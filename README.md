@@ -17,8 +17,11 @@
 
 ### Environment Variables for Railway:
 ```env
-DATABASE_URL=postgresql://... (auto-provided by Railway PostgreSQL service)
-NEXTAUTH_SECRET=your-random-secret-key
+# Railway auto-provides DATABASE_URL when you add PostgreSQL service
+DATABASE_URL=postgresql://postgres:password@postgres.railway.internal:5432/railway
+
+# Set these manually in Railway dashboard:
+NEXTAUTH_SECRET=your-random-secret-key-here
 NEXTAUTH_URL=https://your-app.railway.app
 ```
 
