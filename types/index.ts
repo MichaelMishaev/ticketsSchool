@@ -22,6 +22,7 @@ export interface EventFormData {
   fieldsSchema: FieldSchema[]
   conditions?: string
   requireAcceptance: boolean
+  completionMessage?: string
 }
 
 export interface RegistrationFormData {

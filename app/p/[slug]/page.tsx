@@ -19,6 +19,7 @@ interface Event {
   fieldsSchema: any[]
   conditions?: string
   requireAcceptance: boolean
+  completionMessage?: string
   _count: { registrations: number }
   status: string
 }
@@ -169,6 +170,15 @@ export default function PublicEventPage() {
                 </div>
               )}
             </div>
+
+            {event.completionMessage && (
+              <div className="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                <p className="text-sm text-amber-800 font-medium mb-1">הודעה חשובה:</p>
+                <p className="text-sm text-amber-700 whitespace-pre-wrap">
+                  {event.completionMessage}
+                </p>
+              </div>
+            )}
 
             <div className="mt-6 p-4 bg-blue-50 rounded-lg">
               <p className="text-sm text-blue-800">

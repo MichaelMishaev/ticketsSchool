@@ -20,6 +20,7 @@ export default function NewEventPage() {
     fieldsSchema: defaultFields,
     conditions: '',
     requireAcceptance: false,
+    completionMessage: '',
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -197,6 +198,26 @@ export default function NewEventPage() {
             />
             דרוש אישור תנאי השתתפות בעת ההרשמה
           </label>
+        </div>
+
+        <div className="bg-white shadow rounded-lg p-4 sm:p-6 space-y-4 sm:space-y-6">
+          <h2 className="text-base sm:text-lg font-medium text-gray-900">הודעה לנרשמים</h2>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              הודעה לאחר השלמת הרשמה
+            </label>
+            <textarea
+              value={formData.completionMessage}
+              onChange={(e) => setFormData({ ...formData, completionMessage: e.target.value })}
+              className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+              rows={3}
+              placeholder="הודעה מותאמת אישית שתוצג לנרשמים לאחר השלמת ההרשמה..."
+            />
+            <p className="text-sm text-gray-500 mt-1">
+              ההודעה תוצג למשתתפים לאחר שיסיימו את תהליך ההרשמה בהצלחה.
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
