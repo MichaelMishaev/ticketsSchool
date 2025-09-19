@@ -36,9 +36,14 @@ export default function NewEventPage() {
       if (response.ok) {
         const event = await response.json()
         router.push(`/admin/events/${event.id}`)
+      } else {
+        const errorData = await response.json()
+        console.error('Error creating event:', errorData.error)
+        alert(`Error: ${errorData.error}`)
       }
     } catch (error) {
       console.error('Error creating event:', error)
+      alert('An unexpected error occurred')
     } finally {
       setIsLoading(false)
     }

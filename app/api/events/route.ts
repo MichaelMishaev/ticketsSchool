@@ -31,6 +31,52 @@ export async function POST(request: NextRequest) {
   try {
     const data: EventFormData = await request.json()
 
+    // Validate required fields
+    if (!data.title || !data.startAt) {
+      return NextResponse.json(
+        { error: 'Title and start date are required' },
+        { status: 400 }
+      )
+    }
+
+    // Validate dates
+    const startAt = new Date(data.startAt)
+    if (isNaN(startAt.getTime())) {
+      return NextResponse.json(
+        { error: 'Invalid start date' },
+        { status: 400 }
+      )
+    }
+
+    let endAt = null
+    if (data.endAt) {
+      endAt = new Date(data.endAt)
+      if (isNaN(endAt.getTime())) {
+        return NextResponse.json(
+          { error: 'Invalid end date' },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Validate numbers
+    const capacity = Number(data.capacity)
+    const maxSpotsPerPerson = Number(data.maxSpotsPerPerson)
+
+    if (isNaN(capacity) || capacity < 1) {
+      return NextResponse.json(
+        { error: 'Capacity must be a positive number' },
+        { status: 400 }
+      )
+    }
+
+    if (isNaN(maxSpotsPerPerson) || maxSpotsPerPerson < 1) {
+      return NextResponse.json(
+        { error: 'Max spots per person must be a positive number' },
+        { status: 400 }
+      )
+    }
+
     const event = await prisma.event.create({
       data: {
         slug: generateSlug(),
@@ -38,10 +84,10 @@ export async function POST(request: NextRequest) {
         description: data.description,
         gameType: data.gameType,
         location: data.location,
-        startAt: new Date(data.startAt),
-        endAt: data.endAt ? new Date(data.endAt) : null,
-        capacity: data.capacity,
-        maxSpotsPerPerson: data.maxSpotsPerPerson,
+        startAt: startAt,
+        endAt: endAt,
+        capacity: capacity,
+        maxSpotsPerPerson: maxSpotsPerPerson,
         fieldsSchema: data.fieldsSchema as any,
         conditions: data.conditions,
         requireAcceptance: data.requireAcceptance,
