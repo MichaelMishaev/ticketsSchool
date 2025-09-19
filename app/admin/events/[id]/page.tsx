@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
   Calendar, MapPin, Users, Clock, Trash2, UserCheck,
-  Download, Search, Filter, ChevronDown, ChevronUp,
-  Edit, ExternalLink, Copy, Check
+  Download, Search, ChevronDown, ChevronUp,
+  ExternalLink, Copy, Check
 } from 'lucide-react'
 import { format } from 'date-fns'
 

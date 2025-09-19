@@ -5,8 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:production": "SKIP_ENV_VALIDATION=true next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "next lint",
+    "lint:fix": "next lint --fix",
     "db:migrate": "npx prisma migrate deploy",
     "db:generate": "npx prisma generate",
     "postinstall": "npx prisma generate"
