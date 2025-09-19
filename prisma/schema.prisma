@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Event {
+  id                String         @id @default(cuid())
+  slug              String         @unique
+  title             String
+  description       String?
+  gameType          String?
+  location          String?
+  startAt           DateTime
+  endAt             DateTime?
+  capacity          Int
+  status            EventStatus    @default(OPEN)
+  maxSpotsPerPerson Int            @default(1)
+  fieldsSchema      Json           @default("[]")
+  conditions        String?
+  requireAcceptance Boolean        @default(false)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  registrations     Registration[]
+
+  @@index([slug])
+  @@index([status])
+}
+
+model Registration {
+  id           String               @id @default(cuid())
+  eventId      String
+  event        Event                @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  data         Json
+  spotsCount   Int                  @default(1)
+  status       RegistrationStatus   @default(CONFIRMED)
+  confirmationCode String           @unique
+  phoneNumber  String?
+  email        String?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@index([eventId])
+  @@index([status])
+  @@index([phoneNumber])
+  @@index([confirmationCode])
+  @@unique([eventId, phoneNumber])
+}
+
+enum EventStatus {
+  OPEN
+  PAUSED
+  CLOSED
+}
+
+enum RegistrationStatus {
+  CONFIRMED
+  WAITLIST
+  CANCELLED
+}

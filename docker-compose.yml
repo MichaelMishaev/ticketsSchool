@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: tickets-school-db
+    restart: unless-stopped
+    ports:
+      - "6000:5432"
+    environment:
+      POSTGRES_USER: tickets_user
+      POSTGRES_PASSWORD: tickets_password
+      POSTGRES_DB: tickets_school
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
