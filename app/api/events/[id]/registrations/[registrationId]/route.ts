@@ -3,16 +3,17 @@ import { prisma } from '@/lib/prisma'
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string; registrationId: string } }
+  { params }: { params: Promise<{ id: string; registrationId: string }> }
 ) {
   try {
+    const { id, registrationId } = await params
     const data = await request.json()
 
     // Update registration status
     const registration = await prisma.registration.update({
       where: {
-        id: params.registrationId,
-        eventId: params.id
+        id: registrationId,
+        eventId: id
       },
       data: {
         status: data.status,
@@ -33,13 +34,14 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; registrationId: string } }
+  { params }: { params: Promise<{ id: string; registrationId: string }> }
 ) {
   try {
+    const { id, registrationId } = await params
     await prisma.registration.delete({
       where: {
-        id: params.registrationId,
-        eventId: params.id
+        id: registrationId,
+        eventId: id
       }
     })
 

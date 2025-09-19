@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
         endAt: data.endAt ? new Date(data.endAt) : null,
         capacity: data.capacity,
         maxSpotsPerPerson: data.maxSpotsPerPerson,
-        fieldsSchema: data.fieldsSchema,
+        fieldsSchema: data.fieldsSchema as any,
         conditions: data.conditions,
         requireAcceptance: data.requireAcceptance,
       }
