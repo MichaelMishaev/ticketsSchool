@@ -44,6 +44,7 @@ export async function GET(
       fieldsSchema: event.fieldsSchema,
       conditions: event.conditions,
       requireAcceptance: event.requireAcceptance,
+      completionMessage: event.completionMessage,
       _count: event._count
     })
   } catch (error) {

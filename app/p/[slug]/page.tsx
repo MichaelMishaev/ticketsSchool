@@ -172,9 +172,9 @@ export default function PublicEventPage() {
             </div>
 
             {event.completionMessage && (
-              <div className="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
-                <p className="text-sm text-amber-800 font-medium mb-1">הודעה חשובה:</p>
-                <p className="text-sm text-amber-700 whitespace-pre-wrap">
+              <div className="mt-6 p-5 bg-red-50 rounded-lg border-2 border-red-400">
+                <p className="text-lg text-red-900 font-bold mb-2">⚠️ הודעה חשובה מהמארגן:</p>
+                <p className="text-base text-gray-900 font-bold whitespace-pre-wrap leading-relaxed">
                   {event.completionMessage}
                 </p>
               </div>

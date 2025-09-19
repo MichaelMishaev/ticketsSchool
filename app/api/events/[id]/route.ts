@@ -48,6 +48,7 @@ export async function PATCH(
         ...(data.title && { title: data.title }),
         ...(data.description && { description: data.description }),
         ...(data.capacity && { capacity: data.capacity }),
+        ...(data.completionMessage !== undefined && { completionMessage: data.completionMessage }),
       }
     })
 

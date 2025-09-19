@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
         fieldsSchema: data.fieldsSchema as any,
         conditions: data.conditions,
         requireAcceptance: data.requireAcceptance,
+        completionMessage: data.completionMessage,
       }
     })
 
