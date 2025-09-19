@@ -289,17 +289,22 @@ export default function PublicEventPage() {
             {event.maxSpotsPerPerson > 1 && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  מספר מקומות
+                  מספר מקומות <span className="text-red-500 mr-1">*</span>
+                  <span className="text-xs text-gray-500 mr-2">(מקסימום: {event.maxSpotsPerPerson})</span>
                 </label>
-                <select
+                <input
+                  type="number"
+                  min="1"
+                  max={Math.min(event.maxSpotsPerPerson, spotsLeft || 1)}
                   value={spotsCount}
-                  onChange={(e) => setSpotsCount(parseInt(e.target.value))}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 1;
+                    const max = Math.min(event.maxSpotsPerPerson, spotsLeft || 1);
+                    setSpotsCount(Math.min(Math.max(1, value), max));
+                  }}
+                  required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  {Array.from({ length: Math.min(event.maxSpotsPerPerson, spotsLeft || 1) }, (_, i) => i + 1).map(num => (
-                    <option key={num} value={num}>{num}</option>
-                  ))}
-                </select>
+                />
               </div>
             )}
 
