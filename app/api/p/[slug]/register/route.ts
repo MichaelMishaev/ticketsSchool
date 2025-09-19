@@ -4,9 +4,10 @@ import { generateConfirmationCode, normalizePhoneNumber } from '@/lib/utils'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params;
     const data = await request.json()
     const { spotsCount = 1, ...registrationData } = data
 
@@ -14,7 +15,7 @@ export async function POST(
     return await prisma.$transaction(async (tx) => {
       // Get event with lock to prevent race conditions
       const event = await tx.event.findUnique({
-        where: { slug: params.slug },
+        where: { slug },
         include: {
           _count: {
             select: {
