@@ -16,6 +16,9 @@
     "test:mobile": "playwright test --project='Mobile Chrome'",
     "db:migrate": "npx prisma migrate deploy",
     "db:generate": "npx prisma generate",
+    "db:setup": "node scripts/setup-production-db.js",
+    "db:deploy": "chmod +x scripts/deploy-db.sh && scripts/deploy-db.sh",
+    "db:status": "npx prisma migrate status",
     "postinstall": "npx prisma generate"
   },
   "dependencies": {
