@@ -1,5 +1,8 @@
 FROM node:18-alpine
 
+# Install bash for the start script
+RUN apk add --no-cache bash
+
 WORKDIR /app
 
 # Copy package files
@@ -26,4 +29,4 @@ RUN chmod +x start.sh
 EXPOSE 3000
 
 # Start command
-CMD ["./start.sh"]
+CMD ["sh", "start.sh"]
