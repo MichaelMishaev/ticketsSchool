@@ -62,7 +62,7 @@ npx prisma migrate dev --name init
 npm run dev
 ```
 
-Access at: http://localhost:3000
+Access at: http://localhost:9000
 
 ## 🎯 Features
 

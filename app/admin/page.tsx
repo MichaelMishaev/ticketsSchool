@@ -1,9 +1,10 @@
 'use client'
 
-import { Calendar, Users, Clock, TrendingUp } from 'lucide-react'
+import { Calendar, Users, Clock, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
+import DrilldownModal from '@/components/DrilldownModal'
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -14,8 +15,12 @@ export default function AdminDashboard() {
   })
   const [recentEvents, setRecentEvents] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [isFixing, setIsFixing] = useState(false)
-  const [fixResult, setFixResult] = useState<any>(null)
+  const [modalData, setModalData] = useState<{
+    isOpen: boolean
+    title: string
+    data: any
+    type: 'activeEvents' | 'registrations' | 'waitlist' | 'occupancy'
+  }>({ isOpen: false, title: '', data: null, type: 'activeEvents' })
 
   useEffect(() => {
     fetchDashboardData()
@@ -43,84 +48,62 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleFixRegistrationStatus = async () => {
-    if (!confirm('האם אתה בטוח שברצונך לתקן את סטטוס ההרשמות? פעולה זו תעדכן את כל ההרשמות לפי סדר הגעה.')) {
-      return
-    }
-
-    setIsFixing(true)
-    setFixResult(null)
-
+  const handleCardClick = async (type: 'activeEvents' | 'registrations' | 'waitlist' | 'occupancy') => {
     try {
-      const response = await fetch('/api/admin/fix-registration-status', {
-        method: 'POST'
-      })
-      const result = await response.json()
-      setFixResult(result)
+      setIsLoading(true)
+      const endpoint = {
+        activeEvents: '/api/dashboard/active-events',
+        registrations: '/api/dashboard/registrations',
+        waitlist: '/api/dashboard/waitlist',
+        occupancy: '/api/dashboard/occupancy'
+      }[type]
 
-      if (result.success) {
-        // Refresh dashboard data after fix
-        fetchDashboardData()
+      const response = await fetch(endpoint)
+      const data = await response.json()
+
+      const titles = {
+        activeEvents: 'אירועים פעילים - פרטים מלאים',
+        registrations: 'נרשמים - פרטים מלאים',
+        waitlist: 'רשימת המתנה - פרטים מלאים',
+        occupancy: 'אחוז תפוסה - פרטים מלאים'
       }
+
+      setModalData({
+        isOpen: true,
+        title: titles[type],
+        data,
+        type
+      })
     } catch (error) {
-      console.error('Error fixing registration status:', error)
-      setFixResult({ success: false, error: 'Failed to fix registration status' })
+      console.error('Error fetching drilldown data:', error)
     } finally {
-      setIsFixing(false)
+      setIsLoading(false)
     }
   }
+
+  const closeModal = () => {
+    setModalData({ isOpen: false, title: '', data: null, type: 'activeEvents' })
+  }
+
 
   return (
     <div>
       <div className="flex justify-between items-center mb-4 sm:mb-6">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900">לוח בקרה</h2>
-        <div className="flex gap-2">
-          <button
-            onClick={handleFixRegistrationStatus}
-            disabled={isFixing}
-            className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isFixing ? 'מתקן...' : 'תקן סטטוס הרשמות'}
-          </button>
-          <Link
-            href="/admin-prod"
-            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition"
-          >
-            AdminProd
-          </Link>
-        </div>
+        <Link
+          href="/admin-prod"
+          className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition"
+        >
+          AdminProd
+        </Link>
       </div>
 
-      {fixResult && (
-        <div className={`mb-6 p-4 rounded-lg ${
-          fixResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
-        }`}>
-          <h3 className={`font-medium ${fixResult.success ? 'text-green-800' : 'text-red-800'}`}>
-            {fixResult.success ? '✅ התיקון הושלם בהצלחה' : '❌ שגיאה בתיקון'}
-          </h3>
-          {fixResult.success && fixResult.fixes && (
-            <div className="mt-2">
-              <p className="text-green-700">תוקנו {fixResult.fixes.length} הרשמות:</p>
-              {fixResult.fixes.slice(0, 5).map((fix: any, index: number) => (
-                <div key={index} className="text-sm text-green-600 mt-1">
-                  {fix.eventTitle} - {fix.registrationCode}: {fix.oldStatus} → {fix.newStatus}
-                </div>
-              ))}
-              {fixResult.fixes.length > 5 && (
-                <div className="text-sm text-green-600 mt-1">
-                  ועוד {fixResult.fixes.length - 5} תיקונים...
-                </div>
-              )}
-            </div>
-          )}
-          {fixResult.error && (
-            <p className="text-red-700 mt-2">{fixResult.error}</p>
-          )}
-        </div>
-      )}
 
       <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4 mb-6 sm:mb-8">
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <button
+          onClick={() => handleCardClick('activeEvents')}
+          className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md hover:bg-gray-50 transition-all cursor-pointer text-right w-full group"
+        >
           <div className="p-3 sm:p-5">
             <div className="flex flex-col sm:flex-row sm:items-center">
               <div className="flex-shrink-0 mb-2 sm:mb-0">
@@ -134,9 +117,12 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-        </div>
+        </button>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <button
+          onClick={() => handleCardClick('registrations')}
+          className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md hover:bg-gray-50 transition-all cursor-pointer text-right w-full group"
+        >
           <div className="p-3 sm:p-5">
             <div className="flex flex-col sm:flex-row sm:items-center">
               <div className="flex-shrink-0 mb-2 sm:mb-0">
@@ -150,9 +136,12 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-        </div>
+        </button>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <button
+          onClick={() => handleCardClick('waitlist')}
+          className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md hover:bg-gray-50 transition-all cursor-pointer text-right w-full group"
+        >
           <div className="p-3 sm:p-5">
             <div className="flex flex-col sm:flex-row sm:items-center">
               <div className="flex-shrink-0 mb-2 sm:mb-0">
@@ -166,9 +155,12 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-        </div>
+        </button>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <button
+          onClick={() => handleCardClick('occupancy')}
+          className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md hover:bg-gray-50 transition-all cursor-pointer text-right w-full group"
+        >
           <div className="p-3 sm:p-5">
             <div className="flex flex-col sm:flex-row sm:items-center">
               <div className="flex-shrink-0 mb-2 sm:mb-0">
@@ -182,7 +174,7 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-        </div>
+        </button>
       </div>
 
       <div className="bg-white shadow overflow-hidden sm:rounded-md">
@@ -240,6 +232,14 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+
+      <DrilldownModal
+        isOpen={modalData.isOpen}
+        onClose={closeModal}
+        title={modalData.title}
+        data={modalData.data}
+        type={modalData.type}
+      />
     </div>
   )
 }
