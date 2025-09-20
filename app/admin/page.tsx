@@ -21,23 +21,16 @@ export default function AdminDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await fetch('/api/events')
-      const events = await response.json()
+      // Fetch stats and events in parallel
+      const [statsResponse, eventsResponse] = await Promise.all([
+        fetch('/api/dashboard/stats'),
+        fetch('/api/events')
+      ])
 
-      // Calculate statistics
-      const activeEvents = events.filter((e: any) => e.status === 'OPEN').length
-      const totalRegistrations = events.reduce((sum: number, e: any) => sum + (e._count?.registrations || 0), 0)
+      const statsData = await statsResponse.json()
+      const events = await eventsResponse.json()
 
-      // Calculate occupancy rate
-      const totalCapacity = events.reduce((sum: number, e: any) => sum + e.capacity, 0)
-      const occupancyRate = totalCapacity > 0 ? Math.round((totalRegistrations / totalCapacity) * 100) : 0
-
-      setStats({
-        activeEvents,
-        totalRegistrations,
-        waitlistCount: 0, // This would need a separate API endpoint to get waitlist count
-        occupancyRate
-      })
+      setStats(statsData)
 
       // Get recent events (last 5)
       setRecentEvents(events.slice(0, 5))

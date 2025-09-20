@@ -351,11 +351,11 @@ export default function PublicEventPage() {
                 <input
                   type="number"
                   min="1"
-                  max={Math.min(event.maxSpotsPerPerson, spotsLeft || 1)}
+                  max={isFull ? event.maxSpotsPerPerson : Math.min(event.maxSpotsPerPerson, spotsLeft)}
                   value={spotsCount}
                   onChange={(e) => {
                     const value = parseInt(e.target.value) || 1;
-                    const max = Math.min(event.maxSpotsPerPerson, spotsLeft || 1);
+                    const max = isFull ? event.maxSpotsPerPerson : Math.min(event.maxSpotsPerPerson, spotsLeft);
                     setSpotsCount(Math.min(Math.max(1, value), max));
                   }}
                   required
