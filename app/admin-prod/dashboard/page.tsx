@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react'
 
 interface TableData {
   name: string
@@ -15,6 +16,9 @@ export default function AdminProdDashboard() {
   const [selectedTable, setSelectedTable] = useState<string>('Event')
   const [tableData, setTableData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set())
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
+  const [showColumnManager, setShowColumnManager] = useState(false)
 
   useEffect(() => {
     // Check authentication
@@ -99,6 +103,41 @@ export default function AdminProdDashboard() {
     router.push('/admin')
   }
 
+  const toggleColumn = (column: string) => {
+    const newHidden = new Set(hiddenColumns)
+    if (newHidden.has(column)) {
+      newHidden.delete(column)
+    } else {
+      newHidden.add(column)
+    }
+    setHiddenColumns(newHidden)
+  }
+
+  const toggleRow = (rowId: string) => {
+    const newExpanded = new Set(expandedRows)
+    if (newExpanded.has(rowId)) {
+      newExpanded.delete(rowId)
+    } else {
+      newExpanded.add(rowId)
+    }
+    setExpandedRows(newExpanded)
+  }
+
+  const formatCellValue = (value: any): string => {
+    if (value === null || value === undefined) return ''
+    if (typeof value === 'object') {
+      return JSON.stringify(value, null, 2)
+    }
+    return String(value)
+  }
+
+  const getColumns = () => {
+    if (tableData.length === 0) return []
+    return Object.keys(tableData[0])
+  }
+
+  const visibleColumns = getColumns().filter(col => !hiddenColumns.has(col))
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -110,19 +149,20 @@ export default function AdminProdDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <h1 className="text-2xl font-bold">Production Database Viewer</h1>
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 py-4">
+            <h1 className="text-xl sm:text-2xl font-bold">Production Database</h1>
             <div className="flex gap-2">
               <button
                 onClick={handleBackToAdmin}
-                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base bg-gray-600 text-white rounded hover:bg-gray-700"
               >
-                Back to Admin
+                <span className="hidden sm:inline">Back to Admin</span>
+                <span className="sm:hidden">Back</span>
               </button>
               <button
                 onClick={handleLogout}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base bg-red-600 text-white rounded hover:bg-red-700"
               >
                 Logout
               </button>
@@ -131,13 +171,13 @@ export default function AdminProdDashboard() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex gap-4 mb-6">
+      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
           {tables.map((table) => (
             <button
               key={table.name}
               onClick={() => loadTableData(table.name)}
-              className={`px-4 py-2 rounded ${
+              className={`px-3 py-2 rounded whitespace-nowrap text-sm ${
                 selectedTable === table.name
                   ? 'bg-blue-600 text-white'
                   : 'bg-white border hover:bg-gray-50'
@@ -149,52 +189,125 @@ export default function AdminProdDashboard() {
         </div>
 
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b">
-            <h2 className="text-lg font-semibold">{selectedTable} Table</h2>
+          <div className="px-4 sm:px-6 py-4 border-b flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+            <h2 className="text-base sm:text-lg font-semibold">{selectedTable} Table</h2>
+            <button
+              onClick={() => setShowColumnManager(!showColumnManager)}
+              className="px-3 py-1 text-xs sm:text-sm bg-gray-100 hover:bg-gray-200 rounded flex items-center gap-2 self-start sm:self-auto"
+            >
+              {showColumnManager ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              <span className="hidden sm:inline">Manage Columns</span>
+              <span className="sm:hidden">Columns</span>
+            </button>
           </div>
+
+          {showColumnManager && tableData.length > 0 && (
+            <div className="px-4 sm:px-6 py-3 bg-gray-50 border-b">
+              <div className="flex flex-wrap gap-1 sm:gap-2">
+                {getColumns().map((col) => (
+                  <button
+                    key={col}
+                    onClick={() => toggleColumn(col)}
+                    className={`px-2 sm:px-3 py-1 text-xs sm:text-sm rounded transition-colors ${
+                      !hiddenColumns.has(col)
+                        ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                        : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
+                    }`}
+                  >
+                    {!hiddenColumns.has(col) ? '✓' : '✗'} <span className="hidden sm:inline">{col}</span>
+                    <span className="sm:hidden">{col.slice(0, 8)}{col.length > 8 ? '...' : ''}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {tableData.length === 0 ? (
             <div className="p-6 text-center text-gray-500">
               No records found
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
+            <div className="overflow-x-auto max-w-full">
+              <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    {tableData.length > 0 &&
-                      Object.keys(tableData[0]).map((key) => (
-                        <th
-                          key={key}
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          {key}
-                        </th>
-                      ))}
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {visibleColumns.map((key) => (
+                      <th
+                        key={key}
+                        className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                      >
+                        {key}
+                      </th>
+                    ))}
+                    <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {tableData.map((row) => (
-                    <tr key={row.id}>
-                      {Object.entries(row).map(([key, value]) => (
-                        <td key={key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {typeof value === 'object'
-                            ? JSON.stringify(value)
-                            : String(value)}
+                    <React.Fragment key={row.id}>
+                      <tr className="hover:bg-gray-50">
+                        {visibleColumns.map((key) => (
+                          <td key={key} className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                            {key === 'data' || typeof row[key] === 'object' ? (
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => toggleRow(`${row.id}-${key}`)}
+                                  className="text-blue-600 hover:text-blue-800 flex items-center gap-1 text-xs"
+                                >
+                                  {expandedRows.has(`${row.id}-${key}`) ? (
+                                    <ChevronUp className="w-3 h-3" />
+                                  ) : (
+                                    <ChevronDown className="w-3 h-3" />
+                                  )}
+                                  <span className="hidden sm:inline">View</span>
+                                  <span className="sm:hidden">...</span>
+                                </button>
+                              </div>
+                            ) : key === 'id' || key === 'createdAt' || key === 'updatedAt' ? (
+                              <span className="block" title={String(row[key])}>
+                                {key.includes('At') && row[key] ?
+                                  new Date(row[key]).toLocaleDateString('he-IL', {
+                                    year: '2-digit',
+                                    month: '2-digit',
+                                    day: '2-digit',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  }) :
+                                  formatCellValue(row[key])
+                                }
+                              </span>
+                            ) : (
+                              <span className="block max-w-[200px] truncate" title={String(row[key])}>
+                                {formatCellValue(row[key])}
+                              </span>
+                            )}
+                          </td>
+                        ))}
+                        <td className="px-3 py-2 text-center text-sm font-medium whitespace-nowrap">
+                          <button
+                            onClick={() => handleDelete(selectedTable, row.id)}
+                            className="text-red-600 hover:text-red-900 text-xs sm:text-sm"
+                          >
+                            Delete
+                          </button>
                         </td>
-                      ))}
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={() => handleDelete(selectedTable, row.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
+                      </tr>
+                      {visibleColumns.map((key) =>
+                        expandedRows.has(`${row.id}-${key}`) && (key === 'data' || typeof row[key] === 'object') ? (
+                          <tr key={`${row.id}-${key}-expanded`}>
+                            <td colSpan={visibleColumns.length + 1} className="px-6 py-4 bg-gray-50">
+                              <div className="max-w-full overflow-x-auto">
+                                <pre className="text-xs bg-white p-4 rounded border">
+                                  {formatCellValue(row[key])}
+                                </pre>
+                              </div>
+                            </td>
+                          </tr>
+                        ) : null
+                      )}
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>

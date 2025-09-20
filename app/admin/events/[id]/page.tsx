@@ -168,7 +168,8 @@ export default function EventManagementPage() {
 
   const confirmedCount = event.registrations.filter(r => r.status === 'CONFIRMED')
     .reduce((sum, r) => sum + r.spotsCount, 0)
-  const waitlistCount = event.registrations.filter(r => r.status === 'WAITLIST').length
+  const waitlistCount = event.registrations.filter(r => r.status === 'WAITLIST')
+    .reduce((sum, r) => sum + r.spotsCount, 0)
   const spotsLeft = event.capacity - confirmedCount
 
   const getStatusBadge = (status: string) => {
@@ -220,7 +221,7 @@ export default function EventManagementPage() {
               {waitlistCount > 0 && (
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4" />
-                  {waitlistCount} ברשימת המתנה
+                  {waitlistCount} מקומות ברשימת המתנה
                 </div>
               )}
             </div>
