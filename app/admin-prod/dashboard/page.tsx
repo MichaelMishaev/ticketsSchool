@@ -30,7 +30,11 @@ export default function AdminProdDashboard() {
 
   const loadTables = async () => {
     try {
-      const response = await fetch('/api/admin-prod/tables')
+      const response = await fetch('/api/admin-prod/tables', {
+        headers: {
+          'x-admin-prod-auth': 'authenticated-6262'
+        }
+      })
       if (response.ok) {
         const data = await response.json()
         setTables(data)
@@ -48,7 +52,11 @@ export default function AdminProdDashboard() {
   const loadTableData = async (tableName: string) => {
     setLoading(true)
     try {
-      const response = await fetch(`/api/admin-prod/table-data?table=${tableName}`)
+      const response = await fetch(`/api/admin-prod/table-data?table=${tableName}`, {
+        headers: {
+          'x-admin-prod-auth': 'authenticated-6262'
+        }
+      })
       if (response.ok) {
         const data = await response.json()
         setTableData(data)
@@ -67,7 +75,10 @@ export default function AdminProdDashboard() {
     try {
       const response = await fetch(`/api/admin-prod/delete`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-prod-auth': 'authenticated-6262'
+        },
         body: JSON.stringify({ table: tableName, id })
       })
 

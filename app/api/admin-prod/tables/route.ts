@@ -4,8 +4,8 @@ import { prisma } from '@/lib/prisma'
 export async function GET(request: NextRequest) {
   try {
     // Simple auth check via header
-    const authHeader = request.headers.get('cookie')
-    if (!authHeader?.includes('adminProdAuth')) {
+    const authHeader = request.headers.get('x-admin-prod-auth')
+    if (authHeader !== 'authenticated-6262') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

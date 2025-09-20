@@ -159,7 +159,7 @@ export default function EventManagementPage() {
     const matchesSearch = searchTerm === '' ||
       JSON.stringify(reg.data).toLowerCase().includes(searchTerm.toLowerCase()) ||
       reg.phoneNumber?.includes(searchTerm) ||
-      reg.confirmationCode.includes(searchTerm)
+      reg.confirmationCode.toLowerCase().includes(searchTerm.toLowerCase())
 
     const matchesFilter = filterStatus === 'all' || reg.status === filterStatus
 
@@ -260,16 +260,23 @@ export default function EventManagementPage() {
 
       {/* Filters */}
       <div className="bg-white shadow-sm rounded-lg p-4">
+        {searchTerm && searchTerm.length >= 5 && searchTerm.match(/^[A-Z0-9]+$/i) && (
+          <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-700">
+              🔍 מחפש לפי קוד אישור: <span className="font-mono font-bold">{searchTerm.toUpperCase()}</span>
+            </p>
+          </div>
+        )}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute right-3 top-3 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="חיפוש לפי שם, טלפון או קוד אישור..."
+                placeholder="חיפוש לפי שם, טלפון או קוד אישור (כמו OF9ZEC)..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pr-10 pl-4 py-2 border rounded-lg"
+                className="w-full pr-10 pl-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </div>
@@ -343,8 +350,10 @@ export default function EventManagementPage() {
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                       {getRegistrationStatusBadge(registration.status)}
                     </td>
-                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
-                      {registration.confirmationCode}
+                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-mono">
+                      <span className={`${searchTerm && registration.confirmationCode.toLowerCase().includes(searchTerm.toLowerCase()) ? 'bg-yellow-200 px-1 py-0.5 rounded font-bold text-gray-900' : 'text-gray-900'}`}>
+                        {registration.confirmationCode}
+                      </span>
                     </td>
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {format(new Date(registration.createdAt), 'dd/MM HH:mm')}
