@@ -107,13 +107,38 @@ export default function PublicEventPage() {
     )
   }
 
-  if (!event || event.status === 'CLOSED') {
+  if (!event) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
           <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-900 mb-2">האירוע אינו זמין</h1>
-          <p className="text-gray-600">האירוע לא נמצא או שההרשמה סגורה</p>
+          <p className="text-gray-600">האירוע לא נמצא</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (event.status === 'CLOSED') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+          <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">ההרשמה סגורה</h1>
+          <p className="text-gray-600">ההרשמה לאירוע זה הסתיימה</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (event.status === 'PAUSED') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+          <Clock className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">ההרשמה מושהית</h1>
+          <p className="text-gray-600">ההרשמה לאירוע זה מושהית זמנית</p>
+          <p className="text-sm text-gray-500 mt-2">נא לבדוק שוב מאוחר יותר</p>
         </div>
       </div>
     )
