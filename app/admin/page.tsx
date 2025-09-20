@@ -14,6 +14,8 @@ export default function AdminDashboard() {
   })
   const [recentEvents, setRecentEvents] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isFixing, setIsFixing] = useState(false)
+  const [fixResult, setFixResult] = useState<any>(null)
 
   useEffect(() => {
     fetchDashboardData()
@@ -41,17 +43,81 @@ export default function AdminDashboard() {
     }
   }
 
+  const handleFixRegistrationStatus = async () => {
+    if (!confirm('האם אתה בטוח שברצונך לתקן את סטטוס ההרשמות? פעולה זו תעדכן את כל ההרשמות לפי סדר הגעה.')) {
+      return
+    }
+
+    setIsFixing(true)
+    setFixResult(null)
+
+    try {
+      const response = await fetch('/api/admin/fix-registration-status', {
+        method: 'POST'
+      })
+      const result = await response.json()
+      setFixResult(result)
+
+      if (result.success) {
+        // Refresh dashboard data after fix
+        fetchDashboardData()
+      }
+    } catch (error) {
+      console.error('Error fixing registration status:', error)
+      setFixResult({ success: false, error: 'Failed to fix registration status' })
+    } finally {
+      setIsFixing(false)
+    }
+  }
+
   return (
     <div>
       <div className="flex justify-between items-center mb-4 sm:mb-6">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900">לוח בקרה</h2>
-        <Link
-          href="/admin-prod"
-          className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition"
-        >
-          AdminProd
-        </Link>
+        <div className="flex gap-2">
+          <button
+            onClick={handleFixRegistrationStatus}
+            disabled={isFixing}
+            className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isFixing ? 'מתקן...' : 'תקן סטטוס הרשמות'}
+          </button>
+          <Link
+            href="/admin-prod"
+            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition"
+          >
+            AdminProd
+          </Link>
+        </div>
       </div>
+
+      {fixResult && (
+        <div className={`mb-6 p-4 rounded-lg ${
+          fixResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+        }`}>
+          <h3 className={`font-medium ${fixResult.success ? 'text-green-800' : 'text-red-800'}`}>
+            {fixResult.success ? '✅ התיקון הושלם בהצלחה' : '❌ שגיאה בתיקון'}
+          </h3>
+          {fixResult.success && fixResult.fixes && (
+            <div className="mt-2">
+              <p className="text-green-700">תוקנו {fixResult.fixes.length} הרשמות:</p>
+              {fixResult.fixes.slice(0, 5).map((fix: any, index: number) => (
+                <div key={index} className="text-sm text-green-600 mt-1">
+                  {fix.eventTitle} - {fix.registrationCode}: {fix.oldStatus} → {fix.newStatus}
+                </div>
+              ))}
+              {fixResult.fixes.length > 5 && (
+                <div className="text-sm text-green-600 mt-1">
+                  ועוד {fixResult.fixes.length - 5} תיקונים...
+                </div>
+              )}
+            </div>
+          )}
+          {fixResult.error && (
+            <p className="text-red-700 mt-2">{fixResult.error}</p>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4 mb-6 sm:mb-8">
         <div className="bg-white overflow-hidden shadow rounded-lg">
