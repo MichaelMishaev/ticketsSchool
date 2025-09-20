@@ -45,7 +45,7 @@ export async function GET() {
           status: r.status,
           spotsCount: r.spotsCount,
           createdAt: r.createdAt,
-          name: r.data?.name || 'Unknown'
+          name: (r.data as any)?.name || 'Unknown'
         }))
       }
     })
