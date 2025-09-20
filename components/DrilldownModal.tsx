@@ -47,7 +47,7 @@ export default function DrilldownModal({ isOpen, onClose, title, data, type }: D
                   </div>
                 )}
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 text-center">
                 <div>
                   <div className="text-lg font-semibold text-blue-600">{event.confirmedCount}</div>
                   <div className="text-xs text-gray-500">מאושר</div>
@@ -285,19 +285,19 @@ export default function DrilldownModal({ isOpen, onClose, title, data, type }: D
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-        <div className="flex justify-between items-center p-6 border-b border-gray-200">
+        <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-200">
           <h3 className="text-lg font-medium text-gray-900">{title}</h3>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 sm:p-2 hover:bg-gray-100 rounded-full transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
           >
-            <X className="h-5 w-5 text-gray-400" />
+            <X className="h-5 w-5 sm:h-5 sm:w-5 text-gray-400" />
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+        <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
           {renderContent()}
         </div>
       </div>

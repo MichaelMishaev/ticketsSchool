@@ -99,12 +99,12 @@ export default function AdminDashboard() {
       </div>
 
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4 mb-6 sm:mb-8">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 md:grid-cols-3 lg:grid-cols-4 mb-6 sm:mb-8">
         <button
           onClick={() => handleCardClick('activeEvents')}
-          className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md hover:bg-gray-50 transition-all cursor-pointer text-right w-full group"
+          className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md hover:bg-gray-50 transition-all cursor-pointer text-right w-full group min-h-[88px] sm:min-h-[100px]"
         >
-          <div className="p-3 sm:p-5">
+          <div className="p-4 sm:p-5">
             <div className="flex flex-col sm:flex-row sm:items-center">
               <div className="flex-shrink-0 mb-2 sm:mb-0">
                 <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
@@ -121,9 +121,9 @@ export default function AdminDashboard() {
 
         <button
           onClick={() => handleCardClick('registrations')}
-          className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md hover:bg-gray-50 transition-all cursor-pointer text-right w-full group"
+          className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md hover:bg-gray-50 transition-all cursor-pointer text-right w-full group min-h-[88px] sm:min-h-[100px]"
         >
-          <div className="p-3 sm:p-5">
+          <div className="p-4 sm:p-5">
             <div className="flex flex-col sm:flex-row sm:items-center">
               <div className="flex-shrink-0 mb-2 sm:mb-0">
                 <Users className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
@@ -140,9 +140,9 @@ export default function AdminDashboard() {
 
         <button
           onClick={() => handleCardClick('waitlist')}
-          className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md hover:bg-gray-50 transition-all cursor-pointer text-right w-full group"
+          className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md hover:bg-gray-50 transition-all cursor-pointer text-right w-full group min-h-[88px] sm:min-h-[100px]"
         >
-          <div className="p-3 sm:p-5">
+          <div className="p-4 sm:p-5">
             <div className="flex flex-col sm:flex-row sm:items-center">
               <div className="flex-shrink-0 mb-2 sm:mb-0">
                 <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
@@ -159,9 +159,9 @@ export default function AdminDashboard() {
 
         <button
           onClick={() => handleCardClick('occupancy')}
-          className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md hover:bg-gray-50 transition-all cursor-pointer text-right w-full group"
+          className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md hover:bg-gray-50 transition-all cursor-pointer text-right w-full group min-h-[88px] sm:min-h-[100px]"
         >
-          <div className="p-3 sm:p-5">
+          <div className="p-4 sm:p-5">
             <div className="flex flex-col sm:flex-row sm:items-center">
               <div className="flex-shrink-0 mb-2 sm:mb-0">
                 <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />

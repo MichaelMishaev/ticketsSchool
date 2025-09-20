@@ -48,7 +48,7 @@ export default function AdminLayout({
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+                className="inline-flex items-center justify-center p-3 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 min-w-[44px] min-h-[44px]"
               >
                 {isMobileMenuOpen ? (
                   <X className="h-6 w-6" />
@@ -66,7 +66,7 @@ export default function AdminLayout({
               <Link
                 href="/admin"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="block pr-4 py-2 border-r-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:border-gray-300"
+                className="block pr-4 py-3 border-r-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:border-gray-300 min-h-[44px]"
               >
                 <div className="flex items-center">
                   <Home className="w-5 h-5 ml-3" />
@@ -76,7 +76,7 @@ export default function AdminLayout({
               <Link
                 href="/admin/events"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="block pr-4 py-2 border-r-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:border-gray-300"
+                className="block pr-4 py-3 border-r-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:border-gray-300 min-h-[44px]"
               >
                 <div className="flex items-center">
                   <Calendar className="w-5 h-5 ml-3" />
@@ -86,7 +86,7 @@ export default function AdminLayout({
               <Link
                 href="/admin/events/new"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="block pr-4 py-2 border-r-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:border-gray-300"
+                className="block pr-4 py-3 border-r-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:border-gray-300 min-h-[44px]"
               >
                 <div className="flex items-center">
                   <Plus className="w-5 h-5 ml-3" />

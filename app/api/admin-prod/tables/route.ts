@@ -12,10 +12,12 @@ export async function GET(request: NextRequest) {
     // Get table counts
     const eventCount = await prisma.event.count()
     const registrationCount = await prisma.registration.count()
+    const logCount = await prisma.log.count()
 
     const tables = [
       { name: 'Event', count: eventCount },
-      { name: 'Registration', count: registrationCount }
+      { name: 'Registration', count: registrationCount },
+      { name: 'Log', count: logCount }
     ]
 
     return NextResponse.json(tables)

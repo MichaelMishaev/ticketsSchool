@@ -62,3 +62,26 @@ enum RegistrationStatus {
   WAITLIST
   CANCELLED
 }
+
+model Log {
+  id        String   @id @default(cuid())
+  level     LogLevel @default(INFO)
+  message   String
+  metadata  Json?
+  source    String?
+  userId    String?
+  eventId   String?
+  createdAt DateTime @default(now())
+
+  @@index([level])
+  @@index([source])
+  @@index([createdAt])
+  @@index([eventId])
+}
+
+enum LogLevel {
+  DEBUG
+  INFO
+  WARN
+  ERROR
+}

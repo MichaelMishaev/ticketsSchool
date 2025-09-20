@@ -46,6 +46,12 @@ export async function GET(request: NextRequest) {
           event: undefined // Remove nested object
         }))
         break
+      case 'Log':
+        data = await prisma.log.findMany({
+          orderBy: { createdAt: 'desc' },
+          take: 100
+        })
+        break
       default:
         return NextResponse.json({ error: 'Invalid table name' }, { status: 400 })
     }

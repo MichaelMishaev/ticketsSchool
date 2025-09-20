@@ -7,18 +7,25 @@ import { ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react'
 interface TableData {
   name: string
   count: number
-  data: any[]
+  data: Record<string, any>[]
 }
 
 export default function AdminProdDashboard() {
   const router = useRouter()
   const [tables, setTables] = useState<TableData[]>([])
   const [selectedTable, setSelectedTable] = useState<string>('Event')
-  const [tableData, setTableData] = useState<any[]>([])
+  const [tableData, setTableData] = useState<Record<string, any>[]>([])
   const [loading, setLoading] = useState(true)
   const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set())
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
   const [showColumnManager, setShowColumnManager] = useState(false)
+  const [currentView, setCurrentView] = useState<'prisma' | 'logs'>('prisma')
+  const [logs, setLogs] = useState<Record<string, any>[]>([])
+  const [logFilters, setLogFilters] = useState({
+    level: 'all',
+    source: 'all',
+    search: ''
+  })
 
   useEffect(() => {
     // Check authentication
@@ -30,7 +37,10 @@ export default function AdminProdDashboard() {
 
     // Load initial data
     loadTables()
-  }, [router])
+    if (currentView === 'logs') {
+      loadLogs()
+    }
+  }, [router, currentView])
 
   const loadTables = async () => {
     try {
@@ -68,6 +78,30 @@ export default function AdminProdDashboard() {
       }
     } catch (error) {
       console.error('Error loading table data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadLogs = async () => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams()
+      if (logFilters.level !== 'all') params.append('level', logFilters.level)
+      if (logFilters.source !== 'all') params.append('source', logFilters.source)
+      if (logFilters.search) params.append('search', logFilters.search)
+
+      const response = await fetch(`/api/admin-prod/logs?${params.toString()}`, {
+        headers: {
+          'x-admin-prod-auth': 'authenticated-6262'
+        }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setLogs(data)
+      }
+    } catch (error) {
+      console.error('Error loading logs:', error)
     } finally {
       setLoading(false)
     }
@@ -123,7 +157,7 @@ export default function AdminProdDashboard() {
     setExpandedRows(newExpanded)
   }
 
-  const formatCellValue = (value: any): string => {
+  const formatCellValue = (value: unknown): string => {
     if (value === null || value === undefined) return ''
     if (typeof value === 'object') {
       return JSON.stringify(value, null, 2)
@@ -168,38 +202,65 @@ export default function AdminProdDashboard() {
               </button>
             </div>
           </div>
+
+          {/* Navigation Menu */}
+          <div className="flex gap-1 pb-4 border-b">
+            <button
+              onClick={() => setCurrentView('prisma')}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                currentView === 'prisma'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Prisma
+            </button>
+            <button
+              onClick={() => setCurrentView('logs')}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                currentView === 'logs'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Logs
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-          {tables.map((table) => (
-            <button
-              key={table.name}
-              onClick={() => loadTableData(table.name)}
-              className={`px-3 py-2 rounded whitespace-nowrap text-sm ${
-                selectedTable === table.name
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white border hover:bg-gray-50'
-              }`}
-            >
-              {table.name} ({table.count})
-            </button>
-          ))}
-        </div>
-
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-4 sm:px-6 py-4 border-b flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <h2 className="text-base sm:text-lg font-semibold">{selectedTable} Table</h2>
-            <button
-              onClick={() => setShowColumnManager(!showColumnManager)}
-              className="px-3 py-1 text-xs sm:text-sm bg-gray-100 hover:bg-gray-200 rounded flex items-center gap-2 self-start sm:self-auto"
-            >
-              {showColumnManager ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              <span className="hidden sm:inline">Manage Columns</span>
-              <span className="sm:hidden">Columns</span>
-            </button>
+        {currentView === 'prisma' && (
+          <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+            {tables.map((table) => (
+              <button
+                key={table.name}
+                onClick={() => loadTableData(table.name)}
+                className={`px-3 py-2 rounded whitespace-nowrap text-sm ${
+                  selectedTable === table.name
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white border hover:bg-gray-50'
+                }`}
+              >
+                {table.name} ({table.count})
+              </button>
+            ))}
           </div>
+        )}
+
+        {currentView === 'prisma' ? (
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="px-4 sm:px-6 py-4 border-b flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+              <h2 className="text-base sm:text-lg font-semibold">{selectedTable} Table</h2>
+              <button
+                onClick={() => setShowColumnManager(!showColumnManager)}
+                className="px-3 py-1 text-xs sm:text-sm bg-gray-100 hover:bg-gray-200 rounded flex items-center gap-2 self-start sm:self-auto"
+              >
+                {showColumnManager ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                <span className="hidden sm:inline">Manage Columns</span>
+                <span className="sm:hidden">Columns</span>
+              </button>
+            </div>
 
           {showColumnManager && tableData.length > 0 && (
             <div className="px-4 sm:px-6 py-3 bg-gray-50 border-b">
@@ -313,7 +374,172 @@ export default function AdminProdDashboard() {
               </table>
             </div>
           )}
-        </div>
+          </div>
+        ) : (
+          /* Logs View */
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="px-4 sm:px-6 py-4 border-b">
+              <h2 className="text-base sm:text-lg font-semibold mb-4">System Logs</h2>
+
+              {/* Log Filters */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Level</label>
+                  <select
+                    value={logFilters.level}
+                    onChange={(e) => {
+                      setLogFilters({...logFilters, level: e.target.value})
+                      setTimeout(loadLogs, 100)
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  >
+                    <option value="all">All Levels</option>
+                    <option value="DEBUG">Debug</option>
+                    <option value="INFO">Info</option>
+                    <option value="WARN">Warning</option>
+                    <option value="ERROR">Error</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Source</label>
+                  <select
+                    value={logFilters.source}
+                    onChange={(e) => {
+                      setLogFilters({...logFilters, source: e.target.value})
+                      setTimeout(loadLogs, 100)
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  >
+                    <option value="all">All Sources</option>
+                    <option value="api">API</option>
+                    <option value="auth">Authentication</option>
+                    <option value="database">Database</option>
+                    <option value="system">System</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                  <input
+                    type="text"
+                    value={logFilters.search}
+                    onChange={(e) => setLogFilters({...logFilters, search: e.target.value})}
+                    onKeyDown={(e) => e.key === 'Enter' && loadLogs()}
+                    placeholder="Search messages..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={loadLogs}
+                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+              >
+                Refresh Logs
+              </button>
+            </div>
+
+            {/* Logs Table */}
+            {loading ? (
+              <div className="p-6 text-center text-gray-500">
+                Loading logs...
+              </div>
+            ) : logs.length === 0 ? (
+              <div className="p-6 text-center text-gray-500">
+                No logs found
+              </div>
+            ) : (
+              <div className="overflow-x-auto max-w-full">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Time
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Level
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Source
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Message
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {logs.map((log) => (
+                      <React.Fragment key={log.id}>
+                        <tr className="hover:bg-gray-50">
+                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                            {new Date(log.createdAt).toLocaleDateString('he-IL', {
+                              year: '2-digit',
+                              month: '2-digit',
+                              day: '2-digit',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              second: '2-digit'
+                            })}
+                          </td>
+                          <td className="px-3 py-2 text-sm whitespace-nowrap">
+                            <span
+                              className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                log.level === 'ERROR' ? 'bg-red-100 text-red-800' :
+                                log.level === 'WARN' ? 'bg-yellow-100 text-yellow-800' :
+                                log.level === 'INFO' ? 'bg-blue-100 text-blue-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}
+                            >
+                              {log.level}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-900 whitespace-nowrap">
+                            {log.source || 'Unknown'}
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-900">
+                            <div className="max-w-md truncate" title={log.message}>
+                              {log.message}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 text-sm">
+                            {log.metadata && (
+                              <button
+                                onClick={() => toggleRow(log.id)}
+                                className="text-blue-600 hover:text-blue-800 text-xs flex items-center gap-1"
+                              >
+                                {expandedRows.has(log.id) ? (
+                                  <ChevronUp className="w-3 h-3" />
+                                ) : (
+                                  <ChevronDown className="w-3 h-3" />
+                                )}
+                                <span className="hidden sm:inline">Details</span>
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                        {expandedRows.has(log.id) && log.metadata && (
+                          <tr key={`${log.id}-expanded`}>
+                            <td colSpan={5} className="px-6 py-4 bg-gray-50">
+                              <div className="max-w-full overflow-x-auto">
+                                <pre className="text-xs bg-white p-4 rounded border">
+                                  {JSON.stringify(log.metadata, null, 2)}
+                                </pre>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
