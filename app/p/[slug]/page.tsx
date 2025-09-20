@@ -149,29 +149,50 @@ export default function PublicEventPage() {
   const percentage = Math.min(100, (event._count.registrations / event.capacity) * 100)
 
   if (registered) {
+    // Show different screens for waitlist vs confirmed registration
+    if (isWaitlist) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Clock className="w-10 h-10 text-yellow-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-4">נרשמת לרשימת המתנה</h1>
+              <p className="text-lg text-gray-700 mb-3">
+                הבקשה שלך נקלטה בהצלחה.
+              </p>
+              <p className="text-lg text-gray-700 mb-6">
+                אם יתפנה מקום באירוע, ניצור איתך קשר.
+              </p>
+
+              <div className="bg-yellow-50 rounded-lg p-5 border border-yellow-200">
+                <p className="text-base text-gray-800">
+                  📱 במידה ויתפנה מקום, נעדכן אותך באמצעות פרטי הקשר שהזנת.
+                </p>
+              </div>
+
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-600">
+                  קוד אישור לרשימת המתנה: <span className="font-mono font-bold">{confirmationCode}</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // Regular confirmed registration
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
           <div className="text-center">
-            {isWaitlist ? (
-              <>
-                <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Clock className="w-10 h-10 text-yellow-600" />
-                </div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">נרשמת לרשימת המתנה</h1>
-                <p className="text-gray-600 mb-6">
-                  המקום שלך ברשימת ההמתנה נשמר. נעדכן אותך אם יתפנה מקום.
-                </p>
-              </>
-            ) : (
-              <>
-                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="w-10 h-10 text-green-600" />
-                </div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">ההרשמה הושלמה בהצלחה!</h1>
-                <p className="text-gray-600 mb-6">המקום שלך נשמר לאירוע</p>
-              </>
-            )}
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-10 h-10 text-green-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">ההרשמה הושלמה בהצלחה!</h1>
+            <p className="text-gray-600 mb-6">המקום שלך נשמר לאירוע</p>
 
             <div className="bg-gray-50 rounded-lg p-6 mb-6">
               <p className="text-sm text-gray-500 mb-2">קוד אישור</p>
