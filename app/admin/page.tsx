@@ -50,7 +50,15 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">לוח בקרה</h2>
+      <div className="flex justify-between items-center mb-4 sm:mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">לוח בקרה</h2>
+        <Link
+          href="/admin-prod"
+          className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition"
+        >
+          AdminProd
+        </Link>
+      </div>
 
       <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4 mb-6 sm:mb-8">
         <div className="bg-white overflow-hidden shadow rounded-lg">
