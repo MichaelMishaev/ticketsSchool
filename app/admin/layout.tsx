@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Calendar, Home, Plus, Menu, X } from 'lucide-react'
+import { Calendar, Home, Plus, Menu, X, HelpCircle } from 'lucide-react'
 import { useState } from 'react'
 
 export default function AdminLayout({
@@ -41,6 +41,13 @@ export default function AdminLayout({
                 >
                   <Plus className="w-4 h-4 ml-2" />
                   אירוע חדש
+                </Link>
+                <Link
+                  href="/admin/help"
+                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-900"
+                >
+                  <HelpCircle className="w-4 h-4 ml-2" />
+                  הסבר איך להוסיף אירוע
                 </Link>
               </div>
             </div>
@@ -91,6 +98,16 @@ export default function AdminLayout({
                 <div className="flex items-center">
                   <Plus className="w-5 h-5 ml-3" />
                   אירוע חדש
+                </div>
+              </Link>
+              <Link
+                href="/admin/help"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block pr-4 py-3 border-r-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:border-gray-300 min-h-[44px]"
+              >
+                <div className="flex items-center">
+                  <HelpCircle className="w-5 h-5 ml-3" />
+                  הסבר איך להוסיף אירוע
                 </div>
               </Link>
             </div>
