@@ -1,22 +1,22 @@
 'use client'
 
-import { Calendar, Users, MapPin, Clock, Star, Gift, CheckCircle, AlertCircle, Plus } from 'lucide-react'
+import { Calendar, Users, MapPin, Clock, Star, Gift, CheckCircle, AlertCircle, Plus, Settings, Edit3, FileText, Shield, Hash, MessageCircle, List, Zap } from 'lucide-react'
 import Link from 'next/link'
 
 export default function HelpPage() {
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-5xl mx-auto">
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 mb-8">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            🎉 איך ליצור אירוע חדש? 🎉
+            🎉 המדריך המלא ליצירת אירועים 🎉
           </h1>
           <p className="text-lg text-gray-700 mb-6">
-            ברוכים הבאים! כאן תלמדו איך ליצור אירועים מדליקים בקלות!
+            ברוכים הבאים! כאן תלמדו איך ליצור אירועים מדליקים עם כל האפשרויות!
           </p>
           <div className="inline-flex items-center bg-green-100 text-green-800 px-4 py-2 rounded-full">
             <CheckCircle className="w-5 h-5 ml-2" />
-            <span className="font-medium">זה קל וכיף!</span>
+            <span className="font-medium">זה קל, כיף ומקצועי!</span>
           </div>
         </div>
       </div>
@@ -39,23 +39,28 @@ export default function HelpPage() {
         </div>
       </div>
 
+      {/* Section 1: Basic Event Details */}
       <div className="bg-white rounded-lg shadow-sm border-2 border-blue-200 p-6 mb-8">
         <h2 className="text-2xl font-bold text-blue-600 mb-6 flex items-center">
           <Gift className="w-6 h-6 ml-2" />
-          מדריך צעד אחר צעד
+          חלק 1: פרטי האירוע הבסיסיים
         </h2>
 
         <div className="space-y-6">
           <div className="border-r-4 border-purple-400 pr-4 bg-purple-50 p-4 rounded">
             <h3 className="text-xl font-bold text-purple-700 mb-3 flex items-center">
               <span className="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center ml-3 text-sm font-bold">1</span>
-              📝 שם האירוע
+              📝 כותרת האירוע *
             </h3>
-            <p className="text-gray-700 text-lg">
-              בחרו שם מגניב לאירוע שלכם! למשל: "מסיבת יום הולדת של שרה" או "משחק כדורגל בפארק"
+            <p className="text-gray-700 text-lg mb-3">
+              <span className="text-red-500 font-bold">*חובה!</span> בחרו שם מגניב לאירוע שלכם! זה מה שכולם יראו ראשון!
             </p>
-            <div className="mt-3 bg-white p-3 rounded border">
-              <strong>דוגמה:</strong> 🎉 מסיבת פיצה וחברים 🍕
+            <div className="bg-white p-3 rounded border">
+              <strong>דוגמאות טובות:</strong><br />
+              🎉 מסיבת פיצה וחברים<br />
+              ⚽ משחק כדורגל נגד כיתה ג'<br />
+              🎂 יום הולדת של שרה הגדולה<br />
+              🚌 טיול לספארי ברמת גן
             </div>
           </div>
 
@@ -64,107 +69,391 @@ export default function HelpPage() {
               <span className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center ml-3 text-sm font-bold">2</span>
               📖 תיאור האירוע
             </h3>
-            <p className="text-gray-700 text-lg">
+            <p className="text-gray-700 text-lg mb-3">
               ספרו לחברים מה יהיה באירוע! מה תעשו? מה צריך להביא? מה יהיה כיף?
             </p>
-            <div className="mt-3 bg-white p-3 rounded border">
-              <strong>דוגמה:</strong> ניכין פיצה ביחד, נשחק משחקים ונצפה בסרט מצחיק! תביאו בגדים נוחים 😊
+            <div className="bg-white p-3 rounded border">
+              <strong>דוגמה מלאה:</strong><br />
+              ניכין פיצה ביחד, נשחק משחקי קופסה ונצפה בסרט מצחיק! 🍕🎮🎬<br />
+              תביאו: בגדים נוחים, כרית ושמיכה קטנה 😊<br />
+              נתחיל בפיצה, אחר כך משחקים ובסוף סרט עד השעה 22:00
             </div>
           </div>
 
           <div className="border-r-4 border-green-400 pr-4 bg-green-50 p-4 rounded">
             <h3 className="text-xl font-bold text-green-700 mb-3 flex items-center">
               <span className="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center ml-3 text-sm font-bold">3</span>
-              🎮 סוג המשחק
+              🎮 סוג המשחק/אירוע
             </h3>
-            <p className="text-gray-700 text-lg">
-              איזה סוג אירוע זה? כדורגל? מסיבה? טיול? זה עוזר לאנשים להבין מה לצפות!
+            <p className="text-gray-700 text-lg mb-3">
+              איזה סוג אירוע זה? זה עוזר לאנשים להבין מה לצפות ואיך להתכונן!
             </p>
-            <div className="mt-3 bg-white p-3 rounded border">
-              <strong>דוגמאות:</strong> מסיבה 🎉 | ספורט ⚽ | יום הולדת 🎂 | טיול 🚌
+            <div className="bg-white p-3 rounded border">
+              <strong>האפשרויות שלכם:</strong><br />
+              ⚽ כדורגל - למשחקי כדורגל<br />
+              🏀 כדורסל - למשחקי כדורסל<br />
+              🏐 כדורעף - למשחקי כדורעף<br />
+              🎈 אחר - למסיבות, טיולים, יום הולדת וכל הדברים הכיפיים האחרים!
             </div>
           </div>
 
           <div className="border-r-4 border-orange-400 pr-4 bg-orange-50 p-4 rounded">
             <h3 className="text-xl font-bold text-orange-700 mb-3 flex items-center">
               <span className="bg-orange-600 text-white rounded-full w-8 h-8 flex items-center justify-center ml-3 text-sm font-bold">4</span>
-              📍 איפה זה יהיה?
+              📍 מיקום האירוע
             </h3>
-            <p className="text-gray-700 text-lg">
-              ספרו איפה האירוע יקרה! הכתובת המלאה כדי שכולם יוכלו להגיע!
+            <p className="text-gray-700 text-lg mb-3">
+              ספרו איפה האירוע יקרה! הכתובת המלאה כדי שכולם יוכלו להגיע בלי לאבד!
             </p>
-            <div className="mt-3 bg-white p-3 rounded border">
-              <strong>דוגמה:</strong> פארק הילדים ברחוב הרצל 15, תל אביב 🏞️
+            <div className="bg-white p-3 rounded border">
+              <strong>דוגמאות:</strong><br />
+              🏞️ פארק הילדים ברחוב הרצל 15, תל אביב<br />
+              🏫 בית הספר יסודי "אור", כיתה 12, קומה שנייה<br />
+              🏠 בבית של דני, רחוב הדקל 8 דירה 5, רמת גן<br />
+              ⚽ מגרש כדורגל עירוני, שדרות ירושלים 50
             </div>
           </div>
 
           <div className="border-r-4 border-red-400 pr-4 bg-red-50 p-4 rounded">
             <h3 className="text-xl font-bold text-red-700 mb-3 flex items-center">
               <span className="bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center ml-3 text-sm font-bold">5</span>
-              🕐 מתי זה מתחיל ונגמר?
+              🕐 תאריך ושעת התחלה *
             </h3>
-            <p className="text-gray-700 text-lg">
-              בחרו תאריך ושעה! מתי האירוע מתחיל ומתי הוא נגמר?
+            <p className="text-gray-700 text-lg mb-3">
+              <span className="text-red-500 font-bold">*חובה!</span> מתי האירוע מתחיל? בחרו תאריך ושעה שנוחים לכולם!
             </p>
-            <div className="mt-3 bg-white p-3 rounded border">
-              <strong>דוגמה:</strong> יום שישי 15/3/2024 בשעה 16:00 עד 18:00 ⏰
+            <div className="bg-white p-3 rounded border">
+              <strong>איך לבחור:</strong><br />
+              📅 לחצו על השדה ותראו לוח שנה<br />
+              🕐 בחרו תאריך ואז שעה<br />
+              💡 טיפ: אל תתחילו מוקדם מדי (לא לפני 15:00) או מאוחר מדי (לא אחרי 19:00)
             </div>
           </div>
+        </div>
+      </div>
 
+      {/* Section 2: Quantity Settings */}
+      <div className="bg-white rounded-lg shadow-sm border-2 border-teal-200 p-6 mb-8">
+        <h2 className="text-2xl font-bold text-teal-600 mb-6 flex items-center">
+          <Hash className="w-6 h-6 ml-2" />
+          חלק 2: הגדרות כמות - כמה חברים?
+        </h2>
+
+        <div className="space-y-6">
           <div className="border-r-4 border-teal-400 pr-4 bg-teal-50 p-4 rounded">
             <h3 className="text-xl font-bold text-teal-700 mb-3 flex items-center">
               <span className="bg-teal-600 text-white rounded-full w-8 h-8 flex items-center justify-center ml-3 text-sm font-bold">6</span>
-              👥 כמה חברים יכולים להגיע?
+              👥 מספר מקומות כולל *
             </h3>
-            <p className="text-gray-700 text-lg">
-              כמה מקומות יש באירוע? אם זה מסיבה בבית, אולי 20 ילדים. אם זה במגרש כדורגל, אולי 22!
+            <p className="text-gray-700 text-lg mb-3">
+              <span className="text-red-500 font-bold">*חובה!</span> כמה ילדים בסך הכל יכולים להגיע לאירוע?
             </p>
-            <div className="mt-3 bg-white p-3 rounded border">
-              <strong>דוגמה:</strong> 25 ילדים (כולל אתכם!) 👫👬👭
+            <div className="bg-white p-3 rounded border">
+              <strong>איך לחשב:</strong><br />
+              🏠 מסיבה בבית: 15-25 ילדים (תלוי בגודל הבית)<br />
+              ⚽ משחק כדורגל: 22 ילדים (11 נגד 11)<br />
+              🚌 טיול באוטובוס: 50 ילדים (גודל אוטובוס)<br />
+              🎂 יום הולדת: 20-30 ילדים (תלוי במקום)
+            </div>
+          </div>
+
+          <div className="border-r-4 border-cyan-400 pr-4 bg-cyan-50 p-4 rounded">
+            <h3 className="text-xl font-bold text-cyan-700 mb-3 flex items-center">
+              <span className="bg-cyan-600 text-white rounded-full w-8 h-8 flex items-center justify-center ml-3 text-sm font-bold">7</span>
+              🎯 מקסימום מקומות לנרשם *
+            </h3>
+            <p className="text-gray-700 text-lg mb-3">
+              <span className="text-red-500 font-bold">*חובה!</span> כמה מקומות כל ילד יכול לקחת? בדרך כלל 1, אבל אפשר יותר!
+            </p>
+            <div className="bg-white p-3 rounded border">
+              <strong>מתי להשתמש:</strong><br />
+              🧍 1 מקום: רוב האירועים (כל ילד לוקח מקום אחד)<br />
+              👨‍👩‍👧‍👦 2-3 מקומות: אם ילד יכול להביא הורה או אח/אחות<br />
+              👥 4-5 מקומות: אירועי משפחות שלמות<br />
+              ⚠️ זהירות: אל תשימו יותר מדי כי המקומות ייגמרו מהר!
             </div>
           </div>
         </div>
       </div>
 
-      <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg p-6 mb-8 border-2 border-yellow-300">
-        <h2 className="text-2xl font-bold text-orange-600 mb-4 flex items-center">
-          <AlertCircle className="w-6 h-6 ml-2" />
-          💡 טיפים חשובים
+      {/* Section 2.5: Waitlist Explanation */}
+      <div className="bg-white rounded-lg shadow-sm border-2 border-yellow-200 p-6 mb-8">
+        <h2 className="text-2xl font-bold text-yellow-600 mb-6 flex items-center">
+          <Clock className="w-6 h-6 ml-2" />
+          רשימת המתנה - מה קורה כשהמקומות נגמרים?
         </h2>
-        <div className="space-y-3 text-gray-700">
-          <div className="flex items-start">
-            <span className="text-xl ml-3">✨</span>
-            <p><strong>תנו שמות מגניבים:</strong> במקום "אירוע", קראו לו "מסיבת הפיצה הגדולה"!</p>
+
+        <div className="space-y-6">
+          <div className="border-r-4 border-yellow-400 pr-4 bg-yellow-50 p-4 rounded">
+            <h3 className="text-xl font-bold text-yellow-700 mb-3 flex items-center">
+              <span className="bg-yellow-600 text-white rounded-full w-8 h-8 flex items-center justify-center ml-3 text-sm font-bold">⏰</span>
+              🤔 מה זה רשימת המתנה?
+            </h3>
+            <p className="text-gray-700 text-lg mb-3">
+              רשימת המתנה זה כמו תור! כשהמקומות נגמרים, ילדים שעוד רוצים להגיע נכנסים לרשימת המתנה.
+            </p>
+            <div className="bg-white p-3 rounded border">
+              <strong>איך זה עובד? דוגמה:</strong><br />
+              🎉 יש מסיבה עם 20 מקומות<br />
+              👥 20 ילדים ראשונים נרשמו - המקומות מלאים!<br />
+              😢 ילד ה-21 רוצה להגיע - הוא נכנס לרשימת המתנה<br />
+              📞 אם מישהו מבטל, הילד ברשימת המתנה יקבל הודעה!
+            </div>
           </div>
-          <div className="flex items-start">
-            <span className="text-xl ml-3">📝</span>
-            <p><strong>תהיו ברורים:</strong> כתבו בדיוק איפה ומתי, כדי שאף אחד לא יתבלבל!</p>
+
+          <div className="border-r-4 border-orange-400 pr-4 bg-orange-50 p-4 rounded">
+            <h3 className="text-xl font-bold text-orange-700 mb-3 flex items-center">
+              <span className="bg-orange-600 text-white rounded-full w-8 h-8 flex items-center justify-center ml-3 text-sm font-bold">🔄</span>
+              🎯 איך הרשימת המתנה עוזרת?
+            </h3>
+            <p className="text-gray-700 text-lg mb-3">
+              רשימת המתנה מאוד חשובה! היא עוזרת לכולם!
+            </p>
+            <div className="bg-white p-3 rounded border space-y-2">
+              <div>✅ <strong>לילדים:</strong> יש להם תקווה להיכנס לאירוע גם אם זה מלא</div>
+              <div>✅ <strong>לכם (המארגנים):</strong> האירוע תמיד יהיה מלא, גם אם מישהו מבטל</div>
+              <div>✅ <strong>לכולם:</strong> אף אחד לא מפסיד - כל מקום פנוי מתמלא מיד!</div>
+            </div>
           </div>
-          <div className="flex items-start">
-            <span className="text-xl ml-3">🎯</span>
-            <p><strong>חשבו על המקום:</strong> כמה ילדים באמת נכנסים? עדיף קצת פחות מאשר צפוף!</p>
+
+          <div className="border-r-4 border-red-400 pr-4 bg-red-50 p-4 rounded">
+            <h3 className="text-xl font-bold text-red-700 mb-3 flex items-center">
+              <span className="bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center ml-3 text-sm font-bold">🚀</span>
+              📱 מה קורה ברשימת המתנה?
+            </h3>
+            <p className="text-gray-700 text-lg mb-3">
+              הנה בדיוק מה קורה כשילד נכנס לרשימת המתנה:
+            </p>
+            <div className="bg-white p-3 rounded border">
+              <strong>התהליך המלא:</strong><br />
+              1️⃣ <strong>הרשמה:</strong> הילד נרשם אבל אין מקום - הוא נכנס לרשימת המתנה<br />
+              2️⃣ <strong>הודעה:</strong> הילד מקבל הודעה "נרשמת לרשימת המתנה! נעדכן אותך אם יתפנה מקום"<br />
+              3️⃣ <strong>המתנה:</strong> הילד ברשימת המתנה בסדר מסוים (מי שנרשם קודם, יכנס קודם)<br />
+              4️⃣ <strong>מקום פנוי:</strong> אם מישהו מבטל, הילד הראשון ברשימה מקבל הודעה<br />
+              5️⃣ <strong>כניסה:</strong> הילד עובר אוטומטית לרשימת המשתתפים!
+            </div>
           </div>
-          <div className="flex items-start">
-            <span className="text-xl ml-3">⏰</span>
-            <p><strong>זמנים הגיוניים:</strong> לא להתחיל מוקדם מדי או מאוחר מדי!</p>
+
+          <div className="border-r-4 border-green-400 pr-4 bg-green-50 p-4 rounded">
+            <h3 className="text-xl font-bold text-green-700 mb-3 flex items-center">
+              <span className="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center ml-3 text-sm font-bold">💡</span>
+              🎈 טיפים לרשימת המתנה
+            </h3>
+            <p className="text-gray-700 text-lg mb-3">
+              איך להשתמש ברשימת המתנה בצורה הכי חכמה:
+            </p>
+            <div className="bg-white p-3 rounded border space-y-2">
+              <div>🎯 <strong>תכניסו יותר מקומות מההתחלה:</strong> עדיף 25 מקומות מ-20, כי תמיד יש ביטולים</div>
+              <div>📢 <strong>ספרו לכולם על הרשימה:</strong> "גם אם מלא, הירשמו! יש רשימת המתנה!"</div>
+              <div>⏰ <strong>עקבו אחרי הרשימה:</strong> בלוח הבקרה תוכלו לראות כמה ברשימת המתנה</div>
+              <div>📞 <strong>עדכנו את ההורים:</strong> אפשר לשלוח הודעה לכל מי שברשימת המתנה</div>
+            </div>
+          </div>
+
+          <div className="border-r-4 border-purple-400 pr-4 bg-purple-50 p-4 rounded">
+            <h3 className="text-xl font-bold text-purple-700 mb-3 flex items-center">
+              <span className="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center ml-3 text-sm font-bold">🔍</span>
+              👀 איפה אתם רואים את רשימת המתנה?
+            </h3>
+            <p className="text-gray-700 text-lg mb-3">
+              בלוח הבקרה שלכם יש כל המידע על רשימת המתנה:
+            </p>
+            <div className="bg-white p-3 rounded border space-y-2">
+              <div>📊 <strong>במסך הראשי:</strong> תראו כמה אנשים ברשימת המתנה</div>
+              <div>📋 <strong>בעמוד האירוע:</strong> רשימה מלאה של כל מי שמחכה</div>
+              <div>🔔 <strong>התראות:</strong> תקבלו הודעה כשמישהו נכנס לרשימת המתנה</div>
+              <div>📈 <strong>סטטיסטיקות:</strong> תוכלו לראות כמה אנשים ברשימה לכל אירוע</div>
+            </div>
           </div>
         </div>
       </div>
 
+      {/* Section 3: Registration Form Fields */}
+      <div className="bg-white rounded-lg shadow-sm border-2 border-indigo-200 p-6 mb-8">
+        <h2 className="text-2xl font-bold text-indigo-600 mb-6 flex items-center">
+          <Edit3 className="w-6 h-6 ml-2" />
+          חלק 3: שדות הטופס - מה לשאול את המשתתפים?
+        </h2>
+
+        <div className="space-y-6">
+          <div className="border-r-4 border-indigo-400 pr-4 bg-indigo-50 p-4 rounded">
+            <h3 className="text-xl font-bold text-indigo-700 mb-3 flex items-center">
+              <span className="bg-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center ml-3 text-sm font-bold">8</span>
+              📋 שדות ברירת מחדל (תמיד יהיו!)
+            </h3>
+            <p className="text-gray-700 text-lg mb-3">
+              אלה השדות שתמיד יהיו בטופס ההרשמה. אתם לא יכולים למחוק אותם!
+            </p>
+            <div className="bg-white p-3 rounded border space-y-2">
+              <div>📝 <strong>שם מלא</strong> - כדי לדעת מי נרשם</div>
+              <div>📞 <strong>טלפון</strong> - כדי ליצור קשר אם יש בעיה</div>
+              <div>🎒 <strong>כיתה</strong> - כדי לדעת באיזה גיל הילד (לא חובה למלא)</div>
+            </div>
+          </div>
+
+          <div className="border-r-4 border-purple-400 pr-4 bg-purple-50 p-4 rounded">
+            <h3 className="text-xl font-bold text-purple-700 mb-3 flex items-center">
+              <span className="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center ml-3 text-sm font-bold">9</span>
+              ➕ שדות מותאמים אישית - תוסיפו מה שאתם רוצים!
+            </h3>
+            <p className="text-gray-700 text-lg mb-3">
+              אתם יכולים להוסיף שדות נוספים לפי הצורך שלכם! יש 4 סוגים:
+            </p>
+            <div className="bg-white p-3 rounded border space-y-3">
+              <div className="border-b pb-2">
+                <strong>📝 טקסט</strong> - למילות חופשיות<br />
+                <span className="text-sm text-gray-600">דוגמה: "הערות מיוחדות", "איך הילד אוהב שקוראים לו"</span>
+              </div>
+              <div className="border-b pb-2">
+                <strong>🔢 מספר</strong> - לכמויות ומספרים<br />
+                <span className="text-sm text-gray-600">דוגמה: "גיל", "כמה חברים מביא", "מספר נעל"</span>
+              </div>
+              <div className="border-b pb-2">
+                <strong>📋 רשימה נפתחת</strong> - לבחירה מכמה אפשרויות<br />
+                <span className="text-sm text-gray-600">דוגמה: "מה אוהב לאכול: פיצה, המבורגר, פלאפל"</span>
+              </div>
+              <div>
+                <strong>☑️ תיבת סימון</strong> - לשאלות כן/לא<br />
+                <span className="text-sm text-gray-600">דוגמה: "צמחוני?", "יש אלרגיות?", "צריך הסעה?"</span>
+              </div>
+            </div>
+            <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
+              <strong>💡 טיפ חשוב:</strong> אתם יכולים לסמן כל שדה כ"חובה" - אז הילד חייב למלא אותו!
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Section 4: Terms and Conditions */}
+      <div className="bg-white rounded-lg shadow-sm border-2 border-amber-200 p-6 mb-8">
+        <h2 className="text-2xl font-bold text-amber-600 mb-6 flex items-center">
+          <Shield className="w-6 h-6 ml-2" />
+          חלק 4: תנאים והגבלות - חוקי האירוע
+        </h2>
+
+        <div className="space-y-6">
+          <div className="border-r-4 border-amber-400 pr-4 bg-amber-50 p-4 rounded">
+            <h3 className="text-xl font-bold text-amber-700 mb-3 flex items-center">
+              <span className="bg-amber-600 text-white rounded-full w-8 h-8 flex items-center justify-center ml-3 text-sm font-bold">10</span>
+              📜 תנאי השתתפות
+            </h3>
+            <p className="text-gray-700 text-lg mb-3">
+              כאן אתם כותבים את כל החוקים וההגבלות של האירוע!
+            </p>
+            <div className="bg-white p-3 rounded border">
+              <strong>דוגמאות לתנאים:</strong><br />
+              • גילאים 8-12 בלבד 👶<br />
+              • חובה להביא נעלי ספורט ⚽<br />
+              • אסור להביא חטיפים מבית (נספק אוכל) 🍕<br />
+              • הורה חייב לחתום על הסכמה 📝<br />
+              • אסור לצאת מהבניין בלי הודעה 🏢<br />
+              • מי שמפריע יצטרך לעזוב ⚠️
+            </div>
+          </div>
+
+          <div className="border-r-4 border-orange-400 pr-4 bg-orange-50 p-4 rounded">
+            <h3 className="text-xl font-bold text-orange-700 mb-3 flex items-center">
+              <span className="bg-orange-600 text-white rounded-full w-8 h-8 flex items-center justify-center ml-3 text-sm font-bold">11</span>
+              ✅ דרוש אישור תנאי השתתפות
+            </h3>
+            <p className="text-gray-700 text-lg mb-3">
+              אם תסמנו את התיבה הזו, כל ילד שנרשם יצטרך לסמן "אני מסכים לתנאים"!
+            </p>
+            <div className="bg-white p-3 rounded border">
+              <strong>מתי לסמן:</strong><br />
+              ✅ לטיולים (צריך הסכמה של הורים)<br />
+              ✅ לפעילויות עם סיכון (ספורט, בריכה)<br />
+              ✅ לאירועים עם תשלום<br />
+              ❌ למסיבות רגילות בבית (לא חובה)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Section 5: Completion Message */}
+      <div className="bg-white rounded-lg shadow-sm border-2 border-green-200 p-6 mb-8">
+        <h2 className="text-2xl font-bold text-green-600 mb-6 flex items-center">
+          <MessageCircle className="w-6 h-6 ml-2" />
+          חלק 5: הודעה לנרשמים - מה יראו אחרי ההרשמה?
+        </h2>
+
+        <div className="border-r-4 border-green-400 pr-4 bg-green-50 p-4 rounded">
+          <h3 className="text-xl font-bold text-green-700 mb-3 flex items-center">
+            <span className="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center ml-3 text-sm font-bold">12</span>
+            💌 הודעה לאחר השלמת הרשמה
+          </h3>
+          <p className="text-gray-700 text-lg mb-3">
+            אחרי שילד נרשם בהצלחה, הוא יראה הודעה מיוחדת! אתם יכולים לכתוב מה שאתם רוצים!
+          </p>
+          <div className="bg-white p-3 rounded border">
+            <strong>דוגמאות להודעות:</strong><br />
+            🎉 "ברכות! נרשמת בהצלחה למסיבת הפיצה! נתראה ביום שישי בשעה 16:00!"<br />
+            ⚽ "כל הכבוד! אתה בקבוצה! תזכור להביא נעלי ספורט ובקבוק מים!"<br />
+            🎂 "איזה כיף! אתה מוזמן ליום ההולדת של שרה! תביא מתנה קטנה ואנרגיה גדולה!"<br />
+            🚌 "מעולה! אתה רשום לטיול! הורה שלך יקבל SMS עם פרטים נוספים!"
+          </div>
+          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
+            <strong>💡 אם לא תכתבו כלום:</strong> הילד יראה הודעת ברירת מחדל פשוטה "נרשמת בהצלחה!"
+          </div>
+        </div>
+      </div>
+
+      {/* Tips Section */}
+      <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg p-6 mb-8 border-2 border-yellow-300">
+        <h2 className="text-2xl font-bold text-orange-600 mb-4 flex items-center">
+          <Zap className="w-6 h-6 ml-2" />
+          💡 טיפים חשובים לאירוע מושלם
+        </h2>
+        <div className="grid md:grid-cols-2 gap-4 text-gray-700">
+          <div className="space-y-3">
+            <div className="flex items-start">
+              <span className="text-xl ml-3">✨</span>
+              <p><strong>שמות מגניבים:</strong> במקום "אירוע", קראו לו "מסיבת הפיצה הגדולה"!</p>
+            </div>
+            <div className="flex items-start">
+              <span className="text-xl ml-3">📝</span>
+              <p><strong>תהיו ברורים:</strong> כתבו בדיוק איפה ומתי, כדי שאף אחד לא יתבלבל!</p>
+            </div>
+            <div className="flex items-start">
+              <span className="text-xl ml-3">🎯</span>
+              <p><strong>חשבו על המקום:</strong> כמה ילדים באמת נכנסים? עדיף קצת פחות מאשר צפוף!</p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-start">
+              <span className="text-xl ml-3">⏰</span>
+              <p><strong>זמנים הגיוניים:</strong> לא להתחיל מוקדם מדי או מאוחר מדי!</p>
+            </div>
+            <div className="flex items-start">
+              <span className="text-xl ml-3">❓</span>
+              <p><strong>שדות חכמים:</strong> שאלו רק מה שבאמת צריך לדעת!</p>
+            </div>
+            <div className="flex items-start">
+              <span className="text-xl ml-3">💌</span>
+              <p><strong>הודעות חמות:</strong> כתבו הודעת סיום שמחה ונחמדה!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Call to Action */}
       <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 text-center">
         <h2 className="text-2xl font-bold text-green-600 mb-4">
-          🚀 מוכנים ליצור אירוע?
+          🚀 מוכנים ליצור אירוע מדליק?
         </h2>
         <p className="text-gray-700 text-lg mb-6">
-          עכשיו שאתם יודעים הכל, בואו ניצור אירוע מדליק!
+          עכשיו שאתם יודעים הכל על כל השדות והאפשרויות, בואו ניצור אירוע מדהים!
         </p>
         <Link
           href="/admin/events/new"
-          className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg hover:from-purple-700 hover:to-blue-700 transition text-lg shadow-lg"
+          className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg hover:from-purple-700 hover:to-blue-700 transition text-lg shadow-lg"
         >
-          <Plus className="w-5 h-5 ml-2" />
+          <Plus className="w-6 h-6 ml-2" />
           ליצור אירוע חדש עכשיו!
         </Link>
+        <p className="text-sm text-gray-600 mt-4">
+          עם כל המידע שלמדתם, האירוע שלכם יהיה הכי מוצלח! 🌟
+        </p>
       </div>
     </div>
   )
