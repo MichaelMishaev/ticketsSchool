@@ -56,11 +56,11 @@ export default function HelpPage() {
               <span className="text-red-500 font-bold">*חובה!</span> בחרו שם מגניב לאירוע שלכם! זה מה שכולם יראו ראשון!
             </p>
             <div className="bg-white p-3 rounded border">
-              <strong>דוגמאות טובות:</strong><br />
-              🎉 מסיבת פיצה וחברים<br />
-              ⚽ משחק כדורגל נגד כיתה ג'<br />
-              🎂 יום הולדת של שרה הגדולה<br />
-              🚌 טיול לספארי ברמת גן
+              <strong className="text-gray-900">דוגמאות טובות:</strong><br />
+              <span className="text-gray-900">🎉 מסיבת פיצה וחברים</span><br />
+              <span className="text-gray-900">⚽ משחק כדורגל נגד כיתה ג'</span><br />
+              <span className="text-gray-900">🎂 יום הולדת של שרה הגדולה</span><br />
+              <span className="text-gray-900">🚌 טיול לספארי ברמת גן</span>
             </div>
           </div>
 
@@ -73,10 +73,10 @@ export default function HelpPage() {
               ספרו לחברים מה יהיה באירוע! מה תעשו? מה צריך להביא? מה יהיה כיף?
             </p>
             <div className="bg-white p-3 rounded border">
-              <strong>דוגמה מלאה:</strong><br />
-              ניכין פיצה ביחד, נשחק משחקי קופסה ונצפה בסרט מצחיק! 🍕🎮🎬<br />
-              תביאו: בגדים נוחים, כרית ושמיכה קטנה 😊<br />
-              נתחיל בפיצה, אחר כך משחקים ובסוף סרט עד השעה 22:00
+              <strong className="text-gray-900">דוגמה מלאה:</strong><br />
+              <span className="text-gray-900">ניכין פיצה ביחד, נשחק משחקי קופסה ונצפה בסרט מצחיק! 🍕🎮🎬</span><br />
+              <span className="text-gray-900">תביאו: בגדים נוחים, כרית ושמיכה קטנה 😊</span><br />
+              <span className="text-gray-900">נתחיל בפיצה, אחר כך משחקים ובסוף סרט עד השעה 22:00</span>
             </div>
           </div>
 
@@ -89,11 +89,11 @@ export default function HelpPage() {
               איזה סוג אירוע זה? זה עוזר לאנשים להבין מה לצפות ואיך להתכונן!
             </p>
             <div className="bg-white p-3 rounded border">
-              <strong>האפשרויות שלכם:</strong><br />
-              ⚽ כדורגל - למשחקי כדורגל<br />
-              🏀 כדורסל - למשחקי כדורסל<br />
-              🏐 כדורעף - למשחקי כדורעף<br />
-              🎈 אחר - למסיבות, טיולים, יום הולדת וכל הדברים הכיפיים האחרים!
+              <strong className="text-gray-900">האפשרויות שלכם:</strong><br />
+              <span className="text-gray-900">⚽ כדורגל - למשחקי כדורגל</span><br />
+              <span className="text-gray-900">🏀 כדורסל - למשחקי כדורסל</span><br />
+              <span className="text-gray-900">🏐 כדורעף - למשחקי כדורעף</span><br />
+              <span className="text-gray-900">🎈 אחר - למסיבות, טיולים, יום הולדת וכל הדברים הכיפיים האחרים!</span>
             </div>
           </div>
 
@@ -106,11 +106,11 @@ export default function HelpPage() {
               ספרו איפה האירוע יקרה! הכתובת המלאה כדי שכולם יוכלו להגיע בלי לאבד!
             </p>
             <div className="bg-white p-3 rounded border">
-              <strong>דוגמאות:</strong><br />
-              🏞️ פארק הילדים ברחוב הרצל 15, תל אביב<br />
-              🏫 בית הספר יסודי "אור", כיתה 12, קומה שנייה<br />
-              🏠 בבית של דני, רחוב הדקל 8 דירה 5, רמת גן<br />
-              ⚽ מגרש כדורגל עירוני, שדרות ירושלים 50
+              <strong className="text-gray-900">דוגמאות:</strong><br />
+              <span className="text-gray-900">🏞️ פארק הילדים ברחוב הרצל 15, תל אביב</span><br />
+              <span className="text-gray-900">🏫 בית הספר יסודי "אור", כיתה 12, קומה שנייה</span><br />
+              <span className="text-gray-900">🏠 בבית של דני, רחוב הדקל 8 דירה 5, רמת גן</span><br />
+              <span className="text-gray-900">⚽ מגרש כדורגל עירוני, שדרות ירושלים 50</span>
             </div>
           </div>
 
@@ -123,10 +123,10 @@ export default function HelpPage() {
               <span className="text-red-500 font-bold">*חובה!</span> מתי האירוע מתחיל? בחרו תאריך ושעה שנוחים לכולם!
             </p>
             <div className="bg-white p-3 rounded border">
-              <strong>איך לבחור:</strong><br />
-              📅 לחצו על השדה ותראו לוח שנה<br />
-              🕐 בחרו תאריך ואז שעה<br />
-              💡 טיפ: אל תתחילו מוקדם מדי (לא לפני 15:00) או מאוחר מדי (לא אחרי 19:00)
+              <strong className="text-gray-900">איך לבחור:</strong><br />
+              <span className="text-gray-900">📅 לחצו על השדה ותראו לוח שנה</span><br />
+              <span className="text-gray-900">🕐 בחרו תאריך ואז שעה</span><br />
+              <span className="text-gray-900">💡 טיפ: אל תתחילו מוקדם מדי (לא לפני 15:00) או מאוחר מדי (לא אחרי 19:00)</span>
             </div>
           </div>
         </div>
@@ -149,11 +149,11 @@ export default function HelpPage() {
               <span className="text-red-500 font-bold">*חובה!</span> כמה ילדים בסך הכל יכולים להגיע לאירוע?
             </p>
             <div className="bg-white p-3 rounded border">
-              <strong>איך לחשב:</strong><br />
-              🏠 מסיבה בבית: 15-25 ילדים (תלוי בגודל הבית)<br />
-              ⚽ משחק כדורגל: 22 ילדים (11 נגד 11)<br />
-              🚌 טיול באוטובוס: 50 ילדים (גודל אוטובוס)<br />
-              🎂 יום הולדת: 20-30 ילדים (תלוי במקום)
+              <strong className="text-gray-900">איך לחשב:</strong><br />
+              <span className="text-gray-900">🏠 מסיבה בבית: 15-25 ילדים (תלוי בגודל הבית)</span><br />
+              <span className="text-gray-900">⚽ משחק כדורגל: 22 ילדים (11 נגד 11)</span><br />
+              <span className="text-gray-900">🚌 טיול באוטובוס: 50 ילדים (גודל אוטובוס)</span><br />
+              <span className="text-gray-900">🎂 יום הולדת: 20-30 ילדים (תלוי במקום)</span>
             </div>
           </div>
 
@@ -166,11 +166,11 @@ export default function HelpPage() {
               <span className="text-red-500 font-bold">*חובה!</span> כמה מקומות כל ילד יכול לקחת? בדרך כלל 1, אבל אפשר יותר!
             </p>
             <div className="bg-white p-3 rounded border">
-              <strong>מתי להשתמש:</strong><br />
-              🧍 1 מקום: רוב האירועים (כל ילד לוקח מקום אחד)<br />
-              👨‍👩‍👧‍👦 2-3 מקומות: אם ילד יכול להביא הורה או אח/אחות<br />
-              👥 4-5 מקומות: אירועי משפחות שלמות<br />
-              ⚠️ זהירות: אל תשימו יותר מדי כי המקומות ייגמרו מהר!
+              <strong className="text-gray-900">מתי להשתמש:</strong><br />
+              <span className="text-gray-900">🧍 1 מקום: רוב האירועים (כל ילד לוקח מקום אחד)</span><br />
+              <span className="text-gray-900">👨‍👩‍👧‍👦 2-3 מקומות: אם ילד יכול להביא הורה או אח/אחות</span><br />
+              <span className="text-gray-900">👥 4-5 מקומות: אירועי משפחות שלמות</span><br />
+              <span className="text-gray-900">⚠️ זהירות: אל תשימו יותר מדי כי המקומות ייגמרו מהר!</span>
             </div>
           </div>
         </div>
@@ -193,11 +193,11 @@ export default function HelpPage() {
               רשימת המתנה זה כמו תור! כשהמקומות נגמרים, ילדים שעוד רוצים להגיע נכנסים לרשימת המתנה.
             </p>
             <div className="bg-white p-3 rounded border">
-              <strong>איך זה עובד? דוגמה:</strong><br />
-              🎉 יש מסיבה עם 20 מקומות<br />
-              👥 20 ילדים ראשונים נרשמו - המקומות מלאים!<br />
-              😢 ילד ה-21 רוצה להגיע - הוא נכנס לרשימת המתנה<br />
-              📞 אם מישהו מבטל, הילד ברשימת המתנה יקבל הודעה!
+              <strong className="text-gray-900">איך זה עובד? דוגמה:</strong><br />
+              <span className="text-gray-900">🎉 יש מסיבה עם 20 מקומות</span><br />
+              <span className="text-gray-900">👥 20 ילדים ראשונים נרשמו - המקומות מלאים!</span><br />
+              <span className="text-gray-900">😢 ילד ה-21 רוצה להגיע - הוא נכנס לרשימת המתנה</span><br />
+              <span className="text-gray-900">📞 אם מישהו מבטל, הילד ברשימת המתנה יקבל הודעה!</span>
             </div>
           </div>
 
@@ -210,9 +210,9 @@ export default function HelpPage() {
               רשימת המתנה מאוד חשובה! היא עוזרת לכולם!
             </p>
             <div className="bg-white p-3 rounded border space-y-2">
-              <div>✅ <strong>לילדים:</strong> יש להם תקווה להיכנס לאירוע גם אם זה מלא</div>
-              <div>✅ <strong>לכם (המארגנים):</strong> האירוע תמיד יהיה מלא, גם אם מישהו מבטל</div>
-              <div>✅ <strong>לכולם:</strong> אף אחד לא מפסיד - כל מקום פנוי מתמלא מיד!</div>
+              <div className="text-gray-900">✅ <strong>לילדים:</strong> יש להם תקווה להיכנס לאירוע גם אם זה מלא</div>
+              <div className="text-gray-900">✅ <strong>לכם (המארגנים):</strong> האירוע תמיד יהיה מלא, גם אם מישהו מבטל</div>
+              <div className="text-gray-900">✅ <strong>לכולם:</strong> אף אחד לא מפסיד - כל מקום פנוי מתמלא מיד!</div>
             </div>
           </div>
 
@@ -225,12 +225,12 @@ export default function HelpPage() {
               הנה בדיוק מה קורה כשילד נכנס לרשימת המתנה:
             </p>
             <div className="bg-white p-3 rounded border">
-              <strong>התהליך המלא:</strong><br />
-              1️⃣ <strong>הרשמה:</strong> הילד נרשם אבל אין מקום - הוא נכנס לרשימת המתנה<br />
-              2️⃣ <strong>הודעה:</strong> הילד מקבל הודעה "נרשמת לרשימת המתנה! נעדכן אותך אם יתפנה מקום"<br />
-              3️⃣ <strong>המתנה:</strong> הילד ברשימת המתנה בסדר מסוים (מי שנרשם קודם, יכנס קודם)<br />
-              4️⃣ <strong>מקום פנוי:</strong> אם מישהו מבטל, הילד הראשון ברשימה מקבל הודעה<br />
-              5️⃣ <strong>כניסה:</strong> הילד עובר אוטומטית לרשימת המשתתפים!
+              <strong className="text-gray-900">התהליך המלא:</strong><br />
+              <span className="text-gray-900">1️⃣ <strong>הרשמה:</strong> הילד נרשם אבל אין מקום - הוא נכנס לרשימת המתנה</span><br />
+              <span className="text-gray-900">2️⃣ <strong>הודעה:</strong> הילד מקבל הודעה "נרשמת לרשימת המתנה! נעדכן אותך אם יתפנה מקום"</span><br />
+              <span className="text-gray-900">3️⃣ <strong>המתנה:</strong> הילד ברשימת המתנה בסדר מסוים (מי שנרשם קודם, יכנס קודם)</span><br />
+              <span className="text-gray-900">4️⃣ <strong>מקום פנוי:</strong> אם מישהו מבטל, הילד הראשון ברשימה מקבל הודעה</span><br />
+              <span className="text-gray-900">5️⃣ <strong>כניסה:</strong> הילד עובר אוטומטית לרשימת המשתתפים!</span>
             </div>
           </div>
 
@@ -243,10 +243,10 @@ export default function HelpPage() {
               איך להשתמש ברשימת המתנה בצורה הכי חכמה:
             </p>
             <div className="bg-white p-3 rounded border space-y-2">
-              <div>🎯 <strong>תכניסו יותר מקומות מההתחלה:</strong> עדיף 25 מקומות מ-20, כי תמיד יש ביטולים</div>
-              <div>📢 <strong>ספרו לכולם על הרשימה:</strong> "גם אם מלא, הירשמו! יש רשימת המתנה!"</div>
-              <div>⏰ <strong>עקבו אחרי הרשימה:</strong> בלוח הבקרה תוכלו לראות כמה ברשימת המתנה</div>
-              <div>📞 <strong>עדכנו את ההורים:</strong> אפשר לשלוח הודעה לכל מי שברשימת המתנה</div>
+              <div className="text-gray-900">🎯 <strong>תכניסו יותר מקומות מההתחלה:</strong> עדיף 25 מקומות מ-20, כי תמיד יש ביטולים</div>
+              <div className="text-gray-900">📢 <strong>ספרו לכולם על הרשימה:</strong> "גם אם מלא, הירשמו! יש רשימת המתנה!"</div>
+              <div className="text-gray-900">⏰ <strong>עקבו אחרי הרשימה:</strong> בלוח הבקרה תוכלו לראות כמה ברשימת המתנה</div>
+              <div className="text-gray-900">📞 <strong>עדכנו את ההורים:</strong> אפשר לשלוח הודעה לכל מי שברשימת המתנה</div>
             </div>
           </div>
 
@@ -259,10 +259,10 @@ export default function HelpPage() {
               בלוח הבקרה שלכם יש כל המידע על רשימת המתנה:
             </p>
             <div className="bg-white p-3 rounded border space-y-2">
-              <div>📊 <strong>במסך הראשי:</strong> תראו כמה אנשים ברשימת המתנה</div>
-              <div>📋 <strong>בעמוד האירוע:</strong> רשימה מלאה של כל מי שמחכה</div>
-              <div>🔔 <strong>התראות:</strong> תקבלו הודעה כשמישהו נכנס לרשימת המתנה</div>
-              <div>📈 <strong>סטטיסטיקות:</strong> תוכלו לראות כמה אנשים ברשימה לכל אירוע</div>
+              <div className="text-gray-900">📊 <strong>במסך הראשי:</strong> תראו כמה אנשים ברשימת המתנה</div>
+              <div className="text-gray-900">📋 <strong>בעמוד האירוע:</strong> רשימה מלאה של כל מי שמחכה</div>
+              <div className="text-gray-900">🔔 <strong>התראות:</strong> תקבלו הודעה כשמישהו נכנס לרשימת המתנה</div>
+              <div className="text-gray-900">📈 <strong>סטטיסטיקות:</strong> תוכלו לראות כמה אנשים ברשימה לכל אירוע</div>
             </div>
           </div>
         </div>
@@ -285,9 +285,9 @@ export default function HelpPage() {
               אלה השדות שתמיד יהיו בטופס ההרשמה. אתם לא יכולים למחוק אותם!
             </p>
             <div className="bg-white p-3 rounded border space-y-2">
-              <div>📝 <strong>שם מלא</strong> - כדי לדעת מי נרשם</div>
-              <div>📞 <strong>טלפון</strong> - כדי ליצור קשר אם יש בעיה</div>
-              <div>🎒 <strong>כיתה</strong> - כדי לדעת באיזה גיל הילד (לא חובה למלא)</div>
+              <div className="text-gray-900">📝 <strong>שם מלא</strong> - כדי לדעת מי נרשם</div>
+              <div className="text-gray-900">📞 <strong>טלפון</strong> - כדי ליצור קשר אם יש בעיה</div>
+              <div className="text-gray-900">🎒 <strong>כיתה</strong> - כדי לדעת באיזה גיל הילד (לא חובה למלא)</div>
             </div>
           </div>
 
@@ -318,7 +318,7 @@ export default function HelpPage() {
               </div>
             </div>
             <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
-              <strong>💡 טיפ חשוב:</strong> אתם יכולים לסמן כל שדה כ"חובה" - אז הילד חייב למלא אותו!
+              <strong className="text-gray-900">💡 טיפ חשוב:</strong> <span className="text-gray-900">אתם יכולים לסמן כל שדה כ"חובה" - אז הילד חייב למלא אותו!</span>
             </div>
           </div>
         </div>
@@ -386,14 +386,14 @@ export default function HelpPage() {
             אחרי שילד נרשם בהצלחה, הוא יראה הודעה מיוחדת! אתם יכולים לכתוב מה שאתם רוצים!
           </p>
           <div className="bg-white p-3 rounded border">
-            <strong>דוגמאות להודעות:</strong><br />
-            🎉 "ברכות! נרשמת בהצלחה למסיבת הפיצה! נתראה ביום שישי בשעה 16:00!"<br />
-            ⚽ "כל הכבוד! אתה בקבוצה! תזכור להביא נעלי ספורט ובקבוק מים!"<br />
-            🎂 "איזה כיף! אתה מוזמן ליום ההולדת של שרה! תביא מתנה קטנה ואנרגיה גדולה!"<br />
-            🚌 "מעולה! אתה רשום לטיול! הורה שלך יקבל SMS עם פרטים נוספים!"
+            <strong className="text-gray-900">דוגמאות להודעות:</strong><br />
+            <span className="text-gray-900">🎉 "ברכות! נרשמת בהצלחה למסיבת הפיצה! נתראה ביום שישי בשעה 16:00!"</span><br />
+            <span className="text-gray-900">⚽ "כל הכבוד! אתה בקבוצה! תזכור להביא נעלי ספורט ובקבוק מים!"</span><br />
+            <span className="text-gray-900">🎂 "איזה כיף! אתה מוזמן ליום ההולדת של שרה! תביא מתנה קטנה ואנרגיה גדולה!"</span><br />
+            <span className="text-gray-900">🚌 "מעולה! אתה רשום לטיול! הורה שלך יקבל SMS עם פרטים נוספים!"</span>
           </div>
           <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
-            <strong>💡 אם לא תכתבו כלום:</strong> הילד יראה הודעת ברירת מחדל פשוטה "נרשמת בהצלחה!"
+            <strong className="text-gray-900">💡 אם לא תכתבו כלום:</strong> <span className="text-gray-900">הילד יראה הודעת ברירת מחדל פשוטה "נרשמת בהצלחה!"</span>
           </div>
         </div>
       </div>
