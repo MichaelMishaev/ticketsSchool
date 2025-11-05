@@ -13,11 +13,33 @@ export async function GET(request: NextRequest) {
       include: {
         _count: {
           select: { registrations: true }
+        },
+        registrations: {
+          where: {
+            status: 'CONFIRMED'
+          },
+          select: {
+            spotsCount: true
+          }
         }
       }
     })
 
-    return NextResponse.json(events)
+    // Calculate total spots taken for each event
+    const eventsWithSpots = events.map(event => {
+      const totalSpotsTaken = event.registrations.reduce(
+        (sum, reg) => sum + reg.spotsCount,
+        0
+      )
+      // Remove registrations array from response and add totalSpotsTaken
+      const { registrations, ...eventData } = event
+      return {
+        ...eventData,
+        totalSpotsTaken
+      }
+    })
+
+    return NextResponse.json(eventsWithSpots)
   } catch (error) {
     console.error('Error fetching events:', error)
     return NextResponse.json(

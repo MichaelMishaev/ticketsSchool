@@ -29,6 +29,22 @@ export async function GET(
       )
     }
 
+    // Calculate total spots taken by summing spotsCount from CONFIRMED registrations
+    const confirmedRegistrations = await prisma.registration.findMany({
+      where: {
+        eventId: event.id,
+        status: 'CONFIRMED'
+      },
+      select: {
+        spotsCount: true
+      }
+    })
+
+    const totalSpotsTaken = confirmedRegistrations.reduce(
+      (sum, reg) => sum + reg.spotsCount,
+      0
+    )
+
     // Return only public information
     return NextResponse.json({
       id: event.id,
@@ -45,7 +61,8 @@ export async function GET(
       conditions: event.conditions,
       requireAcceptance: event.requireAcceptance,
       completionMessage: event.completionMessage,
-      _count: event._count
+      _count: event._count,
+      totalSpotsTaken
     })
   } catch (error) {
     console.error('Error fetching event:', error)

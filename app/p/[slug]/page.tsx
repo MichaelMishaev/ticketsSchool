@@ -21,6 +21,7 @@ interface Event {
   requireAcceptance: boolean
   completionMessage?: string
   _count: { registrations: number }
+  totalSpotsTaken: number
   status: string
 }
 
@@ -144,9 +145,9 @@ export default function PublicEventPage() {
     )
   }
 
-  const spotsLeft = event.capacity - event._count.registrations
+  const spotsLeft = event.capacity - event.totalSpotsTaken
   const isFull = spotsLeft <= 0
-  const percentage = Math.min(100, (event._count.registrations / event.capacity) * 100)
+  const percentage = Math.min(100, (event.totalSpotsTaken / event.capacity) * 100)
 
   if (registered) {
     // Show different screens for waitlist vs confirmed registration

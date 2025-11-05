@@ -140,7 +140,7 @@ export default function EventsPage() {
                         </div>
                         <div className="flex items-center">
                           <Users className="w-4 h-4 ml-1" />
-                          {event._count.registrations} / {event.capacity} נרשמים
+                          {event.totalSpotsTaken} / {event.capacity} מקומות
                         </div>
                         {event.gameType && (
                           <div className="flex items-center">
