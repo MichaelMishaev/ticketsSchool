@@ -3,17 +3,13 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files and Prisma schema FIRST
 COPY package*.json ./
-
-# Install ALL dependencies (including devDependencies needed for build)
-RUN npm ci
-
-# Copy Prisma schema
 COPY prisma ./prisma/
 
-# Generate Prisma client
-RUN npx prisma generate
+# Install ALL dependencies (including devDependencies needed for build)
+# The postinstall script will run prisma generate automatically
+RUN npm ci
 
 # Copy source code
 COPY . .
