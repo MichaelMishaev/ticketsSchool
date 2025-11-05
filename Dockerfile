@@ -3,9 +3,11 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Install dependencies first (cached layer)
+# Copy package files
 COPY package*.json ./
-RUN npm ci --only=production --ignore-scripts
+
+# Install ALL dependencies (including devDependencies needed for build)
+RUN npm ci
 
 # Copy Prisma schema
 COPY prisma ./prisma/
@@ -18,6 +20,9 @@ COPY . .
 
 # Build application
 RUN npm run build
+
+# Prune dev dependencies after build
+RUN npm prune --production
 
 # Production stage
 FROM node:18-alpine AS runner
