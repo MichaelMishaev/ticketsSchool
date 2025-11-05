@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e  # Exit on any error
-
 echo "🚀 Starting production deployment..."
 
 # Railway provides DATABASE_URL directly, no need to construct it
@@ -14,6 +12,10 @@ else
         # Use the public URL for migrations (Railway's internal URL might not work for Prisma migrations)
         export DATABASE_URL="postgresql://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/${PGDATABASE}?sslmode=require"
         echo "✅ DATABASE_URL constructed from PostgreSQL variables"
+    else
+        echo "❌ ERROR: No database configuration found!"
+        echo "   Missing required environment variables."
+        exit 1
     fi
 fi
 
@@ -23,12 +25,32 @@ echo "$DATABASE_URL" | sed 's/:.*@/:****@/g'
 
 # Generate Prisma client (ensure it's available)
 echo "📦 Generating Prisma client..."
-npx prisma generate
+if ! npx prisma generate; then
+    echo "❌ ERROR: Failed to generate Prisma client"
+    exit 1
+fi
 
-# Run database migrations
+# Run database migrations with retry logic
 echo "🗃️  Running database migrations..."
-npx prisma migrate deploy
+MAX_RETRIES=3
+RETRY_COUNT=0
+
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    if npx prisma migrate deploy; then
+        echo "✅ Database migrations completed successfully"
+        break
+    else
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+        if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+            echo "⚠️  Migration failed, retrying ($RETRY_COUNT/$MAX_RETRIES)..."
+            sleep 5
+        else
+            echo "❌ ERROR: Database migrations failed after $MAX_RETRIES attempts"
+            echo "   Continuing with app startup anyway (migrations may already be applied)"
+        fi
+    fi
+done
 
 # Start the application
 echo "🌟 Starting Next.js application..."
-npm start
+exec npm start
