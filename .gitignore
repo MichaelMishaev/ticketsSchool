@@ -97,3 +97,7 @@ logs
 
 # TypeScript
 *.tsbuildinfo
+
+# Test results and reports
+playwright-report/
+test-results/

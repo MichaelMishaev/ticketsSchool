@@ -12,7 +12,6 @@ interface FieldBuilderProps {
 const defaultFields: FieldSchema[] = [
   { id: 'name', name: 'name', label: 'שם מלא', type: 'text', required: true },
   { id: 'phone', name: 'phone', label: 'טלפון', type: 'text', required: true },
-  { id: 'class', name: 'class', label: 'כיתה', type: 'text', required: false },
 ]
 
 export default function FieldBuilder({ fields, onChange }: FieldBuilderProps) {
@@ -49,7 +48,7 @@ export default function FieldBuilder({ fields, onChange }: FieldBuilderProps) {
   }
 
   const isDefaultField = (id: string) => {
-    return ['name', 'phone', 'class'].includes(id)
+    return ['name', 'phone'].includes(id)
   }
 
   return (

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Calendar, Users, Clock, Edit, ExternalLink } from 'lucide-react'
+import { Calendar, Users, Clock, Edit, ExternalLink, Trash2 } from 'lucide-react'
 import { format } from 'date-fns'
 
 export default function EventsPage() {
@@ -22,6 +22,42 @@ export default function EventsPage() {
       console.error('Error fetching events:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleDeleteEvent = async (eventId: string, eventTitle: string) => {
+    if (!confirm(`האם אתה בטוח שברצונך למחוק את האירוע "${eventTitle}"?`)) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/events/${eventId}`, {
+        method: 'DELETE'
+      })
+      if (response.ok) {
+        fetchEvents() // Refresh the list
+      } else {
+        const errorData = await response.json()
+        alert(errorData.error || 'שגיאה במחיקת האירוע')
+      }
+    } catch (error) {
+      console.error('Error deleting event:', error)
+      alert('שגיאה במחיקת האירוע')
+    }
+  }
+
+  const handleStatusChange = async (eventId: string, newStatus: 'OPEN' | 'PAUSED' | 'CLOSED') => {
+    try {
+      const response = await fetch(`/api/events/${eventId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      })
+      if (response.ok) {
+        fetchEvents() // Refresh the list
+      }
+    } catch (error) {
+      console.error('Error updating status:', error)
     }
   }
 
@@ -82,7 +118,19 @@ export default function EventsPage() {
                         <h3 className="text-lg font-medium text-gray-900">
                           {event.title}
                         </h3>
-                        {getStatusBadge(event.status)}
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={event.status}
+                            onChange={(e) => handleStatusChange(event.id, e.target.value as 'OPEN' | 'PAUSED' | 'CLOSED')}
+                            className="text-xs px-2 py-1 border rounded"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <option value="OPEN">פתוח</option>
+                            <option value="PAUSED">מושהה</option>
+                            <option value="CLOSED">סגור</option>
+                          </select>
+                          {getStatusBadge(event.status)}
+                        </div>
                       </div>
 
                       <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-500">
@@ -122,6 +170,18 @@ export default function EventsPage() {
                       >
                         <ExternalLink className="w-5 h-5" />
                       </Link>
+                      {event._count.registrations === 0 && (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            handleDeleteEvent(event.id, event.title)
+                          }}
+                          className="p-2 text-red-600 hover:text-red-900"
+                          title="מחק אירוע (רק אירועים ללא הרשמות)"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      )}
                     </div>
                   </div>
 

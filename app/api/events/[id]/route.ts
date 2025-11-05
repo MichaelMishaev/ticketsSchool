@@ -68,6 +68,32 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    
+    // Check if event exists and get registration count
+    const event = await prisma.event.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: { registrations: true }
+        }
+      }
+    })
+
+    if (!event) {
+      return NextResponse.json(
+        { error: 'Event not found' },
+        { status: 404 }
+      )
+    }
+
+    // Only allow deletion of events with no registrations (temp events)
+    if (event._count.registrations > 0) {
+      return NextResponse.json(
+        { error: 'Cannot delete event with existing registrations. Please remove all registrations first.' },
+        { status: 400 }
+      )
+    }
+
     await prisma.event.delete({
       where: { id }
     })
