@@ -29,4 +29,4 @@ RUN chmod +x start.sh
 EXPOSE 3000
 
 # Start command
-CMD ["sh", "start.sh"]
+CMD ["bash", "start.sh"]
