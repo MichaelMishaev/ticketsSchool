@@ -48,7 +48,7 @@ model Registration {
   @@index([status])
   @@index([phoneNumber])
   @@index([confirmationCode])
-  @@unique([eventId, phoneNumber])
+  @@index([eventId, phoneNumber])
 }
 
 enum EventStatus {

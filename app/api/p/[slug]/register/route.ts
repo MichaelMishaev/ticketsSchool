@@ -37,27 +37,43 @@ export async function POST(
         throw new Error('Registration is closed')
       }
 
-      // Check if spots exceed maximum allowed per person
-      if (spotsCount > event.maxSpotsPerPerson) {
-        throw new Error(`Maximum ${event.maxSpotsPerPerson} spots allowed per registration`)
-      }
-
       // Normalize phone number if provided
       const phoneNumber = registrationData.phone ?
         normalizePhoneNumber(registrationData.phone) : null
 
-      // Check for duplicate registration by phone number
+      // Check total spots per phone number (maxSpotsPerPerson limit per phone)
       if (phoneNumber) {
-        const existingRegistration = await tx.registration.findFirst({
+        const existingRegistrations = await tx.registration.aggregate({
           where: {
             eventId: event.id,
             phoneNumber: phoneNumber,
             status: { not: 'CANCELLED' }
+          },
+          _sum: {
+            spotsCount: true
           }
         })
 
-        if (existingRegistration) {
-          throw new Error('Phone number already registered for this event')
+        const totalSpotsForPhone = existingRegistrations._sum.spotsCount || 0
+        const newTotal = totalSpotsForPhone + spotsCount
+
+        if (newTotal > event.maxSpotsPerPerson) {
+          const remaining = event.maxSpotsPerPerson - totalSpotsForPhone
+          if (remaining <= 0) {
+            throw new Error(`מספר הטלפון כבר רשום למקסימום המקומות (${event.maxSpotsPerPerson})`)
+          } else {
+            throw new Error(`ניתן להירשם עד ${remaining} מקומות נוספות עבור מספר טלפון זה (סה"כ מקסימום ${event.maxSpotsPerPerson} מקומות)`)
+          }
+        }
+
+        // Check if single registration exceeds max (also validate for users without phone)
+        if (spotsCount > event.maxSpotsPerPerson) {
+          throw new Error(`מקסימום ${event.maxSpotsPerPerson} מקומות מותרים לכל הרשמה`)
+        }
+      } else {
+        // For registrations without phone number, just check single registration limit
+        if (spotsCount > event.maxSpotsPerPerson) {
+          throw new Error(`מקסימום ${event.maxSpotsPerPerson} מקומות מותרים לכל הרשמה`)
         }
       }
 
@@ -105,9 +121,9 @@ export async function POST(
     console.error('Registration error:', error)
 
     // Handle specific error messages
-    if (error.message.includes('Phone number already registered')) {
+    if (error.message.includes('מספר הטלפון כבר רשום למקסימום') || error.message.includes('ניתן להירשם עד')) {
       return NextResponse.json(
-        { error: 'מספר הטלפון כבר רשום לאירוע זה' },
+        { error: error.message },
         { status: 400 }
       )
     }
