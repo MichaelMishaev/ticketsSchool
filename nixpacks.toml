@@ -2,7 +2,10 @@
 nixPkgs = ['nodejs']
 
 [phases.install]
-cmds = ['npm ci --ignore-scripts']
+cmds = [
+  'rm -rf node_modules/.cache || true',
+  'npm ci --ignore-scripts'
+]
 
 [phases.build]
 cmds = ['npx prisma generate', 'npm run build']
