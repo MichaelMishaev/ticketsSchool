@@ -15,8 +15,11 @@ RUN npm ci --ignore-scripts
 # Generate Prisma client manually
 RUN npx prisma generate
 
-# Copy source code
+# Copy source code (includes public directory)
 COPY . .
+
+# Ensure public directory exists
+RUN mkdir -p public
 
 # Build application
 RUN npm run build
@@ -39,8 +42,8 @@ ENV NODE_ENV=production
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/public ./public
 
 # Copy startup script
 COPY start.sh ./
