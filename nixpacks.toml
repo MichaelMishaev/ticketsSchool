@@ -1,14 +1,15 @@
+# Configure Nixpacks to use our startup script
 [phases.setup]
-nixPkgs = ['nodejs']
+nixPkgs = ["nodejs_18", "bash", "curl"]
 
 [phases.install]
-cmds = [
-  'rm -rf node_modules/.cache || true',
-  'npm ci --ignore-scripts'
-]
+cmds = ["npm ci --ignore-scripts"]
 
 [phases.build]
-cmds = ['npx prisma generate', 'npm run build']
+cmds = [
+    "npx prisma generate",
+    "npm run build"
+]
 
 [start]
-cmd = 'npx prisma migrate deploy && npm start'
+cmd = "bash start.sh"
