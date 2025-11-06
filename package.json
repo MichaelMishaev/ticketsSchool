@@ -20,8 +20,7 @@
     "db:generate": "npx prisma generate",
     "db:setup": "node scripts/setup-production-db.js",
     "db:deploy": "chmod +x scripts/deploy-db.sh && scripts/deploy-db.sh",
-    "db:status": "npx prisma migrate status",
-    "postinstall": "npx prisma generate"
+    "db:status": "npx prisma migrate status"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
