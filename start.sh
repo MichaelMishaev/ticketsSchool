@@ -57,4 +57,5 @@ echo "========================================"
 echo ""
 
 # Start Next.js directly (not through npm to avoid wrapper issues)
-exec node_modules/.bin/next start -p $PORT
+# Bind to 0.0.0.0 for Railway to access from outside container
+exec node_modules/.bin/next start -H 0.0.0.0 -p $PORT
