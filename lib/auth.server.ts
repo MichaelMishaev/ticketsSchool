@@ -43,6 +43,11 @@ export async function login(email: string, password: string): Promise<AuthSessio
       return null
     }
 
+    // OAuth users don't have password hash
+    if (!admin.passwordHash) {
+      return null
+    }
+
     const isValidPassword = await bcrypt.compare(password, admin.passwordHash)
     if (!isValidPassword) {
       return null
