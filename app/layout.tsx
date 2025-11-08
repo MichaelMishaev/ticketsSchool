@@ -8,7 +8,7 @@ const rubik = Rubik({
 });
 
 export const metadata: Metadata = {
-  title: "TicketCap - ניהול כרטיסים",
+  title: "באריֿ - ניהול כרטיסים",
   description: "מערכת ניהול כרטיסים לאירועים ומשחקים - kartis.info",
   metadataBase: new URL("https://kartis.info"),
 };

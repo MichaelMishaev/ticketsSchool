@@ -10,6 +10,15 @@ export async function GET(
     const event = await prisma.event.findUnique({
       where: { slug },
       include: {
+        school: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            logo: true,
+            primaryColor: true
+          }
+        },
         _count: {
           select: {
             registrations: {
@@ -61,6 +70,7 @@ export async function GET(
       conditions: event.conditions,
       requireAcceptance: event.requireAcceptance,
       completionMessage: event.completionMessage,
+      school: event.school,
       _count: event._count,
       totalSpotsTaken
     })

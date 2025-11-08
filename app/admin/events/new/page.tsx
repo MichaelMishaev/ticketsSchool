@@ -152,6 +152,7 @@ export default function NewEventPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 מקסימום מקומות לנרשם *
+                <span className="text-xs text-gray-500 font-normal mr-2">(מינימום: 1, מקסימום: 10)</span>
               </label>
               <input
                 type="number"
@@ -162,6 +163,9 @@ export default function NewEventPage() {
                 onChange={(e) => setFormData({ ...formData, maxSpotsPerPerson: parseInt(e.target.value) })}
                 className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                מספר המקומות המקסימלי שניתן להזמין בהרשמה אחת (בין 1 ל-10)
+              </p>
             </div>
           </div>
         </div>

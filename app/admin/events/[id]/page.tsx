@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import {
   Calendar, MapPin, Users, Clock, Trash2, UserCheck,
   Download, Search, ChevronDown, ChevronUp,
-  ExternalLink, Copy, Check
+  ExternalLink, Copy, Check, Edit
 } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -229,6 +229,13 @@ export default function EventManagementPage() {
 
           <div className="flex flex-col gap-2 w-full sm:w-auto">
             <div className="flex gap-2">
+              <button
+                onClick={() => router.push(`/admin/events/${eventId}/edit`)}
+                className="flex-1 sm:flex-initial px-4 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 flex items-center justify-center gap-2"
+              >
+                <Edit className="w-4 h-4" />
+                ערוך
+              </button>
               <button
                 onClick={copyLink}
                 className="flex-1 sm:flex-initial px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 flex items-center justify-center gap-2"

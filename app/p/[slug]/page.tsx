@@ -5,6 +5,15 @@ import { useParams } from 'next/navigation'
 import { Calendar, MapPin, Users, Clock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { he } from 'date-fns/locale'
+import FeedbackInline from '@/components/FeedbackInline'
+
+interface School {
+  id: string
+  name: string
+  slug: string
+  logo?: string
+  primaryColor: string
+}
 
 interface Event {
   id: string
@@ -23,6 +32,7 @@ interface Event {
   _count: { registrations: number }
   totalSpotsTaken: number
   status: string
+  school: School
 }
 
 export default function PublicEventPage() {
@@ -232,19 +242,64 @@ export default function PublicEventPage() {
                 💡 מומלץ לצלם מסך זה לשמירה
               </p>
             </div>
+
+            <div className="mt-4">
+              <FeedbackInline />
+            </div>
           </div>
         </div>
       </div>
     )
   }
 
+  // Use school's primary color for gradient background
+  const schoolColor = event?.school?.primaryColor || '#3b82f6'
+  const gradientFrom = `${schoolColor}20` // 20% opacity
+  const gradientTo = `${schoolColor}10`   // 10% opacity
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-6 sm:py-12">
+    <div
+      className="min-h-screen py-6 sm:py-12"
+      style={{
+        background: `linear-gradient(to bottom right, ${gradientFrom}, ${gradientTo})`
+      }}
+    >
       <div className="max-w-2xl mx-auto px-4">
+        {/* School Branding Header */}
+        {event.school && (
+          <div className="mb-6 flex items-center gap-3 p-4 bg-white rounded-xl shadow-md">
+            {event.school.logo ? (
+              <img
+                src={event.school.logo}
+                alt={event.school.name}
+                className="w-14 h-14 rounded-lg object-cover"
+              />
+            ) : (
+              <div
+                className="w-14 h-14 rounded-lg flex items-center justify-center text-white font-bold text-xl"
+                style={{ backgroundColor: schoolColor }}
+              >
+                {event.school.name.charAt(0)}
+              </div>
+            )}
+            <div className="flex-1">
+              <div className="text-sm text-gray-500">אירוע של</div>
+              <div className="font-bold text-lg" style={{ color: schoolColor }}>
+                {event.school.name}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Event Header */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-6">
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 sm:p-8">
-            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">{event.title}</h1>
+          <div
+            className="p-6 sm:p-8 text-white"
+            style={{
+              background: `linear-gradient(to right, ${schoolColor}, ${schoolColor}dd)`
+            }}
+          >
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">{event.title}</h1>
             {event.gameType && (
               <span className="inline-block bg-white/20 text-white px-3 py-1 rounded-full text-sm">
                 {event.gameType}

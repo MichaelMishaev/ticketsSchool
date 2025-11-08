@@ -11,27 +11,40 @@ export async function POST(
     const data = await request.json()
     const { spotsCount = 1, ...registrationData } = data
 
-    // Start a transaction to ensure atomic operation
+    // Start a transaction with Serializable isolation to prevent race conditions
     return await prisma.$transaction(async (tx) => {
-      // Get event with lock to prevent race conditions
-      const event = await tx.event.findUnique({
-        where: { slug },
-        include: {
-          _count: {
-            select: {
-              registrations: {
-                where: {
-                  status: 'CONFIRMED'
-                }
-              }
-            }
-          }
-        }
-      })
+      // Lock the event row with FOR UPDATE to prevent concurrent modifications
+      // This ensures only one transaction can read and modify this event at a time
+      const eventRaw = await tx.$queryRaw<Array<{
+        id: string
+        slug: string
+        schoolId: string
+        title: string
+        description: string | null
+        gameType: string | null
+        location: string | null
+        startAt: Date
+        endAt: Date | null
+        capacity: number
+        status: string
+        maxSpotsPerPerson: number
+        fieldsSchema: any
+        conditions: string | null
+        requireAcceptance: boolean
+        completionMessage: string | null
+        createdAt: Date
+        updatedAt: Date
+      }>>`
+        SELECT * FROM "Event"
+        WHERE slug = ${slug}
+        FOR UPDATE
+      `
 
-      if (!event) {
+      if (!eventRaw || eventRaw.length === 0) {
         throw new Error('Event not found')
       }
+
+      const event = eventRaw[0]
 
       if (event.status !== 'OPEN') {
         throw new Error('Registration is closed')
@@ -77,22 +90,53 @@ export async function POST(
         }
       }
 
-      // Calculate current confirmed registrations
-      const currentConfirmed = await tx.registration.aggregate({
-        where: {
-          eventId: event.id,
-          status: 'CONFIRMED'
-        },
-        _sum: {
-          spotsCount: true
+      // Check if spotsReserved column exists (migration applied)
+      // If yes: use atomic counter (fast, race-condition proof)
+      // If no: use aggregate count (slower, but works with FOR UPDATE lock)
+      const useSpotsReserved = 'spotsReserved' in event
+
+      let status: 'CONFIRMED' | 'WAITLIST'
+
+      if (useSpotsReserved) {
+        // PHASE 2: Atomic counter approach (after migration)
+        const spotsLeft = event.capacity - (event.spotsReserved || 0)
+
+        if (spotsLeft >= spotsCount) {
+          // Try to atomically reserve spots
+          const updated = await tx.$executeRaw`
+            UPDATE "Event"
+            SET "spotsReserved" = "spotsReserved" + ${spotsCount}
+            WHERE id = ${event.id}
+            AND "spotsReserved" + ${spotsCount} <= capacity
+          `
+
+          if (updated > 0) {
+            status = 'CONFIRMED'
+          } else {
+            // Another transaction took the spots - go to waitlist
+            status = 'WAITLIST'
+          }
+        } else {
+          status = 'WAITLIST'
         }
-      })
+      } else {
+        // PHASE 1: Aggregate count approach (before migration)
+        // Event row is already locked with FOR UPDATE, so this is safe
+        const currentConfirmed = await tx.registration.aggregate({
+          where: {
+            eventId: event.id,
+            status: 'CONFIRMED'
+          },
+          _sum: {
+            spotsCount: true
+          }
+        })
 
-      const totalConfirmed = currentConfirmed._sum.spotsCount || 0
-      const spotsLeft = event.capacity - totalConfirmed
+        const totalConfirmed = currentConfirmed._sum.spotsCount || 0
+        const spotsLeft = event.capacity - totalConfirmed
 
-      // Determine registration status
-      const status = spotsLeft >= spotsCount ? 'CONFIRMED' : 'WAITLIST'
+        status = spotsLeft >= spotsCount ? 'CONFIRMED' : 'WAITLIST'
+      }
 
       // Create registration
       const registration = await tx.registration.create({
@@ -116,6 +160,9 @@ export async function POST(
           'נרשמת לרשימת ההמתנה' :
           'ההרשמה הושלמה בהצלחה'
       })
+    }, {
+      isolationLevel: 'Serializable',  // Strongest isolation level to prevent race conditions
+      timeout: 10000  // 10 second timeout to prevent long-running locks
     })
   } catch (error: any) {
     console.error('Registration error:', error)

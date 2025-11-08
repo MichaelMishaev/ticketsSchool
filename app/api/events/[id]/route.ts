@@ -1,15 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getCurrentAdmin, requireSchoolAccess } from '@/lib/auth.server'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Require authentication
+    const admin = await getCurrentAdmin()
+    if (!admin) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     const { id } = await params;
     const event = await prisma.event.findUnique({
       where: { id },
       include: {
+        school: true,
         registrations: {
           orderBy: { createdAt: 'desc' }
         }
@@ -20,6 +31,14 @@ export async function GET(
       return NextResponse.json(
         { error: 'Event not found' },
         { status: 404 }
+      )
+    }
+
+    // Check school access
+    if (admin.role === 'SCHOOL_ADMIN' && admin.schoolId !== event.schoolId) {
+      return NextResponse.json(
+        { error: 'Forbidden: No access to this school\'s events' },
+        { status: 403 }
       )
     }
 
@@ -38,17 +57,61 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Require authentication
+    const admin = await getCurrentAdmin()
+    if (!admin) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     const { id } = await params;
     const data = await request.json()
 
+    // Check event exists and get school
+    const existingEvent = await prisma.event.findUnique({
+      where: { id },
+      select: { schoolId: true }
+    })
+
+    if (!existingEvent) {
+      return NextResponse.json(
+        { error: 'Event not found' },
+        { status: 404 }
+      )
+    }
+
+    // Check school access
+    if (admin.role === 'SCHOOL_ADMIN' && admin.schoolId !== existingEvent.schoolId) {
+      return NextResponse.json(
+        { error: 'Forbidden: No access to this school\'s events' },
+        { status: 403 }
+      )
+    }
+
+    const updateData: any = {}
+
+    // Update all provided fields
+    if (data.title !== undefined) updateData.title = data.title
+    if (data.description !== undefined) updateData.description = data.description
+    if (data.gameType !== undefined) updateData.gameType = data.gameType
+    if (data.location !== undefined) updateData.location = data.location
+    if (data.startAt !== undefined) updateData.startAt = new Date(data.startAt)
+    if (data.endAt !== undefined) updateData.endAt = data.endAt ? new Date(data.endAt) : null
+    if (data.capacity !== undefined) updateData.capacity = parseInt(data.capacity)
+    if (data.maxSpotsPerPerson !== undefined) updateData.maxSpotsPerPerson = parseInt(data.maxSpotsPerPerson)
+    if (data.fieldsSchema !== undefined) updateData.fieldsSchema = data.fieldsSchema
+    if (data.conditions !== undefined) updateData.conditions = data.conditions
+    if (data.requireAcceptance !== undefined) updateData.requireAcceptance = data.requireAcceptance
+    if (data.completionMessage !== undefined) updateData.completionMessage = data.completionMessage
+    if (data.status !== undefined) updateData.status = data.status
+
     const event = await prisma.event.update({
       where: { id },
-      data: {
-        status: data.status,
-        ...(data.title && { title: data.title }),
-        ...(data.description && { description: data.description }),
-        ...(data.capacity && { capacity: data.capacity }),
-        ...(data.completionMessage !== undefined && { completionMessage: data.completionMessage }),
+      data: updateData,
+      include: {
+        school: true
       }
     })
 
@@ -67,12 +130,27 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Require authentication
+    const admin = await getCurrentAdmin()
+    if (!admin) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     const { id } = await params;
-    
-    // Check if event exists and get registration count
+
+    // Check if event exists and get registration count + school
     const event = await prisma.event.findUnique({
       where: { id },
       include: {
+        _count: {
+          select: { registrations: true }
+        }
+      },
+      select: {
+        schoolId: true,
         _count: {
           select: { registrations: true }
         }
@@ -83,6 +161,14 @@ export async function DELETE(
       return NextResponse.json(
         { error: 'Event not found' },
         { status: 404 }
+      )
+    }
+
+    // Check school access
+    if (admin.role === 'SCHOOL_ADMIN' && admin.schoolId !== event.schoolId) {
+      return NextResponse.json(
+        { error: 'Forbidden: No access to this school\'s events' },
+        { status: 403 }
       )
     }
 

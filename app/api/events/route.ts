@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { EventFormData } from '@/types'
+import { getCurrentAdmin } from '@/lib/auth.server'
 
 function generateSlug(): string {
   return Math.random().toString(36).substring(2, 15)
@@ -8,9 +9,43 @@ function generateSlug(): string {
 
 export async function GET(request: NextRequest) {
   try {
+    // Get current admin session
+    const admin = await getCurrentAdmin()
+    if (!admin) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // Build where clause based on admin role
+    const where: any = {}
+
+    // School admins can only see their school's events
+    if (admin.role === 'SCHOOL_ADMIN' && admin.schoolId) {
+      where.schoolId = admin.schoolId
+    }
+
+    // Super admins can filter by school via query param
+    if (admin.role === 'SUPER_ADMIN') {
+      const url = new URL(request.url)
+      const schoolId = url.searchParams.get('schoolId')
+      if (schoolId) {
+        where.schoolId = schoolId
+      }
+    }
+
     const events = await prisma.event.findMany({
+      where,
       orderBy: { createdAt: 'desc' },
       include: {
+        school: {
+          select: {
+            id: true,
+            name: true,
+            slug: true
+          }
+        },
         _count: {
           select: { registrations: true }
         },
@@ -51,7 +86,43 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Get current admin session
+    const admin = await getCurrentAdmin()
+    if (!admin) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     const data: EventFormData = await request.json()
+
+    // Determine schoolId
+    let schoolId: string | undefined
+
+    // School admins can ONLY create for their school
+    if (admin.role === 'SCHOOL_ADMIN') {
+      if (!admin.schoolId) {
+        return NextResponse.json(
+          { error: 'School admin must have a school assigned' },
+          { status: 400 }
+        )
+      }
+      schoolId = admin.schoolId
+    }
+
+    // Super admins can specify schoolId or use their assigned school
+    if (admin.role === 'SUPER_ADMIN') {
+      schoolId = (data as any).schoolId || admin.schoolId
+    }
+
+    // Validate schoolId exists
+    if (!schoolId) {
+      return NextResponse.json(
+        { error: 'School ID is required' },
+        { status: 400 }
+      )
+    }
 
     // Validate required fields
     if (!data.title || !data.startAt) {
@@ -102,6 +173,7 @@ export async function POST(request: NextRequest) {
     const event = await prisma.event.create({
       data: {
         slug: generateSlug(),
+        schoolId,  // NEW: Set school context
         title: data.title,
         description: data.description,
         gameType: data.gameType,
@@ -114,6 +186,9 @@ export async function POST(request: NextRequest) {
         conditions: data.conditions,
         requireAcceptance: data.requireAcceptance,
         completionMessage: data.completionMessage,
+      },
+      include: {
+        school: true
       }
     })
 

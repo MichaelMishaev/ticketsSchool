@@ -7,9 +7,165 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model School {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  logo         String?
+  primaryColor String   @default("#3b82f6")
+  isActive     Boolean  @default(true)
+
+  // Subscription & billing
+  plan         SubscriptionPlan    @default(FREE)
+  stripeCustomerId      String?    @unique
+  stripeSubscriptionId  String?    @unique
+  subscriptionStatus    SubscriptionStatus @default(ACTIVE)
+  trialEndsAt           DateTime?
+  subscriptionEndsAt    DateTime?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  events       Event[]
+  admins       Admin[]
+  invitations  TeamInvitation[]
+  usageRecords UsageRecord[]
+
+  @@index([slug])
+  @@index([isActive])
+  @@index([stripeCustomerId])
+  @@index([plan])
+}
+
+enum SubscriptionPlan {
+  FREE
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIAL
+  PAST_DUE
+  CANCELED
+  PAUSED
+}
+
+model UsageRecord {
+  id           String      @id @default(cuid())
+  schoolId     String
+  school       School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  // What resource was used
+  resourceType UsageResourceType
+  // How much was used
+  amount       Int         @default(1)
+
+  // Time period (for monthly limits)
+  year         Int
+  month        Int
+
+  // Metadata
+  metadata     Json?
+
+  createdAt    DateTime    @default(now())
+
+  @@unique([schoolId, resourceType, year, month])
+  @@index([schoolId])
+  @@index([schoolId, year, month])
+  @@index([resourceType])
+}
+
+enum UsageResourceType {
+  EVENT_CREATED
+  REGISTRATION_PROCESSED
+  EMAIL_SENT
+  SMS_SENT
+  API_CALL
+  STORAGE_MB
+}
+
+model Admin {
+  id                String       @id @default(cuid())
+  email             String       @unique
+  passwordHash      String?      // Nullable for OAuth-only users
+  name              String
+  role              AdminRole    @default(SCHOOL_ADMIN)
+  schoolId          String?
+  school            School?      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  // Email verification
+  emailVerified     Boolean      @default(false)
+  verificationToken String?      @unique
+
+  // Password reset
+  resetToken        String?      @unique
+  resetTokenExpiry  DateTime?
+
+  // OAuth
+  googleId          String?      @unique
+
+  // Status
+  isActive          Boolean      @default(true)
+  lastLoginAt       DateTime?
+
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  // Team invitations sent by this admin
+  invitationsSent   TeamInvitation[] @relation("InvitedBy")
+
+  @@index([email])
+  @@index([schoolId])
+  @@index([role])
+  @@index([googleId])
+  @@index([verificationToken])
+  @@index([resetToken])
+}
+
+enum AdminRole {
+  SUPER_ADMIN      // Platform owner - access to everything
+  OWNER            // School owner - billing, team management
+  ADMIN            // School admin - all event operations
+  MANAGER          // School manager - view events, edit registrations
+  VIEWER           // School viewer - read-only access
+  SCHOOL_ADMIN     // Legacy role - keep for backward compatibility
+}
+
+model TeamInvitation {
+  id          String             @id @default(cuid())
+  email       String
+  schoolId    String
+  school      School             @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  role        AdminRole          @default(ADMIN)
+  invitedById String
+  invitedBy   Admin              @relation("InvitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
+  token       String             @unique
+  status      InvitationStatus   @default(PENDING)
+  expiresAt   DateTime
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@unique([email, schoolId])
+  @@index([token])
+  @@index([email])
+  @@index([schoolId])
+  @@index([status])
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
 model Event {
   id                String         @id @default(cuid())
   slug              String         @unique
+  schoolId          String
+  school            School         @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   title             String
   description       String?
   gameType          String?
@@ -17,6 +173,7 @@ model Event {
   startAt           DateTime
   endAt             DateTime?
   capacity          Int
+  spotsReserved     Int            @default(0)  // Atomic counter for confirmed spots
   status            EventStatus    @default(OPEN)
   maxSpotsPerPerson Int            @default(1)
   fieldsSchema      Json           @default("[]")
@@ -29,6 +186,8 @@ model Event {
 
   @@index([slug])
   @@index([status])
+  @@index([schoolId])
+  @@index([schoolId, status])
 }
 
 model Registration {
@@ -84,4 +243,24 @@ enum LogLevel {
   INFO
   WARN
   ERROR
+}
+
+model Feedback {
+  id         String         @id @default(cuid())
+  message    String
+  email      String?
+  status     FeedbackStatus @default(PENDING)
+  adminNotes String?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum FeedbackStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  DISMISSED
 }

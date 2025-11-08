@@ -20,20 +20,32 @@
     "db:generate": "npx prisma generate",
     "db:setup": "node scripts/setup-production-db.js",
     "db:deploy": "chmod +x scripts/deploy-db.sh && scripts/deploy-db.sh",
-    "db:status": "npx prisma migrate status"
+    "db:status": "npx prisma migrate status",
+    "school": "tsx scripts/school-manager.ts",
+    "school:seed": "tsx scripts/school-manager.ts seed"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@prisma/client": "^6.16.2",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/nodemailer": "^7.0.3",
+    "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "googleapis": "^165.0.0",
+    "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.544.0",
     "next": "15.5.3",
+    "nodemailer": "^7.0.10",
     "prisma": "^6.16.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hook-form": "^7.62.0",
+    "resend": "^6.4.2",
+    "server-only": "^0.0.1",
     "tailwind-merge": "^3.3.1",
+    "tsx": "^4.20.6",
     "zod": "^4.1.9"
   },
   "devDependencies": {
