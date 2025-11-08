@@ -99,7 +99,8 @@ export async function POST(
 
       if (useSpotsReserved) {
         // PHASE 2: Atomic counter approach (after migration)
-        const spotsLeft = event.capacity - (event.spotsReserved || 0)
+        const spotsReserved = (event as any).spotsReserved as number || 0
+        const spotsLeft = event.capacity - spotsReserved
 
         if (spotsLeft >= spotsCount) {
           // Try to atomically reserve spots
