@@ -75,7 +75,7 @@ export default function LandingPage() {
               </h1>
 
               <p className="text-xl sm:text-2xl text-gray-600 leading-relaxed">
-                מערכת ניהול אירועים מתקדמת - ניהול פשוט, תשלומים מאובטחים, והכל במקום אחד
+                מערכת ניהול אירועים חכמה - רישום מהיר למקומות מוגבלים, ניהול פשוט של כרטיסים חינמיים
               </p>
 
               <div className="inline-flex items-center gap-2 bg-green-50 px-4 py-2 rounded-full border-2 border-green-500">
@@ -127,7 +127,10 @@ export default function LandingPage() {
 
               {/* Card 2 - Top Right */}
               <div className="absolute top-20 right-0 w-60 bg-[#FF6B6B] text-white p-6 rounded-2xl shadow-2xl rotate-[8deg] hover:rotate-0 transition-transform hover:z-10">
-                <CreditCard className="w-12 h-12 mb-3" />
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs bg-yellow-400 text-black px-2 py-1 rounded-full font-bold">בקרוב</span>
+                  <CreditCard className="w-12 h-12" />
+                </div>
                 <h3 className="text-lg font-bold mb-2 text-right">תשלומים מאובטחים</h3>
                 <p className="text-sm text-white/90 text-right">אשראי וביט בקליק</p>
               </div>
@@ -157,6 +160,35 @@ export default function LandingPage() {
               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white border-4 border-[#FF6B6B] rounded-full w-32 h-32 flex flex-col items-center justify-center shadow-2xl z-20 hover:scale-110 transition-transform">
                 <span className="text-4xl font-black text-[#FF6B6B]">14</span>
                 <span className="text-sm font-bold">ימים חינם</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Use Case Highlight */}
+      <section className="py-16 bg-gradient-to-r from-blue-50 to-purple-50 border-y-4 border-blue-500">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="bg-white rounded-3xl p-8 shadow-2xl border-4 border-blue-500">
+            <h3 className="text-3xl font-black mb-4">מושלם לכרטיסים חינמיים עם מקומות מוגבלים</h3>
+            <p className="text-xl text-gray-700 mb-6">
+              יש לכם 40 כרטיסים לאירוע ו-600 תלמידים? המערכת שלנו מבטיחה שמי שנרשם <strong>ראשון - מקבל</strong>
+            </p>
+            <div className="grid md:grid-cols-3 gap-4 text-right">
+              <div className="bg-green-50 p-4 rounded-xl border-2 border-green-500">
+                <CheckCircle className="w-8 h-8 text-green-600 mb-2 mr-auto" />
+                <h4 className="font-bold mb-1">ללא בלבול</h4>
+                <p className="text-sm text-gray-600">רק מי שהספיק יקבל כרטיס</p>
+              </div>
+              <div className="bg-blue-50 p-4 rounded-xl border-2 border-blue-500">
+                <Zap className="w-8 h-8 text-blue-600 mb-2 mr-auto" />
+                <h4 className="font-bold mb-1">מהיר וצודק</h4>
+                <p className="text-sm text-gray-600">מנגנון אמין למניעת הרשמה כפולה</p>
+              </div>
+              <div className="bg-purple-50 p-4 rounded-xl border-2 border-purple-500">
+                <Users className="w-8 h-8 text-purple-600 mb-2 mr-auto" />
+                <h4 className="font-bold mb-1">רשימת המתנה אוטומטית</h4>
+                <p className="text-sm text-gray-600">מעקב אחרי מי שלא הספיק</p>
               </div>
             </div>
           </div>
@@ -213,6 +245,7 @@ export default function LandingPage() {
                 title: 'תשלומים מאובטחים',
                 description: 'אשראי, PayPal, ביט - כל אפשרויות התשלום במקום אחד',
                 color: 'bg-purple-100 border-purple-500 text-purple-700',
+                badge: 'בקרוב',
               },
               {
                 icon: <BarChart3 className="w-8 h-8" />,
@@ -235,9 +268,16 @@ export default function LandingPage() {
             ].map((feature, idx) => (
               <div
                 key={idx}
-                className={`${feature.color} border-4 rounded-2xl p-6 hover:scale-105 transition-transform shadow-lg hover:shadow-2xl text-right`}
+                className={`${feature.color} border-4 rounded-2xl p-6 hover:scale-105 transition-transform shadow-lg hover:shadow-2xl text-right relative`}
               >
-                <div className="flex justify-end mb-4">{feature.icon}</div>
+                <div className="flex justify-between items-start mb-4">
+                  {feature.badge && (
+                    <span className="text-xs bg-yellow-400 text-black px-2 py-1 rounded-full font-bold">
+                      {feature.badge}
+                    </span>
+                  )}
+                  <div className={!feature.badge ? 'mr-auto' : ''}>{feature.icon}</div>
+                </div>
                 <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
                 <p className="text-sm opacity-90">{feature.description}</p>
               </div>
@@ -329,8 +369,8 @@ export default function LandingPage() {
                 a: 'כן! kartis.info מציעה תוכנית חינמית לצמיתות ללא צורך בכרטיס אשראי. התוכנית החינמית כוללת עד 3 אירועים ו-100 רישומים לחודש.',
               },
               {
-                q: 'האם ישנן עמלות על תשלומים?',
-                a: 'התוכנית החינמית כוללת עמלה קטנה על עסקאות. תוכניות פרימיום מציעות עמלות מופחתות או ללא עמלות.',
+                q: 'האם ניתן לגבות תשלום עבור כרטיסים?',
+                a: 'כרגע המערכת מתמחה בניהול כרטיסים חינמיים עם מקומות מוגבלים (מי שנרשם ראשון מקבל). אפשרות תשלום תתווסף בקרוב.',
               },
               {
                 q: 'האם המערכת מתאימה למכשירים ניידים?',
