@@ -78,11 +78,6 @@ export default function LandingPage() {
                 מערכת ניהול אירועים חכמה - רישום מהיר למקומות מוגבלים, ניהול פשוט של כרטיסים חינמיים
               </p>
 
-              <div className="inline-flex items-center gap-2 bg-green-50 px-4 py-2 rounded-full border-2 border-green-500">
-                <MessageCircle className="w-5 h-5 text-green-600" />
-                <span className="text-sm font-bold text-green-700">עדכוני WhatsApp אוטומטיים</span>
-              </div>
-
               <div className="flex flex-wrap gap-4 justify-end">
                 <Link
                   href="/admin/signup"

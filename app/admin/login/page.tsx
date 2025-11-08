@@ -152,22 +152,22 @@ function LoginForm() {
                 {isLoading ? 'מתחבר...' : 'התחבר'}
               </button>
             </div>
-
-            <div className="flex items-center justify-between text-sm">
-              <Link
-                href="/admin/forgot-password"
-                className="font-medium text-blue-600 hover:text-blue-500"
-              >
-                שכחתי סיסמה
-              </Link>
-              <Link
-                href="/admin/signup"
-                className="font-medium text-blue-600 hover:text-blue-500"
-              >
-                הרשמה
-              </Link>
-            </div>
           </form>
+
+          <div className="mt-6 flex items-center justify-between text-sm">
+            <Link
+              href="/admin/forgot-password"
+              className="font-medium text-blue-600 hover:text-blue-500"
+            >
+              שכחתי סיסמה
+            </Link>
+            <Link
+              href="/admin/signup"
+              className="font-medium text-blue-600 hover:text-blue-500"
+            >
+              הרשמה
+            </Link>
+          </div>
         </div>
       </div>
     </div>
