@@ -153,39 +153,59 @@ function LoginForm() {
               </button>
             </div>
           </form>
-
-          <div className="mt-6 flex items-center justify-between text-sm">
-            <button
-              type="button"
-              onClick={() => router.push('/admin/forgot-password')}
-              className="font-medium text-blue-600 hover:text-blue-500 bg-transparent border-0 cursor-pointer"
-            >
-              שכחתי סיסמה
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push('/admin/signup')}
-              className="font-medium text-blue-600 hover:text-blue-500 bg-transparent border-0 cursor-pointer"
-            >
-              הרשמה
-            </button>
-          </div>
         </div>
       </div>
     </div>
   )
 }
 
+function NavigationLinks() {
+  const router = useRouter()
+
+  return (
+    <div className="mt-6 flex items-center justify-between text-sm">
+      <Link
+        href="/admin/forgot-password"
+        className="font-medium text-blue-600 hover:text-blue-500"
+      >
+        שכחתי סיסמה
+      </Link>
+      <Link
+        href="/admin/signup"
+        className="font-medium text-blue-600 hover:text-blue-500"
+      >
+        הרשמה
+      </Link>
+    </div>
+  )
+}
+
 export default function AdminLoginPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-blue-100">
+            <Lock className="h-6 w-6 text-blue-600" />
+          </div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            כניסת מנהלים
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            kartis.info Admin Panel
+          </p>
+        </div>
+        <div className="bg-white py-8 px-4 shadow-xl rounded-lg sm:px-10">
+          <Suspense fallback={
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            </div>
+          }>
+            <LoginForm />
+          </Suspense>
+          <NavigationLinks />
         </div>
       </div>
-    }>
-      <LoginForm />
-    </Suspense>
+    </div>
   )
 }

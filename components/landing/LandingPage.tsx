@@ -161,9 +161,9 @@ export default function LandingPage() {
       <section className="py-16 bg-gradient-to-r from-blue-50 to-purple-50 border-y-4 border-blue-500">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="bg-white rounded-3xl p-8 shadow-2xl border-4 border-blue-500">
-            <h3 className="text-3xl font-black mb-4">מושלם לכרטיסים חינמיים עם מקומות מוגבלים</h3>
+            <h3 className="text-3xl font-black mb-4">ניהול חכם למקומות מוגבלים</h3>
             <p className="text-xl text-gray-700 mb-6">
-              יש לכם 40 כרטיסים לאירוע ו-600 תלמידים? המערכת שלנו מבטיחה שמי שנרשם <strong>ראשון - מקבל</strong>
+              הפתרון המושלם לאירועים עם ביקוש גבוה - חלוקה הוגנת של כרטיסים לפי סדר הגעה
             </p>
             <div className="grid md:grid-cols-3 gap-4 text-right">
               <div className="bg-green-50 p-4 rounded-xl border-2 border-green-500">

@@ -8,7 +8,7 @@ test.describe('Admin Login Page Navigation Tests', () => {
 
   test('should load admin login page correctly', async ({ page }) => {
     await test.step('Verify page title and main elements', async () => {
-      await expect(page).toHaveTitle(/TicketCap/);
+      await expect(page).toHaveTitle(/kartis\.info/);
 
       // Check main heading
       await expect(page.locator('h2:has-text("כניסת מנהלים")')).toBeVisible();
