@@ -144,11 +144,6 @@ export async function DELETE(
     // Check if event exists and get registration count + school
     const event = await prisma.event.findUnique({
       where: { id },
-      include: {
-        _count: {
-          select: { registrations: true }
-        }
-      },
       select: {
         schoolId: true,
         _count: {
