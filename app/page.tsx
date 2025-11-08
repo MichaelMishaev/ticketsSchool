@@ -2,27 +2,27 @@ import type { Metadata } from 'next'
 import LandingPage from '@/components/landing/LandingPage'
 
 export const metadata: Metadata = {
-  title: 'באריֿ - מערכת ניהול כרטיסים לבתי ספר | חינם לצמיתות',
+  title: 'kartis.info - מערכת ניהול כרטיסים לבתי ספר | חינם לצמיתות',
   description: 'מערכת ניהול כרטיסים חכמה לאירועי בית ספר - תשלומים מאובטחים, ניהול פשוט. תוכנית חינמית לצמיתות ללא כרטיס אשראי ✓',
   keywords: 'ניהול כרטיסים, בית ספר, אירועים, תשלומים מקוונים, WhatsApp, מערכת רישום, כרטוס בית ספר',
-  authors: [{ name: 'באריֿ' }],
-  creator: 'באריֿ',
-  publisher: 'באריֿ',
+  authors: [{ name: 'kartis.info' }],
+  creator: 'kartis.info',
+  publisher: 'kartis.info',
   metadataBase: new URL('https://kartis.info'),
   alternates: {
     canonical: '/',
   },
   openGraph: {
-    title: 'באריֿ - מערכת ניהול כרטיסים לבתי ספר',
+    title: 'kartis.info - מערכת ניהול כרטיסים לבתי ספר',
     description: 'מערכת ניהול כרטיסים חכמה - תוכנית חינמית לצמיתות',
     url: 'https://kartis.info',
-    siteName: 'באריֿ',
+    siteName: 'kartis.info',
     locale: 'he_IL',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'באריֿ - מערכת ניהול כרטיסים לבתי ספר',
+    title: 'kartis.info - מערכת ניהול כרטיסים לבתי ספר',
     description: 'מערכת ניהול כרטיסים חכמה - תוכנית חינמית לצמיתות',
   },
   robots: {
@@ -48,7 +48,7 @@ export default function Home() {
           __html: JSON.stringify({
             '@context': 'https://schema.org',
             '@type': 'Organization',
-            name: 'באריֿ',
+            name: 'kartis.info',
             url: 'https://kartis.info',
             logo: 'https://kartis.info/logo.png',
             description: 'מערכת ניהול כרטיסים לבתי ספר ואירועים',
@@ -67,7 +67,7 @@ export default function Home() {
           __html: JSON.stringify({
             '@context': 'https://schema.org',
             '@type': 'SoftwareApplication',
-            name: 'באריֿ',
+            name: 'kartis.info',
             applicationCategory: 'BusinessApplication',
             operatingSystem: 'Web',
             offers: {
@@ -98,10 +98,10 @@ export default function Home() {
             mainEntity: [
               {
                 '@type': 'Question',
-                name: 'האם באריֿ חינמי?',
+                name: 'האם kartis.info חינמי?',
                 acceptedAnswer: {
                   '@type': 'Answer',
-                  text: 'כן! באריֿ מציעה תוכנית חינמית לצמיתות ללא צורך בכרטיס אשראי. התוכנית החינמית כוללת עד 3 אירועים ו-100 רישומים לחודש.',
+                  text: 'כן! kartis.info מציעה תוכנית חינמית לצמיתות ללא צורך בכרטיס אשראי. התוכנית החינמית כוללת עד 3 אירועים ו-100 רישומים לחודש.',
                 },
               },
               {
@@ -117,7 +117,7 @@ export default function Home() {
                 name: 'האם המערכת מתאימה למכשירים ניידים?',
                 acceptedAnswer: {
                   '@type': 'Answer',
-                  text: 'כן! באריֿ מותאמת במלואה למכשירים ניידים, טאבלטים ומחשבים. ניתן לנהל אירועים מכל מכשיר.',
+                  text: 'כן! kartis.info מותאמת במלואה למכשירים ניידים, טאבלטים ומחשבים. ניתן לנהל אירועים מכל מכשיר.',
                 },
               },
             ],

@@ -1,6 +1,17 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Lazy initialization to avoid build-time errors
+let resend: Resend | null = null
+
+function getResendClient(): Resend {
+  if (!resend && process.env.RESEND_API_KEY) {
+    resend = new Resend(process.env.RESEND_API_KEY)
+  }
+  if (!resend) {
+    throw new Error('RESEND_API_KEY is not configured')
+  }
+  return resend
+}
 
 const FROM_EMAIL = process.env.EMAIL_FROM || 'noreply@ticketcap.com'
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9000'
@@ -21,7 +32,8 @@ async function sendEmail({ to, subject, html }: EmailOptions): Promise<boolean> 
       return false
     }
 
-    await resend.emails.send({
+    const client = getResendClient()
+    await client.emails.send({
       from: FROM_EMAIL,
       to,
       subject,

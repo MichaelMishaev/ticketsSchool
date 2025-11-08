@@ -82,7 +82,7 @@ function LoginForm() {
             כניסת מנהלים
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            באריֿ Admin Panel
+            kartis.info Admin Panel
           </p>
         </div>
         <div className="bg-white py-8 px-4 shadow-xl rounded-lg sm:px-10">

@@ -31,7 +31,7 @@ export default function LandingPage() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
               <Ticket className="w-8 h-8 text-[#FF6B6B]" />
-              <span className="text-2xl font-bold">באריֿ</span>
+              <span className="text-2xl font-bold">kartis.info</span>
             </div>
             <div className="flex gap-3">
               <Link
@@ -191,7 +191,7 @@ export default function LandingPage() {
       <section className="py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-5xl font-black text-center mb-16">
-            למה בתי ספר בוחרים <span className="text-[#FF6B6B]">באריֿ</span>?
+            למה בתי ספר בוחרים <span className="text-[#FF6B6B]">kartis.info</span>?
           </h2>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -325,8 +325,8 @@ export default function LandingPage() {
           <div className="space-y-6">
             {[
               {
-                q: 'האם באריֿ חינמי?',
-                a: 'כן! באריֿ מציעה תוכנית חינמית לצמיתות ללא צורך בכרטיס אשראי. התוכנית החינמית כוללת עד 3 אירועים ו-100 רישומים לחודש.',
+                q: 'האם kartis.info חינמי?',
+                a: 'כן! kartis.info מציעה תוכנית חינמית לצמיתות ללא צורך בכרטיס אשראי. התוכנית החינמית כוללת עד 3 אירועים ו-100 רישומים לחודש.',
               },
               {
                 q: 'האם ישנן עמלות על תשלומים?',
@@ -334,7 +334,7 @@ export default function LandingPage() {
               },
               {
                 q: 'האם המערכת מתאימה למכשירים ניידים?',
-                a: 'כן! באריֿ מותאמת במלואה למכשירים ניידים, טאבלטים ומחשבים. ניתן לנהל אירועים מכל מכשיר.',
+                a: 'כן! kartis.info מותאמת במלואה למכשירים ניידים, טאבלטים ומחשבים. ניתן לנהל אירועים מכל מכשיר.',
               },
               {
                 q: 'מה קורה אחרי תקופת הניסיון?',
@@ -366,7 +366,7 @@ export default function LandingPage() {
 
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <h2 className="text-5xl sm:text-6xl font-black mb-6">מוכנים להתחיל?</h2>
-          <p className="text-2xl mb-12 opacity-90">הצטרפו ל-100+ בתי ספר שכבר משתמשים בבאריֿ</p>
+          <p className="text-2xl mb-12 opacity-90">הצטרפו ל-100+ בתי ספר שכבר משתמשים ב-kartis.info</p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
@@ -395,7 +395,7 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-4 gap-8 text-right">
             <div>
               <div className="flex items-center gap-2 justify-end mb-4">
-                <span className="text-2xl font-bold">באריֿ</span>
+                <span className="text-2xl font-bold">kartis.info</span>
                 <Ticket className="w-8 h-8 text-[#FF6B6B]" />
               </div>
               <p className="text-sm text-gray-600">
@@ -431,7 +431,7 @@ export default function LandingPage() {
           </div>
 
           <div className="mt-12 pt-8 border-t border-gray-200 text-center text-sm text-gray-600">
-            <p>© 2025 באריֿ • כל הזכויות שמורות • kartis.info</p>
+            <p>© 2025 kartis.info • כל הזכויות שמורות</p>
           </div>
         </div>
       </footer>

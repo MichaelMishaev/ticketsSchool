@@ -85,7 +85,7 @@ export default function AdminLayout({
                 <h1 className="text-lg sm:text-xl font-bold text-gray-900">
                   {adminInfo?.role === 'SUPER_ADMIN'
                     ? 'לוח ניהול'
-                    : (adminInfo?.schoolName || 'באריֿ')
+                    : (adminInfo?.schoolName || 'kartis.info')
                   }
                 </h1>
                 {adminInfo?.role === 'SUPER_ADMIN' && (
