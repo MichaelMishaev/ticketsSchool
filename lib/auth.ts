@@ -1,12 +1,13 @@
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import * as bcrypt from 'bcryptjs'
+import { AdminRole } from '@prisma/client'
 
 export interface AuthSession {
   adminId: string
   email: string
   name: string
-  role: 'SUPER_ADMIN' | 'SCHOOL_ADMIN'
+  role: AdminRole
   schoolId?: string
   schoolName?: string
 }
@@ -39,6 +40,11 @@ export async function login(email: string, password: string): Promise<AuthSessio
     })
 
     if (!admin) {
+      return null
+    }
+
+    // OAuth users don't have password hash
+    if (!admin.passwordHash) {
       return null
     }
 

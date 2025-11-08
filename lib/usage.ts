@@ -1,6 +1,6 @@
 import 'server-only'
 import { prisma } from '@/lib/prisma'
-import type { SubscriptionPlan, UsageResourceType } from '@prisma/client'
+import { Prisma, type SubscriptionPlan, type UsageResourceType } from '@prisma/client'
 
 /**
  * Plan limits configuration
@@ -129,7 +129,7 @@ export async function trackUsage(
         amount: {
           increment: amount,
         },
-        metadata: metadata || undefined,
+        metadata: metadata ? (metadata as Prisma.InputJsonValue) : Prisma.JsonNull,
       },
       create: {
         schoolId,
@@ -137,7 +137,7 @@ export async function trackUsage(
         year,
         month,
         amount,
-        metadata: metadata || undefined,
+        metadata: metadata ? (metadata as Prisma.InputJsonValue) : Prisma.JsonNull,
       },
     })
   } catch (error) {
