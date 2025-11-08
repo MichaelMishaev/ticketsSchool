@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import LandingPage from '@/components/landing/LandingPage'
 
 export const metadata: Metadata = {
-  title: 'באריֿ - מערכת ניהול כרטיסים לבתי ספר | עדכוני WhatsApp אוטומטיים',
-  description: 'מערכת ניהול כרטיסים חכמה לאירועי בית ספר - תשלומים מאובטחים, הודעות WhatsApp אוטומטיות, ניהול פשוט. 14 ימי ניסיון חינם ללא כרטיס אשראי ✓',
+  title: 'באריֿ - מערכת ניהול כרטיסים לבתי ספר | חינם לצמיתות',
+  description: 'מערכת ניהול כרטיסים חכמה לאירועי בית ספר - תשלומים מאובטחים, ניהול פשוט. תוכנית חינמית לצמיתות ללא כרטיס אשראי ✓',
   keywords: 'ניהול כרטיסים, בית ספר, אירועים, תשלומים מקוונים, WhatsApp, מערכת רישום, כרטוס בית ספר',
   authors: [{ name: 'באריֿ' }],
   creator: 'באריֿ',
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'באריֿ - מערכת ניהול כרטיסים לבתי ספר',
-    description: 'מערכת ניהול כרטיסים חכמה עם עדכוני WhatsApp אוטומטיים - 14 ימי ניסיון חינם',
+    description: 'מערכת ניהול כרטיסים חכמה - תוכנית חינמית לצמיתות',
     url: 'https://kartis.info',
     siteName: 'באריֿ',
     locale: 'he_IL',
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'באריֿ - מערכת ניהול כרטיסים לבתי ספר',
-    description: 'מערכת ניהול כרטיסים חכמה עם עדכוני WhatsApp אוטומטיים',
+    description: 'מערכת ניהול כרטיסים חכמה - תוכנית חינמית לצמיתות',
   },
   robots: {
     index: true,
@@ -74,9 +74,9 @@ export default function Home() {
               '@type': 'Offer',
               price: '0',
               priceCurrency: 'ILS',
-              description: '14 ימי ניסיון חינם',
+              description: 'תוכנית חינמית לצמיתות',
             },
-            description: 'מערכת ניהול כרטיסים לבתי ספר עם עדכוני WhatsApp',
+            description: 'מערכת ניהול כרטיסים לבתי ספר',
             featureList: [
               'ניהול אירועים',
               'תשלומים מקוונים מאובטחים',
@@ -101,15 +101,15 @@ export default function Home() {
                 name: 'האם באריֿ חינמי?',
                 acceptedAnswer: {
                   '@type': 'Answer',
-                  text: 'כן! באריֿ מציעה 14 ימי ניסיון חינם ללא צורך בכרטיס אשראי. התוכנית החינמית כוללת עד 3 אירועים ו-100 רישומים לחודש.',
+                  text: 'כן! באריֿ מציעה תוכנית חינמית לצמיתות ללא צורך בכרטיס אשראי. התוכנית החינמית כוללת עד 3 אירועים ו-100 רישומים לחודש.',
                 },
               },
               {
                 '@type': 'Question',
-                name: 'איך עובדות הודעות ה-WhatsApp?',
+                name: 'האם ישנן עמלות על תשלומים?',
                 acceptedAnswer: {
                   '@type': 'Answer',
-                  text: 'המערכת שולחת הודעות אישור אוטומטיות ב-WhatsApp למשתתפים מיד לאחר הרישום, כולל פרטי האירוע וקישור לכרטיס הדיגיטלי.',
+                  text: 'התוכנית החינמית כוללת עמלה קטנה על עסקאות. תוכניות פרימיום מציעות עמלות מופחתות או ללא עמלות.',
                 },
               },
               {
