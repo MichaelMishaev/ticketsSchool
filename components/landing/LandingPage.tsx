@@ -114,7 +114,10 @@ export default function LandingPage() {
             <div className="relative h-[600px]">
               {/* Card 1 - Top Left */}
               <div className="absolute top-0 left-0 w-56 bg-white p-6 rounded-2xl shadow-2xl border-4 border-black rotate-[-5deg] hover:rotate-0 transition-transform hover:z-10">
-                <MessageCircle className="w-12 h-12 text-green-600 mb-3" />
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs bg-yellow-400 text-black px-2 py-1 rounded-full font-bold">בקרוב</span>
+                  <MessageCircle className="w-12 h-12 text-green-600" />
+                </div>
                 <h3 className="text-lg font-bold mb-2 text-right">WhatsApp אוטומטי</h3>
                 <p className="text-sm text-gray-600 text-right">הודעות אישור מיידיות</p>
               </div>
@@ -139,8 +142,8 @@ export default function LandingPage() {
               {/* Card 4 - Bottom Right */}
               <div className="absolute bottom-20 right-10 w-56 bg-yellow-400 p-6 rounded-2xl shadow-2xl border-4 border-black rotate-[5deg] hover:rotate-0 transition-transform hover:z-10">
                 <Smartphone className="w-12 h-12 text-black mb-3" />
-                <h3 className="text-lg font-bold mb-2 text-right">נייד בעיקר</h3>
-                <p className="text-sm text-gray-800 text-right">עובד מכל מכשיר</p>
+                <h3 className="text-lg font-bold mb-2 text-right">מותאם לנייד</h3>
+                <p className="text-sm text-gray-800 text-right">גישה מכל מכשיר</p>
               </div>
 
               {/* Card 5 - Bottom Left */}
@@ -148,12 +151,6 @@ export default function LandingPage() {
                 <Shield className="w-12 h-12 text-green-400 mb-3" />
                 <h3 className="text-lg font-bold mb-2 text-right">מאובטח 100%</h3>
                 <p className="text-sm text-gray-300 text-right">הצפנה מלאה של נתונים</p>
-              </div>
-
-              {/* Center Badge */}
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white border-4 border-[#FF6B6B] rounded-full w-32 h-32 flex flex-col items-center justify-center shadow-2xl z-20 hover:scale-110 transition-transform">
-                <span className="text-4xl font-black text-[#FF6B6B]">14</span>
-                <span className="text-sm font-bold">ימים חינם</span>
               </div>
             </div>
           </div>

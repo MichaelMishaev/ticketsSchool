@@ -21,13 +21,12 @@ test.describe('Admin Login Page Navigation Tests', () => {
   });
 
   test('should navigate to registration page when clicking הרשמה', async ({ page }) => {
-    await test.step('Click הרשמה (signup) link', async () => {
-      const signupLink = page.locator('a:has-text("הרשמה")');
-      await expect(signupLink).toBeVisible();
-      await expect(signupLink).toHaveAttribute('href', '/admin/signup');
+    await test.step('Click הרשמה (signup) button', async () => {
+      const signupButton = page.locator('button:has-text("הרשמה")');
+      await expect(signupButton).toBeVisible();
 
       // Click and verify navigation
-      await signupLink.click();
+      await signupButton.click();
       await page.waitForLoadState('networkidle');
 
       // Verify URL changed
@@ -38,13 +37,12 @@ test.describe('Admin Login Page Navigation Tests', () => {
   });
 
   test('should navigate to forgot password page when clicking שכחתי סיסמה', async ({ page }) => {
-    await test.step('Click שכחתי סיסמה (forgot password) link', async () => {
-      const forgotPasswordLink = page.locator('a:has-text("שכחתי סיסמה")');
-      await expect(forgotPasswordLink).toBeVisible();
-      await expect(forgotPasswordLink).toHaveAttribute('href', '/admin/forgot-password');
+    await test.step('Click שכחתי סיסמה (forgot password) button', async () => {
+      const forgotPasswordButton = page.locator('button:has-text("שכחתי סיסמה")');
+      await expect(forgotPasswordButton).toBeVisible();
 
       // Click and verify navigation
-      await forgotPasswordLink.click();
+      await forgotPasswordButton.click();
       await page.waitForLoadState('networkidle');
 
       // Verify URL changed
@@ -56,8 +54,8 @@ test.describe('Admin Login Page Navigation Tests', () => {
 
   test('should check browser back button functionality from signup page', async ({ page }) => {
     await test.step('Navigate to signup and back', async () => {
-      // Click signup link
-      await page.locator('a:has-text("הרשמה")').click();
+      // Click signup button
+      await page.locator('button:has-text("הרשמה")').click();
       await page.waitForLoadState('networkidle');
       await expect(page).toHaveURL(/\/admin\/signup/);
 
@@ -75,8 +73,8 @@ test.describe('Admin Login Page Navigation Tests', () => {
 
   test('should check browser back button functionality from forgot password page', async ({ page }) => {
     await test.step('Navigate to forgot password and back', async () => {
-      // Click forgot password link
-      await page.locator('a:has-text("שכחתי סיסמה")').click();
+      // Click forgot password button
+      await page.locator('button:has-text("שכחתי סיסמה")').click();
       await page.waitForLoadState('networkidle');
       await expect(page).toHaveURL(/\/admin\/forgot-password/);
 
@@ -139,7 +137,7 @@ test.describe('Admin Login Page Navigation Tests', () => {
       console.log('✓ At login page');
 
       // 2. Click הרשמה (signup)
-      await page.locator('a:has-text("הרשמה")').click();
+      await page.locator('button:has-text("הרשמה")').click();
       await page.waitForLoadState('networkidle');
       await expect(page).toHaveURL(/\/admin\/signup/);
       console.log('✓ Navigated to signup page');
@@ -151,7 +149,7 @@ test.describe('Admin Login Page Navigation Tests', () => {
       console.log('✓ Back to login page');
 
       // 4. Click forgot password
-      await page.locator('a:has-text("שכחתי סיסמה")').click();
+      await page.locator('button:has-text("שכחתי סיסמה")').click();
       await page.waitForLoadState('networkidle');
       await expect(page).toHaveURL(/\/admin\/forgot-password/);
       console.log('✓ Navigated to forgot password page');

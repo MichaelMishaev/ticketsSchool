@@ -155,18 +155,20 @@ function LoginForm() {
           </form>
 
           <div className="mt-6 flex items-center justify-between text-sm">
-            <Link
-              href="/admin/forgot-password"
-              className="font-medium text-blue-600 hover:text-blue-500"
+            <button
+              type="button"
+              onClick={() => router.push('/admin/forgot-password')}
+              className="font-medium text-blue-600 hover:text-blue-500 bg-transparent border-0 cursor-pointer"
             >
               שכחתי סיסמה
-            </Link>
-            <Link
-              href="/admin/signup"
-              className="font-medium text-blue-600 hover:text-blue-500"
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/admin/signup')}
+              className="font-medium text-blue-600 hover:text-blue-500 bg-transparent border-0 cursor-pointer"
             >
               הרשמה
-            </Link>
+            </button>
           </div>
         </div>
       </div>
