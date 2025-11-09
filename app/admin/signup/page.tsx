@@ -304,12 +304,6 @@ export default function AdminSignupPage() {
               </div>
             </div>
 
-            <div className="bg-blue-50 border-r-4 border-blue-400 p-4">
-              <p className="text-sm text-blue-700 text-right">
-                <strong>תוכנית חינם:</strong> תקבל 14 ימי ניסיון חינם עם עד 3 אירועים ו-100 רישומים לחודש.
-              </p>
-            </div>
-
             <div>
               <button
                 type="submit"

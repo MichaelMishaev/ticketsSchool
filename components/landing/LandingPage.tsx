@@ -111,15 +111,9 @@ export default function LandingPage() {
             {/* Right: Clean Visual (2 columns) - SIMPLIFIED */}
             <div className="lg:col-span-2">
               <div className="relative">
-                {/* Hero Illustration - AI Generated */}
-                <div className="relative w-full aspect-video mb-8 rounded-2xl overflow-hidden shadow-2xl">
-                  <Image
-                    src="/images/hero/main-illustration.png"
-                    alt="School Event Management Illustration"
-                    fill
-                    className="object-cover"
-                    priority
-                  />
+                {/* Hero Illustration - Placeholder */}
+                <div className="relative w-full aspect-video mb-8 rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br from-red-100 via-purple-100 to-blue-100 flex items-center justify-center">
+                  <Calendar className="w-32 h-32 text-red-500 opacity-30" />
                 </div>
 
                 {/* Modern card stack visualization */}
@@ -130,13 +124,8 @@ export default function LandingPage() {
                       בקרוב
                     </span>
                     <div className="flex items-center gap-4">
-                      <div className="relative w-16 h-16 flex-shrink-0">
-                        <Image
-                          src="/images/hero/whatsapp-icon.png"
-                          alt="WhatsApp Integration"
-                          fill
-                          className="object-contain"
-                        />
+                      <div className="w-16 h-16 flex-shrink-0 bg-green-100 rounded-xl flex items-center justify-center">
+                        <MessageCircle className="w-8 h-8 text-green-600" />
                       </div>
                       <div className="flex-1 text-right">
                         <h3 className="font-semibold text-gray-900">WhatsApp אוטומטי</h3>
@@ -148,13 +137,8 @@ export default function LandingPage() {
                   {/* Card 2 - Analytics */}
                   <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-200 transform hover:-translate-y-1 transition-transform">
                     <div className="flex items-center gap-4">
-                      <div className="relative w-16 h-16 flex-shrink-0">
-                        <Image
-                          src="/images/hero/analytics-icon.png"
-                          alt="Analytics Dashboard"
-                          fill
-                          className="object-contain"
-                        />
+                      <div className="w-16 h-16 flex-shrink-0 bg-blue-100 rounded-xl flex items-center justify-center">
+                        <BarChart3 className="w-8 h-8 text-blue-600" />
                       </div>
                       <div className="flex-1 text-right">
                         <h3 className="font-semibold text-gray-900">דוחות בזמן אמת</h3>
@@ -166,13 +150,8 @@ export default function LandingPage() {
                   {/* Card 3 - Security */}
                   <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-200 transform hover:-translate-y-1 transition-transform">
                     <div className="flex items-center gap-4">
-                      <div className="relative w-16 h-16 flex-shrink-0">
-                        <Image
-                          src="/images/hero/security-icon.png"
-                          alt="Security & Protection"
-                          fill
-                          className="object-contain"
-                        />
+                      <div className="w-16 h-16 flex-shrink-0 bg-red-100 rounded-xl flex items-center justify-center">
+                        <Lock className="w-8 h-8 text-red-600" />
                       </div>
                       <div className="flex-1 text-right">
                         <h3 className="font-semibold text-gray-900">מאובטח 100%</h3>
@@ -407,13 +386,8 @@ export default function LandingPage() {
                     <div className="text-sm text-gray-600">{testimonial.role}</div>
                     <div className="text-sm text-gray-500">{testimonial.school}</div>
                   </div>
-                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-red-500 flex-shrink-0">
-                    <Image
-                      src={testimonial.photo}
-                      alt={testimonial.name}
-                      fill
-                      className="object-cover"
-                    />
+                  <div className="w-16 h-16 rounded-full border-2 border-red-500 flex-shrink-0 bg-gradient-to-br from-red-400 to-purple-400 flex items-center justify-center text-white font-bold text-2xl">
+                    {testimonial.name.charAt(0)}
                   </div>
                 </div>
               </div>
@@ -422,26 +396,26 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* School Logos - TRUST BADGES */}
+      {/* Trust Section - SIMPLIFIED */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <h3 className="text-2xl font-semibold mb-2 text-gray-900">
             מעל <span className="text-red-600">100 בתי ספר</span> בוטחים ב-kartis.info
           </h3>
-          <p className="text-gray-600 mb-12">מוסדות חינוך מובילים ברחבי הארץ</p>
+          <p className="text-gray-600 mb-8">מוסדות חינוך מובילים ברחבי הארץ</p>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6 items-center">
-            {[...Array(12)].map((_, i) => (
+          <div className="flex flex-wrap justify-center gap-4 max-w-4xl mx-auto">
+            {[
+              'בית ספר אלון', 'תיכון הרצליה', 'בית ספר גן רווה',
+              'תיכון רמת אביב', 'בית ספר הדר', 'תיכון מקיף חדרה',
+              'בית ספר נורדאו', 'תיכון ברנר', 'בית ספר ביאליק',
+              'תיכון אלון תבור', 'בית ספר רוגוזין', 'תיכון יבנה'
+            ].map((school, i) => (
               <div
                 key={i}
-                className="relative h-20 group transition-all"
+                className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:border-red-500 hover:shadow-md transition-all"
               >
-                <Image
-                  src={`/images/logos/school-${String(i + 1).padStart(2, '0')}.png`}
-                  alt={`School ${i + 1}`}
-                  fill
-                  className="object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
-                />
+                {school}
               </div>
             ))}
           </div>
