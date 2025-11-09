@@ -101,3 +101,6 @@ logs
 # Test results and reports
 playwright-report/
 test-results/
+
+# Design instructions (contains API keys)
+DESIGN_INSTRUCTIONS.md

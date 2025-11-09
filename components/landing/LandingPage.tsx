@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   Ticket,
   MessageCircle,
@@ -24,13 +25,13 @@ export default function LandingPage() {
   const [showLoginModal, setShowLoginModal] = useState(false)
 
   return (
-    <div className="min-h-screen bg-[#F5F3EF] text-gray-900 overflow-x-hidden">
+    <div className="min-h-screen bg-gray-50 text-gray-900">
       {/* Floating Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
-              <Ticket className="w-8 h-8 text-[#FF6B6B]" />
+              <Ticket className="w-8 h-8 text-red-500" />
               <span className="text-2xl font-bold">kartis.info</span>
             </div>
             <div className="flex gap-3">
@@ -42,7 +43,7 @@ export default function LandingPage() {
               </Link>
               <Link
                 href="/admin/signup"
-                className="px-6 py-2 text-sm font-medium text-white bg-[#FF6B6B] rounded-full hover:bg-[#ff5252] transition-all shadow-lg hover:shadow-xl"
+                className="px-6 py-2 text-sm font-semibold text-white bg-red-500 rounded-lg hover:bg-red-600 transition-all shadow-md hover:shadow-lg"
               >
                 התחל בחינם
               </Link>
@@ -51,134 +52,167 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero Section - Maximalist Collage Style */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        {/* Background Elements */}
-        <div className="absolute top-20 left-10 w-64 h-64 bg-[#FF6B6B]/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-10 right-10 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
+      {/* Hero Section - WORLD-CLASS REDESIGN */}
+      <section className="pt-32 pb-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        {/* Subtle background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-red-50 via-white to-purple-50 opacity-60" />
 
         <div className="max-w-7xl mx-auto relative">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left Column - Text Content */}
-            <div className="space-y-8 text-right">
-              <div className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md border border-gray-200">
+          <div className="grid lg:grid-cols-5 gap-16 items-center">
+
+            {/* Left: Content (3 columns) - FOCUSED & CLEAN */}
+            <div className="lg:col-span-3 space-y-8 text-right">
+              {/* Trust badge */}
+              <div className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-200">
                 <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                <span className="text-sm font-medium">מעל 100+ בתי ספר כבר משתמשים</span>
+                <span className="text-sm font-medium text-gray-700">מעל 100+ בתי ספר כבר משתמשים</span>
               </div>
 
-              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-tight">
-                ניהול כרטיסים
+              {/* Headline - POWERFUL & CLEAR */}
+              <h1 className="text-5xl lg:text-6xl font-bold leading-tight text-gray-900">
+                מלאו אירועים תוך דקות,
                 <br />
-                <span className="text-[#FF6B6B]">חכם ופשוט</span>
-                <br />
-                לבית הספר שלך
+                <span className="text-red-600">לא שעות</span>
               </h1>
 
-              <p className="text-xl sm:text-2xl text-gray-600 leading-relaxed">
-                מערכת ניהול אירועים חכמה - רישום מהיר למקומות מוגבלים, ניהול פשוט של כרטיסים חינמיים
+              {/* Subtext - VALUE PROPOSITION */}
+              <p className="text-xl text-gray-600 leading-relaxed max-w-2xl">
+                מערכת ניהול אירועים שמשתמשים בה 100+ בתי ספר.
+                רישום מהיר למקומות מוגבלים, ניהול פשוט, תוצאות מיידיות.
               </p>
 
-              <div className="flex flex-wrap gap-4 justify-end">
+              {/* Single Primary CTA - CONVERSION FOCUSED */}
+              <div className="flex gap-4 justify-end">
                 <Link
                   href="/admin/signup"
-                  className="group px-8 py-4 text-lg font-bold text-white bg-black rounded-full hover:bg-gray-800 transition-all shadow-xl hover:shadow-2xl hover:scale-105 flex items-center gap-2"
+                  className="px-8 py-4 text-lg font-semibold text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl hover:scale-105"
                 >
-                  <Sparkles className="w-5 h-5 group-hover:rotate-12 transition-transform" />
                   התחל בחינם עכשיו
                 </Link>
-                <Link
-                  href="/admin/login"
-                  className="px-8 py-4 text-lg font-bold text-black bg-white rounded-full hover:bg-gray-50 transition-all shadow-lg border-2 border-black"
-                >
-                  יש לי חשבון
-                </Link>
               </div>
 
-              <div className="flex flex-wrap gap-6 justify-end text-sm text-gray-600">
-                <div className="flex items-center gap-2">
+              {/* Trust indicators */}
+              <div className="flex flex-wrap gap-6 justify-end text-sm text-gray-500">
+                <span className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span>ללא כרטיס אשראי</span>
-                </div>
-                <div className="flex items-center gap-2">
+                  ללא כרטיס אשראי
+                </span>
+                <span className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span>התקנה תוך 5 דקות</span>
-                </div>
-                <div className="flex items-center gap-2">
+                  התקנה תוך 5 דקות
+                </span>
+                <span className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span>תמיכה בעברית</span>
-                </div>
+                  תמיכה בעברית
+                </span>
               </div>
             </div>
 
-            {/* Right Column - Feature Cards Collage */}
-            <div className="relative h-[600px]">
-              {/* Card 1 - Top Left */}
-              <div className="absolute top-0 left-0 w-56 bg-white p-6 rounded-2xl shadow-2xl border-4 border-black rotate-[-5deg] hover:rotate-0 transition-transform hover:z-10">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs bg-yellow-400 text-black px-2 py-1 rounded-full font-bold">בקרוב</span>
-                  <MessageCircle className="w-12 h-12 text-green-600" />
+            {/* Right: Clean Visual (2 columns) - SIMPLIFIED */}
+            <div className="lg:col-span-2">
+              <div className="relative">
+                {/* Hero Illustration - AI Generated */}
+                <div className="relative w-full aspect-video mb-8 rounded-2xl overflow-hidden shadow-2xl">
+                  <Image
+                    src="/images/hero/main-illustration.png"
+                    alt="School Event Management Illustration"
+                    fill
+                    className="object-cover"
+                    priority
+                  />
                 </div>
-                <h3 className="text-lg font-bold mb-2 text-right">WhatsApp אוטומטי</h3>
-                <p className="text-sm text-gray-600 text-right">הודעות אישור מיידיות</p>
-              </div>
 
-              {/* Card 2 - Top Right */}
-              <div className="absolute top-20 right-0 w-60 bg-[#FF6B6B] text-white p-6 rounded-2xl shadow-2xl rotate-[8deg] hover:rotate-0 transition-transform hover:z-10">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs bg-yellow-400 text-black px-2 py-1 rounded-full font-bold">בקרוב</span>
-                  <CreditCard className="w-12 h-12" />
+                {/* Modern card stack visualization */}
+                <div className="relative space-y-4">
+                  {/* Card 1 - WhatsApp */}
+                  <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-200 transform hover:-translate-y-1 transition-transform relative">
+                    <span className="absolute top-3 left-3 px-2 py-1 text-xs font-medium text-orange-600 bg-orange-50 rounded-full border border-orange-200">
+                      בקרוב
+                    </span>
+                    <div className="flex items-center gap-4">
+                      <div className="relative w-16 h-16 flex-shrink-0">
+                        <Image
+                          src="/images/hero/whatsapp-icon.png"
+                          alt="WhatsApp Integration"
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
+                      <div className="flex-1 text-right">
+                        <h3 className="font-semibold text-gray-900">WhatsApp אוטומטי</h3>
+                        <p className="text-sm text-gray-600">הודעות אישור מיידיות</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 2 - Analytics */}
+                  <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-200 transform hover:-translate-y-1 transition-transform">
+                    <div className="flex items-center gap-4">
+                      <div className="relative w-16 h-16 flex-shrink-0">
+                        <Image
+                          src="/images/hero/analytics-icon.png"
+                          alt="Analytics Dashboard"
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
+                      <div className="flex-1 text-right">
+                        <h3 className="font-semibold text-gray-900">דוחות בזמן אמת</h3>
+                        <p className="text-sm text-gray-600">מעקב מלא אחרי המכירות</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 3 - Security */}
+                  <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-200 transform hover:-translate-y-1 transition-transform">
+                    <div className="flex items-center gap-4">
+                      <div className="relative w-16 h-16 flex-shrink-0">
+                        <Image
+                          src="/images/hero/security-icon.png"
+                          alt="Security & Protection"
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
+                      <div className="flex-1 text-right">
+                        <h3 className="font-semibold text-gray-900">מאובטח 100%</h3>
+                        <p className="text-sm text-gray-600">הצפנה מלאה של נתונים</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="text-lg font-bold mb-2 text-right">תשלומים מאובטחים</h3>
-                <p className="text-sm text-white/90 text-right">אשראי וביט בקליק</p>
-              </div>
 
-              {/* Card 3 - Middle Left */}
-              <div className="absolute top-40 left-10 w-64 bg-gradient-to-br from-blue-500 to-purple-600 text-white p-6 rounded-2xl shadow-2xl rotate-[-3deg] hover:rotate-0 transition-transform hover:z-10">
-                <BarChart3 className="w-12 h-12 mb-3" />
-                <h3 className="text-lg font-bold mb-2 text-right">דוחות בזמן אמת</h3>
-                <p className="text-sm text-white/90 text-right">מעקב מלא אחרי המכירות</p>
-              </div>
-
-              {/* Card 4 - Bottom Right */}
-              <div className="absolute bottom-20 right-10 w-56 bg-yellow-400 p-6 rounded-2xl shadow-2xl border-4 border-black rotate-[5deg] hover:rotate-0 transition-transform hover:z-10">
-                <Smartphone className="w-12 h-12 text-black mb-3" />
-                <h3 className="text-lg font-bold mb-2 text-right">מותאם לנייד</h3>
-                <p className="text-sm text-gray-800 text-right">גישה מכל מכשיר</p>
-              </div>
-
-              {/* Card 5 - Bottom Left */}
-              <div className="absolute bottom-0 left-0 w-60 bg-black text-white p-6 rounded-2xl shadow-2xl rotate-[-8deg] hover:rotate-0 transition-transform hover:z-10">
-                <Shield className="w-12 h-12 text-green-400 mb-3" />
-                <h3 className="text-lg font-bold mb-2 text-right">מאובטח 100%</h3>
-                <p className="text-sm text-gray-300 text-right">הצפנה מלאה של נתונים</p>
+                {/* Subtle glow effect */}
+                <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent rounded-3xl blur-3xl -z-10" />
               </div>
             </div>
+
           </div>
         </div>
       </section>
 
       {/* Use Case Highlight */}
-      <section className="py-16 bg-gradient-to-r from-blue-50 to-purple-50 border-y-4 border-blue-500">
+      <section className="py-20 bg-gradient-to-r from-blue-50 to-purple-50 border-y border-gray-200">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="bg-white rounded-3xl p-8 shadow-2xl border-4 border-blue-500">
-            <h3 className="text-3xl font-black mb-4">ניהול חכם למקומות מוגבלים</h3>
+          <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-200">
+            <h3 className="text-3xl font-bold mb-4 text-gray-900">ניהול חכם למקומות מוגבלים</h3>
             <p className="text-xl text-gray-700 mb-6">
               הפתרון המושלם לאירועים עם ביקוש גבוה - חלוקה הוגנת של כרטיסים לפי סדר הגעה
             </p>
             <div className="grid md:grid-cols-3 gap-4 text-right">
-              <div className="bg-green-50 p-4 rounded-xl border-2 border-green-500">
+              <div className="bg-green-50 p-4 rounded-xl border border-green-200">
                 <CheckCircle className="w-8 h-8 text-green-600 mb-2 mr-auto" />
-                <h4 className="font-bold mb-1">ללא בלבול</h4>
+                <h4 className="font-semibold mb-1 text-gray-900">ללא בלבול</h4>
                 <p className="text-sm text-gray-600">רק מי שהספיק יקבל כרטיס</p>
               </div>
-              <div className="bg-blue-50 p-4 rounded-xl border-2 border-blue-500">
+              <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
                 <Zap className="w-8 h-8 text-blue-600 mb-2 mr-auto" />
-                <h4 className="font-bold mb-1">מהיר וצודק</h4>
+                <h4 className="font-semibold mb-1 text-gray-900">מהיר וצודק</h4>
                 <p className="text-sm text-gray-600">מנגנון אמין למניעת הרשמה כפולה</p>
               </div>
-              <div className="bg-purple-50 p-4 rounded-xl border-2 border-purple-500">
+              <div className="bg-purple-50 p-4 rounded-xl border border-purple-200">
                 <Users className="w-8 h-8 text-purple-600 mb-2 mr-auto" />
-                <h4 className="font-bold mb-1">רשימת המתנה אוטומטית</h4>
+                <h4 className="font-semibold mb-1 text-gray-900">רשימת המתנה אוטומטית</h4>
                 <p className="text-sm text-gray-600">מעקב אחרי מי שלא הספיק</p>
               </div>
             </div>
@@ -187,11 +221,11 @@ export default function LandingPage() {
       </section>
 
       {/* Social Proof */}
-      <section className="py-12 bg-white border-y-4 border-black">
+      <section className="py-16 bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
-              <div className="text-4xl font-black text-[#FF6B6B]">100+</div>
+              <div className="text-4xl font-black text-red-600">100+</div>
               <div className="text-sm text-gray-600 mt-2">בתי ספר משתמשים</div>
             </div>
             <div>
@@ -210,66 +244,74 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features Grid - Maximalist Layout */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8">
+      {/* Features Grid - SIMPLIFIED */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gray-50">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-5xl font-black text-center mb-16">
-            למה בתי ספר בוחרים <span className="text-[#FF6B6B]">kartis.info</span>?
+          <h2 className="text-5xl font-bold text-center mb-16 text-gray-900">
+            למה בתי ספר בוחרים <span className="text-red-600">kartis.info</span>?
           </h2>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               {
                 icon: <MessageCircle className="w-8 h-8" />,
                 title: 'WhatsApp אוטומטי',
                 description: 'הודעות אישור מיידיות למשתתפים עם כל הפרטים',
-                color: 'bg-green-100 border-green-500 text-green-700',
+                color: 'bg-green-50 border-green-200 text-green-700',
+                iconBg: 'bg-green-100',
               },
               {
                 icon: <Calendar className="w-8 h-8" />,
                 title: 'ניהול אירועים קל',
                 description: 'צור אירוע תוך 2 דקות - ממשק פשוט ואינטואיטיבי',
-                color: 'bg-blue-100 border-blue-500 text-blue-700',
+                color: 'bg-blue-50 border-blue-200 text-blue-700',
+                iconBg: 'bg-blue-100',
               },
               {
                 icon: <CreditCard className="w-8 h-8" />,
                 title: 'תשלומים מאובטחים',
                 description: 'אשראי, PayPal, ביט - כל אפשרויות התשלום במקום אחד',
-                color: 'bg-purple-100 border-purple-500 text-purple-700',
+                color: 'bg-purple-50 border-purple-200 text-purple-700',
+                iconBg: 'bg-purple-100',
                 badge: 'בקרוב',
               },
               {
                 icon: <BarChart3 className="w-8 h-8" />,
                 title: 'דוחות מפורטים',
                 description: 'מעקב בזמן אמת אחרי מכירות ורווחיות',
-                color: 'bg-orange-100 border-orange-500 text-orange-700',
+                color: 'bg-orange-50 border-orange-200 text-orange-700',
+                iconBg: 'bg-orange-100',
               },
               {
                 icon: <Smartphone className="w-8 h-8" />,
                 title: 'מותאם לנייד',
                 description: 'עובד מושלם על כל מכשיר - טלפון, טאבלט או מחשב',
-                color: 'bg-pink-100 border-pink-500 text-pink-700',
+                color: 'bg-pink-50 border-pink-200 text-pink-700',
+                iconBg: 'bg-pink-100',
               },
               {
                 icon: <Shield className="w-8 h-8" />,
                 title: 'אבטחה מלאה',
                 description: 'הצפנת נתונים, GDPR compliant, גיבויים אוטומטיים',
-                color: 'bg-red-100 border-red-500 text-red-700',
+                color: 'bg-red-50 border-red-200 text-red-700',
+                iconBg: 'bg-red-100',
               },
             ].map((feature, idx) => (
               <div
                 key={idx}
-                className={`${feature.color} border-4 rounded-2xl p-6 hover:scale-105 transition-transform shadow-lg hover:shadow-2xl text-right relative`}
+                className={`${feature.color} border rounded-2xl p-6 hover:shadow-lg transition-all text-right relative`}
               >
                 <div className="flex justify-between items-start mb-4">
                   {feature.badge && (
-                    <span className="text-xs bg-yellow-400 text-black px-2 py-1 rounded-full font-bold">
+                    <span className="text-xs bg-yellow-600 text-white px-2 py-1 rounded-full font-semibold">
                       {feature.badge}
                     </span>
                   )}
-                  <div className={!feature.badge ? 'mr-auto' : ''}>{feature.icon}</div>
+                  <div className={`${feature.iconBg} p-3 rounded-xl ${!feature.badge ? 'mr-auto' : ''}`}>
+                    {feature.icon}
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
+                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
                 <p className="text-sm opacity-90">{feature.description}</p>
               </div>
             ))}
@@ -280,27 +322,22 @@ export default function LandingPage() {
       {/* How It Works */}
       <section className="py-24 bg-white px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-5xl font-black text-center mb-16">
-            איך זה <span className="text-[#FF6B6B]">עובד</span>?
+          <h2 className="text-5xl font-bold text-center mb-16 text-gray-900">
+            איך זה <span className="text-red-600">עובד</span>?
           </h2>
 
-          <div className="grid md:grid-cols-3 gap-8 relative">
-            {/* Arrow 1 */}
-            <div className="hidden md:block absolute top-1/3 left-[35%] w-24 h-1 bg-gray-300 z-0" />
-            {/* Arrow 2 */}
-            <div className="hidden md:block absolute top-1/3 right-[35%] w-24 h-1 bg-gray-300 z-0" />
-
+          <div className="grid md:grid-cols-3 gap-12">
             {[
               { step: '1', title: 'הרשמה בקליק', desc: 'צור חשבון חינם תוך 30 שניות', icon: <Users className="w-12 h-12" /> },
               { step: '2', title: 'יצירת אירוע', desc: 'הוסף פרטי אירוע ומחירים', icon: <Calendar className="w-12 h-12" /> },
               { step: '3', title: 'שתף וקבל תשלומים', desc: 'שלח קישור ותתחיל למכור', icon: <Zap className="w-12 h-12" /> },
             ].map((item, idx) => (
-              <div key={idx} className="relative z-10 bg-[#F5F3EF] border-4 border-black rounded-2xl p-8 text-center hover:scale-105 transition-transform shadow-xl">
-                <div className="w-16 h-16 bg-[#FF6B6B] text-white rounded-full flex items-center justify-center text-3xl font-black mx-auto mb-4">
+              <div key={idx} className="bg-gray-50 border border-gray-200 rounded-2xl p-8 text-center hover:shadow-lg transition-all">
+                <div className="w-16 h-16 bg-red-500 text-white rounded-full flex items-center justify-center text-3xl font-black mx-auto mb-4">
                   {item.step}
                 </div>
-                <div className="flex justify-center mb-4 text-black">{item.icon}</div>
-                <h3 className="text-2xl font-bold mb-2">{item.title}</h3>
+                <div className="flex justify-center mb-4 text-gray-900">{item.icon}</div>
+                <h3 className="text-2xl font-semibold mb-2 text-gray-900">{item.title}</h3>
                 <p className="text-gray-600">{item.desc}</p>
               </div>
             ))}
@@ -308,16 +345,119 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Testimonials - WORLD-CLASS SOCIAL PROOF */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-5xl font-bold mb-4 text-gray-900">
+              מה <span className="text-red-600">אומרים עלינו</span>?
+            </h2>
+            <p className="text-xl text-gray-600">
+              בתי ספר שכבר משתמשים ב-kartis.info משתפים את החוויה שלהם
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                name: 'רונית כהן',
+                role: 'מנהלת בית ספר',
+                school: 'בית ספר אלון תל אביב',
+                quote: 'kartis.info חסכה לנו שעות של עבודה ידנית. מערכת פשוטה ויעילה שהורים אוהבים.',
+                photo: '/images/testimonials/ronit-cohen.png',
+                rating: 5
+              },
+              {
+                name: 'דוד לוי',
+                role: 'רכז אירועים',
+                school: 'תיכון הרצליה',
+                quote: 'לראשונה הצלחנו למלא אירוע תוך דקות, לא שעות. המערכת פשוט עובדת.',
+                photo: '/images/testimonials/david-levi.png',
+                rating: 5
+              },
+              {
+                name: 'מיכל אברהם',
+                role: 'מורה ומארגנת אירועים',
+                school: 'בית ספר גן רווה ירושלים',
+                quote: 'הממשק הכי אינטואיטיבי שעבדתי איתו. התמיכה הטכנית פשוט מעולה.',
+                photo: '/images/testimonials/michal-avraham.png',
+                rating: 5
+              }
+            ].map((testimonial, idx) => (
+              <div
+                key={idx}
+                className="bg-gray-50 border border-gray-200 rounded-2xl p-8 text-right hover:shadow-lg hover:border-red-300 transition-all"
+              >
+                {/* Rating Stars */}
+                <div className="flex justify-end gap-1 mb-4">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <Star key={i} className="w-5 h-5 fill-yellow-500 text-yellow-500" />
+                  ))}
+                </div>
+
+                {/* Quote */}
+                <p className="text-gray-700 text-lg leading-relaxed mb-6 italic">
+                  "{testimonial.quote}"
+                </p>
+
+                {/* Author Info */}
+                <div className="flex items-center gap-4 justify-end">
+                  <div className="text-right">
+                    <div className="font-semibold text-gray-900">{testimonial.name}</div>
+                    <div className="text-sm text-gray-600">{testimonial.role}</div>
+                    <div className="text-sm text-gray-500">{testimonial.school}</div>
+                  </div>
+                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-red-500 flex-shrink-0">
+                    <Image
+                      src={testimonial.photo}
+                      alt={testimonial.name}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* School Logos - TRUST BADGES */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <h3 className="text-2xl font-semibold mb-2 text-gray-900">
+            מעל <span className="text-red-600">100 בתי ספר</span> בוטחים ב-kartis.info
+          </h3>
+          <p className="text-gray-600 mb-12">מוסדות חינוך מובילים ברחבי הארץ</p>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6 items-center">
+            {[...Array(12)].map((_, i) => (
+              <div
+                key={i}
+                className="relative h-20 group transition-all"
+              >
+                <Image
+                  src={`/images/logos/school-${String(i + 1).padStart(2, '0')}.png`}
+                  alt={`School ${i + 1}`}
+                  fill
+                  className="object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Pricing Teaser */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[#FF6B6B] to-[#ff5252] text-white">
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-red-500 to-red-600 text-white">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-5xl font-black mb-6">התחל בחינם היום!</h2>
+          <h2 className="text-5xl font-bold mb-6">התחל בחינם היום!</h2>
           <p className="text-2xl mb-8 opacity-90">
             חינם לגמרי • ללא כרטיס אשראי • עד 100 רישומים
           </p>
 
-          <div className="bg-white text-gray-900 rounded-3xl p-8 shadow-2xl border-4 border-black max-w-md mx-auto mb-8">
-            <div className="text-6xl font-black mb-2">₪0</div>
+          <div className="bg-white text-gray-900 rounded-3xl p-8 shadow-2xl max-w-md mx-auto mb-8">
+            <div className="text-6xl font-black mb-2 text-red-600">₪0</div>
             <div className="text-xl mb-6">תוכנית חינמית לצמיתות</div>
             <ul className="space-y-3 text-right mb-6">
               <li className="flex items-center gap-2 justify-end">
@@ -341,7 +481,7 @@ export default function LandingPage() {
 
           <Link
             href="/admin/signup"
-            className="inline-block px-12 py-5 text-xl font-bold text-[#FF6B6B] bg-white rounded-full hover:bg-gray-100 transition-all shadow-2xl hover:scale-105"
+            className="inline-block px-12 py-5 text-xl font-semibold text-red-600 bg-white rounded-lg hover:bg-gray-100 transition-all shadow-2xl hover:scale-105"
           >
             התחל עכשיו - חינם לגמרי
           </Link>
@@ -351,7 +491,7 @@ export default function LandingPage() {
       {/* FAQ */}
       <section className="py-24 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-5xl font-black text-center mb-16">שאלות נפוצות</h2>
+          <h2 className="text-5xl font-bold text-center mb-16 text-gray-900">שאלות נפוצות</h2>
 
           <div className="space-y-6">
             {[
@@ -361,7 +501,7 @@ export default function LandingPage() {
               },
               {
                 q: 'האם ניתן לגבות תשלום עבור כרטיסים?',
-                a: 'כרגע המערכת מתמחה בניהול כרטיסים חינמיים עם מקומות מוגבלים (מי שנרשם ראשון מקבל). אפשרות תשלום תתווסף בקרוב.',
+                a: 'המערכת תומכת בכרטיסים חינמיים עם ניהול מקומות מוגבלים. אפשרות גבייה בתשלום תתווסף בקרוב.',
               },
               {
                 q: 'האם המערכת מתאימה למכשירים ניידים?',
@@ -376,10 +516,10 @@ export default function LandingPage() {
                 a: 'כן! אנחנו זמינים 24/7 בוואטסאפ, מייל וטלפון. תמיכה בעברית כמובן.',
               },
             ].map((faq, idx) => (
-              <div key={idx} className="bg-[#F5F3EF] border-2 border-gray-300 rounded-xl p-6 text-right hover:border-[#FF6B6B] transition-colors">
-                <h3 className="text-xl font-bold mb-3 flex items-center justify-end gap-2">
+              <div key={idx} className="bg-gray-50 border border-gray-200 rounded-xl p-6 text-right hover:border-red-500 hover:shadow-md transition-all">
+                <h3 className="text-xl font-semibold mb-3 flex items-center justify-end gap-2 text-gray-900">
                   <span>{faq.q}</span>
-                  <CheckCircle className="w-6 h-6 text-[#FF6B6B]" />
+                  <CheckCircle className="w-6 h-6 text-red-600" />
                 </h3>
                 <p className="text-gray-600 leading-relaxed">{faq.a}</p>
               </div>
@@ -389,26 +529,21 @@ export default function LandingPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-black text-white relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full opacity-10">
-          <div className="absolute top-10 left-10 w-64 h-64 bg-[#FF6B6B] rounded-full blur-3xl" />
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-blue-500 rounded-full blur-3xl" />
-        </div>
-
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          <h2 className="text-5xl sm:text-6xl font-black mb-6">מוכנים להתחיל?</h2>
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gray-900 text-white">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-5xl sm:text-6xl font-bold mb-6">מוכנים להתחיל?</h2>
           <p className="text-2xl mb-12 opacity-90">הצטרפו ל-100+ בתי ספר שכבר משתמשים ב-kartis.info</p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/admin/signup"
-              className="px-12 py-5 text-xl font-bold text-black bg-white rounded-full hover:bg-gray-100 transition-all shadow-2xl hover:scale-105"
+              className="px-12 py-5 text-xl font-semibold text-gray-900 bg-white rounded-lg hover:bg-gray-100 transition-all shadow-2xl hover:scale-105"
             >
               התחל בחינם עכשיו
             </Link>
             <Link
               href="/admin/login"
-              className="px-12 py-5 text-xl font-bold text-white bg-transparent border-2 border-white rounded-full hover:bg-white hover:text-black transition-all"
+              className="px-12 py-5 text-xl font-semibold text-white bg-transparent border-2 border-white rounded-lg hover:bg-white hover:text-gray-900 transition-all"
             >
               התחבר לחשבון
             </Link>
@@ -421,13 +556,13 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-white border-t-4 border-black py-12 px-4 sm:px-6 lg:px-8">
+      <footer className="bg-white border-t border-gray-200 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-4 gap-8 text-right">
             <div>
               <div className="flex items-center gap-2 justify-end mb-4">
                 <span className="text-2xl font-bold">kartis.info</span>
-                <Ticket className="w-8 h-8 text-[#FF6B6B]" />
+                <Ticket className="w-8 h-8 text-red-500" />
               </div>
               <p className="text-sm text-gray-600">
                 מערכת ניהול כרטיסים מתקדמת לבתי ספר ומוסדות חינוך
@@ -435,28 +570,28 @@ export default function LandingPage() {
             </div>
 
             <div>
-              <h4 className="font-bold mb-4">מוצר</h4>
+              <h4 className="font-semibold mb-4 text-gray-900">מוצר</h4>
               <ul className="space-y-2 text-sm text-gray-600">
-                <li><Link href="/admin/signup" className="hover:text-[#FF6B6B]">התחל בחינם</Link></li>
-                <li><Link href="/#features" className="hover:text-[#FF6B6B]">תכונות</Link></li>
-                <li><Link href="/#pricing" className="hover:text-[#FF6B6B]">מחירים</Link></li>
+                <li><Link href="/admin/signup" className="hover:text-red-600 transition-colors">התחל בחינם</Link></li>
+                <li><Link href="/#features" className="hover:text-red-600 transition-colors">תכונות</Link></li>
+                <li><Link href="/#pricing" className="hover:text-red-600 transition-colors">מחירים</Link></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="font-bold mb-4">תמיכה</h4>
+              <h4 className="font-semibold mb-4 text-gray-900">תמיכה</h4>
               <ul className="space-y-2 text-sm text-gray-600">
-                <li><Link href="/#faq" className="hover:text-[#FF6B6B]">שאלות נפוצות</Link></li>
-                <li><Link href="/admin/help" className="hover:text-[#FF6B6B]">מרכז עזרה</Link></li>
-                <li><a href="mailto:support@kartis.info" className="hover:text-[#FF6B6B]">צור קשר</a></li>
+                <li><Link href="/#faq" className="hover:text-red-600 transition-colors">שאלות נפוצות</Link></li>
+                <li><Link href="/admin/help" className="hover:text-red-600 transition-colors">מרכז עזרה</Link></li>
+                <li><a href="mailto:support@kartis.info" className="hover:text-red-600 transition-colors">צור קשר</a></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="font-bold mb-4">משפטי</h4>
+              <h4 className="font-semibold mb-4 text-gray-900">משפטי</h4>
               <ul className="space-y-2 text-sm text-gray-600">
-                <li><Link href="/privacy" className="hover:text-[#FF6B6B]">מדיניות פרטיות</Link></li>
-                <li><Link href="/terms" className="hover:text-[#FF6B6B]">תנאי שימוש</Link></li>
+                <li><Link href="/privacy" className="hover:text-red-600 transition-colors">מדיניות פרטיות</Link></li>
+                <li><Link href="/terms" className="hover:text-red-600 transition-colors">תנאי שימוש</Link></li>
               </ul>
             </div>
           </div>

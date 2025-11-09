@@ -1,42 +1,56 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Lock, CheckCircle, AlertCircle } from 'lucide-react'
 import { markLoggedIn } from '@/lib/auth.client'
 
-function LoginForm() {
+export default function AdminLoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
-  const searchParams = useSearchParams()
 
   useEffect(() => {
-    const message = searchParams.get('message')
-    const errorParam = searchParams.get('error')
+    // Read search params from URL on client-side to avoid Suspense
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      const message = urlParams.get('message')
+      const errorParam = urlParams.get('error')
 
-    if (message === 'verified') {
-      setSuccess('המייל אומת בהצלחה! ניתן להתחבר עכשיו.')
-    } else if (message === 'already_verified') {
-      setSuccess('המייל כבר אומת. ניתן להתחבר.')
-    } else if (message === 'password_reset') {
-      setSuccess('הסיסמה שונתה בהצלחה! ניתן להתחבר עכשיו.')
-    }
+      if (message === 'verified') {
+        setSuccess('המייל אומת בהצלחה! ניתן להתחבר עכשיו.')
+      } else if (message === 'already_verified') {
+        setSuccess('המייל כבר אומת. ניתן להתחבר.')
+      } else if (message === 'password_reset') {
+        setSuccess('הסיסמה שונתה בהצלחה! ניתן להתחבר עכשיו.')
+      }
 
-    if (errorParam === 'missing_token') {
-      setError('קוד האימות חסר')
-    } else if (errorParam === 'invalid_token') {
-      setError('קוד אימות לא תקין')
-    } else if (errorParam === 'token_expired') {
-      setError('קוד האימות פג תוקף. נא לבקש קוד חדש.')
-    } else if (errorParam === 'verification_failed') {
-      setError('שגיאה באימות המייל. נסה שוב.')
+      if (errorParam === 'missing_token') {
+        setError('קוד האימות חסר')
+      } else if (errorParam === 'invalid_token') {
+        setError('קוד אימות לא תקין')
+      } else if (errorParam === 'token_expired') {
+        setError('קוד האימות פג תוקף. נא לבקש קוד חדש.')
+      } else if (errorParam === 'verification_failed') {
+        setError('שגיאה באימות המייל. נסה שוב.')
+      }
+
+      // CRITICAL FIX: Manually attach click handlers after hydration
+      // This ensures navigation works even if React hydration has issues
+      const signupBtn = document.querySelector('[data-nav="signup"]') as HTMLElement
+      const forgotBtn = document.querySelector('[data-nav="forgot-password"]') as HTMLElement
+
+      if (signupBtn) {
+        signupBtn.onclick = () => { window.location.href = '/admin/signup' }
+      }
+      if (forgotBtn) {
+        forgotBtn.onclick = () => { window.location.href = '/admin/forgot-password' }
+      }
     }
-  }, [searchParams])
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -56,11 +70,9 @@ function LoginForm() {
       const data = await response.json()
 
       if (response.ok) {
-        // Mark as logged in (sets localStorage hint for client-side routing)
         markLoggedIn()
-        // Auth is now handled via HTTP-only cookies (server-side)
         router.push('/admin')
-        router.refresh() // Refresh to get new session
+        router.refresh()
       } else {
         setError(data.error || 'אימייל או סיסמה שגויים')
       }
@@ -69,6 +81,11 @@ function LoginForm() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Use direct window navigation to avoid any hydration/bfcache issues
+  const handleNavigation = (path: string) => {
+    window.location.href = path
   }
 
   return (
@@ -153,57 +170,25 @@ function LoginForm() {
               </button>
             </div>
           </form>
-        </div>
-      </div>
-    </div>
-  )
-}
 
-function NavigationLinks() {
-  const router = useRouter()
-
-  return (
-    <div className="mt-6 flex items-center justify-between text-sm">
-      <Link
-        href="/admin/forgot-password"
-        className="font-medium text-blue-600 hover:text-blue-500"
-      >
-        שכחתי סיסמה
-      </Link>
-      <Link
-        href="/admin/signup"
-        className="font-medium text-blue-600 hover:text-blue-500"
-      >
-        הרשמה
-      </Link>
-    </div>
-  )
-}
-
-export default function AdminLoginPage() {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-blue-100">
-            <Lock className="h-6 w-6 text-blue-600" />
+          <div className="mt-6 flex items-center justify-between text-sm">
+            <button
+              type="button"
+              data-nav="forgot-password"
+              onClick={() => window.location.href = '/admin/forgot-password'}
+              className="font-medium text-blue-600 hover:text-blue-500 bg-transparent border-0 cursor-pointer p-0 underline"
+            >
+              שכחתי סיסמה
+            </button>
+            <button
+              type="button"
+              data-nav="signup"
+              onClick={() => window.location.href = '/admin/signup'}
+              className="font-medium text-blue-600 hover:text-blue-500 bg-transparent border-0 cursor-pointer p-0 underline"
+            >
+              הרשמה
+            </button>
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            כניסת מנהלים
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            kartis.info Admin Panel
-          </p>
-        </div>
-        <div className="bg-white py-8 px-4 shadow-xl rounded-lg sm:px-10">
-          <Suspense fallback={
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            </div>
-          }>
-            <LoginForm />
-          </Suspense>
-          <NavigationLinks />
         </div>
       </div>
     </div>
