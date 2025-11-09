@@ -70,7 +70,7 @@ export default function LandingPage() {
 
               {/* Headline - POWERFUL & CLEAR */}
               <h1 className="text-5xl lg:text-6xl font-bold leading-tight text-gray-900">
-                מלאו אירועים תוך דקות,
+                מלאו את האירועים תוך דקות,
                 <br />
                 <span className="text-red-600">לא שעות</span>
               </h1>
@@ -142,7 +142,7 @@ export default function LandingPage() {
                       </div>
                       <div className="flex-1 text-right">
                         <h3 className="font-semibold text-gray-900">דוחות בזמן אמת</h3>
-                        <p className="text-sm text-gray-600">מעקב מלא אחרי המכירות</p>
+                        <p className="text-sm text-gray-600">מעקב מלא אחר הרישומים</p>
                       </div>
                     </div>
                   </div>
@@ -192,7 +192,7 @@ export default function LandingPage() {
               <div className="bg-purple-50 p-4 rounded-xl border border-purple-200">
                 <Users className="w-8 h-8 text-purple-600 mb-2 mr-auto" />
                 <h4 className="font-semibold mb-1 text-gray-900">רשימת המתנה אוטומטית</h4>
-                <p className="text-sm text-gray-600">מעקב אחרי מי שלא הספיק</p>
+                <p className="text-sm text-gray-600">מעקב אחר מי שלא הספיק</p>
               </div>
             </div>
           </div>
@@ -257,7 +257,7 @@ export default function LandingPage() {
               {
                 icon: <BarChart3 className="w-8 h-8" />,
                 title: 'דוחות מפורטים',
-                description: 'מעקב בזמן אמת אחרי מכירות ורווחיות',
+                description: 'מעקב בזמן אמת אחר רישומים ורווחיות',
                 color: 'bg-orange-50 border-orange-200 text-orange-700',
                 iconBg: 'bg-orange-100',
               },
