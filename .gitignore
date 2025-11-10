@@ -67,6 +67,8 @@ dist
 # Gatsby files
 .cache/
 public
+!public/images/
+!public/images/landing/
 
 # Storybook build outputs
 .out
@@ -104,3 +106,6 @@ test-results/
 
 # Design instructions (contains API keys)
 DESIGN_INSTRUCTIONS.md
+
+# Ideogram API documentation (contains API key)
+app/docs/ideogram.md
