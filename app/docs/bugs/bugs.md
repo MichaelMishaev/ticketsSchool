@@ -1104,7 +1104,7 @@ Users were not receiving verification emails after signup. Investigation reveale
 **Root Cause:**
 The Resend API key is in **test/free tier mode** with these restrictions:
 1. ❌ Can only send to the verified account owner email (`345287@gmail.com`)
-2. ❌ FROM address `noreply@ticketcap.com` is not a verified domain
+2. ❌ FROM address `noreply@kartis.info` is not a verified domain
 3. ❌ All other recipients are blocked with error: "You can only send testing emails to your own email address"
 
 **API Error Response:**
@@ -1125,7 +1125,7 @@ The Resend API key is in **test/free tier mode** with these restrictions:
 $ node test-resend-api.js
 ✓ Resend API is working
 ✗ Sending restricted: Can only send to 345287@gmail.com
-✗ FROM address 'noreply@ticketcap.com' not verified
+✗ FROM address 'noreply@kartis.info' not verified
 ```
 
 **Fix Applied (Short-term for Development):**
@@ -1151,7 +1151,7 @@ EMAIL_FROM="onboarding@resend.dev"  # ✅ Works in test mode
    - Helps users who checked spam, waited too long, etc.
 
 **Files Changed:**
-- `.env.local:6` - Changed `EMAIL_FROM` from `noreply@ticketcap.com` to `onboarding@resend.dev`
+- `.env.local:6` - Changed `EMAIL_FROM` from `noreply@kartis.info` to `onboarding@resend.dev`
 - `/app/api/admin/resend-verification/route.ts` - New endpoint for resending verification emails
 - `/app/admin/signup/page.tsx:20-21` - Added `isResending` and `resendMessage` state
 - `/app/admin/signup/page.tsx:24-51` - Added `handleResendEmail()` function
@@ -1161,19 +1161,20 @@ EMAIL_FROM="onboarding@resend.dev"  # ✅ Works in test mode
 
 To send emails to all users in production:
 
-1. **Verify a Domain:**
+1. **Verify Your Domain at Resend:**
    ```
    1. Go to https://resend.com/domains
-   2. Add your domain (e.g., ticketcap.com)
-   3. Add DNS records they provide:
-      - SPF: TXT record
-      - DKIM: TXT record
-   4. Wait for verification (~5-10 minutes)
+   2. Click "Add Domain"
+   3. Enter: kartis.info
+   4. Add the DNS records they provide to your domain registrar:
+      - SPF Record (TXT)
+      - DKIM Record (TXT)
+   5. Wait for verification (~5-10 minutes)
    ```
 
 2. **Update Environment Variable:**
    ```env
-   EMAIL_FROM="noreply@ticketcap.com"  # Now will work!
+   EMAIL_FROM="noreply@kartis.info"  # Now will work!
    ```
 
 3. **Or Upgrade Resend Plan:**
