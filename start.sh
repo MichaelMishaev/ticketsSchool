@@ -49,15 +49,49 @@ if [ -n "$DATABASE_URL" ]; then
         # If migrations fail, try to fix failed migrations and retry
         if [ $MIGRATION_EXIT_CODE -ne 0 ]; then
             echo "⚠️  Initial migration failed (exit code: $MIGRATION_EXIT_CODE)"
-            echo "🔧 Attempting to fix failed migrations..."
+            echo "🔧 Attempting to fix all failed migrations..."
 
-            # Mark any failed migration as rolled back
-            echo "Marking failed migration as rolled back..."
-            npx prisma migrate resolve --rolled-back 20250920000000_allow_multiple_registrations_per_phone || echo "No failed migration to resolve"
+            # Get list of failed migrations and mark them as rolled back
+            # List of known problematic migrations
+            FAILED_MIGRATIONS=(
+                "20250920000000_allow_multiple_registrations_per_phone"
+                "20251107211615_add_multi_school_support"
+                "20251107_add_spots_reserved"
+                "20251108163123_add_saas_features"
+            )
 
-            # Retry migrations
-            echo "🔄 Retrying migrations..."
-            npx prisma migrate deploy || echo "⚠️  Migrations failed after retry, continuing..."
+            for migration in "${FAILED_MIGRATIONS[@]}"; do
+                echo "Attempting to resolve migration: $migration"
+                npx prisma migrate resolve --rolled-back "$migration" 2>/dev/null || true
+            done
+
+            # Retry migrations up to 3 times
+            RETRY_COUNT=0
+            MAX_RETRIES=3
+            while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+                RETRY_COUNT=$((RETRY_COUNT + 1))
+                echo "🔄 Retry attempt $RETRY_COUNT of $MAX_RETRIES..."
+
+                set +e
+                npx prisma migrate deploy
+                RETRY_EXIT_CODE=$?
+                set -e
+
+                if [ $RETRY_EXIT_CODE -eq 0 ]; then
+                    echo "✅ Migrations completed successfully on retry $RETRY_COUNT"
+                    break
+                else
+                    echo "⚠️  Retry $RETRY_COUNT failed"
+                    if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                        echo "Waiting 5 seconds before next retry..."
+                        sleep 5
+                    fi
+                fi
+            done
+
+            if [ $RETRY_EXIT_CODE -ne 0 ]; then
+                echo "❌ All migration retries failed, continuing anyway..."
+            fi
         else
             echo "✅ Migrations completed successfully"
         fi
