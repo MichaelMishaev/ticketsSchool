@@ -42,7 +42,7 @@ interface PageMetadataOptions {
   path?: string
   image?: string
   noIndex?: boolean
-  type?: 'website' | 'article' | 'product'
+  type?: 'website' | 'article'
   publishedTime?: string
   modifiedTime?: string
 }
