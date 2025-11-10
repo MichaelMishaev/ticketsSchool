@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { UserPlus, Mail, Lock, User } from 'lucide-react'
+import { UserPlus, Mail, Lock, User, Building2, Link as LinkIcon, Home } from 'lucide-react'
 
 export default function AdminSignupPage() {
   const [formData, setFormData] = useState({
@@ -11,17 +11,41 @@ export default function AdminSignupPage() {
     password: '',
     confirmPassword: '',
     name: '',
+    schoolName: '',
+    schoolSlug: '',
   })
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const router = useRouter()
 
+  const generateSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim()
+  }
+
+  const handleSchoolNameChange = (name: string) => {
+    setFormData({
+      ...formData,
+      schoolName: name,
+      schoolSlug: generateSlug(name),
+    })
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
     // Validation
+    if (!formData.schoolName || !formData.schoolSlug) {
+      setError('נא למלא את שם הארגון והקישור')
+      return
+    }
+
     if (formData.password.length < 8) {
       setError('הסיסמה חייבת להיות לפחות 8 תווים')
       return
@@ -44,6 +68,8 @@ export default function AdminSignupPage() {
           email: formData.email,
           password: formData.password,
           name: formData.name,
+          schoolName: formData.schoolName,
+          schoolSlug: formData.schoolSlug,
         }),
       })
 
@@ -63,7 +89,16 @@ export default function AdminSignupPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center px-4 sm:px-6 lg:px-8 relative">
+        {/* Home Button */}
+        <Link
+          href="/"
+          className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-md hover:shadow-lg transition-all hover:scale-105 group"
+        >
+          <Home className="h-5 w-5 text-green-600 group-hover:text-green-700" />
+          <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">חזרה לדף הבית</span>
+        </Link>
+
         <div className="max-w-md w-full">
           <div className="bg-white py-8 px-4 shadow-xl rounded-lg sm:px-10">
             <div className="text-center">
@@ -106,7 +141,16 @@ export default function AdminSignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12 relative">
+      {/* Home Button */}
+      <Link
+        href="/"
+        className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-md hover:shadow-lg transition-all hover:scale-105 group"
+      >
+        <Home className="h-5 w-5 text-blue-600 group-hover:text-blue-700" />
+        <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">חזרה לדף הבית</span>
+      </Link>
+
       <div className="max-w-2xl w-full space-y-8">
         <div>
           <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-blue-100">
@@ -169,8 +213,71 @@ export default function AdminSignupPage() {
           </div>
 
           <form className="space-y-6" onSubmit={handleSubmit}>
+            {/* Organization Info */}
+            <div className="space-y-4 pb-4 border-b border-gray-200">
+              <h3 className="text-sm font-semibold text-gray-900 text-right">פרטי ארגון</h3>
+
+              <div>
+                <label htmlFor="schoolName" className="block text-sm font-medium text-gray-700 text-right">
+                  שם הארגון <span className="text-red-500">*</span>
+                </label>
+                <div className="mt-1 relative">
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <Building2 className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="schoolName"
+                    name="schoolName"
+                    type="text"
+                    required
+                    value={formData.schoolName}
+                    onChange={(e) => handleSchoolNameChange(e.target.value)}
+                    className="appearance-none block w-full pr-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-right"
+                    placeholder="בית ספר דוגמה"
+                  />
+                </div>
+                <p className="mt-1 text-xs text-gray-500 text-right">
+                  שם הארגון/בית הספר שלך (יכול להיות כל שם - אפילו השם שלך)
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="schoolSlug" className="block text-sm font-medium text-gray-700 text-right">
+                  קישור הארגון <span className="text-red-500">*</span>
+                </label>
+                <div className="mt-1 relative">
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <LinkIcon className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="schoolSlug"
+                    name="schoolSlug"
+                    type="text"
+                    required
+                    value={formData.schoolSlug}
+                    onChange={(e) => setFormData({ ...formData, schoolSlug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+                    className="appearance-none block w-full pr-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-right font-mono"
+                    placeholder="my-organization"
+                    dir="ltr"
+                  />
+                </div>
+                <div className="mt-2 space-y-1 text-right">
+                  <p className="text-xs text-gray-700">
+                    הקישור שלך: <span className="font-mono font-semibold text-blue-600" dir="ltr">ticketcap.com/p/{formData.schoolSlug || 'my-organization'}</span>
+                  </p>
+                  <div className="bg-yellow-50 border border-yellow-200 rounded p-2 text-xs text-gray-600">
+                    <p className="font-semibold text-yellow-800 mb-1">⚠️ חשוב!</p>
+                    <p>
+                      <strong>רק אותיות אנגליות קטנות</strong> (a-z), <strong>מספרים</strong> (0-9) ו<strong>מקף</strong> (-)
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Personal Info */}
             <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-gray-900 text-right">פרטים אישיים</h3>
 
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 text-right">
