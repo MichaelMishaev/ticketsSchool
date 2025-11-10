@@ -17,7 +17,38 @@ export default function AdminSignupPage() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [isResending, setIsResending] = useState(false)
+  const [resendMessage, setResendMessage] = useState('')
   const router = useRouter()
+
+  const handleResendEmail = async () => {
+    setIsResending(true)
+    setResendMessage('')
+
+    try {
+      const response = await fetch('/api/admin/resend-verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setResendMessage('✓ המייל נשלח מחדש! בדוק את תיבת הדואר שלך.')
+      } else {
+        setResendMessage(data.error || '✗ שגיאה בשליחת המייל')
+      }
+    } catch (err) {
+      setResendMessage('✗ שגיאה בהתחברות לשרת')
+    } finally {
+      setIsResending(false)
+    }
+  }
 
   const generateSlug = (name: string) => {
     return name
@@ -129,6 +160,22 @@ export default function AdminSignupPage() {
                 >
                   לדף ההתחברות
                 </button>
+
+                {/* Resend Email Button */}
+                <button
+                  onClick={handleResendEmail}
+                  disabled={isResending}
+                  className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isResending ? 'שולח...' : 'שלח מייל שוב'}
+                </button>
+
+                {resendMessage && (
+                  <p className={`text-xs ${resendMessage.startsWith('✓') ? 'text-green-600' : 'text-red-600'}`}>
+                    {resendMessage}
+                  </p>
+                )}
+
                 <p className="text-xs text-gray-500">
                   לא קיבלת מייל? בדוק את תיקיית הספאם
                 </p>

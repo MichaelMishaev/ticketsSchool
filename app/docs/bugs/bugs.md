@@ -1088,6 +1088,133 @@ export async function POST(request: NextRequest) {
 
 ---
 
+### Bug #14: Verification Emails Not Sending - Resend API Test Mode Restrictions
+**Files:** `/lib/email.ts`, `.env.local`
+**Severity:** 🔴 CRITICAL - User Onboarding Blocker
+**Fixed Date:** 2025-11-10
+
+**Description:**
+Users were not receiving verification emails after signup. Investigation revealed that the Resend API was in test mode with strict limitations that prevented emails from being sent to most recipients.
+
+**User Report:**
+```
+"when sign in, no mail sent, resend problem?"
+```
+
+**Root Cause:**
+The Resend API key is in **test/free tier mode** with these restrictions:
+1. ❌ Can only send to the verified account owner email (`345287@gmail.com`)
+2. ❌ FROM address `noreply@ticketcap.com` is not a verified domain
+3. ❌ All other recipients are blocked with error: "You can only send testing emails to your own email address"
+
+**API Error Response:**
+```json
+{
+  "error": {
+    "statusCode": 403,
+    "name": "validation_error",
+    "message": "You can only send testing emails to your own email address (345287@gmail.com).
+    To send emails to other recipients, please verify a domain at resend.com/domains,
+    and change the `from` address to an email using this domain."
+  }
+}
+```
+
+**Testing Results:**
+```bash
+$ node test-resend-api.js
+✓ Resend API is working
+✗ Sending restricted: Can only send to 345287@gmail.com
+✗ FROM address 'noreply@ticketcap.com' not verified
+```
+
+**Fix Applied (Short-term for Development):**
+
+Changed FROM email to use Resend's test domain which works in test mode:
+
+```env
+# .env.local
+EMAIL_FROM="onboarding@resend.dev"  # ✅ Works in test mode
+```
+
+**Additional Improvements:**
+
+1. **Created Resend Verification Email API Endpoint**
+   - New endpoint: `/api/admin/resend-verification`
+   - Allows users to request email resend if they didn't receive it
+   - Validates account exists and is unverified
+   - Security: Doesn't reveal if account exists (prevents enumeration)
+
+2. **Added Resend Button to Signup Success Page**
+   - Users can click "שלח מייל שוב" (Send Email Again)
+   - Shows success/error feedback
+   - Helps users who checked spam, waited too long, etc.
+
+**Files Changed:**
+- `.env.local:6` - Changed `EMAIL_FROM` from `noreply@ticketcap.com` to `onboarding@resend.dev`
+- `/app/api/admin/resend-verification/route.ts` - New endpoint for resending verification emails
+- `/app/admin/signup/page.tsx:20-21` - Added `isResending` and `resendMessage` state
+- `/app/admin/signup/page.tsx:24-51` - Added `handleResendEmail()` function
+- `/app/admin/signup/page.tsx:164-177` - Added resend button to success page UI
+
+**Long-term Solution (For Production):**
+
+To send emails to all users in production:
+
+1. **Verify a Domain:**
+   ```
+   1. Go to https://resend.com/domains
+   2. Add your domain (e.g., ticketcap.com)
+   3. Add DNS records they provide:
+      - SPF: TXT record
+      - DKIM: TXT record
+   4. Wait for verification (~5-10 minutes)
+   ```
+
+2. **Update Environment Variable:**
+   ```env
+   EMAIL_FROM="noreply@ticketcap.com"  # Now will work!
+   ```
+
+3. **Or Upgrade Resend Plan:**
+   - Free tier: 3,000 emails/month, test mode only
+   - Pro tier ($20/month): 50,000 emails/month, verified domains
+   - https://resend.com/pricing
+
+**Current Limitations (Test Mode):**
+- ⚠️ Can only send to: `345287@gmail.com`
+- ⚠️ Other emails will fail silently or return 403
+- ⚠️ Suitable for development/testing only
+- ⚠️ Must verify domain before production launch
+
+**Testing After Fix:**
+```bash
+# Test with account owner email (should work)
+curl -X POST http://localhost:9000/api/admin/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "345287@gmail.com",
+    "password": "test123",
+    "name": "Test User",
+    "schoolName": "Test School",
+    "schoolSlug": "test-school"
+  }'
+
+# Expected: Email sent successfully ✓
+
+# Test resend endpoint
+curl -X POST http://localhost:9000/api/admin/resend-verification \
+  -H "Content-Type: application/json" \
+  -d '{"email": "345287@gmail.com"}'
+
+# Expected: "מייל האימות נשלח מחדש!" ✓
+```
+
+**Status:** ✅ FIXED (for development)
+**Production Readiness:** ⚠️ Requires domain verification before launch
+
+---
+
 **Report Generated:** 2025-11-10
 **Last Updated:** 2025-11-10
 **Tested By:** Claude Code QA
