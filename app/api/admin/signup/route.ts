@@ -16,11 +16,14 @@ interface SignupRequest {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('[Signup] Starting signup process')
     const body: SignupRequest = await request.json()
     const { email, password, name, schoolName, schoolSlug } = body
+    console.log('[Signup] Received data:', { email, name, schoolName, schoolSlug })
 
     // Validation
     if (!email || !password || !name || !schoolName || !schoolSlug) {
+      console.log('[Signup] Validation failed: missing required fields')
       return NextResponse.json(
         { error: 'חסרים שדות חובה' },
         { status: 400 }
@@ -54,11 +57,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if email already exists
+    console.log('[Signup] Checking if email exists:', email)
     const existingAdmin = await prisma.admin.findUnique({
       where: { email: email.toLowerCase() },
     })
 
     if (existingAdmin) {
+      console.log('[Signup] Email already exists')
       return NextResponse.json(
         { error: 'כתובת המייל הזאת כבר קיימת במערכת' },
         { status: 409 }
@@ -66,11 +71,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if school slug already exists
+    console.log('[Signup] Checking if school slug exists:', schoolSlug)
     const existingSchool = await prisma.school.findUnique({
       where: { slug: schoolSlug.toLowerCase() },
     })
 
     if (existingSchool) {
+      console.log('[Signup] School slug already exists')
       return NextResponse.json(
         { error: 'הקישור הזה כבר תפוס, בחר קישור אחר' },
         { status: 409 }
@@ -78,9 +85,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Hash password
+    console.log('[Signup] Hashing password')
     const passwordHash = await bcrypt.hash(password, 10)
 
     // Generate email verification token (24 hour expiry)
+    console.log('[Signup] Generating verification token')
     const verificationToken = jwt.sign(
       { email: email.toLowerCase() },
       JWT_SECRET,
@@ -88,6 +97,7 @@ export async function POST(request: NextRequest) {
     )
 
     // Create school and admin in a transaction
+    console.log('[Signup] Starting database transaction')
     const result = await prisma.$transaction(async (tx) => {
       // Create school with FREE plan
       const school = await tx.school.create({
@@ -115,8 +125,10 @@ export async function POST(request: NextRequest) {
 
       return { school, admin }
     })
+    console.log('[Signup] Transaction completed successfully')
 
     // Send verification email
+    console.log('[Signup] Sending verification email')
     const emailSent = await sendVerificationEmail(
       email.toLowerCase(),
       verificationToken,
@@ -124,9 +136,12 @@ export async function POST(request: NextRequest) {
     )
 
     if (!emailSent) {
-      console.warn('Verification email failed to send, but account was created')
+      console.warn('[Signup] Verification email failed to send, but account was created')
+    } else {
+      console.log('[Signup] Verification email sent successfully')
     }
 
+    console.log('[Signup] Signup completed successfully')
     return NextResponse.json({
       success: true,
       message: 'החשבון נוצר בהצלחה! שלחנו לך מייל לאימות.',
@@ -144,8 +159,16 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Signup error:', error)
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      type: typeof error,
+    })
     return NextResponse.json(
-      { error: 'שגיאה ביצירת החשבון. נסה שוב.' },
+      {
+        error: 'שגיאה ביצירת החשבון. נסה שוב.',
+        details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined
+      },
       { status: 500 }
     )
   }
