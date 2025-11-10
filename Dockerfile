@@ -30,8 +30,8 @@ RUN npm prune --production
 # Production stage
 FROM node:18-alpine AS runner
 
-# Install bash for startup script
-RUN apk add --no-cache bash curl
+# Install bash and postgresql-client for startup script and SQL execution
+RUN apk add --no-cache bash curl postgresql-client
 
 WORKDIR /app
 

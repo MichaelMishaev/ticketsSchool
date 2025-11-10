@@ -54,8 +54,12 @@ if [ -n "$DATABASE_URL" ]; then
             # Fix data issues FIRST before anything else
             echo "🔧 Step 1: Fixing data integrity issues and removing failed migration records..."
             if [ -f "scripts/fix-events-school-id.sql" ]; then
-                echo "Running comprehensive data fix script..."
-                cat scripts/fix-events-school-id.sql | npx prisma db execute --stdin --schema prisma/schema.prisma && echo "✅ Data fix completed" || echo "⚠️  Data fix script failed"
+                echo "Running comprehensive data fix script using psql..."
+                if [ -n "$DATABASE_URL" ]; then
+                    psql "$DATABASE_URL" -f scripts/fix-events-school-id.sql && echo "✅ Data fix completed successfully!" || echo "⚠️  Data fix script failed"
+                else
+                    echo "❌ DATABASE_URL not set, cannot run SQL fix"
+                fi
             else
                 echo "⚠️  Data fix script not found at scripts/fix-events-school-id.sql"
                 # Fallback: try to mark migrations as rolled back
