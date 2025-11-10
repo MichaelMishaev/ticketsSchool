@@ -106,6 +106,9 @@ model Admin {
   // OAuth
   googleId          String?      @unique
 
+  // Onboarding
+  onboardingCompleted Boolean    @default(false)
+
   // Status
   isActive          Boolean      @default(true)
   lastLoginAt       DateTime?

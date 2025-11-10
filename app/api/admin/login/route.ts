@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { login } from '@/lib/auth.server'
+import { prisma } from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,6 +22,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Fetch admin data to get onboardingCompleted status
+    const adminData = await prisma.admin.findUnique({
+      where: { id: session.adminId },
+      select: {
+        onboardingCompleted: true,
+        schoolId: true,
+      }
+    })
+
     return NextResponse.json(
       {
         success: true,
@@ -29,6 +39,8 @@ export async function POST(request: NextRequest) {
           name: session.name,
           role: session.role,
           schoolName: session.schoolName,
+          schoolId: session.schoolId,
+          onboardingCompleted: adminData?.onboardingCompleted ?? false,
         },
         message: 'התחברת בהצלחה'
       },

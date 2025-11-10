@@ -128,6 +128,7 @@ export async function GET(request: NextRequest) {
             onboardingCompleted: false,
             lastLoginAt: new Date(),
           },
+          include: { school: true },
         })
         console.log('[Google OAuth Callback] New user created')
       }

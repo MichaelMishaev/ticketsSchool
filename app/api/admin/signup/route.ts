@@ -4,25 +4,27 @@ import * as bcrypt from 'bcryptjs'
 import * as jwt from 'jsonwebtoken'
 import { sendVerificationEmail } from '@/lib/email'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-for-dev'
+const JWT_SECRET = process.env.JWT_SECRET!
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is not set')
+}
 
 interface SignupRequest {
   email: string
   password: string
   name: string
-  schoolName: string
-  schoolSlug: string
 }
 
 export async function POST(request: NextRequest) {
   try {
     console.log('[Signup] Starting signup process')
     const body: SignupRequest = await request.json()
-    const { email, password, name, schoolName, schoolSlug } = body
-    console.log('[Signup] Received data:', { email, name, schoolName, schoolSlug })
+    const { email, password, name } = body
+    console.log('[Signup] Received data:', { email, name })
 
     // Validation
-    if (!email || !password || !name || !schoolName || !schoolSlug) {
+    if (!email || !password || !name) {
       console.log('[Signup] Validation failed: missing required fields')
       return NextResponse.json(
         { error: 'חסרים שדות חובה' },
@@ -47,15 +49,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate school slug (alphanumeric, hyphens only)
-    const slugRegex = /^[a-z0-9-]+$/
-    if (!slugRegex.test(schoolSlug)) {
-      return NextResponse.json(
-        { error: 'קישור הארגון יכול להכיל רק אותיות באנגלית, מספרים ומקפים' },
-        { status: 400 }
-      )
-    }
-
     // Check if email already exists
     console.log('[Signup] Checking if email exists:', email)
     const existingAdmin = await prisma.admin.findUnique({
@@ -66,39 +59,6 @@ export async function POST(request: NextRequest) {
       console.log('[Signup] Email already exists')
       return NextResponse.json(
         { error: 'כתובת המייל הזאת כבר קיימת במערכת' },
-        { status: 409 }
-      )
-    }
-
-    // Check if school name already exists
-    console.log('[Signup] Checking if school name exists:', schoolName)
-    const existingSchoolByName = await prisma.school.findFirst({
-      where: {
-        name: {
-          equals: schoolName,
-          mode: 'insensitive' // Case-insensitive comparison
-        }
-      },
-    })
-
-    if (existingSchoolByName) {
-      console.log('[Signup] School name already exists')
-      return NextResponse.json(
-        { error: 'שם הארגון הזה כבר קיים במערכת, בחר שם אחר' },
-        { status: 409 }
-      )
-    }
-
-    // Check if school slug already exists
-    console.log('[Signup] Checking if school slug exists:', schoolSlug)
-    const existingSchool = await prisma.school.findUnique({
-      where: { slug: schoolSlug.toLowerCase() },
-    })
-
-    if (existingSchool) {
-      console.log('[Signup] School slug already exists')
-      return NextResponse.json(
-        { error: 'הקישור הזה כבר תפוס, בחר קישור אחר' },
         { status: 409 }
       )
     }
@@ -115,36 +75,21 @@ export async function POST(request: NextRequest) {
       { expiresIn: '24h' }
     )
 
-    // Create school and admin in a transaction
-    console.log('[Signup] Starting database transaction')
-    const result = await prisma.$transaction(async (tx) => {
-      // Create school with FREE plan
-      const school = await tx.school.create({
-        data: {
-          name: schoolName,
-          slug: schoolSlug.toLowerCase(),
-          plan: 'FREE',
-          subscriptionStatus: 'TRIAL',
-          trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days trial
-        },
-      })
-
-      // Create admin with OWNER role
-      const admin = await tx.admin.create({
-        data: {
-          email: email.toLowerCase(),
-          passwordHash,
-          name,
-          role: 'OWNER',
-          schoolId: school.id,
-          emailVerified: false,
-          verificationToken,
-        },
-      })
-
-      return { school, admin }
+    // Create admin without school (onboarding comes next)
+    console.log('[Signup] Creating admin account')
+    const admin = await prisma.admin.create({
+      data: {
+        email: email.toLowerCase(),
+        passwordHash,
+        name,
+        role: 'OWNER',
+        schoolId: null, // Will be set during onboarding
+        emailVerified: false,
+        verificationToken,
+        onboardingCompleted: false, // User must complete onboarding
+      },
     })
-    console.log('[Signup] Transaction completed successfully')
+    console.log('[Signup] Admin account created successfully')
 
     // Send verification email
     console.log('[Signup] Sending verification email')
@@ -164,17 +109,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'החשבון נוצר בהצלחה! שלחנו לך מייל לאימות.',
-      school: {
-        id: result.school.id,
-        name: result.school.name,
-        slug: result.school.slug,
-      },
       admin: {
-        id: result.admin.id,
-        email: result.admin.email,
-        name: result.admin.name,
+        id: admin.id,
+        email: admin.email,
+        name: admin.name,
       },
       emailSent,
+      requiresOnboarding: true,
     })
   } catch (error) {
     console.error('Signup error:', error)

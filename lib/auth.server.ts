@@ -2,6 +2,7 @@ import 'server-only'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import * as bcrypt from 'bcryptjs'
+import * as jwt from 'jsonwebtoken'
 import { AdminRole } from '@prisma/client'
 
 export interface AuthSession {
@@ -15,17 +16,28 @@ export interface AuthSession {
 
 export const SESSION_COOKIE_NAME = 'admin_session'
 const SESSION_DURATION = 7 * 24 * 60 * 60 * 1000 // 7 days
+const JWT_SECRET = process.env.JWT_SECRET!
 
-// Simple JWT-like encoding (for production, use proper JWT library)
-function encodeSession(session: AuthSession): string {
-  return Buffer.from(JSON.stringify(session)).toString('base64')
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is not set')
+}
+
+// Properly sign session with JWT
+export function encodeSession(session: AuthSession): string {
+  return jwt.sign(session, JWT_SECRET, {
+    expiresIn: '7d',
+    algorithm: 'HS256'
+  })
 }
 
 function decodeSession(token: string): AuthSession | null {
   try {
-    const decoded = Buffer.from(token, 'base64').toString('utf8')
-    return JSON.parse(decoded) as AuthSession
-  } catch {
+    const decoded = jwt.verify(token, JWT_SECRET, {
+      algorithms: ['HS256']
+    }) as AuthSession
+    return decoded
+  } catch (error) {
+    console.error('Session decode error:', error)
     return null
   }
 }

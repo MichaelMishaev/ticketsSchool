@@ -4,7 +4,11 @@ import * as jwt from 'jsonwebtoken'
 import { sendWelcomeEmail } from '@/lib/email'
 import { login } from '@/lib/auth.server'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-for-dev'
+const JWT_SECRET = process.env.JWT_SECRET!
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is not set')
+}
 
 export async function POST(request: NextRequest) {
   try {

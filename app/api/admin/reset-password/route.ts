@@ -3,7 +3,11 @@ import { prisma } from '@/lib/prisma'
 import * as bcrypt from 'bcryptjs'
 import * as jwt from 'jsonwebtoken'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-for-dev'
+const JWT_SECRET = process.env.JWT_SECRET!
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is not set')
+}
 
 export async function POST(request: NextRequest) {
   try {
