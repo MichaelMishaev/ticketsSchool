@@ -51,27 +51,25 @@ if [ -n "$DATABASE_URL" ]; then
             echo "⚠️  Initial migration failed (exit code: $MIGRATION_EXIT_CODE)"
             echo "🔧 Attempting to fix all failed migrations..."
 
-            # Get list of failed migrations and mark them as rolled back
-            # List of known problematic migrations
-            FAILED_MIGRATIONS=(
-                "20250920000000_allow_multiple_registrations_per_phone"
-                "20251107211615_add_multi_school_support"
-                "20251107_add_spots_reserved"
-                "20251108163123_add_saas_features"
-            )
-
-            for migration in "${FAILED_MIGRATIONS[@]}"; do
-                echo "Attempting to resolve migration: $migration"
-                npx prisma migrate resolve --rolled-back "$migration" 2>/dev/null || true
-            done
-
-            # Fix data issues before retrying migrations
-            echo "🔧 Fixing data integrity issues..."
+            # Fix data issues FIRST before anything else
+            echo "🔧 Step 1: Fixing data integrity issues and removing failed migration records..."
             if [ -f "scripts/fix-events-school-id.sql" ]; then
-                echo "Running data fix script..."
-                cat scripts/fix-events-school-id.sql | npx prisma db execute --stdin --schema prisma/schema.prisma || echo "⚠️  Data fix script failed or not needed"
+                echo "Running comprehensive data fix script..."
+                cat scripts/fix-events-school-id.sql | npx prisma db execute --stdin --schema prisma/schema.prisma && echo "✅ Data fix completed" || echo "⚠️  Data fix script failed"
             else
                 echo "⚠️  Data fix script not found at scripts/fix-events-school-id.sql"
+                # Fallback: try to mark migrations as rolled back
+                FAILED_MIGRATIONS=(
+                    "20250920000000_allow_multiple_registrations_per_phone"
+                    "20251107211615_add_multi_school_support"
+                    "20251107_add_spots_reserved"
+                    "20251108163123_add_saas_features"
+                )
+
+                for migration in "${FAILED_MIGRATIONS[@]}"; do
+                    echo "Attempting to resolve migration: $migration"
+                    npx prisma migrate resolve --rolled-back "$migration" 2>/dev/null || true
+                done
             fi
 
             # Retry migrations up to 3 times
