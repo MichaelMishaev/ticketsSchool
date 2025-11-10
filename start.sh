@@ -59,9 +59,11 @@ if [ -n "$DATABASE_URL" ]; then
                     if psql "$DATABASE_URL" -f scripts/fix-events-school-id.sql; then
                         echo "✅ Data fix completed successfully!"
 
-                        # Since we manually applied the changes, mark the migration as applied
-                        echo "🔧 Step 2: Marking migration as manually applied..."
-                        npx prisma migrate resolve --applied 20251107211615_add_multi_school_support || echo "Could not mark migration as applied"
+                        # Since we manually applied the changes, mark ALL affected migrations as applied
+                        echo "🔧 Step 2: Marking migrations as manually applied..."
+                        npx prisma migrate resolve --applied 20251107211615_add_multi_school_support || echo "Could not mark multi_school migration"
+                        npx prisma migrate resolve --applied 20251107_add_spots_reserved || echo "Could not mark spots_reserved migration"
+                        echo "✅ Migrations marked as applied"
                     else
                         echo "⚠️  Data fix script failed"
                     fi

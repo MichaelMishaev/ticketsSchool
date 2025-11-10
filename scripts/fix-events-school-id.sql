@@ -52,5 +52,18 @@ BEGIN
 
         -- Step 7: Now make it NOT NULL
         ALTER TABLE "public"."Event" ALTER COLUMN "schoolId" SET NOT NULL;
+
+        -- Step 8: Add spotsReserved column (from 20251107_add_spots_reserved migration)
+        ALTER TABLE "public"."Event" ADD COLUMN IF NOT EXISTS "spotsReserved" INTEGER NOT NULL DEFAULT 0;
+
+        -- Step 9: Initialize spotsReserved with current confirmed registrations count
+        UPDATE "public"."Event" e
+        SET "spotsReserved" = (
+          SELECT COALESCE(SUM(r."spotsCount"), 0)
+          FROM "public"."Registration" r
+          WHERE r."eventId" = e.id
+          AND r.status = 'CONFIRMED'
+        )
+        WHERE "spotsReserved" = 0;
     END IF;
 END $$;
