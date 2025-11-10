@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 
-const JWT_SECRET = process.env.JWT_SECRET!
-
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is not set')
+// Lazy getter for JWT secret - only validates when actually used (not at import time)
+function getJWTSecret(): Uint8Array {
+  const jwtSecret = process.env.JWT_SECRET
+  if (!jwtSecret) {
+    throw new Error('JWT_SECRET environment variable is not set')
+  }
+  // Convert secret to Uint8Array for jose (Edge Runtime compatible)
+  return new TextEncoder().encode(jwtSecret)
 }
-
-// Convert secret to Uint8Array for jose (Edge Runtime compatible)
-const secret = new TextEncoder().encode(JWT_SECRET)
 
 // Protected routes that require authentication
 const PROTECTED_PATHS = [
@@ -70,7 +71,7 @@ export async function middleware(request: NextRequest) {
 
   // Verify JWT session
   try {
-    await jwtVerify(sessionCookie.value, secret, {
+    await jwtVerify(sessionCookie.value, getJWTSecret(), {
       algorithms: ['HS256']
     })
 

@@ -16,15 +16,19 @@ export interface AuthSession {
 
 export const SESSION_COOKIE_NAME = 'admin_session'
 const SESSION_DURATION = 7 * 24 * 60 * 60 * 1000 // 7 days
-const JWT_SECRET = process.env.JWT_SECRET!
 
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is not set')
+// Lazy getter for JWT_SECRET - only validates when actually used (not at import time)
+function getJWTSecret(): string {
+  const secret = process.env.JWT_SECRET
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is not set')
+  }
+  return secret
 }
 
 // Properly sign session with JWT
 export function encodeSession(session: AuthSession): string {
-  return jwt.sign(session, JWT_SECRET, {
+  return jwt.sign(session, getJWTSecret(), {
     expiresIn: '7d',
     algorithm: 'HS256'
   })
@@ -32,7 +36,7 @@ export function encodeSession(session: AuthSession): string {
 
 function decodeSession(token: string): AuthSession | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET, {
+    const decoded = jwt.verify(token, getJWTSecret(), {
       algorithms: ['HS256']
     }) as AuthSession
     return decoded

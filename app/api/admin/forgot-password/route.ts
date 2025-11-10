@@ -3,10 +3,13 @@ import { prisma } from '@/lib/prisma'
 import * as jwt from 'jsonwebtoken'
 import { sendPasswordResetEmail } from '@/lib/email'
 
-const JWT_SECRET = process.env.JWT_SECRET!
-
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is not set')
+// Lazy getter for JWT_SECRET - only validates when actually used (not at import time)
+function getJWTSecret(): string {
+  const secret = process.env.JWT_SECRET
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is not set')
+  }
+  return secret
 }
 
 export async function POST(request: NextRequest) {
@@ -45,7 +48,7 @@ export async function POST(request: NextRequest) {
     // Generate reset token (1 hour expiry)
     const resetToken = jwt.sign(
       { email: email.toLowerCase(), adminId: admin.id },
-      JWT_SECRET,
+      getJWTSecret(),
       { expiresIn: '1h' }
     )
 

@@ -4,10 +4,13 @@ import * as bcrypt from 'bcryptjs'
 import * as jwt from 'jsonwebtoken'
 import { sendVerificationEmail } from '@/lib/email'
 
-const JWT_SECRET = process.env.JWT_SECRET!
-
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is not set')
+// Lazy getter for JWT_SECRET - only validates when actually used (not at import time)
+function getJWTSecret(): string {
+  const secret = process.env.JWT_SECRET
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is not set')
+  }
+  return secret
 }
 
 interface SignupRequest {
@@ -71,7 +74,7 @@ export async function POST(request: NextRequest) {
     console.log('[Signup] Generating verification token')
     const verificationToken = jwt.sign(
       { email: email.toLowerCase() },
-      JWT_SECRET,
+      getJWTSecret(),
       { expiresIn: '24h' }
     )
 

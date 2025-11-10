@@ -4,10 +4,13 @@ import * as jwt from 'jsonwebtoken'
 import { sendWelcomeEmail } from '@/lib/email'
 import { login } from '@/lib/auth.server'
 
-const JWT_SECRET = process.env.JWT_SECRET!
-
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is not set')
+// Lazy getter for JWT_SECRET - only validates when actually used (not at import time)
+function getJWTSecret(): string {
+  const secret = process.env.JWT_SECRET
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is not set')
+  }
+  return secret
 }
 
 export async function POST(request: NextRequest) {
@@ -24,7 +27,7 @@ export async function POST(request: NextRequest) {
     // Verify JWT token
     let decoded: { email: string }
     try {
-      decoded = jwt.verify(token, JWT_SECRET) as { email: string }
+      decoded = jwt.verify(token, getJWTSecret()) as { email: string }
     } catch (error) {
       if (error instanceof jwt.TokenExpiredError) {
         return NextResponse.json(
@@ -118,7 +121,7 @@ export async function GET(request: NextRequest) {
 
   // Verify the token
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { email: string }
+    const decoded = jwt.verify(token, getJWTSecret()) as { email: string }
 
     // Find and verify admin
     const admin = await prisma.admin.findFirst({
