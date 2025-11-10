@@ -35,13 +35,13 @@ echo "📊 Using PORT: $PORT"
 if [ -n "$DATABASE_URL" ]; then
     echo "✅ DATABASE_URL is set"
 
-    # Only run migrations if explicitly enabled
-    if [ "$RUN_MIGRATIONS" = "true" ]; then
-        echo "🗃️  Running migrations (RUN_MIGRATIONS=true)..."
+    # Always run migrations in production (unless explicitly disabled)
+    if [ "$SKIP_MIGRATIONS" != "true" ]; then
+        echo "🗃️  Running migrations..."
         npx prisma generate || echo "⚠️  Prisma generate failed"
         npx prisma migrate deploy || echo "⚠️  Migrations failed, continuing..."
     else
-        echo "⏭️  Skipping migrations (set RUN_MIGRATIONS=true to enable)"
+        echo "⏭️  Skipping migrations (SKIP_MIGRATIONS=true)"
     fi
 else
     echo "⚠️  No DATABASE_URL set - skipping database operations"
