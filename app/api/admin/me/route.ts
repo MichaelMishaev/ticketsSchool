@@ -30,7 +30,9 @@ export async function GET(request: NextRequest) {
         onboardingCompleted: true,
         school: {
           select: {
+            id: true,
             name: true,
+            slug: true,
           }
         }
       }
@@ -52,7 +54,12 @@ export async function GET(request: NextRequest) {
         schoolId: adminData.schoolId,
         schoolName: adminData.school?.name,
         onboardingCompleted: adminData.onboardingCompleted,
-      }
+      },
+      school: adminData.school ? {
+        id: adminData.school.id,
+        name: adminData.school.name,
+        slug: adminData.school.slug,
+      } : null
     })
   } catch (error) {
     console.error('Get current admin error:', error)
