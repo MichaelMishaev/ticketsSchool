@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Lock, CheckCircle, AlertCircle } from 'lucide-react'
 import { markLoggedIn } from '@/lib/auth.client'
 
@@ -37,18 +38,6 @@ export default function AdminLoginPage() {
       } else if (errorParam === 'verification_failed') {
         setError('שגיאה באימות המייל. נסה שוב.')
       }
-
-      // CRITICAL FIX: Manually attach click handlers after hydration
-      // This ensures navigation works even if React hydration has issues
-      const signupBtn = document.querySelector('[data-nav="signup"]') as HTMLElement
-      const forgotBtn = document.querySelector('[data-nav="forgot-password"]') as HTMLElement
-
-      if (signupBtn) {
-        signupBtn.onclick = () => { window.location.href = '/admin/signup' }
-      }
-      if (forgotBtn) {
-        forgotBtn.onclick = () => { window.location.href = '/admin/forgot-password' }
-      }
     }
   }, [])
 
@@ -83,10 +72,6 @@ export default function AdminLoginPage() {
     }
   }
 
-  // Use direct window navigation to avoid any hydration/bfcache issues
-  const handleNavigation = (path: string) => {
-    window.location.href = path
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 sm:px-6 lg:px-8">
@@ -171,23 +156,29 @@ export default function AdminLoginPage() {
             </div>
           </form>
 
-          <div className="mt-6 flex items-center justify-between text-sm">
-            <button
-              type="button"
-              data-nav="forgot-password"
-              onClick={() => window.location.href = '/admin/forgot-password'}
-              className="font-medium text-blue-600 hover:text-blue-500 bg-transparent border-0 cursor-pointer p-0 underline"
+          <div className="mt-6 flex items-center justify-between text-sm" data-version="v4-onclick">
+            <a
+              href="/admin/forgot-password"
+              onClick={(e) => {
+                e.preventDefault()
+                router.push('/admin/forgot-password')
+              }}
+              className="font-medium text-blue-600 hover:text-blue-500 underline cursor-pointer"
+              data-testid="forgot-password-link"
             >
               שכחתי סיסמה
-            </button>
-            <button
-              type="button"
-              data-nav="signup"
-              onClick={() => window.location.href = '/admin/signup'}
-              className="font-medium text-blue-600 hover:text-blue-500 bg-transparent border-0 cursor-pointer p-0 underline"
+            </a>
+            <a
+              href="/admin/signup"
+              onClick={(e) => {
+                e.preventDefault()
+                router.push('/admin/signup')
+              }}
+              className="font-medium text-blue-600 hover:text-blue-500 underline cursor-pointer"
+              data-testid="signup-link"
             >
               הרשמה
-            </button>
+            </a>
           </div>
         </div>
       </div>

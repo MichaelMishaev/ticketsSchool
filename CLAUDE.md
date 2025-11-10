@@ -1,1 +1,2 @@
 - do not push to git without my permission
+- each bug found and its fix must be documented in '/Users/michaelmishayev/Desktop/Projects/ticketsSchool/app/docs/bugs/bugs.md'

@@ -7,8 +7,7 @@ DELETE FROM "_prisma_migrations"
 WHERE migration_name IN (
     '20250920000000_allow_multiple_registrations_per_phone',
     '20251107211615_add_multi_school_support',
-    '20251107_add_spots_reserved',
-    '20251108163123_add_saas_features'
+    '20251107_add_spots_reserved'
 );
 
 -- Step 2: Create School table if it doesn't exist
