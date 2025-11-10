@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentAdmin } from '@/lib/auth.server'
+import { getCurrentAdmin, encodeSession, SESSION_COOKIE_NAME, AuthSession } from '@/lib/auth.server'
 
 interface OnboardingRequest {
   schoolName: string
@@ -97,7 +97,18 @@ export async function POST(request: NextRequest) {
 
     console.log('[Onboarding] Onboarding completed successfully')
 
-    return NextResponse.json({
+    // Create updated session with new school information
+    const updatedSession: AuthSession = {
+      adminId: result.admin.id,
+      email: result.admin.email,
+      name: result.admin.name,
+      role: result.admin.role,
+      schoolId: result.school.id,
+      schoolName: result.school.name,
+    }
+
+    // Create response and update session cookie
+    const response = NextResponse.json({
       success: true,
       message: 'הארגון נוצר בהצלחה!',
       school: {
@@ -111,6 +122,17 @@ export async function POST(request: NextRequest) {
         name: result.admin.name,
       },
     })
+
+    // Update session cookie with new school information
+    response.cookies.set(SESSION_COOKIE_NAME, encodeSession(updatedSession), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: '/',
+    })
+
+    return response
   } catch (error) {
     console.error('[Onboarding] Error:', error)
     return NextResponse.json(

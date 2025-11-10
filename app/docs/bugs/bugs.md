@@ -531,6 +531,136 @@ npx playwright test debug-oauth-cookies --headed
 
 ---
 
+### Bug #10: Session Not Updated After Onboarding - Users See Wrong School Events
+**File:** `/app/api/admin/onboarding/route.ts`
+**Severity:** 🔴 CRITICAL
+**Fixed Date:** 2025-11-10
+
+**Description:**
+After a user completes the onboarding process and creates their school, the database was correctly updated with the new `schoolId`, but the JWT session cookie was NOT updated. This caused all subsequent API calls to use the old session (with `schoolId: undefined`), resulting in users seeing events from wrong schools or the "Default School".
+
+**User Report:**
+```
+"created new: 345287info@gmail.com, why i see the default school??"
+User created school "tempppp" but dashboard showed 3 events from "Default School" instead of 0 events (correct for new school).
+```
+
+**Investigation:**
+1. ✅ Database correctly showed: User linked to school "tempppp" (schoolId: cmhtby6uq0008mt01718tlxup)
+2. ✅ Events API correctly filters by schoolId from JWT session
+3. ❌ **JWT session cookie still had `schoolId: undefined` from initial OAuth login**
+4. ❌ Result: API filtering failed, showed events from all schools or wrong school
+
+**Root Cause:**
+The onboarding API route updated the database with `schoolId` but did not create and set a new JWT session cookie with the updated school information. The old session cookie persisted across requests, causing data isolation to break.
+
+**Code Before Fix:**
+```typescript
+// app/api/admin/onboarding/route.ts
+export async function POST(request: NextRequest) {
+  // ... validation ...
+
+  const result = await prisma.$transaction(async (tx) => {
+    const school = await tx.school.create({...})
+    const admin = await tx.admin.update({
+      where: { id: currentAdmin.adminId },
+      data: {
+        schoolId: school.id,  // ✅ Database updated
+        onboardingCompleted: true,
+      },
+    })
+    return { school, admin }
+  })
+
+  // ❌ Session cookie NOT updated - still has old schoolId!
+
+  return NextResponse.json({
+    success: true,
+    school: {...},
+    admin: {...},
+  })
+}
+```
+
+**Fix Applied:**
+```typescript
+// app/api/admin/onboarding/route.ts
+import { getCurrentAdmin, encodeSession, SESSION_COOKIE_NAME, AuthSession } from '@/lib/auth.server'
+
+export async function POST(request: NextRequest) {
+  // ... validation and database update ...
+
+  const result = await prisma.$transaction(async (tx) => {
+    const school = await tx.school.create({...})
+    const admin = await tx.admin.update({
+      where: { id: currentAdmin.adminId },
+      data: {
+        schoolId: school.id,
+        onboardingCompleted: true,
+      },
+      include: { school: true },
+    })
+    return { school, admin }
+  })
+
+  // ✅ Create updated session with new school information
+  const updatedSession: AuthSession = {
+    adminId: result.admin.id,
+    email: result.admin.email,
+    name: result.admin.name,
+    role: result.admin.role,
+    schoolId: result.school.id,      // NEW: Include school ID
+    schoolName: result.school.name,   // NEW: Include school name
+  }
+
+  const response = NextResponse.json({
+    success: true,
+    message: 'הארגון נוצר בהצלחה!',
+    school: {...},
+    admin: {...},
+  })
+
+  // ✅ Update session cookie with new school information
+  response.cookies.set(SESSION_COOKIE_NAME, encodeSession(updatedSession), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60, // 7 days
+    path: '/',
+  })
+
+  return response
+}
+```
+
+**Files Changed:**
+- `/app/api/admin/onboarding/route.ts:3` - Added imports: `encodeSession`, `SESSION_COOKIE_NAME`, `AuthSession`
+- `/app/api/admin/onboarding/route.ts:92` - Added `include: { school: true }` to admin update query
+- `/app/api/admin/onboarding/route.ts:101-108` - Created `updatedSession` object with new school information
+- `/app/api/admin/onboarding/route.ts:127-133` - Set session cookie with updated JWT before returning response
+
+**Impact:**
+- Multi-tenant data isolation now works correctly immediately after onboarding
+- Users see only their own school's events without needing to logout/login
+- Session state matches database state throughout the onboarding flow
+
+**Testing:**
+```bash
+# 1. Build succeeds
+npm run build
+
+# 2. Manual test on production:
+#    - Create new account via OAuth
+#    - Complete onboarding with unique school name
+#    - Dashboard should show 0 events (not Default School events)
+#    - Create new event
+#    - Event should appear in dashboard (correct school filtering)
+```
+
+**Status:** ✅ FIXED
+
+---
+
 **Report Generated:** 2025-11-10
 **Tested By:** Claude Code QA
 **Next Review:** After critical fixes implemented
