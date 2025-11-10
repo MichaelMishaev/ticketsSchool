@@ -292,6 +292,9 @@ export default function AdminSignupPage() {
                 <label htmlFor="schoolSlug" className="block text-sm font-medium text-gray-700 text-right">
                   קישור הארגון <span className="text-red-500">*</span>
                 </label>
+                <p className="mt-1 text-xs text-gray-600 text-right mb-2">
+                  💡 זה <strong>לא</strong> הקישור לאתר הארגון שלך! זה רק מזהה פשוט (כמו שם משתמש) שישמש בכתובת של עמוד האירועים שלך
+                </p>
                 <div className="mt-1 relative">
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                     <LinkIcon className="h-5 w-5 text-gray-400" />
@@ -309,9 +312,14 @@ export default function AdminSignupPage() {
                   />
                 </div>
                 <div className="mt-2 space-y-1 text-right">
-                  <p className="text-xs text-gray-700">
-                    הקישור שלך: <span className="font-mono font-semibold text-blue-600" dir="ltr">ticketcap.com/p/{formData.schoolSlug || 'my-organization'}</span>
-                  </p>
+                  <div className="bg-blue-50 border border-blue-200 rounded p-3 text-xs">
+                    <p className="text-gray-700 mb-1">
+                      📍 <strong>דוגמה:</strong> אם תכתוב "herzl", הקישור לעמוד האירועים שלך יהיה:
+                    </p>
+                    <p className="font-mono font-semibold text-blue-600" dir="ltr">
+                      kartis.info/p/{formData.schoolSlug || 'herzl'}
+                    </p>
+                  </div>
                   <div className="bg-yellow-50 border border-yellow-200 rounded p-2 text-xs text-gray-600">
                     <p className="font-semibold text-yellow-800 mb-1">⚠️ חשוב!</p>
                     <p>
