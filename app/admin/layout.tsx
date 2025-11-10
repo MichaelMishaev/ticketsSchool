@@ -24,7 +24,7 @@ export default function AdminLayout({
   const pathname = usePathname()
 
   // Check if current page is public BEFORE any state initialization
-  const publicPages = ['/admin/login', '/admin/signup', '/admin/forgot-password']
+  const publicPages = ['/admin/login', '/admin/signup', '/admin/forgot-password', '/admin/onboarding']
   const isPublicPage = publicPages.includes(pathname)
 
   const [isChecking, setIsChecking] = useState(!isPublicPage)

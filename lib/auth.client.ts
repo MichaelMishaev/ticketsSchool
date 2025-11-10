@@ -22,10 +22,26 @@ export async function isAuthenticated(): Promise<boolean> {
 /**
  * Synchronous check - less reliable but faster
  * Uses localStorage as a client-side hint (not for security)
+ * Also checks cookie as fallback (for OAuth login where server sets cookie but can't set localStorage)
  */
 export function isAuthenticatedSync(): boolean {
   if (typeof window === 'undefined') return false
-  return localStorage.getItem('admin_logged_in') === 'true'
+
+  // Check localStorage first (faster)
+  if (localStorage.getItem('admin_logged_in') === 'true') {
+    return true
+  }
+
+  // Check cookie as fallback (for OAuth login)
+  const cookies = document.cookie.split(';')
+  const authCookie = cookies.find(c => c.trim().startsWith('admin_logged_in='))
+  if (authCookie && authCookie.split('=')[1] === 'true') {
+    // Sync to localStorage for next time
+    localStorage.setItem('admin_logged_in', 'true')
+    return true
+  }
+
+  return false
 }
 
 /**

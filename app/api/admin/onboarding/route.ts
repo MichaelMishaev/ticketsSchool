@@ -1,0 +1,124 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { getCurrentAdmin } from '@/lib/auth.server'
+
+interface OnboardingRequest {
+  schoolName: string
+  schoolSlug: string
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    // Check authentication
+    const currentAdmin = await getCurrentAdmin()
+    if (!currentAdmin) {
+      return NextResponse.json(
+        { error: 'לא מחובר' },
+        { status: 401 }
+      )
+    }
+
+    console.log('[Onboarding] Starting onboarding for admin:', currentAdmin.adminId)
+
+    const body: OnboardingRequest = await request.json()
+    const { schoolName, schoolSlug } = body
+
+    // Validation
+    if (!schoolName || !schoolSlug) {
+      return NextResponse.json(
+        { error: 'חסרים שדות חובה' },
+        { status: 400 }
+      )
+    }
+
+    // Validate school slug (alphanumeric, hyphens only)
+    const slugRegex = /^[a-z0-9-]+$/
+    if (!slugRegex.test(schoolSlug)) {
+      return NextResponse.json(
+        { error: 'קישור הארגון יכול להכיל רק אותיות באנגלית, מספרים ומקפים' },
+        { status: 400 }
+      )
+    }
+
+    // Check if school name already exists
+    const existingSchoolByName = await prisma.school.findFirst({
+      where: {
+        name: {
+          equals: schoolName,
+          mode: 'insensitive'
+        }
+      },
+    })
+
+    if (existingSchoolByName) {
+      return NextResponse.json(
+        { error: 'שם הארגון הזה כבר קיים במערכת, בחר שם אחר' },
+        { status: 409 }
+      )
+    }
+
+    // Check if school slug already exists
+    const existingSchool = await prisma.school.findUnique({
+      where: { slug: schoolSlug.toLowerCase() },
+    })
+
+    if (existingSchool) {
+      return NextResponse.json(
+        { error: 'הקישור הזה כבר תפוס, בחר קישור אחר' },
+        { status: 409 }
+      )
+    }
+
+    // Create school and update admin in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Create school with FREE plan
+      const school = await tx.school.create({
+        data: {
+          name: schoolName,
+          slug: schoolSlug.toLowerCase(),
+          plan: 'FREE',
+          subscriptionStatus: 'TRIAL',
+          trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days trial
+        },
+      })
+
+      // Update admin with school and mark onboarding as completed
+      const admin = await tx.admin.update({
+        where: { id: currentAdmin.adminId },
+        data: {
+          schoolId: school.id,
+          onboardingCompleted: true,
+        },
+        include: { school: true },
+      })
+
+      return { school, admin }
+    })
+
+    console.log('[Onboarding] Onboarding completed successfully')
+
+    return NextResponse.json({
+      success: true,
+      message: 'הארגון נוצר בהצלחה!',
+      school: {
+        id: result.school.id,
+        name: result.school.name,
+        slug: result.school.slug,
+      },
+      admin: {
+        id: result.admin.id,
+        email: result.admin.email,
+        name: result.admin.name,
+      },
+    })
+  } catch (error) {
+    console.error('[Onboarding] Error:', error)
+    return NextResponse.json(
+      {
+        error: 'שגיאה ביצירת הארגון. נסה שוב.',
+        details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined
+      },
+      { status: 500 }
+    )
+  }
+}
