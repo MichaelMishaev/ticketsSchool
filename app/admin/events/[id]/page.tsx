@@ -36,6 +36,11 @@ interface Event {
   conditions?: string
   requireAcceptance: boolean
   registrations: Registration[]
+  school?: {
+    id: string
+    name: string
+    slug: string
+  }
 }
 
 export default function EventManagementPage() {
@@ -204,6 +209,13 @@ export default function EventManagementPage() {
             </div>
 
             <div className="space-y-2 text-sm text-gray-600">
+              {event.school && (
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-sm font-semibold text-purple-700 bg-purple-100 px-3 py-1.5 rounded-lg border border-purple-200">
+                    🏫 בית ספר: {event.school.name}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
                 {format(new Date(event.startAt), 'dd/MM/yyyy HH:mm')}

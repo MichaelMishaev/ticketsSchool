@@ -191,16 +191,26 @@ export default function AdminDashboard() {
               {recentEvents.map((event) => (
                 <div key={event.id} className="border-b pb-3 last:border-0">
                   <div className="flex justify-between items-start">
-                    <div>
+                    <div className="flex-1">
                       <Link
                         href={`/admin/events/${event.id}`}
                         className="text-sm font-medium text-blue-600 hover:text-blue-800"
                       >
                         {event.title}
                       </Link>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {format(new Date(event.startAt), 'dd/MM/yyyy HH:mm')}
-                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs text-gray-500">
+                          {format(new Date(event.startAt), 'dd/MM/yyyy HH:mm')}
+                        </p>
+                        {event.school && (
+                          <>
+                            <span className="text-xs text-gray-400">•</span>
+                            <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded">
+                              {event.school.name}
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-semibold">

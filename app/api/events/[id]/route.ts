@@ -34,8 +34,8 @@ export async function GET(
       )
     }
 
-    // Check school access
-    if (admin.role === 'SCHOOL_ADMIN' && admin.schoolId !== event.schoolId) {
+    // Check school access (all roles except SUPER_ADMIN must match schoolId)
+    if (admin.role !== 'SUPER_ADMIN' && admin.schoolId !== event.schoolId) {
       return NextResponse.json(
         { error: 'Forbidden: No access to this school\'s events' },
         { status: 403 }
@@ -82,8 +82,8 @@ export async function PATCH(
       )
     }
 
-    // Check school access
-    if (admin.role === 'SCHOOL_ADMIN' && admin.schoolId !== existingEvent.schoolId) {
+    // Check school access (all roles except SUPER_ADMIN must match schoolId)
+    if (admin.role !== 'SUPER_ADMIN' && admin.schoolId !== existingEvent.schoolId) {
       return NextResponse.json(
         { error: 'Forbidden: No access to this school\'s events' },
         { status: 403 }
@@ -159,8 +159,8 @@ export async function DELETE(
       )
     }
 
-    // Check school access
-    if (admin.role === 'SCHOOL_ADMIN' && admin.schoolId !== event.schoolId) {
+    // Check school access (all roles except SUPER_ADMIN must match schoolId)
+    if (admin.role !== 'SUPER_ADMIN' && admin.schoolId !== event.schoolId) {
       return NextResponse.json(
         { error: 'Forbidden: No access to this school\'s events' },
         { status: 403 }

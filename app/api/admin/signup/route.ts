@@ -70,6 +70,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check if school name already exists
+    console.log('[Signup] Checking if school name exists:', schoolName)
+    const existingSchoolByName = await prisma.school.findFirst({
+      where: {
+        name: {
+          equals: schoolName,
+          mode: 'insensitive' // Case-insensitive comparison
+        }
+      },
+    })
+
+    if (existingSchoolByName) {
+      console.log('[Signup] School name already exists')
+      return NextResponse.json(
+        { error: 'שם הארגון הזה כבר קיים במערכת, בחר שם אחר' },
+        { status: 409 }
+      )
+    }
+
     // Check if school slug already exists
     console.log('[Signup] Checking if school slug exists:', schoolSlug)
     const existingSchool = await prisma.school.findUnique({

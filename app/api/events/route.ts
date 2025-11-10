@@ -21,18 +21,19 @@ export async function GET(request: NextRequest) {
     // Build where clause based on admin role
     const where: any = {}
 
-    // School admins can only see their school's events
-    if (admin.role === 'SCHOOL_ADMIN' && admin.schoolId) {
+    // Regular admins can only see their school's events (all roles except SUPER_ADMIN)
+    if (admin.role !== 'SUPER_ADMIN' && admin.schoolId) {
       where.schoolId = admin.schoolId
     }
 
-    // Super admins can filter by school via query param
+    // Super admins can filter by school via query param or see all schools
     if (admin.role === 'SUPER_ADMIN') {
       const url = new URL(request.url)
       const schoolId = url.searchParams.get('schoolId')
       if (schoolId) {
         where.schoolId = schoolId
       }
+      // If no schoolId param, SUPER_ADMIN sees all schools
     }
 
     const events = await prisma.event.findMany({
@@ -100,11 +101,11 @@ export async function POST(request: NextRequest) {
     // Determine schoolId
     let schoolId: string | undefined
 
-    // School admins can ONLY create for their school
-    if (admin.role === 'SCHOOL_ADMIN') {
+    // Regular admins can ONLY create events for their school (all roles except SUPER_ADMIN)
+    if (admin.role !== 'SUPER_ADMIN') {
       if (!admin.schoolId) {
         return NextResponse.json(
-          { error: 'School admin must have a school assigned' },
+          { error: 'Admin must have a school assigned' },
           { status: 400 }
         )
       }

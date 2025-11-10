@@ -1,12 +1,39 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getCurrentAdmin } from '@/lib/auth.server'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // Get current admin session
+    const admin = await getCurrentAdmin()
+    if (!admin) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // Build where clause based on admin role
+    const where: any = {
+      status: 'OPEN'
+    }
+
+    // Regular admins can only see their school's events
+    if (admin.role !== 'SUPER_ADMIN' && admin.schoolId) {
+      where.schoolId = admin.schoolId
+    }
+
+    // Super admins can filter by school via query param
+    if (admin.role === 'SUPER_ADMIN') {
+      const url = new URL(request.url)
+      const schoolId = url.searchParams.get('schoolId')
+      if (schoolId) {
+        where.schoolId = schoolId
+      }
+    }
+
     const activeEvents = await prisma.event.findMany({
-      where: {
-        status: 'OPEN'
-      },
+      where,
       include: {
         _count: {
           select: {

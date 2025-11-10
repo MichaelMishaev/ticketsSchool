@@ -147,6 +147,13 @@ export default function EventsPage() {
                             <span className="font-medium">{event.gameType}</span>
                           </div>
                         )}
+                        {event.school && (
+                          <div className="flex items-center">
+                            <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded border border-purple-200">
+                              🏫 {event.school.name}
+                            </span>
+                          </div>
+                        )}
                       </div>
 
                       {event.description && (
