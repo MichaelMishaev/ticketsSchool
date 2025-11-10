@@ -45,7 +45,7 @@ export default function LandingPage() {
                 href="/admin/signup"
                 className="px-6 py-2 text-sm font-semibold text-white bg-red-500 rounded-lg hover:bg-red-600 transition-all shadow-md hover:shadow-lg"
               >
-                התחל בחינם
+                התחל
               </Link>
             </div>
           </div>
@@ -78,7 +78,6 @@ export default function LandingPage() {
               {/* Subtext - VALUE PROPOSITION */}
               <p className="text-xl text-gray-600 leading-relaxed max-w-2xl">
                 מערכת ניהול אירועים עם רישום מקוון, ניהול כרטיסים, רשימת המתנה אוטומטית וצוות עבודה משותף.
-                <span className="block mt-2 font-semibold text-gray-900">חינם לחלוטין - ללא עלויות נסתרות</span>
               </p>
 
               {/* Single Primary CTA - CONVERSION FOCUSED */}
@@ -87,16 +86,12 @@ export default function LandingPage() {
                   href="/admin/signup"
                   className="px-8 py-4 text-lg font-semibold text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl hover:scale-105"
                 >
-                  התחל בחינם עכשיו
+                  התחל עכשיו
                 </Link>
               </div>
 
               {/* Trust indicators */}
               <div className="flex flex-wrap gap-6 justify-end text-sm text-gray-500">
-                <span className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  ללא כרטיס אשראי
-                </span>
                 <span className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-green-600" />
                   התקנה תוך 5 דקות
@@ -277,7 +272,7 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-3 gap-12">
             {[
-              { step: '1', title: 'הרשמה בקליק', desc: 'צרו חשבון חינם עם אימייל או Google', icon: <Users className="w-12 h-12" /> },
+              { step: '1', title: 'הרשמה בקליק', desc: 'צרו חשבון עם אימייל או Google', icon: <Users className="w-12 h-12" /> },
               { step: '2', title: 'יצירת אירוע', desc: 'מלאו פרטים בסיסיים, הגדירו מספר מקומות ושדות נוספים', icon: <Calendar className="w-12 h-12" /> },
               { step: '3', title: 'שיתוף וניהול', desc: 'שתפו קישור והתחילו לקבל רישומים - עם רשימת המתנה אוטומטית', icon: <Zap className="w-12 h-12" /> },
             ].map((item, idx) => (
@@ -392,21 +387,15 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing Teaser */}
+      {/* CTA Section */}
       <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-red-500 to-red-600 text-white">
         <div className="max-w-5xl mx-auto text-center">
-          <h2 className="text-5xl font-bold mb-6">התחילו בחינם - ללא התחייבות!</h2>
+          <h2 className="text-5xl font-bold mb-6">התחילו לנהל אירועים בצורה מקצועית</h2>
           <p className="text-2xl mb-8 opacity-90">
-            ללא כרטיס אשראי • ללא עלויות נסתרות • חינם לצמיתות
+            כל מה שצריך לניהול אירועים בבית הספר במקום אחד
           </p>
 
           <div className="bg-white text-gray-900 rounded-3xl p-8 shadow-2xl max-w-3xl mx-auto mb-8">
-            <div className="flex items-baseline justify-center gap-2 mb-4">
-              <div className="text-7xl font-black text-red-600">₪0</div>
-              <div className="text-2xl text-gray-600">לתמיד</div>
-            </div>
-            <div className="text-xl mb-8 text-gray-700 font-semibold">תוכנית חינמית ללא הגבלת זמן</div>
-
             <div className="grid md:grid-cols-2 gap-4 text-right mb-6">
               <div className="bg-gray-50 p-4 rounded-xl">
                 <div className="flex items-center gap-2 justify-end mb-2">
@@ -457,9 +446,9 @@ export default function LandingPage() {
             href="/admin/signup"
             className="inline-block px-12 py-5 text-xl font-semibold text-red-600 bg-white rounded-lg hover:bg-gray-100 transition-all shadow-2xl hover:scale-105"
           >
-            צרו חשבון חינם עכשיו
+            צרו חשבון עכשיו
           </Link>
-          <p className="mt-4 text-sm opacity-90">אין צורך בכרטיס אשראי • התחילו תוך דקות</p>
+          <p className="mt-4 text-sm opacity-90">התחילו תוך דקות</p>
         </div>
       </section>
 
@@ -471,24 +460,20 @@ export default function LandingPage() {
           <div className="space-y-6">
             {[
               {
-                q: 'האם kartis.info חינמי?',
-                a: 'כן! kartis.info מציעה תוכנית חינמית לצמיתות ללא צורך בכרטיס אשראי. התוכנית החינמית כוללת עד 3 אירועים ו-100 רישומים לחודש.',
-              },
-              {
-                q: 'האם ניתן לגבות תשלום עבור כרטיסים?',
-                a: 'המערכת תומכת בכרטיסים חינמיים עם ניהול מקומות מוגבלים. אפשרות גבייה בתשלום תתווסף בקרוב.',
-              },
-              {
                 q: 'האם המערכת מתאימה למכשירים ניידים?',
                 a: 'כן! kartis.info מותאמת במלואה למכשירים ניידים, טאבלטים ומחשבים. ניתן לנהל אירועים מכל מכשיר.',
               },
               {
-                q: 'מה קורה אחרי תקופת הניסיון?',
-                a: 'תוכל להמשיך עם תוכנית חינמית מוגבלת, או לשדרג לתוכנית פרו עם אירועים ללא הגבלה.',
+                q: 'כמה זמן לוקח להתחיל?',
+                a: 'ההרשמה לוקחת פחות מדקה, ותוכלו ליצור את האירוע הראשון שלכם תוך 5 דקות.',
               },
               {
                 q: 'האם יש תמיכה טכנית?',
                 a: 'כן! אנחנו זמינים 24/7 בוואטסאפ, מייל וטלפון. תמיכה בעברית כמובן.',
+              },
+              {
+                q: 'האם המידע שלי מאובטח?',
+                a: 'כל בית ספר רואה רק את המידע שלו. אנחנו משתמשים בשיטות הצפנה מתקדמות כדי להבטיח את אבטחת המידע.',
               },
             ].map((faq, idx) => (
               <div key={idx} className="bg-gray-50 border border-gray-200 rounded-xl p-6 text-right hover:border-red-500 hover:shadow-md transition-all">
@@ -514,7 +499,7 @@ export default function LandingPage() {
               href="/admin/signup"
               className="px-12 py-5 text-xl font-semibold text-gray-900 bg-white rounded-lg hover:bg-gray-100 transition-all shadow-2xl hover:scale-105"
             >
-              התחל בחינם עכשיו
+              התחל עכשיו
             </Link>
             <Link
               href="/admin/login"
@@ -525,7 +510,7 @@ export default function LandingPage() {
           </div>
 
           <p className="mt-8 text-sm opacity-75">
-            ללא כרטיס אשראי • ביטול בכל עת • תמיכה בעברית 24/7
+            תמיכה בעברית 24/7
           </p>
         </div>
       </section>
@@ -547,9 +532,8 @@ export default function LandingPage() {
             <div>
               <h4 className="font-semibold mb-4 text-gray-900">מוצר</h4>
               <ul className="space-y-2 text-sm text-gray-600">
-                <li><Link href="/admin/signup" className="hover:text-red-600 transition-colors">התחל בחינם</Link></li>
+                <li><Link href="/admin/signup" className="hover:text-red-600 transition-colors">התחל</Link></li>
                 <li><Link href="/#features" className="hover:text-red-600 transition-colors">תכונות</Link></li>
-                <li><Link href="/#pricing" className="hover:text-red-600 transition-colors">מחירים</Link></li>
               </ul>
             </div>
 
