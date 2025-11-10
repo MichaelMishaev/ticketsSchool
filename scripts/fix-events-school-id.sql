@@ -20,6 +20,18 @@ ON CONFLICT DO NOTHING;
 
 -- Step 2: Create enums if they don't exist
 DO $$ BEGIN
+    CREATE TYPE "public"."SubscriptionPlan" AS ENUM ('FREE', 'STARTER', 'PRO', 'ENTERPRISE');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE "public"."SubscriptionStatus" AS ENUM ('ACTIVE', 'TRIAL', 'PAST_DUE', 'CANCELED', 'PAUSED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
     CREATE TYPE "public"."AdminRole" AS ENUM ('SUPER_ADMIN', 'OWNER', 'ADMIN', 'MANAGER', 'VIEWER', 'SCHOOL_ADMIN');
 EXCEPTION
     WHEN duplicate_object THEN null;
@@ -45,6 +57,12 @@ CREATE TABLE IF NOT EXISTS "public"."School" (
     "logo" TEXT,
     "primaryColor" TEXT NOT NULL DEFAULT '#3b82f6',
     "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "plan" "public"."SubscriptionPlan" NOT NULL DEFAULT 'FREE',
+    "stripeCustomerId" TEXT,
+    "stripeSubscriptionId" TEXT,
+    "subscriptionStatus" "public"."SubscriptionStatus" NOT NULL DEFAULT 'ACTIVE',
+    "trialEndsAt" TIMESTAMP(3),
+    "subscriptionEndsAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     CONSTRAINT "School_pkey" PRIMARY KEY ("id")
@@ -95,10 +113,26 @@ CREATE TABLE IF NOT EXISTS "public"."Feedback" (
     CONSTRAINT "Feedback_pkey" PRIMARY KEY ("id")
 );
 
--- Step 7: Create all necessary indexes
+-- Step 7: Add missing columns to School table if it already exists
+DO $$
+BEGIN
+    -- Add subscription columns if they don't exist
+    ALTER TABLE "public"."School" ADD COLUMN IF NOT EXISTS "plan" "public"."SubscriptionPlan" NOT NULL DEFAULT 'FREE';
+    ALTER TABLE "public"."School" ADD COLUMN IF NOT EXISTS "stripeCustomerId" TEXT;
+    ALTER TABLE "public"."School" ADD COLUMN IF NOT EXISTS "stripeSubscriptionId" TEXT;
+    ALTER TABLE "public"."School" ADD COLUMN IF NOT EXISTS "subscriptionStatus" "public"."SubscriptionStatus" NOT NULL DEFAULT 'ACTIVE';
+    ALTER TABLE "public"."School" ADD COLUMN IF NOT EXISTS "trialEndsAt" TIMESTAMP(3);
+    ALTER TABLE "public"."School" ADD COLUMN IF NOT EXISTS "subscriptionEndsAt" TIMESTAMP(3);
+END $$;
+
+-- Step 8: Create all necessary indexes
 CREATE UNIQUE INDEX IF NOT EXISTS "School_slug_key" ON "public"."School"("slug");
+CREATE UNIQUE INDEX IF NOT EXISTS "School_stripeCustomerId_key" ON "public"."School"("stripeCustomerId");
+CREATE UNIQUE INDEX IF NOT EXISTS "School_stripeSubscriptionId_key" ON "public"."School"("stripeSubscriptionId");
 CREATE INDEX IF NOT EXISTS "School_slug_idx" ON "public"."School"("slug");
 CREATE INDEX IF NOT EXISTS "School_isActive_idx" ON "public"."School"("isActive");
+CREATE INDEX IF NOT EXISTS "School_stripeCustomerId_idx" ON "public"."School"("stripeCustomerId");
+CREATE INDEX IF NOT EXISTS "School_plan_idx" ON "public"."School"("plan");
 
 CREATE UNIQUE INDEX IF NOT EXISTS "Admin_email_key" ON "public"."Admin"("email");
 CREATE UNIQUE INDEX IF NOT EXISTS "Admin_verificationToken_key" ON "public"."Admin"("verificationToken");
@@ -119,14 +153,16 @@ CREATE INDEX IF NOT EXISTS "Log_eventId_idx" ON "public"."Log"("eventId");
 CREATE INDEX IF NOT EXISTS "Feedback_status_idx" ON "public"."Feedback"("status");
 CREATE INDEX IF NOT EXISTS "Feedback_createdAt_idx" ON "public"."Feedback"("createdAt");
 
--- Step 4: Create a default school if it doesn't exist
-INSERT INTO "public"."School" ("id", "name", "slug", "primaryColor", "isActive", "createdAt", "updatedAt")
+-- Step 9: Create a default school if it doesn't exist
+INSERT INTO "public"."School" ("id", "name", "slug", "primaryColor", "isActive", "plan", "subscriptionStatus", "createdAt", "updatedAt")
 VALUES (
     'default-school-id',
     'Default School',
     'default',
     '#3b82f6',
     true,
+    'FREE',
+    'ACTIVE',
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 )
