@@ -20,15 +20,19 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isChecking, setIsChecking] = useState(true)
-  const [adminInfo, setAdminInfo] = useState<AdminInfo | null>(null)
   const router = useRouter()
   const pathname = usePathname()
 
+  // Check if current page is public BEFORE any state initialization
+  const publicPages = ['/admin/login', '/admin/signup', '/admin/forgot-password']
+  const isPublicPage = publicPages.includes(pathname)
+
+  const [isChecking, setIsChecking] = useState(!isPublicPage)
+  const [adminInfo, setAdminInfo] = useState<AdminInfo | null>(null)
+
   useEffect(() => {
-    // Skip auth check on login page
-    if (pathname === '/admin/login') {
-      setIsChecking(false)
+    // Skip auth check on public admin pages
+    if (isPublicPage) {
       return
     }
 
@@ -48,7 +52,7 @@ export default function AdminLayout({
         .catch(err => console.error('Failed to fetch admin info:', err))
         .finally(() => setIsChecking(false))
     }
-  }, [router, pathname])
+  }, [router, pathname, isPublicPage])
 
   const handleLogout = async () => {
     try {
@@ -61,8 +65,8 @@ export default function AdminLayout({
     clientLogout()
   }
 
-  // Don't show layout on login page
-  if (pathname === '/admin/login') {
+  // Don't show layout on public pages (login, signup, forgot password)
+  if (isPublicPage) {
     return <>{children}</>
   }
 
