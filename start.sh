@@ -56,7 +56,15 @@ if [ -n "$DATABASE_URL" ]; then
             if [ -f "scripts/fix-events-school-id.sql" ]; then
                 echo "Running comprehensive data fix script using psql..."
                 if [ -n "$DATABASE_URL" ]; then
-                    psql "$DATABASE_URL" -f scripts/fix-events-school-id.sql && echo "✅ Data fix completed successfully!" || echo "⚠️  Data fix script failed"
+                    if psql "$DATABASE_URL" -f scripts/fix-events-school-id.sql; then
+                        echo "✅ Data fix completed successfully!"
+
+                        # Since we manually applied the changes, mark the migration as applied
+                        echo "🔧 Step 2: Marking migration as manually applied..."
+                        npx prisma migrate resolve --applied 20251107211615_add_multi_school_support || echo "Could not mark migration as applied"
+                    else
+                        echo "⚠️  Data fix script failed"
+                    fi
                 else
                     echo "❌ DATABASE_URL not set, cannot run SQL fix"
                 fi
