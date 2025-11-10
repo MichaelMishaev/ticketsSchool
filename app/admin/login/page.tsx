@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Lock, CheckCircle, AlertCircle } from 'lucide-react'
+import { Lock, CheckCircle, AlertCircle, Home } from 'lucide-react'
 import { markLoggedIn } from '@/lib/auth.client'
 
 export default function AdminLoginPage() {
@@ -84,7 +84,16 @@ export default function AdminLoginPage() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 sm:px-6 lg:px-8 relative">
+      {/* Home Button */}
+      <Link
+        href="/"
+        className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-md hover:shadow-lg transition-all hover:scale-105 group"
+      >
+        <Home className="h-5 w-5 text-blue-600 group-hover:text-blue-700" />
+        <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">חזרה לדף הבית</span>
+      </Link>
+
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-blue-100">
