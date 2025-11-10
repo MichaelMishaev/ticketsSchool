@@ -39,7 +39,23 @@ if [ -n "$DATABASE_URL" ]; then
     if [ "$SKIP_MIGRATIONS" != "true" ]; then
         echo "🗃️  Running migrations..."
         npx prisma generate || echo "⚠️  Prisma generate failed"
-        npx prisma migrate deploy || echo "⚠️  Migrations failed, continuing..."
+
+        # Try to run migrations
+        npx prisma migrate deploy
+
+        # If migrations fail, try to fix failed migrations and retry
+        if [ $? -ne 0 ]; then
+            echo "⚠️  Initial migration failed, attempting to fix failed migrations..."
+
+            # Mark any failed migration as rolled back
+            npx prisma migrate resolve --rolled-back 20250920000000_allow_multiple_registrations_per_phone 2>/dev/null || true
+
+            # Retry migrations
+            echo "🔄 Retrying migrations..."
+            npx prisma migrate deploy || echo "⚠️  Migrations failed after retry, continuing..."
+        else
+            echo "✅ Migrations completed successfully"
+        fi
     else
         echo "⏭️  Skipping migrations (SKIP_MIGRATIONS=true)"
     fi
