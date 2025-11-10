@@ -8,7 +8,7 @@ import { getCurrentAdmin } from '@/lib/auth.server'
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const admin = await getCurrentAdmin()
@@ -27,7 +27,7 @@ export async function DELETE(
       )
     }
 
-    const { id } = params
+    const { id } = await params
 
     // Find the invitation
     const invitation = await prisma.teamInvitation.findUnique({

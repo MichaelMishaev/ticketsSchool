@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
         email: email.toLowerCase(),
         schoolId: admin.schoolId!,
         role,
-        invitedById: admin.id,
+        invitedById: admin.adminId,
         token,
         expiresAt
       },
