@@ -31,30 +31,30 @@ export default function LandingPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
+    <div className="min-h-screen bg-white text-gray-900 overflow-x-hidden">
       {/* Ultra-Modern Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-b border-gray-100 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center shadow-lg">
-                <Ticket className="w-6 h-6 text-white" />
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-14 sm:h-16">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg">
+                <Ticket className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-red-600 to-red-500 bg-clip-text text-transparent">kartis.info</span>
+              <span className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-red-600 to-red-500 bg-clip-text text-transparent">kartis.info</span>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-2 sm:gap-3">
               <Link
                 href="/admin/login"
-                className="px-5 py-2.5 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+                className="px-3 sm:px-5 py-2.5 sm:py-2.5 text-xs sm:text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors whitespace-nowrap min-h-[44px] flex items-center"
               >
                 התחבר
               </Link>
               <Link
                 href="/admin/signup"
-                className="group px-6 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-red-500 to-red-600 rounded-xl hover:from-red-600 hover:to-red-700 transition-all shadow-lg hover:shadow-xl hover:scale-105 flex items-center gap-2"
+                className="group px-3 sm:px-6 py-2.5 sm:py-2.5 text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-red-500 to-red-600 rounded-lg sm:rounded-xl hover:from-red-600 hover:to-red-700 transition-all shadow-lg hover:shadow-xl hover:scale-105 flex items-center gap-1 sm:gap-2 whitespace-nowrap min-h-[44px]"
               >
-                <span>התחל עכשיו</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                <span>התחל</span>
+                <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
           </div>
@@ -62,7 +62,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section - Ultra Eye-Catching */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-red-50">
+      <section className="pt-20 sm:pt-32 pb-12 sm:pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-red-50">
         {/* Animated Background Elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-red-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
@@ -73,16 +73,16 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto relative">
           <div className="text-center space-y-8">
             {/* Eye-Catching Badge */}
-            <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-5 py-2.5 rounded-full shadow-lg border border-red-100">
+            <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 sm:px-5 py-2.5 rounded-full shadow-lg border border-red-100">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
               </span>
-              <span className="text-sm font-bold text-gray-900">מערכת הניהול המובילה לבתי ספר</span>
+              <span className="text-xs sm:text-sm font-bold text-gray-900">מערכת הניהול המובילה לבתי ספר</span>
             </div>
 
             {/* Massive Headline */}
-            <h1 className="text-6xl lg:text-8xl font-black leading-tight">
+            <h1 className="text-4xl sm:text-6xl lg:text-8xl font-black leading-tight">
               <span className="block text-gray-900">נהלו אירועים</span>
               <span className="block bg-gradient-to-r from-red-600 via-red-500 to-purple-600 bg-clip-text text-transparent">
                 בקלות מוחלטת
@@ -90,7 +90,7 @@ export default function LandingPage() {
             </h1>
 
             {/* Compelling Value Proposition */}
-            <p className="text-xl lg:text-2xl text-gray-600 leading-relaxed max-w-3xl mx-auto font-medium">
+            <p className="text-base sm:text-xl lg:text-2xl text-gray-600 leading-relaxed max-w-3xl mx-auto font-medium">
               מערכת ניהול אירועים מלאה עם רישום מקוון, רשימת המתנה אוטומטית,
               ניהול צוות וניתוח נתונים בזמן אמת. הכל במקום אחד.
             </p>
@@ -99,7 +99,7 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
               <Link
                 href="/admin/login"
-                className="px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold text-gray-900 bg-white border-2 border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-xl transition-all"
+                className="px-8 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold text-gray-900 bg-white border-2 border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-xl transition-all max-w-[80%] sm:max-w-none"
               >
                 כניסה למערכת
               </Link>
@@ -129,12 +129,12 @@ export default function LandingPage() {
       <section id="features" className="py-24 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
-            <h2 className="text-5xl lg:text-6xl font-black mb-6">
+            <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black mb-6">
               <span className="text-gray-900">כל מה שאתם צריכים</span>
               <br />
               <span className="bg-gradient-to-r from-red-600 to-purple-600 bg-clip-text text-transparent">במקום אחד</span>
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-base sm:text-xl text-gray-600 max-w-2xl mx-auto">
               תכונות מתקדמות שנבנו במיוחד עבור בתי ספר ומוסדות חינוך
             </p>
           </div>
@@ -203,10 +203,10 @@ export default function LandingPage() {
       <section className="py-24 bg-gradient-to-br from-gray-50 to-white px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-20">
-            <h2 className="text-5xl lg:text-6xl font-black mb-6 text-gray-900">
+            <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black mb-6 text-gray-900">
               התחילו תוך <span className="text-red-600">3 דקות</span>
             </h2>
-            <p className="text-xl text-gray-600">פשוט, מהיר וללא סיבוכים</p>
+            <p className="text-base sm:text-xl text-gray-600">פשוט, מהיר וללא סיבוכים</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-12 relative">
@@ -255,10 +255,10 @@ export default function LandingPage() {
       <section id="how-it-works" className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 to-purple-50">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-5xl font-bold mb-6 text-gray-900">
+            <h2 className="text-3xl sm:text-5xl font-bold mb-6 text-gray-900">
               איך להתחיל? פשוט מאוד!
             </h2>
-            <p className="text-2xl text-gray-600">
+            <p className="text-lg sm:text-2xl text-gray-600">
               3 צעדים פשוטים וגמרנו
             </p>
           </div>
@@ -273,10 +273,10 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div className="flex-1 text-right">
-                  <h3 className="text-3xl font-bold mb-4 text-gray-900">לחצו על "כניסה למערכת"</h3>
-                  <p className="text-xl text-gray-700 leading-relaxed">
+                  <h3 className="text-xl sm:text-3xl font-bold mb-4 text-gray-900">לחצו על "כניסה למערכת"</h3>
+                  <p className="text-base sm:text-xl text-gray-700 leading-relaxed">
                     זה הכפתור הלבן למעלה בעמוד. אפשר גם ללחוץ
-                    <Link href="/admin/login" className="text-red-600 font-bold underline mx-2">
+                    <Link href="/admin/login" className="inline-block text-red-600 font-bold underline mx-2">
                       כאן
                     </Link>
                   </p>
@@ -291,20 +291,20 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div className="flex-1 text-right">
-                  <h3 className="text-3xl font-bold mb-4 text-gray-900">תירשמו</h3>
-                  <p className="text-xl text-gray-700 leading-relaxed mb-4">
+                  <h3 className="text-xl sm:text-3xl font-bold mb-4 text-gray-900">תירשמו</h3>
+                  <p className="text-base sm:text-xl text-gray-700 leading-relaxed mb-4">
                     המערכת תבקש מכם להירשם. אפשר להירשם עם:
                   </p>
                   <div className="bg-green-50 rounded-xl p-6 space-y-3">
                     <div className="flex items-center justify-end gap-3">
-                      <span className="text-xl font-semibold text-gray-900">חשבון גוגל (הכי מהיר!)</span>
+                      <span className="text-base sm:text-xl font-semibold text-gray-900">חשבון גוגל (הכי מהיר!)</span>
                       <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                         <CheckCircle className="w-5 h-5 text-white" />
                       </div>
                     </div>
                     <div className="text-center text-gray-400">או</div>
                     <div className="flex items-center justify-end gap-3">
-                      <span className="text-xl font-semibold text-gray-900">אימייל וסיסמה</span>
+                      <span className="text-base sm:text-xl font-semibold text-gray-900">אימייל וסיסמה</span>
                       <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                         <CheckCircle className="w-5 h-5 text-white" />
                       </div>
@@ -321,25 +321,25 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div className="flex-1 text-right">
-                  <h3 className="text-3xl font-bold mb-4 text-gray-900">זהו! אתם בפנים</h3>
-                  <p className="text-xl text-gray-700 leading-relaxed mb-4">
+                  <h3 className="text-xl sm:text-3xl font-bold mb-4 text-gray-900">זהו! אתם בפנים</h3>
+                  <p className="text-base sm:text-xl text-gray-700 leading-relaxed mb-4">
                     המערכת תבקש מכם לתת שם לבית הספר שלכם, ואז תוכלו להתחיל ליצור אירועים.
                   </p>
 
                   {/* URL/Slug Explanation */}
                   <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-6 mb-4">
                     <div className="flex items-center justify-end gap-3 mb-3">
-                      <span className="text-xl font-bold text-purple-900">תקבלו כתובת ייחודית לבית הספר שלכם!</span>
+                      <span className="text-base sm:text-xl font-bold text-purple-900">תקבלו כתובת ייחודית לבית הספר שלכם!</span>
                       <Globe className="w-6 h-6 text-purple-600" />
                     </div>
                     <div className="bg-white rounded-lg p-4 mb-3">
-                      <p className="text-gray-700 text-lg mb-3 text-right">לדוגמה: אם בית הספר שלכם נקרא "בית ספר הרצל"</p>
-                      <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg p-4">
-                        <div className="bg-purple-600 text-white px-4 py-2 rounded-lg font-mono text-lg font-bold">
+                      <p className="text-gray-700 text-sm sm:text-lg mb-3 text-right">לדוגמה: אם בית הספר שלכם נקרא "בית ספר הרצל"</p>
+                      <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg p-4 flex-wrap">
+                        <div className="bg-purple-600 text-white px-3 py-2 rounded-lg font-mono text-sm sm:text-lg font-bold break-all">
                           herzl.kartis.info
                         </div>
-                        <ArrowRight className="w-6 h-6 text-purple-600" />
-                        <div className="text-gray-700 font-bold text-lg">הכתובת שלכם</div>
+                        <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
+                        <div className="text-gray-700 font-bold text-base sm:text-lg">הכתובת שלכם</div>
                       </div>
                     </div>
                     <p className="text-purple-800 text-base leading-relaxed">
@@ -360,7 +360,7 @@ export default function LandingPage() {
             <div className="mt-12 pt-8 border-t-2 border-gray-100 text-center">
               <Link
                 href="/admin/login"
-                className="inline-block px-6 sm:px-10 py-3 sm:py-4 text-base sm:text-lg font-bold text-white bg-gradient-to-r from-red-500 to-red-600 rounded-xl hover:from-red-600 hover:to-red-700 transition-all shadow-lg hover:shadow-xl hover:scale-105"
+                className="inline-block px-8 sm:px-10 py-3 sm:py-4 text-base sm:text-lg font-bold text-white bg-gradient-to-r from-red-500 to-red-600 rounded-xl hover:from-red-600 hover:to-red-700 transition-all shadow-lg hover:shadow-xl hover:scale-105 max-w-[80%] sm:max-w-none"
               >
                 התחילו עכשיו
               </Link>
@@ -377,8 +377,8 @@ export default function LandingPage() {
       <section id="faq" className="py-24 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-5xl lg:text-6xl font-black mb-6 text-gray-900">שאלות נפוצות</h2>
-            <p className="text-xl text-gray-600">כל מה שרציתם לדעת על המערכת</p>
+            <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black mb-6 text-gray-900">שאלות נפוצות</h2>
+            <p className="text-base sm:text-xl text-gray-600">כל מה שרציתם לדעת על המערכת</p>
           </div>
 
           <div className="space-y-6">
@@ -431,10 +431,10 @@ export default function LandingPage() {
               <div className="inline-flex items-center justify-center p-6 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full mb-6 shadow-xl animate-bounce-slow">
                 <MessageCircle className="w-16 h-16 text-white" />
               </div>
-              <h2 className="text-5xl lg:text-6xl font-black mb-6 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black mb-6 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                 צריכים עזרה?
               </h2>
-              <p className="text-2xl text-gray-700 font-medium">
+              <p className="text-lg sm:text-2xl text-gray-700 font-medium">
                 דברו איתנו ישירות בוואטסאפ!
               </p>
             </div>
@@ -459,11 +459,11 @@ export default function LandingPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-white font-bold text-xl mb-1">
+                    <div className="text-white font-bold text-base sm:text-xl mb-1">
                       שלחו הודעה בוואטסאפ
                     </div>
                     <div className="flex items-center justify-end gap-2 text-green-50">
-                      <span className="text-lg font-mono">055-502-0829</span>
+                      <span className="text-sm sm:text-lg font-mono">055-502-0829</span>
                       <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
                     </div>
                   </div>
@@ -513,10 +513,10 @@ export default function LandingPage() {
         </div>
 
         <div className="max-w-5xl mx-auto text-center relative z-10">
-          <h2 className="text-5xl lg:text-7xl font-black mb-8 leading-tight">
+          <h2 className="text-3xl sm:text-5xl lg:text-7xl font-black mb-8 leading-tight">
             מוכנים להתחיל?
           </h2>
-          <p className="text-2xl lg:text-3xl mb-12 opacity-95 font-medium leading-relaxed">
+          <p className="text-lg sm:text-2xl lg:text-3xl mb-12 opacity-95 font-medium leading-relaxed">
             הצטרפו לבתי הספר שכבר מנהלים אירועים בצורה מקצועית
           </p>
 
@@ -537,17 +537,17 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center w-full">
             <Link
               href="/admin/signup"
-              className="group px-6 sm:px-10 py-3 sm:py-5 text-base sm:text-lg font-bold text-red-600 bg-white rounded-2xl hover:bg-gray-50 transition-all shadow-2xl hover:scale-110 flex items-center gap-3"
+              className="group px-8 sm:px-10 py-3 sm:py-5 text-base sm:text-lg font-bold text-red-600 bg-white rounded-2xl hover:bg-gray-50 transition-all shadow-2xl hover:scale-110 flex items-center gap-3 max-w-[80%] sm:max-w-none"
             >
               <span>צור חשבון עכשיו</span>
               <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-2 transition-transform" />
             </Link>
             <Link
               href="/admin/login"
-              className="px-6 sm:px-10 py-3 sm:py-5 text-base sm:text-lg font-bold text-white bg-white/10 backdrop-blur-sm border-2 border-white rounded-2xl hover:bg-white/20 transition-all"
+              className="px-8 sm:px-10 py-3 sm:py-5 text-base sm:text-lg font-bold text-white bg-white/10 backdrop-blur-sm border-2 border-white rounded-2xl hover:bg-white/20 transition-all max-w-[80%] sm:max-w-none"
             >
               כניסה למערכת
             </Link>
@@ -577,27 +577,27 @@ export default function LandingPage() {
 
             <div>
               <h4 className="font-bold mb-6 text-lg">מוצר</h4>
-              <ul className="space-y-3 text-gray-400">
-                <li><Link href="/admin/signup" className="hover:text-white transition-colors font-medium">התחל עכשיו</Link></li>
-                <li><Link href="/#features" className="hover:text-white transition-colors font-medium">תכונות</Link></li>
-                <li><Link href="/#how-it-works" className="hover:text-white transition-colors font-medium">איך זה עובד</Link></li>
+              <ul className="space-y-2 text-gray-400">
+                <li><Link href="/admin/signup" className="inline-block py-2 hover:text-white transition-colors font-medium">התחל עכשיו</Link></li>
+                <li><Link href="/#features" className="inline-block py-2 hover:text-white transition-colors font-medium">תכונות</Link></li>
+                <li><Link href="/#how-it-works" className="inline-block py-2 hover:text-white transition-colors font-medium">איך זה עובד</Link></li>
               </ul>
             </div>
 
             <div>
               <h4 className="font-bold mb-6 text-lg">תמיכה</h4>
-              <ul className="space-y-3 text-gray-400">
-                <li><Link href="/#faq" className="hover:text-white transition-colors font-medium">שאלות נפוצות</Link></li>
-                <li><Link href="/admin/help" className="hover:text-white transition-colors font-medium">מרכז עזרה</Link></li>
-                <li><a href="mailto:support@kartis.info" className="hover:text-white transition-colors font-medium">צור קשר</a></li>
+              <ul className="space-y-2 text-gray-400">
+                <li><Link href="/#faq" className="inline-block py-2 hover:text-white transition-colors font-medium">שאלות נפוצות</Link></li>
+                <li><Link href="/admin/help" className="inline-block py-2 hover:text-white transition-colors font-medium">מרכז עזרה</Link></li>
+                <li><a href="mailto:support@kartis.info" className="inline-block py-2 hover:text-white transition-colors font-medium">צור קשר</a></li>
               </ul>
             </div>
 
             <div>
               <h4 className="font-bold mb-6 text-lg">משפטי</h4>
-              <ul className="space-y-3 text-gray-400">
-                <li><Link href="/privacy" className="hover:text-white transition-colors font-medium">מדיניות פרטיות</Link></li>
-                <li><Link href="/terms" className="hover:text-white transition-colors font-medium">תנאי שימוש</Link></li>
+              <ul className="space-y-2 text-gray-400">
+                <li><Link href="/privacy" className="inline-block py-2 hover:text-white transition-colors font-medium">מדיניות פרטיות</Link></li>
+                <li><Link href="/terms" className="inline-block py-2 hover:text-white transition-colors font-medium">תנאי שימוש</Link></li>
               </ul>
             </div>
           </div>
