@@ -65,6 +65,13 @@ if [ -n "$DATABASE_URL" ]; then
                 npx prisma migrate resolve --rolled-back "$migration" 2>/dev/null || true
             done
 
+            # Fix data issues before retrying migrations
+            echo "🔧 Fixing data integrity issues..."
+            if [ -f "scripts/fix-events-school-id.sql" ]; then
+                echo "Running data fix script..."
+                npx prisma db execute --file scripts/fix-events-school-id.sql --schema prisma/schema.prisma 2>/dev/null || echo "Data fix script failed or not needed"
+            fi
+
             # Retry migrations up to 3 times
             RETRY_COUNT=0
             MAX_RETRIES=3
