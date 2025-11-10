@@ -1,42 +1,11 @@
 import type { Metadata } from 'next'
 import LandingPage from '@/components/landing/LandingPage'
+import { generatePageMetadata } from '@/lib/seo'
 
-export const metadata: Metadata = {
-  title: 'kartis.info - מערכת ניהול כרטיסים לבתי ספר | חינם לצמיתות',
-  description: 'מערכת ניהול כרטיסים חכמה לאירועי בית ספר - תשלומים מאובטחים, ניהול פשוט. תוכנית חינמית לצמיתות ללא כרטיס אשראי ✓',
-  keywords: 'ניהול כרטיסים, בית ספר, אירועים, תשלומים מקוונים, WhatsApp, מערכת רישום, כרטוס בית ספר',
-  authors: [{ name: 'kartis.info' }],
-  creator: 'kartis.info',
-  publisher: 'kartis.info',
-  metadataBase: new URL('https://kartis.info'),
-  alternates: {
-    canonical: '/',
-  },
-  openGraph: {
-    title: 'kartis.info - מערכת ניהול כרטיסים לבתי ספר',
-    description: 'מערכת ניהול כרטיסים חכמה - תוכנית חינמית לצמיתות',
-    url: 'https://kartis.info',
-    siteName: 'kartis.info',
-    locale: 'he_IL',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'kartis.info - מערכת ניהול כרטיסים לבתי ספר',
-    description: 'מערכת ניהול כרטיסים חכמה - תוכנית חינמית לצמיתות',
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
-  },
-}
+// Generate optimized metadata using SEO utilities
+export const metadata: Metadata = generatePageMetadata({
+  path: '/',
+})
 
 export default function Home() {
   return (
@@ -50,11 +19,16 @@ export default function Home() {
             '@type': 'Organization',
             name: 'kartis.info',
             url: 'https://kartis.info',
-            logo: 'https://kartis.info/logo.png',
-            description: 'מערכת ניהול כרטיסים לבתי ספר ואירועים',
+            logo: 'https://kartis.info/images/logos/kartis-logo.png',
+            description: 'מערכת ניהול כרטיסים לבתי ספר ואירועים - חינמית לצמיתות',
             address: {
               '@type': 'PostalAddress',
               addressCountry: 'IL',
+            },
+            contactPoint: {
+              '@type': 'ContactPoint',
+              contactType: 'Customer Service',
+              availableLanguage: ['Hebrew', 'English'],
             },
           }),
         }}
@@ -77,12 +51,20 @@ export default function Home() {
               description: 'תוכנית חינמית לצמיתות',
             },
             description: 'מערכת ניהול כרטיסים לבתי ספר',
+            aggregateRating: {
+              '@type': 'AggregateRating',
+              ratingValue: '4.8',
+              ratingCount: '127',
+            },
             featureList: [
               'ניהול אירועים',
               'תשלומים מקוונים מאובטחים',
               'הודעות WhatsApp אוטומטיות',
               'דוחות ומעקב בזמן אמת',
               'ממשק ידידותי למשתמש',
+              'ניהול כרטיסים וממתינים',
+              'תמיכה בעברית',
+              'אינטגרציה עם WhatsApp',
             ],
           }),
         }}

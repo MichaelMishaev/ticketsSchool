@@ -170,7 +170,7 @@ export default function EventsPage() {
                         <Edit className="w-5 h-5" />
                       </Link>
                       <Link
-                        href={`/p/${event.slug}`}
+                        href={`/p/${event.school.slug}/${event.slug}`}
                         target="_blank"
                         className="p-2 text-gray-600 hover:text-gray-900"
                         title="צפה בדף ההרשמה"
@@ -199,7 +199,7 @@ export default function EventsPage() {
                     <div className="text-xs text-gray-500">
                       קישור:
                       <span className="font-mono mr-1">
-                        {typeof window !== 'undefined' ? `${window.location.origin}/p/${event.slug}` : ''}
+                        {typeof window !== 'undefined' ? `${window.location.origin}/p/${event.school.slug}/${event.slug}` : ''}
                       </span>
                     </div>
                   </div>

@@ -1,14 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+/**
+ * GET /api/p/[schoolSlug]/[eventSlug]
+ * Fetch event by school slug + event slug
+ */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ slug: string }> }
+  { params }: { params: Promise<{ schoolSlug: string; eventSlug: string }> }
 ) {
   try {
-    const { slug } = await params;
-    const event = await prisma.event.findUnique({
-      where: { slug },
+    const { schoolSlug, eventSlug } = await params
+
+    // First, verify the school exists
+    const school = await prisma.school.findUnique({
+      where: { slug: schoolSlug },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        logo: true,
+        primaryColor: true
+      }
+    })
+
+    if (!school) {
+      return NextResponse.json(
+        { error: 'School not found' },
+        { status: 404 }
+      )
+    }
+
+    // Find the event by slug AND schoolId (for security/isolation)
+    const event = await prisma.event.findFirst({
+      where: {
+        slug: eventSlug,
+        schoolId: school.id
+      },
       include: {
         school: {
           select: {
@@ -38,7 +66,7 @@ export async function GET(
       )
     }
 
-    // Calculate total spots taken by summing spotsCount from CONFIRMED registrations
+    // Calculate total spots taken
     const confirmedRegistrations = await prisma.registration.findMany({
       where: {
         eventId: event.id,
@@ -54,8 +82,8 @@ export async function GET(
       0
     )
 
-    // Return only public information
     return NextResponse.json({
+      type: 'event',
       id: event.id,
       title: event.title,
       description: event.description,

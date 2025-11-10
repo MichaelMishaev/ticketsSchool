@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import { Calendar, MapPin, Users, Clock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { Calendar, MapPin, Clock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { he } from 'date-fns/locale'
 import FeedbackInline from '@/components/FeedbackInline'
@@ -35,9 +35,10 @@ interface Event {
   school: School
 }
 
-export default function PublicEventPage() {
+export default function EventPage() {
   const params = useParams()
-  const slug = params.slug as string
+  const schoolSlug = params.schoolSlug as string
+  const eventSlug = params.eventSlug as string
 
   const [event, setEvent] = useState<Event | null>(null)
   const [loading, setLoading] = useState(true)
@@ -51,15 +52,15 @@ export default function PublicEventPage() {
 
   useEffect(() => {
     fetchEvent()
-  }, [slug])
+  }, [schoolSlug, eventSlug])
 
   const fetchEvent = async () => {
     try {
-      const response = await fetch(`/api/p/${slug}`)
+      const response = await fetch(`/api/p/${schoolSlug}/${eventSlug}`)
       if (response.ok) {
         const data = await response.json()
         setEvent(data)
-        // Initialize form data with default values
+        // Initialize form data
         const initialData: any = {}
         data.fieldsSchema.forEach((field: any) => {
           initialData[field.name] = ''
@@ -82,7 +83,7 @@ export default function PublicEventPage() {
 
     setSubmitting(true)
     try {
-      const response = await fetch(`/api/p/${slug}/register`, {
+      const response = await fetch(`/api/p/${schoolSlug}/${eventSlug}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -160,7 +161,6 @@ export default function PublicEventPage() {
   const percentage = Math.min(100, (event.totalSpotsTaken / event.capacity) * 100)
 
   if (registered) {
-    // Show different screens for waitlist vs confirmed registration
     if (isWaitlist) {
       return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -194,7 +194,6 @@ export default function PublicEventPage() {
       )
     }
 
-    // Regular confirmed registration
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
@@ -252,10 +251,9 @@ export default function PublicEventPage() {
     )
   }
 
-  // Use school's primary color for gradient background
   const schoolColor = event?.school?.primaryColor || '#3b82f6'
-  const gradientFrom = `${schoolColor}20` // 20% opacity
-  const gradientTo = `${schoolColor}10`   // 10% opacity
+  const gradientFrom = `${schoolColor}20`
+  const gradientTo = `${schoolColor}10`
 
   return (
     <div

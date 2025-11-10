@@ -3,8 +3,84 @@ import { prisma } from '@/lib/prisma'
 import { EventFormData } from '@/types'
 import { getCurrentAdmin } from '@/lib/auth.server'
 
-function generateSlug(): string {
-  return Math.random().toString(36).substring(2, 15)
+/**
+ * Hebrew to English transliteration map
+ * Maps each Hebrew letter to its English equivalent
+ */
+const hebrewToEnglish: Record<string, string> = {
+  'א': 'a', 'ב': 'b', 'ג': 'g', 'ד': 'd', 'ה': 'h', 'ו': 'v', 'ז': 'z', 'ח': 'ch',
+  'ט': 't', 'י': 'y', 'כ': 'k', 'ך': 'k', 'ל': 'l', 'מ': 'm', 'ם': 'm', 'נ': 'n',
+  'ן': 'n', 'ס': 's', 'ע': 'a', 'פ': 'p', 'ף': 'p', 'צ': 'tz', 'ץ': 'tz', 'ק': 'k',
+  'ר': 'r', 'ש': 'sh', 'ת': 't'
+}
+
+/**
+ * Transliterate Hebrew text to English
+ * Example: "כדורסל" -> "kdvrsl"
+ */
+function transliterateHebrew(text: string): string {
+  return text.split('').map(char => hebrewToEnglish[char] || char).join('')
+}
+
+/**
+ * Generate a URL-friendly slug from text
+ * Example: "Basketball Game 2024" -> "basketball-game-2024"
+ * Example: "כדורסל 2024" -> "kdvrsl-2024" (transliterated)
+ * Example: "משחק השנה" -> "mschk-hshnh"
+ */
+function createSlugFromText(text: string): string {
+  // First, transliterate Hebrew to English
+  const transliterated = transliterateHebrew(text)
+
+  const slug = transliterated
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '') // Remove special characters except spaces, hyphens, and numbers
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+    .replace(/^-+|-+$/g, '') // Remove leading/trailing hyphens
+    .substring(0, 60) // Limit length
+
+  // If slug is empty or just numbers, use "event" prefix
+  if (!slug || /^\d+$/.test(slug)) {
+    return slug ? `event-${slug}` : 'event'
+  }
+
+  return slug
+}
+
+/**
+ * Generate a unique slug for an event
+ * If slug exists, append a number (e.g., "basketball-game-2")
+ */
+async function generateUniqueSlug(title: string, schoolId: string): Promise<string> {
+  const baseSlug = createSlugFromText(title)
+
+  // Check if slug already exists for this school
+  const existingEvent = await prisma.event.findUnique({
+    where: { slug: baseSlug }
+  })
+
+  if (!existingEvent) {
+    return baseSlug
+  }
+
+  // If exists, find a unique variant by appending numbers
+  let counter = 2
+  let uniqueSlug = `${baseSlug}-${counter}`
+
+  while (await prisma.event.findUnique({ where: { slug: uniqueSlug } })) {
+    counter++
+    uniqueSlug = `${baseSlug}-${counter}`
+
+    // Safety limit
+    if (counter > 100) {
+      // Fallback to random if too many duplicates
+      return `${baseSlug}-${Math.random().toString(36).substring(2, 8)}`
+    }
+  }
+
+  return uniqueSlug
 }
 
 export async function GET(request: NextRequest) {
@@ -178,9 +254,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Generate unique slug from event title
+    const slug = await generateUniqueSlug(data.title, schoolId)
+
     const event = await prisma.event.create({
       data: {
-        slug: generateSlug(),
+        slug,
         schoolId,  // NEW: Set school context
         title: data.title,
         description: data.description,

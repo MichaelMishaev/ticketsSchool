@@ -228,7 +228,7 @@ export default function SuperAdminDashboard() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-col">
                           <a
-                            href={`/p/${event.slug}`}
+                            href={`/p/${event.schoolSlug}/${event.slug}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-sm font-medium text-purple-600 hover:text-purple-800 hover:underline"

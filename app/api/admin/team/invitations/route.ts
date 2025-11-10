@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin } from '@/lib/auth.server'
+import { sendTeamInvitationEmail } from '@/lib/email'
 import crypto from 'crypto'
 
 /**
@@ -106,9 +107,19 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // TODO: Send invitation email via Resend
-    // const invitationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/admin/accept-invitation?token=${token}`
-    // await sendInvitationEmail(email, invitationUrl, admin.name, school.name)
+    // Send invitation email
+    try {
+      await sendTeamInvitationEmail(
+        email,
+        invitation.school.name,
+        invitation.invitedBy.name,
+        role,
+        token
+      )
+    } catch (emailError) {
+      console.error('Failed to send invitation email:', emailError)
+      // Don't fail the request if email sending fails - invitation is still created
+    }
 
     return NextResponse.json({
       success: true,

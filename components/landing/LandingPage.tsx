@@ -17,7 +17,10 @@ import {
   Clock,
   Target,
   TrendingUp,
-  Globe
+  Globe,
+  Phone,
+  MessageCircle,
+  Mail
 } from 'lucide-react'
 
 export default function LandingPage() {
@@ -95,15 +98,8 @@ export default function LandingPage() {
             {/* Powerful CTAs */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
               <Link
-                href="/admin/signup"
-                className="group px-10 py-5 text-lg font-bold text-white bg-gradient-to-r from-red-500 to-red-600 rounded-2xl hover:from-red-600 hover:to-red-700 transition-all shadow-2xl hover:shadow-red-200 hover:scale-105 flex items-center gap-3"
-              >
-                <span>צור חשבון עכשיו</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
-              </Link>
-              <Link
                 href="/admin/login"
-                className="px-10 py-5 text-lg font-bold text-gray-900 bg-white border-2 border-gray-200 rounded-2xl hover:border-gray-300 hover:shadow-xl transition-all"
+                className="px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold text-gray-900 bg-white border-2 border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-xl transition-all"
               >
                 כניסה למערכת
               </Link>
@@ -128,32 +124,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Live Stats Section - Eye-Catching Numbers */}
-      <section className="py-16 bg-gradient-to-r from-red-500 to-red-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8 text-center">
-            {[
-              { number: '1,200+', label: 'רישומים לאירועים', icon: <Users className="w-8 h-8" /> },
-              { number: '250+', label: 'אירועים פעילים', icon: <Calendar className="w-8 h-8" /> },
-              { number: '50+', label: 'בתי ספר משתמשים', icon: <Star className="w-8 h-8" /> },
-              { number: '98%', label: 'שביעות רצון', icon: <TrendingUp className="w-8 h-8" /> },
-            ].map((stat, idx) => (
-              <div key={idx} className="transform hover:scale-105 transition-transform">
-                <div className="flex justify-center mb-3 opacity-80">
-                  {stat.icon}
-                </div>
-                <div className={`text-5xl font-black mb-2 transition-all duration-1000 ${statsAnimated ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                  {stat.number}
-                </div>
-                <div className="text-red-100 font-medium text-lg">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Core Features - Clean & Powerful */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-white">
+      <section id="features" className="py-24 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
             <h2 className="text-5xl lg:text-6xl font-black mb-6">
@@ -278,31 +251,34 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* How Schools Can Add Themselves - CLEAR INSTRUCTIONS */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 to-purple-50">
+      {/* How to Start - SUPER SIMPLE FOR NON-TECHNICAL USERS */}
+      <section id="how-it-works" className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 to-purple-50">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-5xl font-bold mb-6 text-gray-900">
-              איך הבית ספר שלך יכול להצטרף?
+              איך להתחיל? פשוט מאוד!
             </h2>
             <p className="text-2xl text-gray-600">
-              כל בית ספר יכול להירשם ולהתחיל להשתמש במערכת תוך 5 דקות
+              3 צעדים פשוטים וגמרנו
             </p>
           </div>
 
           <div className="bg-white rounded-3xl shadow-2xl p-8 sm:p-12 border-2 border-gray-100">
-            <div className="space-y-8">
+            <div className="space-y-10">
               {/* Step 1 */}
               <div className="flex gap-6">
                 <div className="flex-shrink-0">
-                  <div className="w-14 h-14 bg-red-500 text-white rounded-full flex items-center justify-center text-2xl font-bold shadow-lg">
+                  <div className="w-16 h-16 bg-red-500 text-white rounded-full flex items-center justify-center text-3xl font-bold shadow-lg">
                     1
                   </div>
                 </div>
                 <div className="flex-1 text-right">
-                  <h3 className="text-2xl font-bold mb-3 text-gray-900">לחצו על &quot;התחל עכשיו&quot;</h3>
-                  <p className="text-lg text-gray-600 leading-relaxed">
-                    מכל עמוד באתר, לחצו על הכפתור הכתום &quot;התחל עכשיו&quot; או על &quot;הרשמה&quot; בתפריט העליון.
+                  <h3 className="text-3xl font-bold mb-4 text-gray-900">לחצו על "כניסה למערכת"</h3>
+                  <p className="text-xl text-gray-700 leading-relaxed">
+                    זה הכפתור הלבן למעלה בעמוד. אפשר גם ללחוץ
+                    <Link href="/admin/login" className="text-red-600 font-bold underline mx-2">
+                      כאן
+                    </Link>
                   </p>
                 </div>
               </div>
@@ -310,86 +286,72 @@ export default function LandingPage() {
               {/* Step 2 */}
               <div className="flex gap-6">
                 <div className="flex-shrink-0">
-                  <div className="w-14 h-14 bg-red-500 text-white rounded-full flex items-center justify-center text-2xl font-bold shadow-lg">
+                  <div className="w-16 h-16 bg-red-500 text-white rounded-full flex items-center justify-center text-3xl font-bold shadow-lg">
                     2
                   </div>
                 </div>
                 <div className="flex-1 text-right">
-                  <h3 className="text-2xl font-bold mb-3 text-gray-900">צרו חשבון אישי</h3>
-                  <p className="text-lg text-gray-600 leading-relaxed mb-3">
-                    בחרו אחת משתי האפשרויות:
+                  <h3 className="text-3xl font-bold mb-4 text-gray-900">תירשמו</h3>
+                  <p className="text-xl text-gray-700 leading-relaxed mb-4">
+                    המערכת תבקש מכם להירשם. אפשר להירשם עם:
                   </p>
-                  <ul className="space-y-2 text-lg text-gray-600">
-                    <li className="flex items-center justify-end gap-2">
-                      <span>הרשמה מהירה עם חשבון Google</span>
-                      <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-                    </li>
-                    <li className="flex items-center justify-end gap-2">
-                      <span>הרשמה עם כתובת אימייל וסיסמה</span>
-                      <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-                    </li>
-                  </ul>
+                  <div className="bg-green-50 rounded-xl p-6 space-y-3">
+                    <div className="flex items-center justify-end gap-3">
+                      <span className="text-xl font-semibold text-gray-900">חשבון גוגל (הכי מהיר!)</span>
+                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <CheckCircle className="w-5 h-5 text-white" />
+                      </div>
+                    </div>
+                    <div className="text-center text-gray-400">או</div>
+                    <div className="flex items-center justify-end gap-3">
+                      <span className="text-xl font-semibold text-gray-900">אימייל וסיסמה</span>
+                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <CheckCircle className="w-5 h-5 text-white" />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {/* Step 3 */}
               <div className="flex gap-6">
                 <div className="flex-shrink-0">
-                  <div className="w-14 h-14 bg-red-500 text-white rounded-full flex items-center justify-center text-2xl font-bold shadow-lg">
-                    3
-                  </div>
-                </div>
-                <div className="flex-1 text-right">
-                  <h3 className="text-2xl font-bold mb-3 text-gray-900">הוסיפו את בית הספר שלכם</h3>
-                  <p className="text-lg text-gray-600 leading-relaxed mb-4">
-                    לאחר ההרשמה, תתבקשו למלא את פרטי בית הספר:
-                  </p>
-                  <div className="bg-gray-50 rounded-xl p-6 space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-500">לדוגמה:</span>
-                      <span className="font-semibold text-gray-900">שדה</span>
-                    </div>
-                    <div className="flex justify-between items-center border-t border-gray-200 pt-3">
-                      <span className="font-mono text-sm text-gray-500">baery.kartis.info</span>
-                      <span className="font-semibold text-gray-900">שם בית הספר: &quot;בית ספר בארי&quot; →</span>
-                    </div>
-                    <div className="flex justify-between items-center border-t border-gray-200 pt-3">
-                      <span className="font-mono text-sm text-gray-500">demo-school.kartis.info</span>
-                      <span className="font-semibold text-gray-900">שם בית הספר: &quot;Demo School&quot; →</span>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-500 mt-4 leading-relaxed">
-                    💡 <strong>טיפ:</strong> הקישור יהיה ייחודי לבית הספר שלכם ויכיל אותיות באנגלית בלבד (ללא רווחים או תווים מיוחדים).
-                  </p>
-                </div>
-              </div>
-
-              {/* Step 4 */}
-              <div className="flex gap-6">
-                <div className="flex-shrink-0">
-                  <div className="w-14 h-14 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl font-bold shadow-lg">
+                  <div className="w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center text-3xl font-bold shadow-lg">
                     ✓
                   </div>
                 </div>
                 <div className="flex-1 text-right">
-                  <h3 className="text-2xl font-bold mb-3 text-gray-900">התחילו לעבוד!</h3>
-                  <p className="text-lg text-gray-600 leading-relaxed">
-                    זהו! בית הספר שלכם נוסף למערכת. עכשיו תוכלו:
+                  <h3 className="text-3xl font-bold mb-4 text-gray-900">זהו! אתם בפנים</h3>
+                  <p className="text-xl text-gray-700 leading-relaxed mb-4">
+                    המערכת תבקש מכם לתת שם לבית הספר שלכם, ואז תוכלו להתחיל ליצור אירועים.
                   </p>
-                  <ul className="mt-4 space-y-2 text-lg text-gray-600">
-                    <li className="flex items-center justify-end gap-2">
-                      <span>ליצור אירועים חדשים</span>
-                      <Calendar className="w-5 h-5 text-red-600 flex-shrink-0" />
-                    </li>
-                    <li className="flex items-center justify-end gap-2">
-                      <span>להזמין חברי צוות נוספים</span>
-                      <Users className="w-5 h-5 text-red-600 flex-shrink-0" />
-                    </li>
-                    <li className="flex items-center justify-end gap-2">
-                      <span>לנהל רישומים ורשימות המתנה</span>
-                      <CheckCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-                    </li>
-                  </ul>
+
+                  {/* URL/Slug Explanation */}
+                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-6 mb-4">
+                    <div className="flex items-center justify-end gap-3 mb-3">
+                      <span className="text-xl font-bold text-purple-900">תקבלו כתובת ייחודית לבית הספר שלכם!</span>
+                      <Globe className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <div className="bg-white rounded-lg p-4 mb-3">
+                      <p className="text-gray-700 text-lg mb-3 text-right">לדוגמה: אם בית הספר שלכם נקרא "בית ספר הרצל"</p>
+                      <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg p-4">
+                        <div className="bg-purple-600 text-white px-4 py-2 rounded-lg font-mono text-lg font-bold">
+                          herzl.kartis.info
+                        </div>
+                        <ArrowRight className="w-6 h-6 text-purple-600" />
+                        <div className="text-gray-700 font-bold text-lg">הכתובת שלכם</div>
+                      </div>
+                    </div>
+                    <p className="text-purple-800 text-base leading-relaxed">
+                      את הקישור הזה תשתפו עם ההורים והתלמידים כדי שיוכלו להירשם לאירועים שלכם!
+                    </p>
+                  </div>
+
+                  <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
+                    <p className="text-lg text-blue-900 font-semibold">
+                      💡 לא צריך להבין בטכנולוגיה! המערכת פשוטה ואינטואיטיבית.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -397,135 +359,22 @@ export default function LandingPage() {
             {/* CTA */}
             <div className="mt-12 pt-8 border-t-2 border-gray-100 text-center">
               <Link
-                href="/admin/signup"
-                className="inline-block px-12 py-5 text-xl font-semibold text-white bg-gradient-to-r from-red-500 to-red-600 rounded-lg hover:from-red-600 hover:to-red-700 transition-all shadow-lg hover:shadow-xl hover:scale-105"
+                href="/admin/login"
+                className="inline-block px-6 sm:px-10 py-3 sm:py-4 text-base sm:text-lg font-bold text-white bg-gradient-to-r from-red-500 to-red-600 rounded-xl hover:from-red-600 hover:to-red-700 transition-all shadow-lg hover:shadow-xl hover:scale-105"
               >
-                הוסיפו את בית הספר שלכם עכשיו
+                התחילו עכשיו
               </Link>
-              <p className="mt-4 text-gray-500">
-                ההרשמה לוקחת פחות מ-3 דקות
+              <p className="mt-4 text-sm sm:text-base text-gray-600">
+                לוקח 2 דקות ⏱️
               </p>
             </div>
           </div>
-
-          {/* Important Notes */}
-          <div className="mt-8 bg-blue-100 border-2 border-blue-300 rounded-xl p-6">
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0">
-                <div className="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center">
-                  💡
-                </div>
-              </div>
-              <div className="flex-1 text-right">
-                <h4 className="font-bold text-blue-900 mb-2">חשוב לדעת:</h4>
-                <ul className="space-y-2 text-blue-800">
-                  <li>• כל בית ספר מקבל סביבה נפרדת ומאובטחת</li>
-                  <li>• אתם שולטים במלואי על הנתונים שלכם</li>
-                  <li>• אפשר להוסיף מספר מנהלים לאותו בית ספר</li>
-                  <li>• בתי ספר שונים לא רואים את הנתונים אחד של השני</li>
-                </ul>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
-      {/* Social Proof - Testimonials */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-20">
-            <h2 className="text-5xl lg:text-6xl font-black mb-6">
-              <span className="text-gray-900">מה אומרים</span>
-              <span className="bg-gradient-to-r from-red-600 to-purple-600 bg-clip-text text-transparent"> המשתמשים</span>
-            </h2>
-            <p className="text-xl text-gray-600">בתי ספר שכבר משתמשים במערכת משתפים את החוויה</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                name: 'רונית כהן',
-                role: 'מנהלת בית ספר',
-                school: 'בית ספר אלון תל אביב',
-                quote: 'kartis.info חסכה לנו שעות של עבודה ידנית. המערכת פשוטה, מהירה והורים אוהבים אותה.',
-                rating: 5
-              },
-              {
-                name: 'דוד לוי',
-                role: 'רכז אירועים',
-                school: 'תיכון הרצליה',
-                quote: 'לראשונה הצלחנו למלא אירוע תוך דקות במקום שעות. רשימת ההמתנה האוטומטית פשוט גאונית.',
-                rating: 5
-              },
-              {
-                name: 'מיכל אברהם',
-                role: 'מורה ומארגנת',
-                school: 'בית ספר גן רווה',
-                quote: 'הממשק הכי אינטואיטיבי שעבדתי איתו. התמיכה הטכנית מהירה ומקצועית.',
-                rating: 5
-              }
-            ].map((testimonial, idx) => (
-              <div
-                key={idx}
-                className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-3xl p-8 text-right hover:shadow-2xl hover:border-red-300 transition-all duration-300 hover:-translate-y-2"
-              >
-                {/* Rating Stars */}
-                <div className="flex justify-end gap-1 mb-6">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-
-                {/* Quote */}
-                <p className="text-gray-700 text-lg leading-relaxed mb-8 font-medium">
-                  "{testimonial.quote}"
-                </p>
-
-                {/* Author */}
-                <div className="flex items-center gap-4 justify-end">
-                  <div className="text-right">
-                    <div className="font-bold text-gray-900 text-lg">{testimonial.name}</div>
-                    <div className="text-sm text-gray-600">{testimonial.role}</div>
-                    <div className="text-sm text-gray-500">{testimonial.school}</div>
-                  </div>
-                  <div className="w-16 h-16 rounded-full border-3 border-red-500 flex-shrink-0 bg-gradient-to-br from-red-400 to-purple-400 flex items-center justify-center text-white font-bold text-2xl shadow-lg">
-                    {testimonial.name.charAt(0)}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Trust Logos */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <h3 className="text-2xl font-bold mb-2 text-gray-900">
-            מוסדות חינוך <span className="text-red-600">בוטחים בנו</span>
-          </h3>
-          <p className="text-gray-600 mb-10">מערכת אמינה ומאובטחת המשמשת בתי ספר ברחבי הארץ</p>
-
-          <div className="flex flex-wrap justify-center gap-4 max-w-5xl mx-auto">
-            {[
-              'בית ספר אלון', 'תיכון הרצליה', 'בית ספר גן רווה',
-              'תיכון רמת אביב', 'בית ספר הדר', 'תיכון מקיף חדרה',
-              'בית ספר נורדאו', 'תיכון ברנר', 'בית ספר ביאליק',
-              'תיכון אלון תבור', 'בית ספר רוגוזין', 'תיכון יבנה'
-            ].map((school, i) => (
-              <div
-                key={i}
-                className="px-6 py-3 bg-white border-2 border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:border-red-500 hover:shadow-lg transition-all hover:-translate-y-1"
-              >
-                {school}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* FAQ Section */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-white">
+      <section id="faq" className="py-24 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-5xl lg:text-6xl font-black mb-6 text-gray-900">שאלות נפוצות</h2>
@@ -563,6 +412,92 @@ export default function LandingPage() {
                 <p className="text-gray-600 leading-relaxed">{faq.a}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Us - WhatsApp */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 relative overflow-hidden">
+        {/* Decorative Background Elements */}
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute top-10 right-10 w-72 h-72 bg-green-300 rounded-full filter blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-10 left-10 w-96 h-96 bg-emerald-300 rounded-full filter blur-3xl animate-pulse animation-delay-2000"></div>
+        </div>
+
+        <div className="max-w-5xl mx-auto relative z-10">
+          <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 sm:p-16 border border-green-200/50">
+            {/* Header */}
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center justify-center p-6 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full mb-6 shadow-xl animate-bounce-slow">
+                <MessageCircle className="w-16 h-16 text-white" />
+              </div>
+              <h2 className="text-5xl lg:text-6xl font-black mb-6 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                צריכים עזרה?
+              </h2>
+              <p className="text-2xl text-gray-700 font-medium">
+                דברו איתנו ישירות בוואטסאפ!
+              </p>
+            </div>
+
+            {/* WhatsApp Button */}
+            <a
+              href="https://wa.me/972555020829"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="relative group block"
+            >
+              {/* Glow Effect on Hover */}
+              <div className="absolute -inset-1 bg-gradient-to-r from-green-400 to-emerald-500 rounded-2xl blur opacity-0 group-hover:opacity-75 transition duration-500"></div>
+
+              {/* Main Button */}
+              <div className="relative flex items-center justify-between p-6 bg-gradient-to-r from-green-500 via-green-600 to-emerald-600 rounded-2xl shadow-xl hover:shadow-green-500/50 transition-all duration-300 transform group-hover:scale-105">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-white rounded-full animate-ping opacity-25"></div>
+                    <div className="relative w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-lg">
+                      <MessageCircle className="w-7 h-7 text-green-600" />
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-white font-bold text-xl mb-1">
+                      שלחו הודעה בוואטסאפ
+                    </div>
+                    <div className="flex items-center justify-end gap-2 text-green-50">
+                      <span className="text-lg font-mono">055-502-0829</span>
+                      <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+                <ArrowRight className="w-8 h-8 text-white group-hover:translate-x-2 transition-transform duration-300" />
+              </div>
+            </a>
+
+            {/* Features/Benefits */}
+            <div className="grid md:grid-cols-3 gap-6 mt-12">
+              <div className="flex flex-col items-center text-center p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200/50">
+                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mb-4">
+                  <Clock className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">מענה מהיר</h3>
+                <p className="text-gray-600">תשובות תוך דקות</p>
+              </div>
+
+              <div className="flex flex-col items-center text-center p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200/50">
+                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mb-4">
+                  <Users className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">תמיכה אישית</h3>
+                <p className="text-gray-600">נענה לכל שאלה</p>
+              </div>
+
+              <div className="flex flex-col items-center text-center p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200/50">
+                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mb-4">
+                  <Shield className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">תמיכה בעברית</h3>
+                <p className="text-gray-600">שירות מקצועי ואדיב</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -605,14 +540,14 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
             <Link
               href="/admin/signup"
-              className="group px-12 py-6 text-xl font-black text-red-600 bg-white rounded-2xl hover:bg-gray-50 transition-all shadow-2xl hover:scale-110 flex items-center gap-3"
+              className="group px-6 sm:px-10 py-3 sm:py-5 text-base sm:text-lg font-bold text-red-600 bg-white rounded-2xl hover:bg-gray-50 transition-all shadow-2xl hover:scale-110 flex items-center gap-3"
             >
               <span>צור חשבון עכשיו</span>
-              <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+              <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-2 transition-transform" />
             </Link>
             <Link
               href="/admin/login"
-              className="px-12 py-6 text-xl font-black text-white bg-white/10 backdrop-blur-sm border-2 border-white rounded-2xl hover:bg-white/20 transition-all"
+              className="px-6 sm:px-10 py-3 sm:py-5 text-base sm:text-lg font-bold text-white bg-white/10 backdrop-blur-sm border-2 border-white rounded-2xl hover:bg-white/20 transition-all"
             >
               כניסה למערכת
             </Link>

@@ -138,7 +138,7 @@ export default function EventManagementPage() {
   }
 
   const copyLink = () => {
-    const link = `${window.location.origin}/p/${event?.slug}`
+    const link = `${window.location.origin}/p/${event?.school?.slug}/${event?.slug}`
     navigator.clipboard.writeText(link)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
@@ -256,7 +256,7 @@ export default function EventManagementPage() {
                 {copied ? 'הועתק!' : 'העתק קישור'}
               </button>
               <a
-                href={`/p/${event.slug}`}
+                href={`/p/${event.school?.slug}/${event.slug}`}
                 target="_blank"
                 className="px-4 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 flex items-center gap-2"
               >
