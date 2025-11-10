@@ -41,9 +41,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Fetch all active events with their school information
     const events = await prisma.event.findMany({
       where: {
-        status: {
-          in: ['OPEN', 'ACTIVE'], // Include both OPEN and ACTIVE events
-        },
+        status: 'OPEN', // Only open events
         startAt: {
           gte: new Date(), // Only future events
         },
