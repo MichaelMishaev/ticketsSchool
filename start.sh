@@ -40,6 +40,13 @@ if [ -n "$DATABASE_URL" ]; then
         echo "🗃️  Running migrations..."
         npx prisma generate || echo "⚠️  Prisma generate failed"
 
+        # ALWAYS ensure all tables exist (idempotent operation)
+        echo "🔧 Ensuring all database tables exist..."
+        if [ -f "scripts/fix-events-school-id.sql" ] && [ -n "$DATABASE_URL" ]; then
+            echo "Running table creation script..."
+            psql "$DATABASE_URL" -f scripts/fix-events-school-id.sql 2>&1 | head -20 || echo "⚠️  Table creation had warnings (likely tables already exist)"
+        fi
+
         # Try to run migrations (capture exit code properly)
         set +e  # Temporarily disable exit on error
         npx prisma migrate deploy
