@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
@@ -65,20 +65,20 @@ export default function LandingPage() {
               {/* Trust badge */}
               <div className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-200">
                 <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                <span className="text-sm font-medium text-gray-700">מעל 100+ בתי ספר כבר משתמשים</span>
+                <span className="text-sm font-medium text-gray-700">מערכת ניהול כרטיסים לבתי ספר</span>
               </div>
 
               {/* Headline - POWERFUL & CLEAR */}
               <h1 className="text-5xl lg:text-6xl font-bold leading-tight text-gray-900">
-                מלאו את האירועים תוך דקות,
+                נהלו אירועי בית הספר
                 <br />
-                <span className="text-red-600">לא שעות</span>
+                <span className="text-red-600">בקלות ובמהירות</span>
               </h1>
 
               {/* Subtext - VALUE PROPOSITION */}
               <p className="text-xl text-gray-600 leading-relaxed max-w-2xl">
-                מערכת ניהול אירועים שמשתמשים בה 100+ בתי ספר.
-                רישום מהיר למקומות מוגבלים, ניהול פשוט, תוצאות מיידיות.
+                מערכת ניהול אירועים עם רישום מקוון, ניהול כרטיסים, רשימת המתנה אוטומטית וצוות עבודה משותף.
+                <span className="block mt-2 font-semibold text-gray-900">חינם לחלוטין - ללא עלויות נסתרות</span>
               </p>
 
               {/* Single Primary CTA - CONVERSION FOCUSED */}
@@ -118,23 +118,7 @@ export default function LandingPage() {
 
                 {/* Modern card stack visualization */}
                 <div className="relative space-y-4">
-                  {/* Card 1 - WhatsApp */}
-                  <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-200 transform hover:-translate-y-1 transition-transform relative">
-                    <span className="absolute top-3 left-3 px-2 py-1 text-xs font-medium text-orange-600 bg-orange-50 rounded-full border border-orange-200">
-                      בקרוב
-                    </span>
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 flex-shrink-0 bg-green-100 rounded-xl flex items-center justify-center">
-                        <MessageCircle className="w-8 h-8 text-green-600" />
-                      </div>
-                      <div className="flex-1 text-right">
-                        <h3 className="font-semibold text-gray-900">WhatsApp אוטומטי</h3>
-                        <p className="text-sm text-gray-600">הודעות אישור מיידיות</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Card 2 - Analytics */}
+                  {/* Card 1 - Analytics */}
                   <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-200 transform hover:-translate-y-1 transition-transform">
                     <div className="flex items-center gap-4">
                       <div className="w-16 h-16 flex-shrink-0 bg-blue-100 rounded-xl flex items-center justify-center">
@@ -172,52 +156,33 @@ export default function LandingPage() {
 
       {/* Use Case Highlight */}
       <section className="py-20 bg-gradient-to-r from-blue-50 to-purple-50 border-y border-gray-200">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-200">
-            <h3 className="text-3xl font-bold mb-4 text-gray-900">ניהול חכם למקומות מוגבלים</h3>
-            <p className="text-xl text-gray-700 mb-6">
-              הפתרון המושלם לאירועים עם ביקוש גבוה - חלוקה הוגנת של כרטיסים לפי סדר הגעה
+            <h3 className="text-3xl font-bold mb-4 text-gray-900">מה באמת כולל המערכת?</h3>
+            <p className="text-xl text-gray-700 mb-8">
+              כל מה שצריך לנהל אירועים בצורה מקצועית - ללא תשלומים נוספים
             </p>
-            <div className="grid md:grid-cols-3 gap-4 text-right">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-right">
               <div className="bg-green-50 p-4 rounded-xl border border-green-200">
                 <CheckCircle className="w-8 h-8 text-green-600 mb-2 mr-auto" />
-                <h4 className="font-semibold mb-1 text-gray-900">ללא בלבול</h4>
-                <p className="text-sm text-gray-600">רק מי שהספיק יקבל כרטיס</p>
+                <h4 className="font-semibold mb-1 text-gray-900">יצירת אירועים</h4>
+                <p className="text-sm text-gray-600">צרו אירוע עם כל הפרטים: תאריך, מיקום, הגבלת מקומות</p>
               </div>
               <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
                 <Zap className="w-8 h-8 text-blue-600 mb-2 mr-auto" />
-                <h4 className="font-semibold mb-1 text-gray-900">מהיר וצודק</h4>
-                <p className="text-sm text-gray-600">מנגנון אמין למניעת הרשמה כפולה</p>
+                <h4 className="font-semibold mb-1 text-gray-900">רישום מקוון</h4>
+                <p className="text-sm text-gray-600">המשתתפים נרשמים בקישור ומקבלים קוד אישור מיידי</p>
               </div>
               <div className="bg-purple-50 p-4 rounded-xl border border-purple-200">
                 <Users className="w-8 h-8 text-purple-600 mb-2 mr-auto" />
-                <h4 className="font-semibold mb-1 text-gray-900">רשימת המתנה אוטומטית</h4>
-                <p className="text-sm text-gray-600">מעקב אחר מי שלא הספיק</p>
+                <h4 className="font-semibold mb-1 text-gray-900">צוות עבודה</h4>
+                <p className="text-sm text-gray-600">הזמינו עמיתים לעזור בניהול עם הרשאות שונות</p>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Social Proof */}
-      <section className="py-16 bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-4xl font-black text-red-600">100+</div>
-              <div className="text-sm text-gray-600 mt-2">בתי ספר משתמשים</div>
-            </div>
-            <div>
-              <div className="text-4xl font-black text-blue-600">5,000+</div>
-              <div className="text-sm text-gray-600 mt-2">אירועים נוצרו</div>
-            </div>
-            <div>
-              <div className="text-4xl font-black text-green-600">50K+</div>
-              <div className="text-sm text-gray-600 mt-2">כרטיסים נמכרו</div>
-            </div>
-            <div>
-              <div className="text-4xl font-black text-yellow-600">4.9★</div>
-              <div className="text-sm text-gray-600 mt-2">דירוג ממוצע</div>
+              <div className="bg-orange-50 p-4 rounded-xl border border-orange-200">
+                <BarChart3 className="w-8 h-8 text-orange-600 mb-2 mr-auto" />
+                <h4 className="font-semibold mb-1 text-gray-900">יצוא לאקסל</h4>
+                <p className="text-sm text-gray-600">הורידו את כל הנרשמים לקובץ CSV עם כל הפרטים</p>
+              </div>
             </div>
           </div>
         </div>
@@ -231,51 +196,56 @@ export default function LandingPage() {
           </h2>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {
-                icon: <MessageCircle className="w-8 h-8" />,
-                title: 'WhatsApp אוטומטי',
-                description: 'הודעות אישור מיידיות למשתתפים עם כל הפרטים',
-                color: 'bg-green-50 border-green-200 text-green-700',
-                iconBg: 'bg-green-100',
-              },
+            {([
               {
                 icon: <Calendar className="w-8 h-8" />,
-                title: 'ניהול אירועים קל',
-                description: 'צור אירוע תוך 2 דקות - ממשק פשוט ואינטואיטיבי',
+                title: 'יצירת אירועים ללא הגבלה',
+                description: 'צרו אירועים עם פרטים מלאים, מיקום, תאריכים והגבלת כמות משתתפים',
                 color: 'bg-blue-50 border-blue-200 text-blue-700',
                 iconBg: 'bg-blue-100',
+                badge: undefined,
               },
               {
-                icon: <CreditCard className="w-8 h-8" />,
-                title: 'תשלומים מאובטחים',
-                description: 'אשראי, PayPal, ביט - כל אפשרויות התשלום במקום אחד',
+                icon: <Users className="w-8 h-8" />,
+                title: 'רשימת המתנה אוטומטית',
+                description: 'כשהאירוע מתמלא, המשתתפים נכנסים אוטומטית לרשימת המתנה',
                 color: 'bg-purple-50 border-purple-200 text-purple-700',
                 iconBg: 'bg-purple-100',
-                badge: 'בקרוב',
+                badge: undefined,
+              },
+              {
+                icon: <Users className="w-8 h-8" />,
+                title: 'ניהול צוות משותף',
+                description: 'הזמינו חברי צוות עם הרשאות שונות - מנהל, עורך או צופה בלבד',
+                color: 'bg-green-50 border-green-200 text-green-700',
+                iconBg: 'bg-green-100',
+                badge: undefined,
               },
               {
                 icon: <BarChart3 className="w-8 h-8" />,
-                title: 'דוחות מפורטים',
-                description: 'מעקב בזמן אמת אחר רישומים ורווחיות',
+                title: 'לוח בקרה בזמן אמת',
+                description: 'מעקב אחר אירועים פעילים, מספר נרשמים ושיעור תפוסה',
                 color: 'bg-orange-50 border-orange-200 text-orange-700',
                 iconBg: 'bg-orange-100',
+                badge: undefined,
               },
               {
-                icon: <Smartphone className="w-8 h-8" />,
-                title: 'מותאם לנייד',
-                description: 'עובד מושלם על כל מכשיר - טלפון, טאבלט או מחשב',
+                icon: <CheckCircle className="w-8 h-8" />,
+                title: 'שדות רישום מותאמים אישית',
+                description: 'הוסיפו שדות מותאמים לכל אירוע - טקסט, בחירה מרובה ועוד',
                 color: 'bg-pink-50 border-pink-200 text-pink-700',
                 iconBg: 'bg-pink-100',
+                badge: undefined,
               },
               {
                 icon: <Shield className="w-8 h-8" />,
-                title: 'אבטחה מלאה',
-                description: 'הצפנת נתונים, GDPR compliant, גיבויים אוטומטיים',
+                title: 'בידוד מידע מוחלט',
+                description: 'כל בית ספר רואה רק את המידע שלו - אבטחה ברמה הגבוהה ביותר',
                 color: 'bg-red-50 border-red-200 text-red-700',
                 iconBg: 'bg-red-100',
+                badge: undefined,
               },
-            ].map((feature, idx) => (
+            ] as Array<{icon: React.ReactElement; title: string; description: string; color: string; iconBg: string; badge?: string}>).map((feature, idx) => (
               <div
                 key={idx}
                 className={`${feature.color} border rounded-2xl p-6 hover:shadow-lg transition-all text-right relative`}
@@ -307,9 +277,9 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-3 gap-12">
             {[
-              { step: '1', title: 'הרשמה בקליק', desc: 'צור חשבון חינם תוך 30 שניות', icon: <Users className="w-12 h-12" /> },
-              { step: '2', title: 'יצירת אירוע', desc: 'הוסף פרטי אירוע ומחירים', icon: <Calendar className="w-12 h-12" /> },
-              { step: '3', title: 'שתף וקבל תשלומים', desc: 'שלח קישור ותתחיל למכור', icon: <Zap className="w-12 h-12" /> },
+              { step: '1', title: 'הרשמה בקליק', desc: 'צרו חשבון חינם עם אימייל או Google', icon: <Users className="w-12 h-12" /> },
+              { step: '2', title: 'יצירת אירוע', desc: 'מלאו פרטים בסיסיים, הגדירו מספר מקומות ושדות נוספים', icon: <Calendar className="w-12 h-12" /> },
+              { step: '3', title: 'שיתוף וניהול', desc: 'שתפו קישור והתחילו לקבל רישומים - עם רשימת המתנה אוטומטית', icon: <Zap className="w-12 h-12" /> },
             ].map((item, idx) => (
               <div key={idx} className="bg-gray-50 border border-gray-200 rounded-2xl p-8 text-center hover:shadow-lg transition-all">
                 <div className="w-16 h-16 bg-red-500 text-white rounded-full flex items-center justify-center text-3xl font-black mx-auto mb-4">
@@ -400,9 +370,9 @@ export default function LandingPage() {
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <h3 className="text-2xl font-semibold mb-2 text-gray-900">
-            מעל <span className="text-red-600">100 בתי ספר</span> בוטחים ב-kartis.info
+            מוסדות חינוך בוטחים ב-<span className="text-red-600">kartis.info</span>
           </h3>
-          <p className="text-gray-600 mb-8">מוסדות חינוך מובילים ברחבי הארץ</p>
+          <p className="text-gray-600 mb-8">מערכת אמינה ומאובטחת לניהול אירועים</p>
 
           <div className="flex flex-wrap justify-center gap-4 max-w-4xl mx-auto">
             {[
@@ -424,41 +394,72 @@ export default function LandingPage() {
 
       {/* Pricing Teaser */}
       <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-red-500 to-red-600 text-white">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-5xl font-bold mb-6">התחל בחינם היום!</h2>
+        <div className="max-w-5xl mx-auto text-center">
+          <h2 className="text-5xl font-bold mb-6">התחילו בחינם - ללא התחייבות!</h2>
           <p className="text-2xl mb-8 opacity-90">
-            חינם לגמרי • ללא כרטיס אשראי • עד 100 רישומים
+            ללא כרטיס אשראי • ללא עלויות נסתרות • חינם לצמיתות
           </p>
 
-          <div className="bg-white text-gray-900 rounded-3xl p-8 shadow-2xl max-w-md mx-auto mb-8">
-            <div className="text-6xl font-black mb-2 text-red-600">₪0</div>
-            <div className="text-xl mb-6">תוכנית חינמית לצמיתות</div>
-            <ul className="space-y-3 text-right mb-6">
-              <li className="flex items-center gap-2 justify-end">
-                <span>עד 3 אירועים</span>
-                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-              </li>
-              <li className="flex items-center gap-2 justify-end">
-                <span>100 רישומים לחודש</span>
-                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-              </li>
-              <li className="flex items-center gap-2 justify-end">
-                <span>הודעות WhatsApp</span>
-                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-              </li>
-              <li className="flex items-center gap-2 justify-end">
-                <span>תמיכה 24/7</span>
-                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-              </li>
-            </ul>
+          <div className="bg-white text-gray-900 rounded-3xl p-8 shadow-2xl max-w-3xl mx-auto mb-8">
+            <div className="flex items-baseline justify-center gap-2 mb-4">
+              <div className="text-7xl font-black text-red-600">₪0</div>
+              <div className="text-2xl text-gray-600">לתמיד</div>
+            </div>
+            <div className="text-xl mb-8 text-gray-700 font-semibold">תוכנית חינמית ללא הגבלת זמן</div>
+
+            <div className="grid md:grid-cols-2 gap-4 text-right mb-6">
+              <div className="bg-gray-50 p-4 rounded-xl">
+                <div className="flex items-center gap-2 justify-end mb-2">
+                  <span className="font-semibold text-gray-900">אירועים ללא הגבלה</span>
+                  <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                </div>
+                <p className="text-sm text-gray-600">צרו כמה שאתם צריכים</p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-xl">
+                <div className="flex items-center gap-2 justify-end mb-2">
+                  <span className="font-semibold text-gray-900">רשימת המתנה אוטומטית</span>
+                  <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                </div>
+                <p className="text-sm text-gray-600">ניהול חכם של מקומות מוגבלים</p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-xl">
+                <div className="flex items-center gap-2 justify-end mb-2">
+                  <span className="font-semibold text-gray-900">צוות עבודה משותף</span>
+                  <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                </div>
+                <p className="text-sm text-gray-600">הזמינו חברי צוות עם הרשאות</p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-xl">
+                <div className="flex items-center gap-2 justify-end mb-2">
+                  <span className="font-semibold text-gray-900">יצוא נתונים ל-CSV</span>
+                  <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                </div>
+                <p className="text-sm text-gray-600">הורידו רשימות נרשמים בקליק</p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-xl">
+                <div className="flex items-center gap-2 justify-end mb-2">
+                  <span className="font-semibold text-gray-900">שדות מותאמים אישית</span>
+                  <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                </div>
+                <p className="text-sm text-gray-600">הוסיפו שדות לכל אירוע</p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-xl">
+                <div className="flex items-center gap-2 justify-end mb-2">
+                  <span className="font-semibold text-gray-900">בידוד מידע מוחלט</span>
+                  <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                </div>
+                <p className="text-sm text-gray-600">המידע שלכם מוגן ומבודד</p>
+              </div>
+            </div>
           </div>
 
           <Link
             href="/admin/signup"
             className="inline-block px-12 py-5 text-xl font-semibold text-red-600 bg-white rounded-lg hover:bg-gray-100 transition-all shadow-2xl hover:scale-105"
           >
-            התחל עכשיו - חינם לגמרי
+            צרו חשבון חינם עכשיו
           </Link>
+          <p className="mt-4 text-sm opacity-90">אין צורך בכרטיס אשראי • התחילו תוך דקות</p>
         </div>
       </section>
 
@@ -506,7 +507,7 @@ export default function LandingPage() {
       <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gray-900 text-white">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-5xl sm:text-6xl font-bold mb-6">מוכנים להתחיל?</h2>
-          <p className="text-2xl mb-12 opacity-90">הצטרפו ל-100+ בתי ספר שכבר משתמשים ב-kartis.info</p>
+          <p className="text-2xl mb-12 opacity-90">הצטרפו למערכת המובילה לניהול אירועים בבתי ספר</p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link

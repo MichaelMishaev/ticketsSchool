@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Calendar, Home, Plus, Menu, X, HelpCircle, LogOut, MessageSquare, Shield, Settings } from 'lucide-react'
+import { Calendar, Home, Plus, Menu, X, HelpCircle, LogOut, MessageSquare, Shield, Settings, Users } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { isAuthenticatedSync, clientLogout } from '@/lib/auth.client'
@@ -145,6 +145,13 @@ export default function AdminLayout({
                       משובים
                     </Link>
                     <Link
+                      href="/admin/team"
+                      className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-900"
+                    >
+                      <Users className="w-4 h-4 ml-2" />
+                      צוות
+                    </Link>
+                    <Link
                       href="/admin/settings"
                       className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-900"
                     >
@@ -244,6 +251,16 @@ export default function AdminLayout({
                     <div className="flex items-center">
                       <MessageSquare className="w-5 h-5 ml-3" />
                       משובים
+                    </div>
+                  </Link>
+                  <Link
+                    href="/admin/team"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block pr-4 py-3 border-r-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:border-gray-300 min-h-[44px]"
+                  >
+                    <div className="flex items-center">
+                      <Users className="w-5 h-5 ml-3" />
+                      צוות
                     </div>
                   </Link>
                   <Link
