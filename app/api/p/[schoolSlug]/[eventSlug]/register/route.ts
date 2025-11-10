@@ -96,7 +96,7 @@ export async function POST(
     const registration = await prisma.registration.create({
       data: {
         eventId: event.id,
-        formData: data,
+        data,
         spotsCount,
         status: registrationStatus,
         confirmationCode
