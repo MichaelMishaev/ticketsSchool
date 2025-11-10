@@ -773,6 +773,322 @@ This bug highlights the importance of:
 
 ---
 
+### Bug #12: AdminProd Button Visible to All Users - Missing Super Admin Check
+**File:** `/app/admin/page.tsx`
+**Severity:** 🟡 MODERATE - Security/Access Control
+**Fixed Date:** 2025-11-10
+
+**Description:**
+The "AdminProd" button in the admin dashboard header was visible to all authenticated users, not just super admins. This button provides access to production admin tools and should only be visible to users with `SUPER_ADMIN` role.
+
+**Security Impact:**
+- ⚠️ **Unauthorized Access**: Regular admins and managers could see and potentially access super admin production tools
+- ⚠️ **Information Disclosure**: Button visibility reveals existence of admin production features
+- ⚠️ **Principle of Least Privilege**: Users seeing controls they shouldn't have access to
+
+**Code Before Fix:**
+```typescript
+// app/admin/page.tsx:91-98
+return (
+  <div>
+    <div className="flex justify-between items-center mb-4 sm:mb-6">
+      <h2 className="text-xl sm:text-2xl font-bold text-gray-900">לוח בקרה</h2>
+      <Link
+        href="/admin-prod"
+        className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition"
+      >
+        AdminProd
+      </Link>
+    </div>
+// ❌ Button always visible to all authenticated users
+```
+
+**Fix Applied:**
+```typescript
+// app/admin/page.tsx:9-13
+interface AdminInfo {
+  role: 'SUPER_ADMIN' | 'OWNER' | 'ADMIN' | 'MANAGER'
+  schoolId?: string
+  schoolName?: string
+}
+
+export default function AdminDashboard() {
+  // ... other state ...
+  const [adminInfo, setAdminInfo] = useState<AdminInfo | null>(null)
+
+  useEffect(() => {
+    fetchDashboardData()
+    fetchAdminInfo()  // ✅ Fetch user role
+  }, [])
+
+  const fetchAdminInfo = async () => {
+    try {
+      const response = await fetch('/api/admin/me')
+      const data = await response.json()
+      if (data.authenticated && data.admin) {
+        setAdminInfo(data.admin)
+      }
+    } catch (error) {
+      console.error('Error fetching admin info:', error)
+    }
+  }
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4 sm:mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">לוח בקרה</h2>
+        {adminInfo?.role === 'SUPER_ADMIN' && (  // ✅ Only show for super admins
+          <Link
+            href="/admin-prod"
+            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition"
+          >
+            AdminProd
+          </Link>
+        )}
+      </div>
+```
+
+**Files Changed:**
+- `/app/admin/page.tsx:9-13` - Added `AdminInfo` interface with role types
+- `/app/admin/page.tsx:24` - Added `adminInfo` state to track user role
+- `/app/admin/page.tsx:34` - Added call to `fetchAdminInfo()` in useEffect
+- `/app/admin/page.tsx:59-69` - Added `fetchAdminInfo()` function to fetch user role from API
+- `/app/admin/page.tsx:113-120` - Added conditional rendering `{adminInfo?.role === 'SUPER_ADMIN' && (...)}`
+
+**How This Works:**
+1. Component fetches current admin info from `/api/admin/me` on mount
+2. Response includes `role` field from JWT session
+3. Button only renders if `role === 'SUPER_ADMIN'`
+4. Regular admins, managers, and owners won't see the button at all
+
+**Server-Side Protection:**
+Note: This is a UI-level restriction. The actual `/admin-prod` routes should also have server-side middleware protection using `requireSuperAdmin()` from `/lib/auth.server.ts:149-155`.
+
+**Testing:**
+```bash
+# 1. Test as regular admin (OWNER/ADMIN/MANAGER)
+# Login with regular credentials
+# Expected: No "AdminProd" button visible in dashboard
+
+# 2. Test as super admin
+# Login with SUPER_ADMIN credentials
+# Expected: "AdminProd" button visible in top-right of dashboard
+```
+
+**Status:** ✅ FIXED
+
+---
+
+### Bug #13: Signup Form Missing Organization Fields - Requires Separate Onboarding Step
+**Files:** `/app/admin/signup/page.tsx`, `/app/api/admin/signup/route.ts`
+**Severity:** 🟡 MODERATE - UX/Onboarding
+**Fixed Date:** 2025-11-10
+
+**Description:**
+The signup form only collected personal information (name, email, password) but not organization details (school name and slug). Users had to complete a separate onboarding step after signup to provide organization information. This created a disjointed user experience with an extra step in the registration flow.
+
+**User Report:**
+```
+"when create mail manual: there is no organization name and slug"
+User showing signup form missing organization fields that appeared in the onboarding step.
+```
+
+**UX Impact:**
+- ⚠️ **Extra Steps**: Users must fill out two separate forms (signup + onboarding)
+- ⚠️ **Confusion**: Users not understanding why they need another form after signup
+- ⚠️ **Drop-off Risk**: Some users might abandon registration during the onboarding step
+
+**Previous Flow:**
+1. User fills signup form (name, email, password)
+2. Account created with `schoolId: null`, `onboardingCompleted: false`
+3. User verifies email
+4. User redirected to `/admin/onboarding` to enter school name/slug
+5. School created and linked to user
+
+**Fix Applied - Single-Step Signup:**
+Now the signup form includes organization fields inline, allowing users to complete everything in one step.
+
+**Frontend Changes:**
+
+```typescript
+// app/admin/signup/page.tsx:9-16
+const [formData, setFormData] = useState({
+  email: '',
+  password: '',
+  confirmPassword: '',
+  name: '',
+  schoolName: '',      // ✅ NEW
+  schoolSlug: '',      // ✅ NEW
+})
+
+// Auto-generate slug from school name
+const generateSlug = (name: string) => {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim()
+}
+
+const handleSchoolNameChange = (name: string) => {
+  setFormData({
+    ...formData,
+    schoolName: name,
+    schoolSlug: generateSlug(name),  // ✅ Auto-generate URL-friendly slug
+  })
+}
+```
+
+**UI Structure:**
+```jsx
+<form>
+  {/* NEW: Organization Info Section */}
+  <div className="space-y-4 pb-4 border-b border-gray-200">
+    <h3>פרטי ארגון</h3>
+
+    {/* School Name Field */}
+    <input
+      name="schoolName"
+      placeholder="בית ספר דוגמה"
+      onChange={(e) => handleSchoolNameChange(e.target.value)}
+    />
+
+    {/* School Slug Field (auto-generated, editable) */}
+    <input
+      name="schoolSlug"
+      placeholder="my-organization"
+      value={formData.schoolSlug}
+    />
+    <p>הקישור שלך: ticketcap.com/p/{formData.schoolSlug}</p>
+  </div>
+
+  {/* Personal Info Section */}
+  <div className="space-y-4">
+    <h3>פרטים אישיים</h3>
+    {/* Name, Email, Password fields */}
+  </div>
+</form>
+```
+
+**Backend Changes:**
+
+```typescript
+// app/api/admin/signup/route.ts:16-22
+interface SignupRequest {
+  email: string
+  password: string
+  name: string
+  schoolName?: string     // ✅ NEW - Optional for backward compatibility
+  schoolSlug?: string     // ✅ NEW - Optional for backward compatibility
+}
+
+export async function POST(request: NextRequest) {
+  const { email, password, name, schoolName, schoolSlug } = body
+
+  // Create school if provided
+  let createdSchoolId: string | null = null
+  let requiresOnboarding = true
+
+  if (schoolName && schoolSlug) {
+    // ✅ Check if slug already taken
+    const existingSchool = await prisma.school.findUnique({
+      where: { slug: schoolSlug }
+    })
+
+    if (existingSchool) {
+      return NextResponse.json(
+        { error: 'הקישור הזה כבר תפוס. אנא בחר קישור אחר.' },
+        { status: 409 }
+      )
+    }
+
+    // ✅ Create school during signup
+    const school = await prisma.school.create({
+      data: {
+        name: schoolName,
+        slug: schoolSlug,
+      }
+    })
+    createdSchoolId = school.id
+    requiresOnboarding = false  // ✅ Onboarding complete!
+  }
+
+  // Create admin with schoolId if school was created
+  const admin = await prisma.admin.create({
+    data: {
+      email: email.toLowerCase(),
+      passwordHash,
+      name,
+      role: 'OWNER',
+      schoolId: createdSchoolId,           // ✅ Set immediately if provided
+      onboardingCompleted: !requiresOnboarding,  // ✅ True if school created
+      emailVerified: false,
+      verificationToken,
+    },
+  })
+
+  return NextResponse.json({
+    success: true,
+    requiresOnboarding,  // ✅ False if school info was provided
+  })
+}
+```
+
+**New Flow:**
+1. User fills ONE form (name, email, password, school name, slug)
+2. Account + School created in same request
+3. User verifies email
+4. User redirected directly to `/admin` dashboard (no onboarding needed)
+
+**Backward Compatibility:**
+- Fields are optional (`schoolName?: string`)
+- If not provided, old onboarding flow still works
+- Existing onboarding page remains functional for edge cases
+
+**Files Changed:**
+- `/app/admin/signup/page.tsx:3` - Added imports: `Building2`, `Link as LinkIcon`
+- `/app/admin/signup/page.tsx:9-16` - Added `schoolName` and `schoolSlug` to form state
+- `/app/admin/signup/page.tsx:22-37` - Added `generateSlug()` and `handleSchoolNameChange()` functions
+- `/app/admin/signup/page.tsx:44-47` - Added validation for school fields
+- `/app/admin/signup/page.tsx:67-73` - Added school fields to API request body
+- `/app/admin/signup/page.tsx:198-258` - Added organization info section to form UI
+- `/app/api/admin/signup/route.ts:16-22` - Added `schoolName` and `schoolSlug` to interface
+- `/app/api/admin/signup/route.ts:28` - Added fields to request destructuring
+- `/app/api/admin/signup/route.ts:83-112` - Added school creation logic with slug validation
+- `/app/api/admin/signup/route.ts:122` - Set `schoolId` on admin if school created
+- `/app/api/admin/signup/route.ts:125` - Set `onboardingCompleted` based on school creation
+- `/app/api/admin/signup/route.ts:154` - Return `requiresOnboarding` in response
+
+**User Experience Improvements:**
+- ✅ One form instead of two
+- ✅ Real-time slug generation from school name
+- ✅ Visual preview of final URL: `ticketcap.com/p/my-school`
+- ✅ Clear validation (slug format requirements shown)
+- ✅ No extra page navigation needed
+
+**Testing:**
+```bash
+# 1. Test new signup flow with school info
+# Navigate to /admin/signup
+# Fill all fields including school name
+# Expected: Account + school created, onboarding skipped
+
+# 2. Test backward compatibility (no school info)
+# Navigate to /admin/signup
+# Fill only personal info (leave school fields empty)
+# Expected: Account created, redirected to /admin/onboarding
+
+# 3. Test slug uniqueness validation
+# Try to create account with existing school slug
+# Expected: Error "הקישור הזה כבר תפוס"
+```
+
+**Status:** ✅ FIXED
+
+---
+
 **Report Generated:** 2025-11-10
+**Last Updated:** 2025-11-10
 **Tested By:** Claude Code QA
 **Next Review:** After critical fixes implemented

@@ -6,6 +6,12 @@ import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import DrilldownModal from '@/components/DrilldownModal'
 
+interface AdminInfo {
+  role: 'SUPER_ADMIN' | 'OWNER' | 'ADMIN' | 'MANAGER'
+  schoolId?: string
+  schoolName?: string
+}
+
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
     activeEvents: 0,
@@ -15,6 +21,7 @@ export default function AdminDashboard() {
   })
   const [recentEvents, setRecentEvents] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [adminInfo, setAdminInfo] = useState<AdminInfo | null>(null)
   const [modalData, setModalData] = useState<{
     isOpen: boolean
     title: string
@@ -24,6 +31,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchDashboardData()
+    fetchAdminInfo()
   }, [])
 
   const fetchDashboardData = async () => {
@@ -45,6 +53,18 @@ export default function AdminDashboard() {
       console.error('Error fetching dashboard data:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const fetchAdminInfo = async () => {
+    try {
+      const response = await fetch('/api/admin/me')
+      const data = await response.json()
+      if (data.authenticated && data.admin) {
+        setAdminInfo(data.admin)
+      }
+    } catch (error) {
+      console.error('Error fetching admin info:', error)
     }
   }
 
@@ -90,12 +110,14 @@ export default function AdminDashboard() {
     <div>
       <div className="flex justify-between items-center mb-4 sm:mb-6">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900">לוח בקרה</h2>
-        <Link
-          href="/admin-prod"
-          className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition"
-        >
-          AdminProd
-        </Link>
+        {adminInfo?.role === 'SUPER_ADMIN' && (
+          <Link
+            href="/admin-prod"
+            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition"
+          >
+            AdminProd
+          </Link>
+        )}
       </div>
 
 

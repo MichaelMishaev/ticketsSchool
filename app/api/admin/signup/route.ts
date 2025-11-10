@@ -17,14 +17,16 @@ interface SignupRequest {
   email: string
   password: string
   name: string
+  schoolName?: string
+  schoolSlug?: string
 }
 
 export async function POST(request: NextRequest) {
   try {
     console.log('[Signup] Starting signup process')
     const body: SignupRequest = await request.json()
-    const { email, password, name } = body
-    console.log('[Signup] Received data:', { email, name })
+    const { email, password, name, schoolName, schoolSlug } = body
+    console.log('[Signup] Received data:', { email, name, schoolName, schoolSlug })
 
     // Validation
     if (!email || !password || !name) {
@@ -78,7 +80,38 @@ export async function POST(request: NextRequest) {
       { expiresIn: '24h' }
     )
 
-    // Create admin without school (onboarding comes next)
+    // Create school if schoolName and schoolSlug are provided
+    let createdSchoolId: string | null = null
+    let requiresOnboarding = true
+
+    if (schoolName && schoolSlug) {
+      console.log('[Signup] Creating school:', { schoolName, schoolSlug })
+
+      // Check if slug already exists
+      const existingSchool = await prisma.school.findUnique({
+        where: { slug: schoolSlug }
+      })
+
+      if (existingSchool) {
+        console.log('[Signup] School slug already exists')
+        return NextResponse.json(
+          { error: 'הקישור הזה כבר תפוס. אנא בחר קישור אחר.' },
+          { status: 409 }
+        )
+      }
+
+      const school = await prisma.school.create({
+        data: {
+          name: schoolName,
+          slug: schoolSlug,
+        }
+      })
+      createdSchoolId = school.id
+      requiresOnboarding = false
+      console.log('[Signup] School created successfully:', school.id)
+    }
+
+    // Create admin
     console.log('[Signup] Creating admin account')
     const admin = await prisma.admin.create({
       data: {
@@ -86,10 +119,10 @@ export async function POST(request: NextRequest) {
         passwordHash,
         name,
         role: 'OWNER',
-        schoolId: null, // Will be set during onboarding
+        schoolId: createdSchoolId, // Will be null if onboarding required
         emailVerified: false,
         verificationToken,
-        onboardingCompleted: false, // User must complete onboarding
+        onboardingCompleted: !requiresOnboarding, // True if school was created
       },
     })
     console.log('[Signup] Admin account created successfully')
@@ -118,7 +151,7 @@ export async function POST(request: NextRequest) {
         name: admin.name,
       },
       emailSent,
-      requiresOnboarding: true,
+      requiresOnboarding,
     })
   } catch (error) {
     console.error('Signup error:', error)
