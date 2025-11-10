@@ -22,7 +22,14 @@ export async function GET(request: NextRequest) {
     const where: any = {}
 
     // Regular admins can only see their school's events (all roles except SUPER_ADMIN)
-    if (admin.role !== 'SUPER_ADMIN' && admin.schoolId) {
+    if (admin.role !== 'SUPER_ADMIN') {
+      // CRITICAL: Non-super admins MUST have a schoolId to prevent seeing all events
+      if (!admin.schoolId) {
+        return NextResponse.json(
+          { error: 'Admin must have a school assigned. Please logout and login again.' },
+          { status: 403 }
+        )
+      }
       where.schoolId = admin.schoolId
     }
 

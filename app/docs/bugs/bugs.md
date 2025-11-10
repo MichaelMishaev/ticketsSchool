@@ -661,6 +661,118 @@ npm run build
 
 ---
 
+### Bug #11: Data Isolation Bypass - Users Without schoolId See All Events
+**Files:** Multiple API routes (`/api/events/route.ts`, `/api/dashboard/*/route.ts`)
+**Severity:** 🔴 CRITICAL - Data Breach
+**Fixed Date:** 2025-11-10
+
+**Description:**
+All dashboard and event API routes had weak validation that allowed users with `schoolId: undefined` in their JWT session to bypass multi-tenant data isolation and see events from ALL schools, including private data from other organizations.
+
+**User Report:**
+```
+"why 345287info@gmail.com see Default School events???"
+User with their own school seeing 3 events from "Default School" that belonged to a different organization.
+```
+
+**Root Cause:**
+The filtering logic in API routes used this pattern:
+```typescript
+if (admin.role !== 'SUPER_ADMIN' && admin.schoolId) {
+  where.schoolId = admin.schoolId
+}
+```
+
+The problem: `&& admin.schoolId` means if `schoolId` is `undefined`, the entire condition is FALSE, and NO filter is applied. Result: User sees ALL events from ALL schools.
+
+**Attack Scenario:**
+1. Attacker creates account via OAuth
+2. JWT session has `schoolId: undefined` (before onboarding or from old session)
+3. Attacker calls `/api/events` or `/api/dashboard/stats`
+4. Validation checks: `admin.role !== 'SUPER_ADMIN'` ✅ AND `admin.schoolId` ❌ undefined
+5. Condition FALSE → No filter applied
+6. **Attacker sees all events from all schools** (data breach)
+
+**Security Impact:**
+- ⚠️ **Data Breach**: Unauthorized access to other schools' events, registrations, and statistics
+- ⚠️ **Privacy Violation**: User emails, registration data exposed across tenant boundaries
+- ⚠️ **Compliance Risk**: GDPR/privacy violations for exposing user data to wrong organizations
+
+**Affected Endpoints:**
+1. `/api/events` - List all events
+2. `/api/dashboard/stats` - Dashboard statistics
+3. `/api/dashboard/active-events` - Active events list
+4. `/api/dashboard/registrations` - Registration data
+5. `/api/dashboard/waitlist` - Waitlist data
+6. `/api/dashboard/occupancy` - Occupancy statistics
+
+**Code Before Fix:**
+```typescript
+// app/api/events/route.ts:25
+// Regular admins can only see their school's events
+if (admin.role !== 'SUPER_ADMIN' && admin.schoolId) {
+  where.schoolId = admin.schoolId
+}
+// ❌ If schoolId is undefined, filter is NOT applied → sees ALL schools
+```
+
+**Fix Applied:**
+```typescript
+// Regular admins MUST have a schoolId
+if (admin.role !== 'SUPER_ADMIN') {
+  // CRITICAL: Non-super admins MUST have a schoolId to prevent seeing all events
+  if (!admin.schoolId) {
+    return NextResponse.json(
+      { error: 'Admin must have a school assigned. Please logout and login again.' },
+      { status: 403 }
+    )
+  }
+  where.schoolId = admin.schoolId
+}
+// ✅ Now explicitly rejects requests from users without schoolId
+```
+
+**Files Changed:**
+- `/app/api/events/route.ts:25-34` - Added strict schoolId validation
+- `/app/api/dashboard/stats/route.ts:20-29` - Added strict schoolId validation
+- `/app/api/dashboard/active-events/route.ts:22-31` - Added strict schoolId validation
+- `/app/api/dashboard/registrations/route.ts:22-33` - Added strict schoolId validation
+- `/app/api/dashboard/waitlist/route.ts:22-33` - Added strict schoolId validation
+- `/app/api/dashboard/occupancy/route.ts:20-29` - Added strict schoolId validation
+
+**How Users Are Affected:**
+- Users with old session cookies (created before Bug #10 fix) will get a 403 error
+- Error message: "Admin must have a school assigned. Please logout and login again."
+- After logout/login, new session will have correct schoolId from database
+
+**Testing:**
+```bash
+# 1. Test that users without schoolId are rejected
+# Simulate by temporarily setting JWT session with schoolId: undefined
+# Expected: 403 Forbidden
+
+# 2. Test that users with valid schoolId see only their events
+# Login as user with schoolId
+# Expected: Only events from their school
+
+# 3. Test that SUPER_ADMIN can see all schools
+# Login as SUPER_ADMIN
+# Expected: Can see all events (optional schoolId filter)
+```
+
+**Prevention:**
+This bug highlights the importance of:
+1. **Fail-secure validation**: Always reject invalid states, don't silently skip filters
+2. **Explicit checks**: Use `if (!value)` instead of relying on truthy/falsy in complex conditions
+3. **Session integrity**: Ensure JWT sessions are always updated when database state changes (see Bug #10)
+
+**Related Bugs:**
+- Bug #10: Session not updated after onboarding (root cause of undefined schoolId)
+
+**Status:** ✅ FIXED
+
+---
+
 **Report Generated:** 2025-11-10
 **Tested By:** Claude Code QA
 **Next Review:** After critical fixes implemented
