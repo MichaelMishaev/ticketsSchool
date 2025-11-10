@@ -290,10 +290,10 @@ export default function AdminSignupPage() {
 
               <div>
                 <label htmlFor="schoolSlug" className="block text-sm font-medium text-gray-700 text-right">
-                  שם קצר באנגלית <span className="text-red-500">*</span>
+                  המזהה שלך באנגלית <span className="text-red-500">*</span>
                 </label>
-                <p className="mt-1 text-xs text-gray-600 text-right mb-2">
-                  🏷️ בחר שם קצר באנגלית שיזהה אותך במערכת (כמו שם משתמש)
+                <p className="mt-1 text-sm text-gray-700 text-right mb-2 bg-yellow-50 border-r-4 border-yellow-400 p-2 rounded">
+                  <strong>בחר שם פשוט באנגלית</strong> - זה יהיה חלק מהקישור לעמוד האירועים שלך
                 </p>
                 <div className="mt-1 relative">
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -312,18 +312,20 @@ export default function AdminSignupPage() {
                   />
                 </div>
                 <div className="mt-2 space-y-2 text-right">
-                  <div className="bg-blue-50 border-r-4 border-blue-400 rounded p-3 text-xs">
-                    <p className="text-gray-700 mb-2">
-                      ✨ <strong>לדוגמה:</strong> אם תכתוב <span className="font-mono font-semibold">herzl</span>
+                  <div className="bg-blue-50 border-r-4 border-blue-400 rounded p-3">
+                    <p className="text-sm text-gray-800 mb-2">
+                      <strong>דוגמה:</strong> אם תכתוב <span className="font-mono font-bold text-blue-700">herzl</span>
                     </p>
-                    <p className="text-gray-600 mb-1">הכתובת לעמוד האירועים שלך תהיה:</p>
-                    <p className="font-mono font-bold text-blue-600 bg-white px-2 py-1 rounded" dir="ltr">
-                      kartis.info/p/{formData.schoolSlug || 'herzl'}
-                    </p>
+                    <p className="text-xs text-gray-600 mb-2">↓ הקישור שלך יהיה ↓</p>
+                    <div className="bg-white border-2 border-blue-300 rounded p-2">
+                      <p className="font-mono font-bold text-blue-600 text-sm" dir="ltr">
+                        kartis.info/p/{formData.schoolSlug || 'herzl'}
+                      </p>
+                    </div>
                   </div>
                   <div className="bg-gray-50 border border-gray-300 rounded p-2 text-xs text-gray-600">
-                    <p className="mb-1">✅ מה מותר להשתמש:</p>
-                    <p className="font-semibold text-gray-700">
+                    <p className="mb-1"><strong>רק אלה מותרים:</strong></p>
+                    <p className="text-gray-700">
                       אותיות אנגליות קטנות (a-z) • מספרים (0-9) • מקף (-)
                     </p>
                   </div>
