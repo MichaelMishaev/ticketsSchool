@@ -1,14 +1,22 @@
 -- Fix script to prepare database for add_multi_school_support migration
 -- This script must be run BEFORE the migration
 
--- Step 1: Remove ALL failed migration records (both with and without finished_at)
--- This handles migrations that failed partway through or have error timestamps
+-- Step 1: Remove ALL existing migration records for problematic migrations
+-- This ensures a clean slate before re-inserting them as successful
 DELETE FROM "_prisma_migrations"
 WHERE migration_name IN (
     '20250920000000_allow_multiple_registrations_per_phone',
     '20251107211615_add_multi_school_support',
     '20251107_add_spots_reserved'
 );
+
+-- Step 1b: Re-insert these migrations as successfully completed
+-- This prevents Prisma from trying to run them again
+INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, logs, rolled_back_at, started_at, applied_steps_count)
+VALUES
+    (gen_random_uuid()::text, '', NOW(), '20251107211615_add_multi_school_support', NULL, NULL, NOW(), 1),
+    (gen_random_uuid()::text, '', NOW(), '20251107_add_spots_reserved', NULL, NULL, NOW(), 1)
+ON CONFLICT DO NOTHING;
 
 -- Step 2: Create School table if it doesn't exist
 CREATE TABLE IF NOT EXISTS "public"."School" (
