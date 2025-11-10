@@ -40,15 +40,20 @@ if [ -n "$DATABASE_URL" ]; then
         echo "🗃️  Running migrations..."
         npx prisma generate || echo "⚠️  Prisma generate failed"
 
-        # Try to run migrations
+        # Try to run migrations (capture exit code properly)
+        set +e  # Temporarily disable exit on error
         npx prisma migrate deploy
+        MIGRATION_EXIT_CODE=$?
+        set -e  # Re-enable exit on error
 
         # If migrations fail, try to fix failed migrations and retry
-        if [ $? -ne 0 ]; then
-            echo "⚠️  Initial migration failed, attempting to fix failed migrations..."
+        if [ $MIGRATION_EXIT_CODE -ne 0 ]; then
+            echo "⚠️  Initial migration failed (exit code: $MIGRATION_EXIT_CODE)"
+            echo "🔧 Attempting to fix failed migrations..."
 
             # Mark any failed migration as rolled back
-            npx prisma migrate resolve --rolled-back 20250920000000_allow_multiple_registrations_per_phone 2>/dev/null || true
+            echo "Marking failed migration as rolled back..."
+            npx prisma migrate resolve --rolled-back 20250920000000_allow_multiple_registrations_per_phone || echo "No failed migration to resolve"
 
             # Retry migrations
             echo "🔄 Retrying migrations..."
