@@ -69,7 +69,9 @@ if [ -n "$DATABASE_URL" ]; then
             echo "🔧 Fixing data integrity issues..."
             if [ -f "scripts/fix-events-school-id.sql" ]; then
                 echo "Running data fix script..."
-                npx prisma db execute --file scripts/fix-events-school-id.sql --schema prisma/schema.prisma 2>/dev/null || echo "Data fix script failed or not needed"
+                cat scripts/fix-events-school-id.sql | npx prisma db execute --stdin --schema prisma/schema.prisma || echo "⚠️  Data fix script failed or not needed"
+            else
+                echo "⚠️  Data fix script not found at scripts/fix-events-school-id.sql"
             fi
 
             # Retry migrations up to 3 times
