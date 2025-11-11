@@ -20,8 +20,11 @@ import {
   Globe,
   Phone,
   MessageCircle,
-  Mail
+  Mail,
+  Trophy
 } from 'lucide-react'
+import UseCaseCarousel from './UseCaseCarousel'
+import UseCaseTabs from './UseCaseTabs'
 
 export default function LandingPage() {
   const [statsAnimated, setStatsAnimated] = useState(false)
@@ -49,13 +52,6 @@ export default function LandingPage() {
               >
                 התחבר
               </Link>
-              <Link
-                href="/admin/signup"
-                className="group px-3 sm:px-6 py-2.5 sm:py-2.5 text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-red-500 to-red-600 rounded-lg sm:rounded-xl hover:from-red-600 hover:to-red-700 transition-all shadow-lg hover:shadow-xl hover:scale-105 flex items-center gap-1 sm:gap-2 whitespace-nowrap min-h-[44px]"
-              >
-                <span>התחל</span>
-                <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 group-hover:-translate-x-1 transition-transform" />
-              </Link>
             </div>
           </div>
         </div>
@@ -78,7 +74,7 @@ export default function LandingPage() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
               </span>
-              <span className="text-xs sm:text-sm font-bold text-gray-900">מערכת הניהול המובילה לבתי ספר</span>
+              <span className="text-xs sm:text-sm font-bold text-gray-900">מערכת ניהול אירועים מקצועית</span>
             </div>
 
             {/* Massive Headline */}
@@ -94,6 +90,11 @@ export default function LandingPage() {
               מערכת ניהול אירועים מלאה עם רישום מקוון, רשימת המתנה אוטומטית,
               ניהול צוות וניתוח נתונים בזמן אמת. הכל במקום אחד.
             </p>
+
+            {/* Use Case Carousel - Show Versatility */}
+            <div className="pt-8">
+              <UseCaseCarousel autoPlayInterval={3000} pauseOnHover={true} />
+            </div>
 
             {/* Powerful CTAs */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
@@ -135,7 +136,7 @@ export default function LandingPage() {
               <span className="bg-gradient-to-r from-red-600 to-purple-600 bg-clip-text text-transparent">במקום אחד</span>
             </h2>
             <p className="text-base sm:text-xl text-gray-600 max-w-2xl mx-auto">
-              תכונות מתקדמות שנבנו במיוחד עבור בתי ספר ומוסדות חינוך
+              תכונות מתקדמות לכל סוג של ארגון או קבוצה
             </p>
           </div>
 
@@ -179,7 +180,7 @@ export default function LandingPage() {
               {
                 icon: <Lock className="w-10 h-10" />,
                 title: 'אבטחה מקסימלית',
-                description: 'בידוד מוחלט בין בתי ספר, הצפנת נתונים מלאה והרשאות מדויקות לכל משתמש',
+                description: 'בידוד מוחלט בין ארגונים, הצפנת נתונים מלאה והרשאות מדויקות לכל משתמש',
                 color: 'from-red-500 to-red-600',
                 bgColor: 'bg-red-50',
               },
@@ -323,27 +324,27 @@ export default function LandingPage() {
                 <div className="flex-1 text-right">
                   <h3 className="text-xl sm:text-3xl font-bold mb-4 text-gray-900">זהו! אתם בפנים</h3>
                   <p className="text-base sm:text-xl text-gray-700 leading-relaxed mb-4">
-                    המערכת תבקש מכם לתת שם לבית הספר שלכם, ואז תוכלו להתחיל ליצור אירועים.
+                    המערכת תבקש מכם לתת שם לארגון שלכם, ואז תוכלו להתחיל ליצור אירועים.
                   </p>
 
                   {/* URL/Slug Explanation */}
                   <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-6 mb-4">
                     <div className="flex items-center justify-end gap-3 mb-3">
-                      <span className="text-base sm:text-xl font-bold text-purple-900">תקבלו כתובת ייחודית לבית הספר שלכם!</span>
+                      <span className="text-base sm:text-xl font-bold text-purple-900">תקבלו כתובת ייחודית לארגון שלכם!</span>
                       <Globe className="w-6 h-6 text-purple-600" />
                     </div>
                     <div className="bg-white rounded-lg p-4 mb-3">
-                      <p className="text-gray-700 text-sm sm:text-lg mb-3 text-right">לדוגמה: אם בית הספר שלכם נקרא "בית ספר הרצל"</p>
+                      <p className="text-gray-700 text-sm sm:text-lg mb-3 text-right">לדוגמה: אם הארגון שלכם נקרא "קבוצת הרצל"</p>
                       <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg p-4 flex-wrap">
                         <div className="bg-purple-600 text-white px-3 py-2 rounded-lg font-mono text-sm sm:text-lg font-bold break-all">
-                          herzl.kartis.info
+                          kartis.info/p/herzl
                         </div>
                         <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
                         <div className="text-gray-700 font-bold text-base sm:text-lg">הכתובת שלכם</div>
                       </div>
                     </div>
                     <p className="text-purple-800 text-base leading-relaxed">
-                      את הקישור הזה תשתפו עם ההורים והתלמידים כדי שיוכלו להירשם לאירועים שלכם!
+                      את הקישור הזה תשתפו עם המשתתפים הפוטנציאליים כדי שיוכלו להירשם לאירועים שלכם!
                     </p>
                   </div>
 
@@ -392,8 +393,8 @@ export default function LandingPage() {
                 a: 'בהחלט! המערכת מותאמת במלואה לטלפונים ניידים, טאבלטים ומחשבים. ניתן לנהל אירועים מכל מכשיר בכל מקום.',
               },
               {
-                q: 'האם המידע של בית הספר שלי מאובטח?',
-                a: 'כן. כל בית ספר רואה רק את המידע שלו בלבד. אנחנו משתמשים בהצפנה מתקדמת ובידוד מוחלט של נתונים.',
+                q: 'האם המידע של הארגון שלי מאובטח?',
+                a: 'כן. כל ארגון רואה רק את המידע שלו בלבד. אנחנו משתמשים בהצפנה מתקדמת ובידוד מוחלט של נתונים.',
               },
               {
                 q: 'האם יש תמיכה טכנית?',
@@ -412,6 +413,20 @@ export default function LandingPage() {
                 <p className="text-gray-600 leading-relaxed">{faq.a}</p>
               </div>
             ))}
+
+            {/* Tabbed Use Cases - Progressive Disclosure */}
+            <div className="mt-12">
+              <div className="text-center mb-8">
+                <h3 className="text-2xl sm:text-4xl font-black mb-4 bg-gradient-to-r from-red-600 to-purple-600 bg-clip-text text-transparent">
+                  למי זה מתאים?
+                </h3>
+                <p className="text-base sm:text-xl text-gray-700 font-medium max-w-3xl mx-auto">
+                  מערכת הרישום מושלמת לכל ארגון, קבוצה או אדם שמארגן אירועים עם מספר משתתפים מוגבל
+                </p>
+              </div>
+
+              <UseCaseTabs />
+            </div>
           </div>
         </div>
       </section>
@@ -517,7 +532,7 @@ export default function LandingPage() {
             מוכנים להתחיל?
           </h2>
           <p className="text-lg sm:text-2xl lg:text-3xl mb-12 opacity-95 font-medium leading-relaxed">
-            הצטרפו לבתי הספר שכבר מנהלים אירועים בצורה מקצועית
+            הצטרפו לארגונים שכבר מנהלים אירועים בצורה מקצועית
           </p>
 
           {/* Features Grid in CTA */}
@@ -571,7 +586,7 @@ export default function LandingPage() {
                 </div>
               </div>
               <p className="text-gray-400 leading-relaxed">
-                מערכת ניהול אירועים מתקדמת לבתי ספר ומוסדות חינוך
+                מערכת ניהול אירועים מתקדמת לכל סוג של ארגון וקבוצה
               </p>
             </div>
 

@@ -81,7 +81,7 @@ export default function NewEventPage() {
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
               rows={3}
-              placeholder="פרטים נוספים על האירוע..."
+              placeholder="לדוגמה: משחק ידידות 11 נגד 11. הביאו נעלי ספורט, בקבוק מים ומדים. נפתח את המגרש בשעה 16:00, התחלה 16:30, סיום 18:00. חובה להגיע בזמן!"
             />
           </div>
 
@@ -189,7 +189,7 @@ export default function NewEventPage() {
               onChange={(e) => setFormData({ ...formData, conditions: e.target.value })}
               className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
               rows={3}
-              placeholder="תנאים מיוחדים, הגבלות גיל, דרישות..."
+              placeholder="לדוגמה: האירוע מיועד לגילאי 10-16 בלבד. חובה להביא נעלי ספורט. אסור להביא חטיפים מבית. הורה חייב לחתום על הסכמה. אסור לעזוב את המתחם ללא אישור. מי שמפריע יתבקש לעזוב."
             />
           </div>
 
@@ -216,7 +216,7 @@ export default function NewEventPage() {
               onChange={(e) => setFormData({ ...formData, completionMessage: e.target.value })}
               className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
               rows={3}
-              placeholder="הודעה מותאמת אישית שתוצג לנרשמים לאחר השלמת ההרשמה..."
+              placeholder="לדוגמה: מעולה! נרשמת בהצלחה. ניתן לאסוף כרטיסים בבית הספר, קומה 2, חדר 15, בין השעות 14:00-16:00. אם אתה לא יכול להגיע - תתקשר אלינו ל-054-1234567. נתראה באירוע!"
             />
             <p className="text-sm text-gray-500 mt-1">
               ההודעה תוצג למשתתפים לאחר שיסיימו את תהליך ההרשמה בהצלחה.
