@@ -285,75 +285,81 @@ export default function LandingPage() {
               </div>
 
               {/* Step 2 */}
-              <div className="flex gap-3 sm:gap-6">
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-red-500 text-white rounded-full flex items-center justify-center text-2xl sm:text-3xl font-bold shadow-lg">
-                    2
+              <div className="space-y-4">
+                <div className="flex gap-3 sm:gap-6">
+                  <div className="flex-shrink-0">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-red-500 text-white rounded-full flex items-center justify-center text-2xl sm:text-3xl font-bold shadow-lg">
+                      2
+                    </div>
+                  </div>
+                  <div className="flex-1 text-right">
+                    <h3 className="text-lg sm:text-2xl lg:text-3xl font-bold mb-2 sm:mb-4 text-gray-900">תירשמו</h3>
+                    <p className="text-sm sm:text-lg lg:text-xl text-gray-700 leading-relaxed">
+                      המערכת תבקש מכם להירשם. אפשר להירשם עם:
+                    </p>
                   </div>
                 </div>
-                <div className="flex-1 text-right">
-                  <h3 className="text-lg sm:text-2xl lg:text-3xl font-bold mb-2 sm:mb-4 text-gray-900">תירשמו</h3>
-                  <p className="text-sm sm:text-lg lg:text-xl text-gray-700 leading-relaxed mb-3 sm:mb-4">
-                    המערכת תבקש מכם להירשם. אפשר להירשם עם:
-                  </p>
-                  <div className="bg-green-50 rounded-xl p-4 sm:p-6 space-y-2 sm:space-y-3">
-                    <div className="flex items-center justify-end gap-2 sm:gap-3">
-                      <span className="text-sm sm:text-lg lg:text-xl font-semibold text-gray-900">חשבון גוגל (הכי מהיר!)</span>
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                        <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                      </div>
+
+                {/* Signup Options - Full Width */}
+                <div className="bg-green-50 rounded-xl p-4 sm:p-6 space-y-3 sm:space-y-4 w-full">
+                  <div className="flex items-center justify-center gap-2 sm:gap-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                     </div>
-                    <div className="text-center text-gray-400 text-sm">או</div>
-                    <div className="flex items-center justify-end gap-2 sm:gap-3">
-                      <span className="text-sm sm:text-lg lg:text-xl font-semibold text-gray-900">אימייל וסיסמה</span>
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                        <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                      </div>
+                    <span className="text-base sm:text-xl font-bold text-gray-900 text-center">חשבון גוגל (הכי מהיר!)</span>
+                  </div>
+                  <div className="text-center text-gray-400 text-sm sm:text-base font-medium">או</div>
+                  <div className="flex items-center justify-center gap-2 sm:gap-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                     </div>
+                    <span className="text-base sm:text-xl font-bold text-gray-900 text-center">אימייל וסיסמה</span>
                   </div>
                 </div>
               </div>
 
               {/* Step 3 */}
-              <div className="flex gap-3 sm:gap-6">
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl sm:text-3xl font-bold shadow-lg">
-                    ✓
+              <div className="space-y-4">
+                <div className="flex gap-3 sm:gap-6">
+                  <div className="flex-shrink-0">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl sm:text-3xl font-bold shadow-lg">
+                      ✓
+                    </div>
+                  </div>
+                  <div className="flex-1 text-right">
+                    <h3 className="text-lg sm:text-2xl lg:text-3xl font-bold mb-2 sm:mb-4 text-gray-900">זהו! אתם בפנים</h3>
+                    <p className="text-sm sm:text-lg lg:text-xl text-gray-700 leading-relaxed">
+                      המערכת תבקש מכם לתת שם לארגון שלכם, ואז תוכלו להתחיל ליצור אירועים.
+                    </p>
                   </div>
                 </div>
-                <div className="flex-1 text-right">
-                  <h3 className="text-lg sm:text-2xl lg:text-3xl font-bold mb-2 sm:mb-4 text-gray-900">זהו! אתם בפנים</h3>
-                  <p className="text-sm sm:text-lg lg:text-xl text-gray-700 leading-relaxed mb-3 sm:mb-4">
-                    המערכת תבקש מכם לתת שם לארגון שלכם, ואז תוכלו להתחיל ליצור אירועים.
-                  </p>
 
-                  {/* URL/Slug Explanation */}
-                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-4 sm:p-6 mb-4">
-                    <div className="flex items-center justify-end gap-2 sm:gap-3 mb-3">
-                      <span className="text-sm sm:text-xl font-bold text-purple-900">תקבלו כתובת ייחודית לארגון שלכם!</span>
-                      <Globe className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 flex-shrink-0" />
-                    </div>
-                    <div className="bg-white rounded-lg p-3 sm:p-4 mb-3">
-                      <p className="text-gray-700 text-xs sm:text-lg mb-3 text-right">לדוגמה: אם הארגון שלכם נקרא "קבוצת הרצל"</p>
-                      <div className="flex flex-col items-stretch gap-2 sm:gap-3">
-                        <div className="text-gray-700 font-bold text-sm sm:text-lg text-center">הכתובת שלכם</div>
-                        <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg p-2 sm:p-3 flex items-center justify-center">
-                          <div className="bg-purple-600 text-white px-3 py-2 sm:px-4 sm:py-3 rounded-lg font-mono text-xs sm:text-base font-bold break-all text-center max-w-full">
-                            kartis.info/p/herzl
-                          </div>
+                {/* URL/Slug Explanation - Full Width */}
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-4 sm:p-6 w-full">
+                  <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4">
+                    <Globe className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 flex-shrink-0" />
+                    <span className="text-base sm:text-xl font-bold text-purple-900 text-center">תקבלו כתובת ייחודית לארגון שלכם!</span>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 sm:p-6 mb-4 w-full">
+                    <p className="text-gray-700 text-sm sm:text-lg mb-4 text-center font-medium">לדוגמה: אם הארגון שלכם נקרא "קבוצת הרצל"</p>
+                    <div className="space-y-3 w-full">
+                      <div className="text-gray-700 font-bold text-sm sm:text-lg text-center">הכתובת שלכם תהיה:</div>
+                      <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg p-3 sm:p-4 w-full">
+                        <div className="bg-purple-600 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-lg font-mono text-sm sm:text-lg font-bold text-center w-full break-all">
+                          kartis.info/p/herzl
                         </div>
                       </div>
                     </div>
-                    <p className="text-purple-800 text-sm sm:text-base leading-relaxed text-right">
-                      את הקישור הזה תשתפו עם המשתתפים הפוטנציאליים כדי שיוכלו להירשם לאירועים שלכם!
-                    </p>
                   </div>
+                  <p className="text-purple-800 text-sm sm:text-base leading-relaxed text-center">
+                    את הקישור הזה תשתפו עם המשתתפים הפוטנציאליים כדי שיוכלו להירשם לאירועים שלכם!
+                  </p>
+                </div>
 
-                  <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 sm:p-6">
-                    <p className="text-sm sm:text-lg text-blue-900 font-semibold">
-                      💡 לא צריך להבין בטכנולוגיה! המערכת פשוטה ואינטואיטיבית.
-                    </p>
-                  </div>
+                <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 sm:p-6 w-full text-center">
+                  <p className="text-sm sm:text-lg text-blue-900 font-semibold">
+                    💡 לא צריך להבין בטכנולוגיה! המערכת פשוטה ואינטואיטיבית.
+                  </p>
                 </div>
               </div>
             </div>

@@ -167,9 +167,10 @@ export default function OnboardingPage() {
             </div>
 
             <div>
-              <label htmlFor="schoolSlug" className="block text-sm font-medium text-gray-700 text-right">
-                קישור הארגון <span className="text-red-500">*</span>
+              <label htmlFor="schoolSlug" className="block text-sm font-medium text-gray-700 text-right mb-2">
+               שם הארגון באנגלית <span className="text-red-500">*</span>
               </label>
+            
               <div className="mt-1 relative">
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                   <LinkIcon className="h-5 w-5 text-gray-400" />
@@ -182,18 +183,15 @@ export default function OnboardingPage() {
                   value={formData.schoolSlug}
                   onChange={(e) => setFormData({ ...formData, schoolSlug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
                   className="appearance-none block w-full pr-10 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-right font-mono"
-                  placeholder="my-organization"
+                  placeholder="your-organization"
                   dir="ltr"
                 />
               </div>
-              <div className="mt-2 space-y-1 text-right">
-                <p className="text-xs text-gray-700">
-                  הקישור שלך: <span className="font-mono font-semibold text-blue-600" dir="ltr">ticketcap.com/p/{formData.schoolSlug || 'my-organization'}</span>
-                </p>
-                <div className="bg-yellow-50 border border-yellow-200 rounded p-2 text-xs text-gray-600">
-                  <p className="font-semibold text-yellow-800 mb-1">⚠️ חשוב!</p>
+              <div className="mt-2 space-y-2 text-right">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 text-xs text-gray-700">
+                  <p className="font-semibold text-yellow-800 mb-1">📝 כללי כתיבה:</p>
                   <p>
-                    <strong>רק אותיות אנגליות קטנות</strong> (a-z), <strong>מספרים</strong> (0-9) ו<strong>מקף</strong> (-)
+                    רק <strong>אותיות אנגליות קטנות</strong> (a-z), <strong>מספרים</strong> (0-9) ו<strong>מקף</strong> (-)
                   </p>
                 </div>
               </div>
@@ -214,12 +212,6 @@ export default function OnboardingPage() {
                   'המשך לדשבורד'
                 )}
               </button>
-            </div>
-
-            <div className="bg-blue-50 border-r-4 border-blue-400 p-3 text-right">
-              <p className="text-xs text-blue-800">
-                💡 הקישור יווצר אוטומטית מהשם שתכתוב למעלה. אפשר לערוך אותו בכל זמן בהגדרות.
-              </p>
             </div>
           </form>
         </div>

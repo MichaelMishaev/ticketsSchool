@@ -18,6 +18,32 @@ export const metadata: Metadata = {
   title: "kartis.info - ניהול כרטיסים",
   description: "מערכת ניהול כרטיסים לאירועים ומשחקים - kartis.info",
   metadataBase: new URL("https://kartis.info"),
+  openGraph: {
+    title: "kartis.info - ניהול כרטיסים",
+    description: "מערכת ניהול כרטיסים לאירועים ומשחקים",
+    url: "https://kartis.info",
+    siteName: "kartis.info",
+    images: [
+      {
+        url: "/images/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "kartis.info - ניהול כרטיסים לאירועים ומשחקים",
+      },
+    ],
+    locale: "he_IL",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "kartis.info - ניהול כרטיסים",
+    description: "מערכת ניהול כרטיסים לאירועים ומשחקים",
+    images: ["/images/og-image.png"],
+  },
+  icons: {
+    icon: "/images/ticketcap-logo.png",
+    apple: "/images/ticketcap-logo.png",
+  },
 };
 
 export default function RootLayout({

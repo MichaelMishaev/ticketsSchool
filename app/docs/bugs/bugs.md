@@ -1614,6 +1614,123 @@ Subtitle: "המערכת שלנו נבנתה במיוחד למשחקי כדורג
 
 ---
 
+### Bug #18: White Text on White Background in Mobile Registration Form - Invisible Input Fields
+**File:** `/app/p/[schoolSlug]/[eventSlug]/page.tsx`
+**Severity:** 🔴 CRITICAL - User Registration Blocker
+**Fixed Date:** 2025-11-11
+
+**Description:**
+On mobile devices, users filling out the event registration form could not see what they were typing because the input text color was white on a white background. This made the form completely unusable on mobile devices, blocking all new registrations from mobile users.
+
+**User Report:**
+```
+"on prod, after admin created url, users get in and fill data, the font is white n white background:
+[screenshot showing Hebrew form with invisible text in input fields]
+and people do not see what they type. problem ONLY on mobile"
+```
+
+**Visual Issue:**
+- Form fields: "שם מלא" (Full Name), "טלפון" (Phone), "שם הילד" (Child's Name)
+- Input text appeared invisible when typing
+- Only affected mobile browsers (likely iOS Safari, Chrome Mobile)
+- Desktop browsers worked fine (had default text color)
+
+**Root Cause:**
+The input fields in the registration form were missing explicit `text-gray-900` and `bg-white` CSS classes. On mobile browsers, especially with certain accessibility or dark mode settings, the default text color can be white. Without explicit styling, this resulted in white text on white background.
+
+**Code Before Fix:**
+```typescript
+// Line 372 - Dropdown select
+<select
+  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+>
+// ❌ No text color or background specified
+
+// Line 393 - Text/number input
+<input
+  type={field.type === 'number' ? 'number' : 'text'}
+  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+/>
+// ❌ No text color or background specified
+
+// Line 416 - Spots count input
+<input
+  type="number"
+  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+/>
+// ❌ No text color or background specified
+```
+
+**Fix Applied:**
+Added explicit `text-gray-900` (dark text) and `bg-white` (white background) to all input elements:
+
+```typescript
+// Line 372 - Dropdown select
+<select
+  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+>
+// ✅ Dark text on white background
+
+// Line 393 - Text/number input
+<input
+  type={field.type === 'number' ? 'number' : 'text'}
+  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+/>
+// ✅ Dark text on white background
+
+// Line 416 - Spots count input
+<input
+  type="number"
+  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+/>
+// ✅ Dark text on white background
+```
+
+**Files Changed:**
+- `/app/p/[schoolSlug]/[eventSlug]/page.tsx:372` - Added `text-gray-900 bg-white` to dropdown select
+- `/app/p/[schoolSlug]/[eventSlug]/page.tsx:393` - Added `text-gray-900 bg-white` to text/number input
+- `/app/p/[schoolSlug]/[eventSlug]/page.tsx:416` - Added `text-gray-900 bg-white` to spots count input
+
+**Impact:**
+- ✅ Mobile users can now see what they're typing
+- ✅ Consistent styling across all browsers and devices
+- ✅ Proper contrast meets accessibility standards
+- ✅ Registration form fully functional on mobile
+
+**Testing:**
+```bash
+# 1. Manual test on mobile device
+# Navigate to any event registration page on iPhone/Android
+# Expected: Text is dark and clearly visible in all input fields
+# Expected: No white-on-white text issue
+
+# 2. Test on desktop
+# Expected: No visual regression, still works as before
+
+# 3. Test with different mobile browsers
+# Safari iOS, Chrome Mobile, Firefox Mobile
+# Expected: All show dark text on white background
+```
+
+**Why This Was Critical:**
+- 🚫 **Complete Registration Failure**: Mobile users (majority of traffic) couldn't complete registration
+- 🚫 **Revenue Loss**: Events couldn't accept registrations from mobile users
+- 🚫 **Poor User Experience**: Users had to type blindly or give up
+- 🚫 **Accessibility Issue**: Violated WCAG contrast guidelines
+
+**Prevention:**
+Always specify explicit text colors and backgrounds for form inputs, especially for mobile:
+```typescript
+// Good pattern for all inputs
+className="... text-gray-900 bg-white ..."
+
+// Never rely on browser defaults for production forms
+```
+
+**Status:** ✅ FIXED
+
+---
+
 **Report Generated:** 2025-11-10
 **Last Updated:** 2025-11-11
 **Tested By:** Claude Code QA
