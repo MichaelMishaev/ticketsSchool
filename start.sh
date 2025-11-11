@@ -38,7 +38,13 @@ if [ -n "$DATABASE_URL" ]; then
     # Always run migrations in production (unless explicitly disabled)
     if [ "$SKIP_MIGRATIONS" != "true" ]; then
         echo "🗃️  Running migrations..."
-        npx prisma generate || echo "⚠️  Prisma generate failed"
+        echo "📦 Verifying Prisma client..."
+        if ! npx prisma generate; then
+            echo "❌ Prisma generate failed! This will cause database queries to fail."
+            echo "   Continuing anyway, but expect errors..."
+        else
+            echo "✅ Prisma client generated successfully"
+        fi
 
         # ALWAYS ensure all tables exist (idempotent operation)
         echo "🔧 Ensuring all database tables exist..."

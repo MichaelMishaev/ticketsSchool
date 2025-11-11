@@ -57,6 +57,9 @@ RUN addgroup -g 1001 -S nodejs && \
 RUN chmod +x start.sh && \
     chown -R nextjs:nodejs /app
 
+# Regenerate Prisma client in runner stage (ensures it's fresh and accessible)
+RUN npx prisma generate
+
 USER nextjs
 
 # Expose port

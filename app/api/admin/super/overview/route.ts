@@ -82,6 +82,12 @@ export async function GET() {
     })
   } catch (error) {
     console.error('Super admin overview error:', error)
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      name: error instanceof Error ? error.name : 'Unknown',
+      type: typeof error
+    })
 
     // Check if it's a forbidden error (not super admin)
     if (error instanceof Error && error.message.includes('Super admin required')) {
@@ -91,8 +97,13 @@ export async function GET() {
       )
     }
 
+    // Return more detailed error in development
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { error: 'Failed to fetch overview data' },
+      {
+        error: 'Failed to fetch overview data',
+        details: process.env.NODE_ENV !== 'production' ? errorMessage : undefined
+      },
       { status: 500 }
     )
   }
