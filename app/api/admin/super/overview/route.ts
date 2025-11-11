@@ -11,8 +11,36 @@ export async function GET() {
     // Verify super admin access
     await requireSuperAdmin()
 
+    // First, clean up any orphaned events (events without a valid school)
+    const orphanedEvents = await prisma.event.findMany({
+      where: {
+        school: null
+      },
+      select: {
+        id: true,
+        title: true,
+        schoolId: true
+      }
+    })
+
+    if (orphanedEvents.length > 0) {
+      console.warn(`Found ${orphanedEvents.length} orphaned events without valid schools:`, orphanedEvents)
+      // Delete orphaned events
+      await prisma.event.deleteMany({
+        where: {
+          school: null
+        }
+      })
+      console.log(`Deleted ${orphanedEvents.length} orphaned events`)
+    }
+
     // Fetch all events with school and registration data
     const events = await prisma.event.findMany({
+      where: {
+        school: {
+          isNot: null
+        }
+      },
       include: {
         school: {
           select: {

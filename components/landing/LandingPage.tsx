@@ -335,15 +335,15 @@ export default function LandingPage() {
                     </div>
                     <div className="bg-white rounded-lg p-4 mb-3">
                       <p className="text-gray-700 text-sm sm:text-lg mb-3 text-right">לדוגמה: אם הארגון שלכם נקרא "קבוצת הרצל"</p>
-                      <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg p-4 flex-wrap">
-                        <div className="bg-purple-600 text-white px-3 py-2 rounded-lg font-mono text-sm sm:text-lg font-bold break-all">
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg p-4">
+                        <div className="text-gray-700 font-bold text-base sm:text-lg order-2 sm:order-1">הכתובת שלכם</div>
+                        <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 order-1 sm:order-2 hidden sm:block" />
+                        <div className="bg-purple-600 text-white px-4 py-3 rounded-lg font-mono text-sm sm:text-base font-bold whitespace-nowrap order-0 sm:order-3 max-w-full overflow-x-auto">
                           kartis.info/p/herzl
                         </div>
-                        <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
-                        <div className="text-gray-700 font-bold text-base sm:text-lg">הכתובת שלכם</div>
                       </div>
                     </div>
-                    <p className="text-purple-800 text-base leading-relaxed">
+                    <p className="text-purple-800 text-base leading-relaxed text-right">
                       את הקישור הזה תשתפו עם המשתתפים הפוטנציאליים כדי שיוכלו להירשם לאירועים שלכם!
                     </p>
                   </div>
