@@ -301,19 +301,19 @@ export default function LandingPage() {
                 </div>
 
                 {/* Signup Options - Full Width */}
-                <div className="bg-green-50 rounded-xl p-4 sm:p-6 space-y-3 sm:space-y-4 w-full">
-                  <div className="flex items-center justify-center gap-2 sm:gap-3">
+                <div className="bg-green-50 rounded-xl p-4 sm:p-6 space-y-3 sm:space-y-4 w-full flex flex-col items-center">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <span className="text-base sm:text-xl font-bold text-gray-900">חשבון גוגל (הכי מהיר!)</span>
                     <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
                       <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                     </div>
-                    <span className="text-base sm:text-xl font-bold text-gray-900 text-center">חשבון גוגל (הכי מהיר!)</span>
                   </div>
                   <div className="text-center text-gray-400 text-sm sm:text-base font-medium">או</div>
-                  <div className="flex items-center justify-center gap-2 sm:gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <span className="text-base sm:text-xl font-bold text-gray-900">אימייל וסיסמה</span>
                     <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
                       <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                     </div>
-                    <span className="text-base sm:text-xl font-bold text-gray-900 text-center">אימייל וסיסמה</span>
                   </div>
                 </div>
               </div>
@@ -466,31 +466,31 @@ export default function LandingPage() {
               href="https://wa.me/972555020829"
               target="_blank"
               rel="noopener noreferrer"
-              className="relative group block"
+              className="relative group block max-w-md mx-auto"
             >
               {/* Glow Effect on Hover */}
-              <div className="absolute -inset-1 bg-gradient-to-r from-green-400 to-emerald-500 rounded-2xl blur opacity-0 group-hover:opacity-75 transition duration-500"></div>
+              <div className="absolute -inset-1 bg-gradient-to-r from-green-400 to-emerald-500 rounded-xl sm:rounded-2xl blur opacity-0 group-hover:opacity-75 transition duration-500"></div>
 
               {/* Main Button */}
-              <div className="relative flex items-center justify-between p-6 bg-gradient-to-r from-green-500 via-green-600 to-emerald-600 rounded-2xl shadow-xl hover:shadow-green-500/50 transition-all duration-300 transform group-hover:scale-105">
-                <div className="flex items-center gap-4">
+              <div className="relative flex items-center justify-between p-4 sm:p-6 bg-gradient-to-r from-green-500 via-green-600 to-emerald-600 rounded-xl sm:rounded-2xl shadow-xl hover:shadow-green-500/50 transition-all duration-300 transform group-hover:scale-105">
+                <div className="flex items-center gap-3 sm:gap-4">
                   <div className="relative">
                     <div className="absolute inset-0 bg-white rounded-full animate-ping opacity-25"></div>
-                    <div className="relative w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-lg">
-                      <MessageCircle className="w-7 h-7 text-green-600" />
+                    <div className="relative w-12 h-12 sm:w-14 sm:h-14 bg-white rounded-full flex items-center justify-center shadow-lg">
+                      <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 text-green-600" />
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-white font-bold text-base sm:text-xl mb-1">
+                    <div className="text-white font-bold text-sm sm:text-base lg:text-xl mb-1">
                       שלחו הודעה בוואטסאפ
                     </div>
                     <div className="flex items-center justify-end gap-2 text-green-50">
-                      <span className="text-sm sm:text-lg font-mono">055-502-0829</span>
+                      <span className="text-xs sm:text-sm lg:text-lg font-mono">055-502-0829</span>
                       <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
                     </div>
                   </div>
                 </div>
-                <ArrowLeft className="w-8 h-8 text-white group-hover:-translate-x-2 transition-transform duration-300" />
+                <ArrowLeft className="w-6 h-6 sm:w-8 sm:h-8 text-white group-hover:-translate-x-2 transition-transform duration-300" />
               </div>
             </a>
 
@@ -545,7 +545,6 @@ export default function LandingPage() {
           {/* Features Grid in CTA */}
           <div className="grid md:grid-cols-3 gap-6 mb-12 max-w-4xl mx-auto">
             {[
-              { icon: <Calendar />, text: 'אירועים ללא הגבלה' },
               { icon: <Users />, text: 'צוות עבודה משותף' },
               { icon: <BarChart3 />, text: 'דוחות בזמן אמת' },
               { icon: <Download />, text: 'יצוא נתונים מיידי' },

@@ -270,6 +270,14 @@ function EventRegistrationPage({ eventData }: { eventData: Event }) {
         })
       })
 
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('Server returned non-JSON response:', await response.text())
+        alert('שגיאה בשרת. אנא נסה שוב מאוחר יותר.')
+        return
+      }
+
       const result = await response.json()
       if (response.ok) {
         setRegistered(true)
@@ -280,7 +288,7 @@ function EventRegistrationPage({ eventData }: { eventData: Event }) {
       }
     } catch (error) {
       console.error('Error submitting registration:', error)
-      alert('שגיאה בהרשמה')
+      alert('שגיאה בהרשמה. אנא בדוק את החיבור לאינטרנט ונסה שוב.')
     } finally {
       setSubmitting(false)
     }

@@ -74,6 +74,33 @@ export default function EventPage() {
     }
   }
 
+  // Get missing required fields for validation
+  const getMissingFields = () => {
+    if (!event) return []
+
+    const missing: string[] = []
+
+    // Check all required fields in schema
+    event.fieldsSchema.forEach((field: any) => {
+      if (field.required) {
+        const value = formData[field.name]
+        if (!value || (typeof value === 'string' && value.trim() === '')) {
+          missing.push(field.label)
+        }
+      }
+    })
+
+    // Check terms acceptance if required
+    if (event.requireAcceptance && !acceptedTerms) {
+      missing.push('אישור תנאי השתתפות')
+    }
+
+    return missing
+  }
+
+  const missingFields = getMissingFields()
+  const isFormValid = missingFields.length === 0
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (event?.requireAcceptance && !acceptedTerms) {
@@ -92,6 +119,14 @@ export default function EventPage() {
         })
       })
 
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('Server returned non-JSON response:', await response.text())
+        alert('שגיאה בשרת. אנא נסה שוב מאוחר יותר.')
+        return
+      }
+
       const result = await response.json()
       if (response.ok) {
         setRegistered(true)
@@ -102,7 +137,7 @@ export default function EventPage() {
       }
     } catch (error) {
       console.error('Error submitting registration:', error)
-      alert('שגיאה בהרשמה')
+      alert('שגיאה בהרשמה. אנא בדוק את החיבור לאינטרנט ונסה שוב.')
     } finally {
       setSubmitting(false)
     }
@@ -439,9 +474,31 @@ export default function EventPage() {
               </div>
             )}
 
+            {/* Missing Fields Indicator */}
+            {!isFormValid && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-red-800 mb-2">
+                      יש למלא את השדות הבאים כדי להמשיך:
+                    </p>
+                    <ul className="text-sm text-red-700 space-y-1">
+                      {missingFields.map((field, index) => (
+                        <li key={index} className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 bg-red-600 rounded-full"></span>
+                          {field}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <button
               type="submit"
-              disabled={submitting || (event.status !== 'OPEN')}
+              disabled={submitting || (event.status !== 'OPEN') || !isFormValid}
               className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               {submitting ? (
@@ -449,6 +506,8 @@ export default function EventPage() {
                   <Loader2 className="w-5 h-5 animate-spin ml-2" />
                   שולח...
                 </span>
+              ) : !isFormValid ? (
+                'נא למלא את כל השדות החובה'
               ) : (
                 isFull ? 'הרשמה לרשימת המתנה' : 'שלח הרשמה'
               )}

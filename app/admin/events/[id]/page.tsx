@@ -197,6 +197,29 @@ export default function EventManagementPage() {
     return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${className}`}>{text}</span>
   }
 
+  // Helper function to get field label from fieldsSchema
+  const getFieldLabel = (fieldKey: string): string => {
+    if (!event?.fieldsSchema) return fieldKey
+
+    // Check if this is a custom field (starts with "field_")
+    if (fieldKey.startsWith('field_')) {
+      const field = event.fieldsSchema.find((f: any) => f.id === fieldKey)
+      return field?.label || fieldKey
+    }
+
+    // Return common field labels in Hebrew
+    const commonFields: Record<string, string> = {
+      name: 'שם',
+      phone: 'טלפון',
+      email: 'אימייל',
+      spotsCount: 'מספר מקומות',
+      message: 'הודעה',
+      notes: 'הערות'
+    }
+
+    return commonFields[fieldKey] || fieldKey
+  }
+
   return (
     <div className="space-y-6">
       {/* Event Header */}
@@ -212,7 +235,7 @@ export default function EventManagementPage() {
               {event.school && (
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-sm font-semibold text-purple-700 bg-purple-100 px-3 py-1.5 rounded-lg border border-purple-200">
-                    🏫 בית ספר: {event.school.name}
+                    🏢 ארגון: {event.school.name}
                   </span>
                 </div>
               )}
@@ -239,41 +262,58 @@ export default function EventManagementPage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 w-full sm:w-auto">
-            <div className="flex gap-2">
-              <button
-                onClick={() => router.push(`/admin/events/${eventId}/edit`)}
-                className="flex-1 sm:flex-initial px-4 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 flex items-center justify-center gap-2"
-              >
-                <Edit className="w-4 h-4" />
-                ערוך
-              </button>
-              <button
-                onClick={copyLink}
-                className="flex-1 sm:flex-initial px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 flex items-center justify-center gap-2"
-              >
-                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                {copied ? 'הועתק!' : 'העתק קישור'}
-              </button>
-              <a
-                href={`/p/${event.school?.slug}/${event.slug}`}
-                target="_blank"
-                className="px-4 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 flex items-center gap-2"
-              >
-                <ExternalLink className="w-4 h-4" />
-                צפה
-              </a>
+          <div className="flex flex-col gap-3 w-full sm:w-auto">
+            {/* Actions Section */}
+            <div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => router.push(`/admin/events/${eventId}/edit`)}
+                  className="flex-1 sm:flex-initial px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center justify-center gap-1.5 text-sm font-medium shadow-sm"
+                  title="ערוך אירוע"
+                >
+                  <Edit className="w-4 h-4" />
+                  <span>ערוך</span>
+                </button>
+                <button
+                  onClick={copyLink}
+                  className="flex-1 sm:flex-initial px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5 text-sm font-medium shadow-sm"
+                  title="העתק קישור להרשמה"
+                >
+                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  <span>{copied ? 'הועתק!' : 'העתק קישור'}</span>
+                </button>
+                <a
+                  href={`/p/${event.school?.slug}/${event.slug}`}
+                  target="_blank"
+                  className="flex-1 sm:flex-initial px-3 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors flex items-center justify-center gap-1.5 text-sm font-medium shadow-sm"
+                  title="צפה בעמוד ציבורי"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  <span>צפה</span>
+                </a>
+              </div>
             </div>
 
-            <select
-              value={event.status}
-              onChange={(e) => handleStatusChange(e.target.value as any)}
-              className="w-full px-4 py-2 border rounded-lg"
-            >
-              <option value="OPEN">פתוח להרשמה</option>
-              <option value="PAUSED">מושהה</option>
-              <option value="CLOSED">סגור</option>
-            </select>
+            {/* Status Section */}
+            <div>
+              <div className="mb-1.5">
+                <p className="text-xs font-medium text-gray-700 mb-0.5">
+                  שליטה בהרשמות
+                </p>
+                <p className="text-xs text-gray-500">
+                  פתוח - מאפשר הרשמה חדשה | מושהה - זמנית | סגור - חסום
+                </p>
+              </div>
+              <select
+                value={event.status}
+                onChange={(e) => handleStatusChange(e.target.value as any)}
+                className="w-full px-3 py-1.5 border-2 border-gray-300 rounded-md text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+              >
+                <option value="OPEN">✅ פתוח להרשמה</option>
+                <option value="PAUSED">⏸️ מושהה</option>
+                <option value="CLOSED">🚫 סגור</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -417,7 +457,7 @@ export default function EventManagementPage() {
                         <div className="space-y-2 text-sm">
                           {Object.entries(registration.data).map(([key, value]) => (
                             <div key={key} className="flex gap-2">
-                              <span className="font-medium text-gray-700">{key}:</span>
+                              <span className="font-medium text-gray-700">{getFieldLabel(key)}:</span>
                               <span className="text-gray-900">{String(value)}</span>
                             </div>
                           ))}

@@ -86,12 +86,12 @@ export default function AdminLayout({
           <div className="flex justify-between h-16">
             <div className="flex flex-1">
               <div className="flex-shrink-0 flex items-center gap-2">
-                <h1 className="text-lg sm:text-xl font-bold text-gray-900">
+                <Link href="/admin" className="text-lg sm:text-xl font-bold text-gray-900 hover:text-gray-600 transition">
                   {adminInfo?.role === 'SUPER_ADMIN'
                     ? 'לוח ניהול'
                     : (adminInfo?.schoolName || 'kartis.info')
                   }
-                </h1>
+                </Link>
                 {adminInfo?.role === 'SUPER_ADMIN' && (
                   <span className="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 border border-purple-300">
                     Super Admin
@@ -131,13 +131,6 @@ export default function AdminLayout({
                       אירוע חדש
                     </Link>
                     <Link
-                      href="/admin/help"
-                      className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-900"
-                    >
-                      <HelpCircle className="w-4 h-4 ml-2" />
-                      הסבר איך להוסיף אירוע
-                    </Link>
-                    <Link
                       href="/admin/team"
                       className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-900"
                     >
@@ -155,7 +148,16 @@ export default function AdminLayout({
                 )}
               </div>
             </div>
-            <div className="hidden sm:flex sm:items-center">
+            <div className="hidden sm:flex sm:items-center sm:gap-2">
+              {adminInfo?.role !== 'SUPER_ADMIN' && (
+                <Link
+                  href="/admin/help"
+                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition border border-blue-300"
+                >
+                  <HelpCircle className="w-4 h-4 ml-2" />
+                  הסבר איך להוסיף אירוע
+                </Link>
+              )}
               <button
                 onClick={handleLogout}
                 className="inline-flex items-center px-3 py-2 text-sm font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition"
@@ -164,7 +166,15 @@ export default function AdminLayout({
                 התנתק
               </button>
             </div>
-            <div className="sm:hidden flex items-center">
+            <div className="sm:hidden flex items-center gap-2">
+              {adminInfo?.role !== 'SUPER_ADMIN' && (
+                <Link
+                  href="/admin/help"
+                  className="inline-flex items-center justify-center p-3 rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50 min-w-[44px] min-h-[44px]"
+                >
+                  <HelpCircle className="h-6 w-6" />
+                </Link>
+              )}
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -224,16 +234,6 @@ export default function AdminLayout({
                     <div className="flex items-center">
                       <Plus className="w-5 h-5 ml-3" />
                       אירוע חדש
-                    </div>
-                  </Link>
-                  <Link
-                    href="/admin/help"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="block pr-4 py-3 border-r-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:border-gray-300 min-h-[44px]"
-                  >
-                    <div className="flex items-center">
-                      <HelpCircle className="w-5 h-5 ml-3" />
-                      הסבר איך להוסיף אירוע
                     </div>
                   </Link>
                   <Link

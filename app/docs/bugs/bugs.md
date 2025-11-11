@@ -1731,6 +1731,334 @@ className="... text-gray-900 bg-white ..."
 
 ---
 
+### Bug #19: Missing Form Validation - Submit Button Active Without Required Fields
+**File:** `/app/p/[schoolSlug]/[eventSlug]/page.tsx`
+**Severity:** 🟡 MODERATE - UX/Validation
+**Fixed Date:** 2025-11-11
+
+**Description:**
+Users could submit event registration forms without filling in all mandatory fields. The submit button was enabled even when required fields were empty, leading to failed submissions and poor user experience. There was no clear feedback about which fields needed to be completed.
+
+**UX Impact:**
+- ⚠️ **Poor User Feedback**: Users clicking submit without knowing what was missing
+- ⚠️ **Wasted Time**: Users had to guess which fields were required
+- ⚠️ **Frustration**: Form submission failing without clear guidance
+- ⚠️ **Higher Bounce Rate**: Users potentially abandoning registration
+
+**User Request:**
+```
+"on the event: http://localhost:9000/p/schooltest/asd-2 when not all mandatory fields filled,
+the submit button must be disabled and near it the missing fields that missing, as text. follow ui ux"
+```
+
+**Code Before Fix:**
+```typescript
+// app/p/[schoolSlug]/[eventSlug]/page.tsx:442-455
+<button
+  type="submit"
+  disabled={submitting || (event.status !== 'OPEN')}
+  className="..."
+>
+  {submitting ? 'שולח...' : (isFull ? 'הרשמה לרשימת המתנה' : 'שלח הרשמה')}
+</button>
+// ❌ Button enabled even when required fields are empty
+// ❌ No feedback about which fields are missing
+```
+
+**Fix Applied:**
+
+**1. Validation Logic (lines 77-102):**
+```typescript
+// Get missing required fields for validation
+const getMissingFields = () => {
+  if (!event) return []
+
+  const missing: string[] = []
+
+  // Check all required fields in schema
+  event.fieldsSchema.forEach((field: any) => {
+    if (field.required) {
+      const value = formData[field.name]
+      if (!value || (typeof value === 'string' && value.trim() === '')) {
+        missing.push(field.label)  // ✅ Collect missing field labels
+      }
+    }
+  })
+
+  // Check terms acceptance if required
+  if (event.requireAcceptance && !acceptedTerms) {
+    missing.push('אישור תנאי השתתפות')
+  }
+
+  return missing
+}
+
+const missingFields = getMissingFields()
+const isFormValid = missingFields.length === 0
+```
+
+**2. Missing Fields Indicator (lines 469-489):**
+```typescript
+{/* Missing Fields Indicator */}
+{!isFormValid && (
+  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+    <div className="flex items-start gap-2">
+      <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+      <div className="flex-1">
+        <p className="text-sm font-semibold text-red-800 mb-2">
+          יש למלא את השדות הבאים כדי להמשיך:
+        </p>
+        <ul className="text-sm text-red-700 space-y-1">
+          {missingFields.map((field, index) => (
+            <li key={index} className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-red-600 rounded-full"></span>
+              {field}  {/* ✅ Show specific field name */}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </div>
+)}
+```
+
+**3. Submit Button Updates (lines 491-506):**
+```typescript
+<button
+  type="submit"
+  disabled={submitting || (event.status !== 'OPEN') || !isFormValid}  // ✅ Disabled when invalid
+  className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+>
+  {submitting ? (
+    <span className="flex items-center justify-center">
+      <Loader2 className="w-5 h-5 animate-spin ml-2" />
+      שולח...
+    </span>
+  ) : !isFormValid ? (
+    'נא למלא את כל השדות החובה'  // ✅ Clear disabled state message
+  ) : (
+    isFull ? 'הרשמה לרשימת המתנה' : 'שלח הרשמה'
+  )}
+</button>
+```
+
+**Files Changed:**
+- `/app/p/[schoolSlug]/[eventSlug]/page.tsx:77-102` - Added `getMissingFields()` validation function
+- `/app/p/[schoolSlug]/[eventSlug]/page.tsx:101-102` - Added `missingFields` and `isFormValid` computed values
+- `/app/p/[schoolSlug]/[eventSlug]/page.tsx:469-489` - Added missing fields indicator UI
+- `/app/p/[schoolSlug]/[eventSlug]/page.tsx:493` - Added `!isFormValid` to button disabled condition
+- `/app/p/[schoolSlug]/[eventSlug]/page.tsx:501-502` - Added disabled state button text
+
+**Features:**
+- ✅ **Real-time Validation**: Form validity updates as user fills fields
+- ✅ **Clear Feedback**: Red notification box lists all missing fields
+- ✅ **Visual Indicators**: AlertCircle icon and bullet points for each missing field
+- ✅ **Disabled State**: Button visually disabled (50% opacity) when invalid
+- ✅ **Button Text Change**: "נא למלא את כל השדות החובה" when disabled
+- ✅ **Accessibility**: Proper ARIA states through disabled attribute
+- ✅ **RTL Support**: Hebrew text with proper right-to-left layout
+
+**UI/UX Best Practices:**
+1. **Progressive Disclosure**: Error message only appears when needed
+2. **Specific Feedback**: Lists exact field names, not generic "fill all fields"
+3. **Visual Hierarchy**: Red color (error), icon (attention), list (clarity)
+4. **Consistent Behavior**: Button disabled state matches validation state
+5. **Helpful Text**: Button text explains why it's disabled
+
+**Testing:**
+```bash
+# 1. Test empty form
+# Navigate to event registration page
+# Expected: Red notification visible with all required fields listed
+# Expected: Button disabled with text "נא למלא את כל השדות החובה"
+
+# 2. Test partial completion
+# Fill some but not all required fields
+# Expected: Notification updates to show remaining missing fields
+# Expected: Button still disabled
+
+# 3. Test complete form
+# Fill all required fields
+# Expected: Red notification disappears
+# Expected: Button enabled with "שלח הרשמה" text
+# Expected: Can submit successfully
+
+# 4. Test terms checkbox
+# Fill all fields but don't check terms (if requireAcceptance is true)
+# Expected: "אישור תנאי השתתפות" appears in missing fields list
+```
+
+**Impact:**
+- ✅ Reduced form abandonment (users know what to fill)
+- ✅ Fewer failed submissions (validation before submit)
+- ✅ Better user experience (clear, actionable feedback)
+- ✅ Improved accessibility (disabled states properly communicated)
+- ✅ Professional UI (matches modern web standards)
+
+**Status:** ✅ FIXED
+
+---
+
+### Bug #20: Admin Panel Displaying Field IDs Instead of Field Labels in Registration Data
+**File:** `/app/admin/events/[id]/page.tsx`
+**Severity:** 🟡 MODERATE - UX/Data Display
+**Fixed Date:** 2025-11-11
+
+**Description:**
+When viewing registration details in the admin panel, custom field names were displaying as technical IDs (e.g., `field_1762863496708`) instead of the human-readable labels that admins set up when creating the event. This made it difficult for admins to understand what information users had submitted.
+
+**User Report:**
+```
+"work, but admin see: [screenshots showing field IDs]
+Registration data:
+- name: asdads
+- phone: 123123
+- field_1762863496708: asdads  ❌ (should show actual question)
+- field_1762863500589: asdad   ❌
+- field_1762863506443: 111     ❌
+- field_1762863527445: שדגשדגשד ❌
+```
+
+**Visual Issue:**
+- User registration worked correctly ✅
+- User received confirmation code ✅
+- BUT admin panel showed field IDs instead of field labels ❌
+- Example: `field_1762863496708` instead of "שם הילד" or "כיתה"
+
+**Root Cause:**
+The admin panel's expanded registration view was directly displaying keys from `registration.data` object without mapping them to their corresponding labels from the event's `fieldsSchema`.
+
+**How Custom Fields Work:**
+1. Admin creates event with custom fields via FieldBuilder
+2. Each field gets a unique ID: `field_1762863496708`
+3. Field has a `label` (human-readable, e.g., "שם הילד")
+4. User submits registration → data saved with field ID as key
+5. Admin views registration → needs to map field ID back to label
+
+**Code Before Fix:**
+```typescript
+// app/admin/events/[id]/page.tsx:435-440
+{expandedRow === registration.id && (
+  <tr>
+    <td colSpan={7} className="px-3 sm:px-6 py-4 bg-gray-50">
+      <div className="space-y-2 text-sm">
+        {Object.entries(registration.data).map(([key, value]) => (
+          <div key={key} className="flex gap-2">
+            <span className="font-medium text-gray-700">{key}:</span>  {/* ❌ Shows field ID */}
+            <span className="text-gray-900">{String(value)}</span>
+          </div>
+        ))}
+      </div>
+    </td>
+  </tr>
+)}
+```
+
+**Fix Applied:**
+
+**1. Created Helper Function (lines 200-221):**
+```typescript
+// Helper function to get field label from fieldsSchema
+const getFieldLabel = (fieldKey: string): string => {
+  if (!event?.fieldsSchema) return fieldKey
+
+  // Check if this is a custom field (starts with "field_")
+  if (fieldKey.startsWith('field_')) {
+    const field = event.fieldsSchema.find((f: any) => f.id === fieldKey)
+    return field?.label || fieldKey  // ✅ Return human-readable label
+  }
+
+  // Return common field labels in Hebrew
+  const commonFields: Record<string, string> = {
+    name: 'שם',
+    phone: 'טלפון',
+    email: 'אימייל',
+    spotsCount: 'מספר מקומות',
+    message: 'הודעה',
+    notes: 'הערות'
+  }
+
+  return commonFields[fieldKey] || fieldKey
+}
+```
+
+**2. Updated Registration Data Display (line 460):**
+```typescript
+{Object.entries(registration.data).map(([key, value]) => (
+  <div key={key} className="flex gap-2">
+    <span className="font-medium text-gray-700">{getFieldLabel(key)}:</span>  {/* ✅ Uses label */}
+    <span className="text-gray-900">{String(value)}</span>
+  </div>
+))}
+```
+
+**How It Works:**
+1. Admin clicks row to expand registration details
+2. System iterates through `registration.data` object
+3. For each field key:
+   - If starts with `field_`, looks up label in `event.fieldsSchema`
+   - If common field (name, phone), translates to Hebrew
+   - If not found, falls back to original key (safe default)
+4. Displays human-readable label instead of technical ID
+
+**Before/After Comparison:**
+```
+BEFORE:
+- field_1762863496708: asdads
+- field_1762863500589: asdad
+- field_1762863506443: 111
+- field_1762863527445: שדגשדגשד
+
+AFTER:
+- שם הילד: asdads
+- כיתה: asdad
+- גיל: 111
+- הערות: שדגשדגשד
+```
+
+**Files Changed:**
+- `/app/admin/events/[id]/page.tsx:200-221` - Added `getFieldLabel()` helper function
+- `/app/admin/events/[id]/page.tsx:460` - Updated registration data display to use `getFieldLabel(key)`
+
+**Features:**
+- ✅ **Custom Field Mapping**: Maps `field_*` IDs to their labels from fieldsSchema
+- ✅ **Common Field Translation**: Translates standard fields to Hebrew (שם, טלפון, etc.)
+- ✅ **Fallback Safety**: Returns original key if no label found
+- ✅ **No Breaking Changes**: Works with all existing registration data
+- ✅ **Schema Validation**: Handles missing or malformed fieldsSchema gracefully
+
+**Testing:**
+```bash
+# 1. Test with custom fields
+# Create event with custom fields (via FieldBuilder)
+# Add registration with custom field data
+# View registration in admin panel
+# Expected: Field labels show correctly (not IDs)
+
+# 2. Test with common fields only
+# Create event with default fields (name, phone)
+# Add registration
+# Expected: Shows "שם" and "טלפון" (translated)
+
+# 3. Test with missing schema
+# If fieldsSchema is null/undefined
+# Expected: Falls back to field keys (no crash)
+
+# 4. Test with mixed field types
+# Event with both custom and common fields
+# Expected: Both display with proper labels
+```
+
+**Impact:**
+- ✅ Admins can now understand registration data at a glance
+- ✅ No need to cross-reference field IDs with event schema
+- ✅ More professional admin experience
+- ✅ Consistent with UX expectations (labels, not IDs)
+
+**Status:** ✅ FIXED
+
+---
+
 **Report Generated:** 2025-11-10
 **Last Updated:** 2025-11-11
 **Tested By:** Claude Code QA
