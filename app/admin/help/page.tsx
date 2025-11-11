@@ -6,36 +6,47 @@ import Link from 'next/link'
 export default function HelpPage() {
   return (
     <div className="max-w-5xl mx-auto">
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 mb-8">
+      <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 mb-8 border-2 border-green-300">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            🎉 המדריך המלא ליצירת אירועים 🎉
+            ⚽ המדריך המלא לניהול משחקי כדורגל ⚽
           </h1>
           <p className="text-lg text-gray-700 mb-6">
-            ברוכים הבאים! כאן תלמדו איך ליצור אירועים מדליקים עם כל האפשרויות!
+            ברוכים הבאים! המערכת שלנו נבנתה במיוחד למשחקי כדורגל, אבל אפשר להשתמש בה לכל סוג אירוע!
           </p>
           <div className="inline-flex items-center bg-green-100 text-green-800 px-4 py-2 rounded-full">
             <CheckCircle className="w-5 h-5 ml-2" />
-            <span className="font-medium">זה קל, כיף ומקצועי!</span>
+            <span className="font-medium">קל, מהיר ומקצועי - בלי לדעת טכנולוגיה!</span>
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border-2 border-purple-200 p-6 mb-8">
-        <h2 className="text-2xl font-bold text-purple-600 mb-4 flex items-center">
+      <div className="bg-white rounded-lg shadow-sm border-2 border-blue-200 p-6 mb-8">
+        <h2 className="text-2xl font-bold text-blue-600 mb-4 flex items-center">
           <Star className="w-6 h-6 ml-2" />
-          מה זה אירוע?
+          מה זה אירוע? למה זה טוב בשבילי?
         </h2>
         <div className="text-gray-700 text-lg leading-relaxed">
           <p className="mb-4">
-            🎮 <strong>אירוע</strong> זה כמו מסיבה, משחק או פעילות שאנחנו רוצים לעשות!
+            ⚽ <strong>אירוע</strong> זה כל פעילות שאתם רוצים לארגן - בעיקר משחקי כדורגל!
           </p>
           <p className="mb-4">
-            למשל: יום הולדת 🎂, משחק כדורגל ⚽, מסיבת פיג'מות 🥳, או טיול 🚌
+            <strong>דוגמאות למה תשתמשו במערכת:</strong>
           </p>
-          <p>
-            כשאנחנו יוצרים אירוע, אנחנו אומרים לכולם מתי זה יהיה, איפה, וכמה אנשים יכולים להגיע!
-          </p>
+          <ul className="list-disc list-inside space-y-2 mr-6">
+            <li>⚽ <strong>משחק כדורגל</strong> - 11 נגד 11, 7 נגד 7, או כל גודל קבוצה</li>
+            <li>🏆 <strong>טורניר</strong> - מספר קבוצות משחקות אחת נגד השנייה</li>
+            <li>🎓 <strong>אימון קבוצתי</strong> - אימון לקבוצה עם מספר מוגבל של שחקנים</li>
+            <li>🏃 <strong>מבחני כושר</strong> - מבחנים לשחקנים חדשים</li>
+            <li>🎉 <strong>אירועים אחרים</strong> - יום הולדת, מסיבה, טיול, כל דבר!</li>
+          </ul>
+          <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p className="font-bold text-green-800">💡 למה זה נוח?</p>
+            <p className="text-green-700 mt-2">
+              במקום לשלוח הודעות וואטסאפ ולספור ידנית מי מגיע - כל ההרשמות במקום אחד!
+              אתם רואים בזמן אמת כמה שחקנים נרשמו, מי הם, ומה המספר שלהם.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -53,14 +64,18 @@ export default function HelpPage() {
               📝 כותרת האירוע *
             </h3>
             <p className="text-gray-700 text-lg mb-3">
-              <span className="text-red-500 font-bold">*חובה!</span> בחרו שם מגניב לאירוע שלכם! זה מה שכולם יראו ראשון!
+              <span className="text-red-500 font-bold">*חובה!</span> בחרו שם ברור ומושך למשחק! זה מה שהשחקנים יראו ראשון!
             </p>
             <div className="bg-white p-3 rounded border">
-              <strong className="text-gray-900">דוגמאות טובות:</strong><br />
-              <span className="text-gray-900">🎉 מסיבת פיצה וחברים</span><br />
-              <span className="text-gray-900">⚽ משחק כדורגל נגד כיתה ג'</span><br />
-              <span className="text-gray-900">🎂 יום הולדת של שרה הגדולה</span><br />
-              <span className="text-gray-900">🚌 טיול לספארי ברמת גן</span>
+              <strong className="text-gray-900">דוגמאות למשחקי כדורגל:</strong><br />
+              <span className="text-gray-900">⚽ משחק ידידות - נוער נגד מבוגרים</span><br />
+              <span className="text-gray-900">⚽ כיתה ו' נגד כיתה ז' - גמר הגביע</span><br />
+              <span className="text-gray-900">⚽ אימון קבוצתי - הכנה למשחק חשוב</span><br />
+              <span className="text-gray-900">⚽ טורניר ליגת הכיתות - שלב א'</span><br />
+              <span className="text-gray-900">🎂 חגיגת יום הולדת במגרש (לכל סוג אירוע!)</span>
+            </div>
+            <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
+              <strong className="text-gray-900">💡 טיפ חשוב:</strong> <span className="text-gray-900">תנו שם שמסביר מה קורה! למשל: "משחק ידידות" פחות טוב מ"משחק ידידות - קבוצת הבית נגד קבוצת האורחים"</span>
             </div>
           </div>
 
@@ -70,13 +85,23 @@ export default function HelpPage() {
               📖 תיאור האירוע
             </h3>
             <p className="text-gray-700 text-lg mb-3">
-              ספרו לחברים מה יהיה באירוע! מה תעשו? מה צריך להביא? מה יהיה כיף?
+              ספרו לשחקנים מה יהיה במשחק! איזה סוג משחק? מה צריך להביא? מה חשוב לדעת?
             </p>
             <div className="bg-white p-3 rounded border">
-              <strong className="text-gray-900">דוגמה מלאה:</strong><br />
-              <span className="text-gray-900">ניכין פיצה ביחד, נשחק משחקי קופסה ונצפה בסרט מצחיק! 🍕🎮🎬</span><br />
-              <span className="text-gray-900">תביאו: בגדים נוחים, כרית ושמיכה קטנה 😊</span><br />
-              <span className="text-gray-900">נתחיל בפיצה, אחר כך משחקים ובסוף סרט עד השעה 22:00</span>
+              <strong className="text-gray-900">דוגמה למשחק כדורגל:</strong><br />
+              <span className="text-gray-900">⚽ משחק ידידות 11 נגד 11 במגרש העירוני</span><br />
+              <span className="text-gray-900">🥅 הביאו: נעלי ספורט, בקבוק מים, מדים אם יש</span><br />
+              <span className="text-gray-900">⏰ נפתח את המגרש בשעה 16:00, מתחילים לשחק 16:30, סיום בשעה 18:00</span><br />
+              <span className="text-gray-900">📌 חובה להגיע בזמן! אם מאחרים - תתקשרו</span>
+            </div>
+            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
+              <strong className="text-gray-900">💡 מה חשוב לכתוב:</strong>
+              <ul className="list-disc list-inside mr-4 mt-2 space-y-1 text-gray-700">
+                <li>איזה סוג משחק (11 נגד 11, 7 נגד 7, אימון וכו')</li>
+                <li>מה להביא (נעליים, מים, ציוד מיוחד)</li>
+                <li>שעות מדויקות (פתיחה, התחלה, סיום)</li>
+                <li>הוראות חשובות (להגיע בזמן, להתקשר אם מאחרים)</li>
+              </ul>
             </div>
           </div>
 
@@ -103,14 +128,17 @@ export default function HelpPage() {
               📍 מיקום האירוע
             </h3>
             <p className="text-gray-700 text-lg mb-3">
-              ספרו איפה האירוע יקרה! הכתובת המלאה כדי שכולם יוכלו להגיע בלי לאבד!
+              ספרו איפה המשחק יתקיים! תנו כתובת מדויקת כדי שהשחקנים יוכלו להגיע בקלות!
             </p>
             <div className="bg-white p-3 rounded border">
-              <strong className="text-gray-900">דוגמאות:</strong><br />
-              <span className="text-gray-900">🏞️ פארק הילדים ברחוב הרצל 15, תל אביב</span><br />
-              <span className="text-gray-900">🏫 בית הספר יסודי "אור", כיתה 12, קומה שנייה</span><br />
-              <span className="text-gray-900">🏠 בבית של דני, רחוב הדקל 8 דירה 5, רמת גן</span><br />
-              <span className="text-gray-900">⚽ מגרש כדורגל עירוני, שדרות ירושלים 50</span>
+              <strong className="text-gray-900">דוגמאות למגרשי כדורגל:</strong><br />
+              <span className="text-gray-900">⚽ מגרש כדורגל עירוני, שדרות ירושלים 50, תל אביב</span><br />
+              <span className="text-gray-900">⚽ מגרש כדורגל בבית הספר "אורט", רחוב הרצל 15, רמת גן</span><br />
+              <span className="text-gray-900">⚽ מתחם ספורט "אלפא", מגרש 3, רחוב הספורט 20, חולון</span><br />
+              <span className="text-gray-900">⚽ מגרש השכונה - ליד הפארק המרכזי, רחוב הדקל 8</span>
+            </div>
+            <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded">
+              <strong className="text-gray-900">💡 טיפ חשוב:</strong> <span className="text-gray-900">תוסיפו פרטים כמו "ליד התחנה המרכזית" או "יש חניה ליד המגרש" - זה עוזר לאנשים למצוא את המקום!</span>
             </div>
           </div>
 
@@ -146,14 +174,24 @@ export default function HelpPage() {
               👥 מספר מקומות כולל *
             </h3>
             <p className="text-gray-700 text-lg mb-3">
-              <span className="text-red-500 font-bold">*חובה!</span> כמה ילדים בסך הכל יכולים להגיע לאירוע?
+              <span className="text-red-500 font-bold">*חובה!</span> כמה שחקנים בסך הכל יכולים להשתתף במשחק?
             </p>
             <div className="bg-white p-3 rounded border">
-              <strong className="text-gray-900">איך לחשב:</strong><br />
-              <span className="text-gray-900">🏠 מסיבה בבית: 15-25 ילדים (תלוי בגודל הבית)</span><br />
-              <span className="text-gray-900">⚽ משחק כדורגל: 22 ילדים (11 נגד 11)</span><br />
-              <span className="text-gray-900">🚌 טיול באוטובוס: 50 ילדים (גודל אוטובוס)</span><br />
-              <span className="text-gray-900">🎂 יום הולדת: 20-30 ילדים (תלוי במקום)</span>
+              <strong className="text-gray-900">דוגמאות למשחקי כדורגל:</strong><br />
+              <span className="text-gray-900">⚽ משחק 11 נגד 11: 22 שחקנים (11 בכל קבוצה)</span><br />
+              <span className="text-gray-900">⚽ משחק 11 נגד 11 עם ספסל: 30 שחקנים (15 בכל קבוצה)</span><br />
+              <span className="text-gray-900">⚽ משחק 7 נגד 7: 14 שחקנים (7 בכל קבוצה)</span><br />
+              <span className="text-gray-900">⚽ אימון קבוצתי: 25 שחקנים (תלוי בגודל המגרש)</span><br />
+              <span className="text-gray-900">⚽ טורניר: 50-100 שחקנים (תלוי במספר הקבוצות)</span>
+            </div>
+            <div className="mt-3 p-3 bg-teal-50 border border-teal-200 rounded">
+              <strong className="text-gray-900">💡 איך לחשב:</strong>
+              <ul className="list-disc list-inside mr-4 mt-2 space-y-1 text-gray-700">
+                <li>לכל קבוצה צריך מספר שחקנים מסוים (11, 7, 5 וכו')</li>
+                <li>תוסיפו מקומות לשחקני ספסל (בדרך כלל 3-5 בכל קבוצה)</li>
+                <li>אם יש שופטים או מאמנים - תחשבו גם אותם!</li>
+                <li>עדיף להוסיף כמה מקומות נוספים למקרה של ביטולים</li>
+              </ul>
             </div>
           </div>
 
@@ -163,14 +201,21 @@ export default function HelpPage() {
               🎯 מקסימום מקומות לנרשם *
             </h3>
             <p className="text-gray-700 text-lg mb-3">
-              <span className="text-red-500 font-bold">*חובה!</span> כמה מקומות כל ילד יכול לקחת? בדרך כלל 1, אבל אפשר יותר!
+              <span className="text-red-500 font-bold">*חובה!</span> כמה מקומות כל אדם יכול לקחת כשהוא נרשם?
             </p>
             <div className="bg-white p-3 rounded border">
-              <strong className="text-gray-900">מתי להשתמש:</strong><br />
-              <span className="text-gray-900">🧍 1 מקום: רוב האירועים (כל ילד לוקח מקום אחד)</span><br />
-              <span className="text-gray-900">👨‍👩‍👧‍👦 2-3 מקומות: אם ילד יכול להביא הורה או אח/אחות</span><br />
-              <span className="text-gray-900">👥 4-5 מקומות: אירועי משפחות שלמות</span><br />
-              <span className="text-gray-900">⚠️ זהירות: אל תשימו יותר מדי כי המקומות ייגמרו מהר!</span>
+              <strong className="text-gray-900">למשחקי כדורגל - בדרך כלל 1:</strong><br />
+              <span className="text-gray-900">⚽ משחק רגיל: 1 מקום (כל שחקן נרשם לעצמו)</span><br />
+              <span className="text-gray-900">👨‍👦 משחק משפחות: 2-4 מקומות (הורה + ילדים)</span><br />
+              <span className="text-gray-900">👥 טורניר קבוצות: 5-11 מקומות (מאמן רושם את כל הקבוצה)</span><br />
+              <span className="text-gray-900">⚠️ <strong>המלצה:</strong> למשחקים רגילים - תשאירו על 1! זה הכי פשוט ונוח</span>
+            </div>
+            <div className="mt-3 p-3 bg-cyan-50 border border-cyan-200 rounded">
+              <strong className="text-gray-900">💡 למה זה חשוב:</strong>
+              <p className="text-gray-700 mt-2">
+                אם תשימו 1 מקום לאדם - כל שחקן נרשם בנפרד ואתם רואים בדיוק מי מגיע.
+                אם תשימו יותר - אדם אחד יכול לרשום כמה שחקנים (נוח למאמנים שרושמים את הקבוצה).
+              </p>
             </div>
           </div>
         </div>
@@ -386,11 +431,11 @@ export default function HelpPage() {
             אחרי שילד נרשם בהצלחה, הוא יראה הודעה מיוחדת! אתם יכולים לכתוב מה שאתם רוצים!
           </p>
           <div className="bg-white p-3 rounded border">
-            <strong className="text-gray-900">דוגמאות להודעות:</strong><br />
-            <span className="text-gray-900">🎉 "ברכות! נרשמת בהצלחה למסיבת הפיצה! נתראה ביום שישי בשעה 16:00!"</span><br />
-            <span className="text-gray-900">⚽ "כל הכבוד! אתה בקבוצה! תזכור להביא נעלי ספורט ובקבוק מים!"</span><br />
-            <span className="text-gray-900">🎂 "איזה כיף! אתה מוזמן ליום ההולדת של שרה! תביא מתנה קטנה ואנרגיה גדולה!"</span><br />
-            <span className="text-gray-900">🚌 "מעולה! אתה רשום לטיול! הורה שלך יקבל SMS עם פרטים נוספים!"</span>
+            <strong className="text-gray-900">דוגמאות להודעות למשחקי כדורגל:</strong><br />
+            <span className="text-gray-900">⚽ "מעולה! נרשמת בהצלחה למשחק! תזכור להביא נעלי ספורט, בקבוק מים ומדים. נתראה במגרש!"</span><br />
+            <span className="text-gray-900">⚽ "כל הכבוד! אתה במשחק! נתחיל בשעה 16:30 - הגיע 15 דקות קודם להתארגנות!"</span><br />
+            <span className="text-gray-900">⚽ "ברכות! אתה חלק מהקבוצה! המאמן יצור איתך קשר בקרוב עם פרטים נוספים."</span><br />
+            <span className="text-gray-900">⚽ "נרשמת בהצלחה! אם אתה לא יכול להגיע - תודיע לנו 24 שעות מראש כדי שנוכל לתת את המקום למישהו אחר."</span>
           </div>
           <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
             <strong className="text-gray-900">💡 אם לא תכתבו כלום:</strong> <span className="text-gray-900">הילד יראה הודעת ברירת מחדל פשוטה "נרשמת בהצלחה!"</span>
@@ -399,61 +444,74 @@ export default function HelpPage() {
       </div>
 
       {/* Tips Section */}
-      <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg p-6 mb-8 border-2 border-yellow-300">
-        <h2 className="text-2xl font-bold text-orange-600 mb-4 flex items-center">
+      <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 mb-8 border-2 border-green-300">
+        <h2 className="text-2xl font-bold text-green-600 mb-4 flex items-center">
           <Zap className="w-6 h-6 ml-2" />
-          💡 טיפים חשובים לאירוע מושלם
+          💡 טיפים חשובים למשחק כדורגל מושלם
         </h2>
         <div className="grid md:grid-cols-2 gap-4 text-gray-700">
           <div className="space-y-3">
             <div className="flex items-start">
-              <span className="text-xl ml-3">✨</span>
-              <p><strong>שמות מגניבים:</strong> במקום "אירוע", קראו לו "מסיבת הפיצה הגדולה"!</p>
+              <span className="text-xl ml-3">⚽</span>
+              <p><strong>שמות ברורים:</strong> במקום "משחק", כתבו "משחק כדורגל 11 נגד 11 - גמר הליגה"!</p>
             </div>
             <div className="flex items-start">
-              <span className="text-xl ml-3">📝</span>
-              <p><strong>תהיו ברורים:</strong> כתבו בדיוק איפה ומתי, כדי שאף אחד לא יתבלבל!</p>
+              <span className="text-xl ml-3">📍</span>
+              <p><strong>מיקום מדויק:</strong> תנו כתובת מלאה + הנחיות (למשל: "ליד החנייה, מגרש 3")</p>
             </div>
             <div className="flex items-start">
               <span className="text-xl ml-3">🎯</span>
-              <p><strong>חשבו על המקום:</strong> כמה ילדים באמת נכנסים? עדיף קצת פחות מאשר צפוף!</p>
+              <p><strong>מספר שחקנים:</strong> תמיד תוסיפו כמה מקומות נוספים למקרה של ביטולים!</p>
+            </div>
+            <div className="flex items-start">
+              <span className="text-xl ml-3">📞</span>
+              <p><strong>פרטי קשר:</strong> תוסיפו את הטלפון שלכם בתיאור - למקרה שמישהו מאבד!</p>
             </div>
           </div>
           <div className="space-y-3">
             <div className="flex items-start">
               <span className="text-xl ml-3">⏰</span>
-              <p><strong>זמנים הגיוניים:</strong> לא להתחיל מוקדם מדי או מאוחר מדי!</p>
+              <p><strong>זמנים הגיוניים:</strong> משחקים בדרך כלל 16:00-18:00 (אחרי בית הספר)</p>
             </div>
             <div className="flex items-start">
-              <span className="text-xl ml-3">❓</span>
-              <p><strong>שדות חכמים:</strong> שאלו רק מה שבאמת צריך לדעת!</p>
+              <span className="text-xl ml-3">👕</span>
+              <p><strong>מה להביא:</strong> ציינו בתיאור - נעליים, מים, מדים, מגיני שוקיים</p>
+            </div>
+            <div className="flex items-start">
+              <span className="text-xl ml-3">📋</span>
+              <p><strong>רשימת המתנה:</strong> תמיד אפשרו רשימת המתנה! אנשים מבטלים והיא תתמלא</p>
             </div>
             <div className="flex items-start">
               <span className="text-xl ml-3">💌</span>
-              <p><strong>הודעות חמות:</strong> כתבו הודעת סיום שמחה ונחמדה!</p>
+              <p><strong>הודעת סיום:</strong> תזכירו בהודעה מה להביא ומתי להגיע!</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Call to Action */}
-      <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 text-center">
+      <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 text-center border-2 border-green-300">
         <h2 className="text-2xl font-bold text-green-600 mb-4">
-          🚀 מוכנים ליצור אירוע מדליק?
+          🚀 מוכנים ליצור את המשחק הבא?
         </h2>
         <p className="text-gray-700 text-lg mb-6">
-          עכשיו שאתם יודעים הכל על כל השדות והאפשרויות, בואו ניצור אירוע מדהים!
+          עכשיו שאתם יודעים הכל - זה הזמן ליצור את משחק הכדורגל הבא שלכם! זה לוקח רק 2-3 דקות!
         </p>
         <Link
           href="/admin/events/new"
-          className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg hover:from-purple-700 hover:to-blue-700 transition text-lg shadow-lg"
+          className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-green-600 to-blue-600 text-white font-bold rounded-lg hover:from-green-700 hover:to-blue-700 transition text-lg shadow-lg"
         >
           <Plus className="w-6 h-6 ml-2" />
-          ליצור אירוע חדש עכשיו!
+          ליצור משחק כדורגל עכשיו!
         </Link>
         <p className="text-sm text-gray-600 mt-4">
-          עם כל המידע שלמדתם, האירוע שלכם יהיה הכי מוצלח! 🌟
+          עם המדריך שלמדתם, המשחק שלכם יהיה מאורגן ומקצועי! ⚽🌟
         </p>
+        <div className="mt-6 p-4 bg-white rounded-lg border border-green-200">
+          <p className="text-green-700 font-medium">
+            💡 <strong>זכרו:</strong> המערכת נבנתה במיוחד למשחקי כדורגל, אבל אפשר להשתמש בה לכל סוג אירוע - טיולים, מסיבות, אימונים, וכל דבר אחר!
+          </p>
+        </div>
       </div>
     </div>
   )

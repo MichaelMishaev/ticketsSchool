@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
-import { MessageSquare, Trash2, Check, Eye, X } from 'lucide-react'
+import { MessageSquare, Trash2, Check, Eye, X, Shield } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 type Feedback = {
   id: string
@@ -15,6 +16,8 @@ type Feedback = {
 }
 
 export default function AdminFeedbackPage() {
+  const router = useRouter()
+  const [isAuthorized, setIsAuthorized] = useState(false)
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [filter, setFilter] = useState<string>('all')
@@ -22,8 +25,22 @@ export default function AdminFeedbackPage() {
   const [notesText, setNotesText] = useState('')
 
   useEffect(() => {
-    fetchFeedbacks()
-  }, [filter])
+    // Check if user is super admin
+    fetch('/api/admin/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.authenticated && data.admin && data.admin.role === 'SUPER_ADMIN') {
+          setIsAuthorized(true)
+          fetchFeedbacks()
+        } else {
+          // Not authorized, redirect to admin home
+          router.push('/admin')
+        }
+      })
+      .catch(() => {
+        router.push('/admin')
+      })
+  }, [filter, router])
 
   const fetchFeedbacks = async () => {
     try {
@@ -121,10 +138,24 @@ export default function AdminFeedbackPage() {
     ? feedbacks
     : feedbacks.filter(f => f.status === filter)
 
+  if (!isAuthorized) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-center">
+        <Shield className="h-12 w-12 text-gray-400 mb-4" />
+        <p className="text-lg text-gray-600">בודק הרשאות...</p>
+      </div>
+    )
+  }
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">משובים</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-bold text-gray-900">משובים</h2>
+          <span className="px-3 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 border border-purple-300">
+            Super Admin Only
+          </span>
+        </div>
         <div className="flex gap-2">
           <select
             value={filter}

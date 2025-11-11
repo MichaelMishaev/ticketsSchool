@@ -111,96 +111,104 @@ export default function EventsPage() {
           <ul className="divide-y divide-gray-200">
             {events.map((event) => (
               <li key={event.id}>
-                <div className="px-4 py-4 sm:px-6 hover:bg-gray-50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-lg font-medium text-gray-900">
-                          {event.title}
-                        </h3>
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={event.status}
-                            onChange={(e) => handleStatusChange(event.id, e.target.value as 'OPEN' | 'PAUSED' | 'CLOSED')}
-                            className="text-xs px-2 py-1 border rounded"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <option value="OPEN">פתוח</option>
-                            <option value="PAUSED">מושהה</option>
-                            <option value="CLOSED">סגור</option>
-                          </select>
-                          {getStatusBadge(event.status)}
-                        </div>
-                      </div>
-
-                      <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-500">
-                        <div className="flex items-center">
-                          <Calendar className="w-4 h-4 ml-1" />
-                          {format(new Date(event.startAt), 'dd/MM/yyyy HH:mm')}
-                        </div>
-                        <div className="flex items-center">
-                          <Users className="w-4 h-4 ml-1" />
-                          {event.totalSpotsTaken} / {event.capacity} מקומות
-                        </div>
-                        {event.gameType && (
-                          <div className="flex items-center">
-                            <span className="font-medium">{event.gameType}</span>
-                          </div>
-                        )}
-                        {event.school && (
-                          <div className="flex items-center">
-                            <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded border border-purple-200">
-                              🏫 {event.school.name}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      {event.description && (
-                        <p className="mt-2 text-sm text-gray-600">{event.description}</p>
-                      )}
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Link
-                        href={`/admin/events/${event.id}`}
-                        className="p-2 text-gray-600 hover:text-gray-900"
-                        title="ערוך"
+                <div className="px-4 py-5 sm:px-6 hover:bg-gray-50">
+                  {/* Header Section - Title and Status */}
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
+                    <h3 className="text-lg sm:text-xl font-medium text-gray-900 flex-1">
+                      {event.title}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={event.status}
+                        onChange={(e) => handleStatusChange(event.id, e.target.value as 'OPEN' | 'PAUSED' | 'CLOSED')}
+                        className="text-sm px-3 py-1.5 border rounded-md min-h-[44px] min-w-[100px]"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <Edit className="w-5 h-5" />
-                      </Link>
-                      <Link
-                        href={`/p/${event.school.slug}/${event.slug}`}
-                        target="_blank"
-                        className="p-2 text-gray-600 hover:text-gray-900"
-                        title="צפה בדף ההרשמה"
-                      >
-                        <ExternalLink className="w-5 h-5" />
-                      </Link>
-                      {event._count.registrations === 0 && (
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault()
-                            handleDeleteEvent(event.id, event.title)
-                          }}
-                          className="p-2 text-red-600 hover:text-red-900"
-                          title="מחק אירוע (רק אירועים ללא הרשמות)"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      )}
+                        <option value="OPEN">פתוח</option>
+                        <option value="PAUSED">מושהה</option>
+                        <option value="CLOSED">סגור</option>
+                      </select>
+                      <div className="hidden sm:block">
+                        {getStatusBadge(event.status)}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="mt-3 flex gap-2">
-                    <div className="text-xs text-gray-500">
-                      קוד אירוע: <span className="font-mono">{event.slug}</span>
+                  {/* Event Details */}
+                  <div className="space-y-2 mb-3">
+                    <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-4 text-sm text-gray-600">
+                      <div className="flex items-center min-h-[40px]">
+                        <Calendar className="w-5 h-5 ml-2 flex-shrink-0" />
+                        <span className="font-medium">{format(new Date(event.startAt), 'dd/MM/yyyy HH:mm')}</span>
+                      </div>
+                      <div className="flex items-center min-h-[40px]">
+                        <Users className="w-5 h-5 ml-2 flex-shrink-0" />
+                        <span className="font-medium">{event.totalSpotsTaken} / {event.capacity} מקומות</span>
+                      </div>
+                      {event.gameType && (
+                        <div className="flex items-center min-h-[40px]">
+                          <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded-md font-medium text-sm">
+                            {event.gameType}
+                          </span>
+                        </div>
+                      )}
+                      {event.school && (
+                        <div className="flex items-center min-h-[40px]">
+                          <span className="text-sm font-medium text-purple-600 bg-purple-50 px-3 py-1.5 rounded-md border border-purple-200">
+                            🏫 {event.school.name}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    <div className="text-xs text-gray-500">
-                      קישור:
-                      <span className="font-mono mr-1">
-                        {typeof window !== 'undefined' ? `${window.location.origin}/p/${event.school.slug}/${event.slug}` : ''}
-                      </span>
+
+                    {event.description && (
+                      <p className="text-sm text-gray-600 mt-2 line-clamp-2">{event.description}</p>
+                    )}
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    <Link
+                      href={`/admin/events/${event.id}`}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 min-h-[44px]"
+                      title="ערוך וצפה בהרשמות"
+                    >
+                      <Edit className="w-4 h-4" />
+                      <span>ערוך וצפה בהרשמות</span>
+                    </Link>
+                    <Link
+                      href={`/p/${event.school.slug}/${event.slug}`}
+                      target="_blank"
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 min-h-[44px]"
+                      title="צפה בדף ההרשמה"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      <span>צפה בדף</span>
+                    </Link>
+                    {event._count.registrations === 0 && (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault()
+                          handleDeleteEvent(event.id, event.title)
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 min-h-[44px]"
+                        title="מחק אירוע"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        <span>מחק</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Event Code - Collapsible on mobile */}
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <div className="text-xs text-gray-500 space-y-1">
+                      <div>
+                        קוד אירוע: <span className="font-mono font-medium">{event.slug}</span>
+                      </div>
+                      <div className="hidden sm:block break-all">
+                        קישור: <span className="font-mono">{typeof window !== 'undefined' ? `${window.location.origin}/p/${event.school.slug}/${event.slug}` : ''}</span>
+                      </div>
                     </div>
                   </div>
                 </div>

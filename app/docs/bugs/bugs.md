@@ -1216,7 +1216,405 @@ curl -X POST http://localhost:9000/api/admin/resend-verification \
 
 ---
 
+### Bug #15: Feedback Section Accessible to All Admins - Missing Super Admin Authorization
+**Files:** `/app/admin/layout.tsx`, `/app/admin/feedback/page.tsx`, `/app/api/admin/feedback/route.ts`, `/app/api/admin/feedback/[id]/route.ts`
+**Severity:** 🟡 MODERATE - Access Control
+**Fixed Date:** 2025-11-11
+
+**Description:**
+The feedback (משובים) section was accessible to all authenticated admins, not just super admins. This section contains sensitive user feedback and should only be accessible to users with the `SUPER_ADMIN` role.
+
+**Security Impact:**
+- ⚠️ **Unauthorized Access**: Regular admins could view all user feedback
+- ⚠️ **Information Disclosure**: Feedback may contain sensitive information about bugs, feature requests, or user complaints
+- ⚠️ **Principle of Least Privilege**: Regular admins don't need access to system-wide feedback
+
+**Code Before Fix:**
+```typescript
+// app/admin/layout.tsx - Navigation showed feedback link to all admins
+<Link href="/admin/feedback">משובים</Link>
+
+// app/admin/feedback/page.tsx - No role check
+export default function AdminFeedbackPage() {
+  const [feedbacks, setFeedbacks] = useState<Feedback[]>([])
+  // ... loads all feedback without checking role
+}
+
+// app/api/admin/feedback/route.ts - No authorization
+export async function GET(request: NextRequest) {
+  const feedbacks = await prisma.feedback.findMany({...})
+  return NextResponse.json(feedbacks)
+}
+```
+
+**Fix Applied:**
+
+**1. Client-Side Navigation Hiding:**
+```typescript
+// app/admin/layout.tsx:102-155
+{adminInfo?.role === 'SUPER_ADMIN' ? (
+  <Link href="/admin/super">
+    <Shield className="w-4 h-4 ml-2" />
+    לוח בקרה Super Admin
+  </Link>
+) : (
+  <>
+    <Link href="/admin">ראשי</Link>
+    <Link href="/admin/events">אירועים</Link>
+    {/* ❌ Removed feedback link for non-super admins */}
+    <Link href="/admin/team">צוות</Link>
+    <Link href="/admin/settings">הגדרות</Link>
+  </>
+)}
+```
+
+**2. Client-Side Page Protection:**
+```typescript
+// app/admin/feedback/page.tsx:19-43
+const [isAuthorized, setIsAuthorized] = useState(false)
+
+useEffect(() => {
+  fetch('/api/admin/me')
+    .then(res => res.json())
+    .then(data => {
+      if (data.authenticated && data.admin && data.admin.role === 'SUPER_ADMIN') {
+        setIsAuthorized(true)
+        fetchFeedbacks()
+      } else {
+        router.push('/admin')  // ✅ Redirect non-super admins
+      }
+    })
+}, [])
+
+if (!isAuthorized) {
+  return (
+    <div className="flex flex-col items-center justify-center h-64">
+      <Shield className="h-12 w-12 text-gray-400 mb-4" />
+      <p className="text-lg text-gray-600">בודק הרשאות...</p>
+    </div>
+  )
+}
+```
+
+**3. Server-Side API Protection:**
+```typescript
+// app/api/admin/feedback/route.ts:3-8
+import { requireSuperAdmin } from '@/lib/auth'
+
+export async function GET(request: NextRequest) {
+  // ✅ Only super admins can access feedback
+  await requireSuperAdmin()
+
+  const feedbacks = await prisma.feedback.findMany({...})
+  return NextResponse.json(feedbacks)
+}
+
+// app/api/admin/feedback/[id]/route.ts:11-40
+export async function PATCH(...) {
+  await requireSuperAdmin()  // ✅ Only super admins can update
+  // ...
+}
+
+export async function DELETE(...) {
+  await requireSuperAdmin()  // ✅ Only super admins can delete
+  // ...
+}
+```
+
+**Files Changed:**
+- `/app/admin/layout.tsx:141-146` - Removed feedback navigation link for non-super admins
+- `/app/admin/layout.tsx:247-254` - Removed feedback mobile menu link for non-super admins
+- `/app/admin/feedback/page.tsx:1-6` - Added imports: `Shield`, `useRouter`
+- `/app/admin/feedback/page.tsx:19-20` - Added authorization state
+- `/app/admin/feedback/page.tsx:27-43` - Added role check with redirect
+- `/app/admin/feedback/page.tsx:141-148` - Added authorization loading state
+- `/app/admin/feedback/page.tsx:153-157` - Added "Super Admin Only" badge
+- `/app/api/admin/feedback/route.ts:3` - Added `requireSuperAdmin` import
+- `/app/api/admin/feedback/route.ts:6-8` - Added super admin check
+- `/app/api/admin/feedback/[id]/route.ts:3` - Added `requireSuperAdmin` import
+- `/app/api/admin/feedback/[id]/route.ts:10-11` - Added super admin check to PATCH
+- `/app/api/admin/feedback/[id]/route.ts:39-40` - Added super admin check to DELETE
+
+**Visual Improvements:**
+- Added "Super Admin Only" purple badge to feedback page header
+- Shield icon during authorization check
+- Smooth redirect for unauthorized access
+
+**Testing:**
+```bash
+# 1. Test as regular admin (OWNER/ADMIN)
+# Expected: No "משובים" link in navigation
+# Expected: Direct URL access redirects to /admin
+
+# 2. Test as super admin
+# Expected: "משובים" link visible
+# Expected: Can view, update, delete feedback
+# Expected: See "Super Admin Only" badge
+```
+
+**Status:** ✅ FIXED
+
+---
+
+### Bug #16: Admin Events Page Mobile UI Not Optimized - Poor Touch Targets and Layout
+**File:** `/app/admin/events/page.tsx`
+**Severity:** 🟡 MODERATE - UX/Mobile
+**Fixed Date:** 2025-11-11
+
+**Description:**
+The admin events list page had poor mobile UI/UX with cramped buttons, horizontal overflow risks, and content that didn't stack well on small screens. Touch targets were too small and important information was hard to read.
+
+**UX Impact:**
+- ⚠️ **Touch Targets**: Buttons smaller than 44px (iOS accessibility minimum)
+- ⚠️ **Horizontal Overflow**: Long event names and URLs could cause scrolling
+- ⚠️ **Cramped Layout**: Too much horizontal content on mobile
+- ⚠️ **Poor Readability**: Small fonts and inconsistent spacing
+
+**Code Before Fix:**
+```typescript
+// Cramped layout with poor mobile support
+<div className="flex items-center justify-between">
+  <div className="flex-1">
+    <h3 className="text-lg">{event.title}</h3>
+    <div className="flex gap-4">
+      {/* Too many items in one row */}
+    </div>
+  </div>
+  <div className="flex gap-2">
+    <Link href={...} className="p-2">
+      <Edit className="w-5 h-5" />  {/* ❌ Touch target too small */}
+    </Link>
+  </div>
+</div>
+```
+
+**Fix Applied:**
+
+**1. Proper Touch Targets (44px minimum):**
+```typescript
+// All interactive elements >= 44px height
+<select className="min-h-[44px] min-w-[100px]" />
+<Link className="min-h-[44px] px-4 py-2">
+  <Edit className="w-4 h-4" />
+  <span>ערוך וצפה בהרשמות</span>
+</Link>
+```
+
+**2. Responsive Layout Stacking:**
+```typescript
+// Header - stack title and status vertically on mobile
+<div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
+  <h3 className="text-lg sm:text-xl">{event.title}</h3>
+  <select className="min-h-[44px]" />
+</div>
+
+// Event details - vertical list on mobile
+<div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-4">
+  <div className="flex items-center min-h-[40px]">
+    <Calendar />
+    <span>{date}</span>
+  </div>
+</div>
+
+// Action buttons - wrap naturally
+<div className="flex flex-wrap gap-2">
+  <Link className="min-h-[44px]">Button 1</Link>
+  <Link className="min-h-[44px]">Button 2</Link>
+</div>
+```
+
+**3. Prevent Horizontal Overflow:**
+```typescript
+// Hide full URL on mobile, show only slug
+<div className="text-xs text-gray-500 space-y-1">
+  <div>קוד אירוע: <span className="font-mono">{event.slug}</span></div>
+  <div className="hidden sm:block break-all">
+    קישור: <span className="font-mono">{fullUrl}</span>
+  </div>
+</div>
+```
+
+**4. Improved Visual Hierarchy:**
+```typescript
+// Larger text, better spacing, clearer badges
+<h3 className="text-lg sm:text-xl font-medium">  {/* Responsive sizing */}
+<span className="px-3 py-1.5 bg-purple-50 rounded-md">  {/* Larger badges */}
+<div className="space-y-2">  {/* Consistent vertical spacing */}
+```
+
+**5. Better Button Labels:**
+```typescript
+// Before: Icon-only buttons (unclear)
+<Link>
+  <Edit className="w-5 h-5" />
+</Link>
+
+// After: Icon + text (clear purpose)
+<Link className="flex items-center gap-2">
+  <Edit className="w-4 h-4" />
+  <span>ערוך וצפה בהרשמות</span>
+</Link>
+```
+
+**Files Changed:**
+- `/app/admin/events/page.tsx:114-218` - Complete mobile-first redesign of event card
+- `/app/admin/events/page.tsx:116-135` - Responsive header with stacking
+- `/app/admin/events/page.tsx:137-167` - Vertical event details layout
+- `/app/admin/events/page.tsx:169-201` - Large touch target buttons with labels
+- `/app/admin/events/page.tsx:203-213` - Overflow-safe event code section
+
+**Mobile Improvements:**
+- ✅ All buttons >= 44px height (iOS accessibility standard)
+- ✅ Content stacks vertically on small screens
+- ✅ No horizontal overflow
+- ✅ Clear button labels (not just icons)
+- ✅ Responsive typography (text-lg → text-xl on desktop)
+- ✅ Proper spacing with Tailwind gap utilities
+- ✅ Status badge hidden on mobile (redundant with dropdown)
+
+**Testing:**
+```bash
+# 1. Test on mobile viewport (375px width)
+# Expected: All content readable, no horizontal scroll
+# Expected: Buttons easy to tap (not cramped)
+
+# 2. Test on tablet (768px width)
+# Expected: Layout uses more horizontal space
+# Expected: Status badge appears next to dropdown
+
+# 3. Test on desktop (1024px+)
+# Expected: Full layout with all information visible
+```
+
+**Status:** ✅ FIXED
+
+---
+
+### Bug #17: Help Page Not Soccer-Focused - Generic Examples and No Real-World Context
+**File:** `/app/admin/help/page.tsx`
+**Severity:** 🟢 LOW - UX/Content
+**Fixed Date:** 2025-11-11
+
+**Description:**
+The help page had generic examples (parties, birthdays, trips) instead of soccer-specific examples. Since the system is built for sports events (especially soccer), the documentation should reflect this with practical, realistic examples that users can relate to.
+
+**UX Impact:**
+- ⚠️ **Confusing Examples**: Users managing soccer games seeing party examples
+- ⚠️ **Missing Context**: No explanation of why soccer-specific features exist
+- ⚠️ **Poor Onboarding**: New users don't understand the system was built for sports
+
+**Content Before Fix:**
+- Generic title: "המדריך המלא ליצירת אירועים"
+- Party examples: "מסיבת פיצה וחברים", "יום הולדת"
+- General capacity: "15-25 ילדים (תלוי בגודל הבית)"
+- Mixed event types without focus
+
+**Fix Applied:**
+
+**1. Soccer-Focused Header:**
+```markdown
+Before: 🎉 המדריך המלא ליצירת אירועים 🎉
+After:  ⚽ המדריך המלא לניהול משחקי כדורגל ⚽
+
+Subtitle: "המערכת שלנו נבנתה במיוחד למשחקי כדורגל, אבל אפשר להשתמש בה לכל סוג אירוע!"
+```
+
+**2. Soccer Examples Throughout:**
+```typescript
+// Event title examples
+⚽ משחק ידידות - נוער נגד מבוגרים
+⚽ כיתה ו' נגד כיתה ז' - גמר הגביע
+⚽ אימון קבוצתי - הכנה למשחק חשוב
+⚽ טורניר ליגת הכיתות - שלב א'
+
+// Event description example
+⚽ משחק ידידות 11 נגד 11 במגרש העירוני
+🥅 הביאו: נעלי ספורט, בקבוק מים, מדים אם יש
+⏰ נפתח בשעה 16:00, מתחילים 16:30, סיום 18:00
+📌 חובה להגיע בזמן! אם מאחרים - תתקשרו
+
+// Location examples
+⚽ מגרש כדורגל עירוני, שדרות ירושלים 50, תל אביב
+⚽ מגרש כדורגל בבית הספר "אורט", רחוב הרצל 15
+⚽ מתחם ספורט "אלפא", מגרש 3, חולון
+
+// Capacity examples
+⚽ משחק 11 נגד 11: 22 שחקנים (11 בכל קבוצה)
+⚽ משחק 11 נגד 11 עם ספסל: 30 שחקנים
+⚽ משחק 7 נגד 7: 14 שחקנים
+⚽ טורניר: 50-100 שחקנים
+```
+
+**3. Practical Tips for Soccer:**
+```typescript
+💡 טיפים חשובים למשחק כדורגל מושלם
+
+⚽ שמות ברורים: "משחק כדורגל 11 נגד 11 - גמר הליגה"
+📍 מיקום מדויק: כתובת + הנחיות ("ליד החנייה, מגרש 3")
+🎯 מספר שחקנים: תוסיפו מקומות נוספים למקרה של ביטולים
+⏰ זמנים הגיוניים: 16:00-18:00 (אחרי בית הספר)
+👕 מה להביא: נעליים, מים, מדים, מגיני שוקיים
+```
+
+**4. Completion Messages:**
+```typescript
+// Before: Generic party messages
+// After: Soccer-specific
+⚽ "מעולה! נרשמת בהצלחה למשחק! תזכור להביא נעלי ספורט, בקבוק מים ומדים."
+⚽ "כל הכבוד! אתה במשחק! נתחיל בשעה 16:30 - הגיע 15 דקות קודם!"
+⚽ "ברכות! אתה חלק מהקבוצה! המאמן יצור איתך קשר בקרוב."
+```
+
+**5. Clear System Flexibility:**
+```typescript
+// Added prominent reminder at end
+💡 זכרו: המערכת נבנתה במיוחד למשחקי כדורגל,
+אבל אפשר להשתמש בה לכל סוג אירוע -
+טיולים, מסיבות, אימונים, וכל דבר אחר!
+```
+
+**Color Scheme Changes:**
+- Changed from purple/pink to green/blue (soccer colors)
+- Updated gradients to match sports theme
+- Green accent color for soccer elements
+
+**Files Changed:**
+- `/app/admin/help/page.tsx:9-22` - Soccer-focused header and subtitle
+- `/app/admin/help/page.tsx:24-51` - Added use case explanations with soccer examples
+- `/app/admin/help/page.tsx:61-80` - Soccer title examples with tips
+- `/app/admin/help/page.tsx:82-106` - Soccer description examples with checklist
+- `/app/admin/help/page.tsx:125-143` - Soccer location examples with landmarks
+- `/app/admin/help/page.tsx:171-196` - Soccer capacity calculations
+- `/app/admin/help/page.tsx:198-220` - Max spots per registration for teams
+- `/app/admin/help/page.tsx:434-439` - Soccer completion message examples
+- `/app/admin/help/page.tsx:447-490` - Soccer-specific tips section
+- `/app/admin/help/page.tsx:493-515` - Soccer call-to-action with reminder
+
+**Content Improvements:**
+- ✅ Soccer examples in every section
+- ✅ Clear explanation of system purpose
+- ✅ Practical venue and capacity examples
+- ✅ Real-world tips (what to bring, timing, etc.)
+- ✅ Prominent reminder about flexibility
+- ✅ Non-technical language throughout
+- ✅ Visual hierarchy with soccer-themed colors
+
+**Testing:**
+```bash
+# 1. Test readability
+# Expected: Soccer coaches/organizers understand examples
+# Expected: No technical jargon
+
+# 2. Test flexibility messaging
+# Expected: Clear that system works for other events too
+# Expected: Soccer examples don't limit perceived use cases
+```
+
+**Status:** ✅ FIXED
+
+---
+
 **Report Generated:** 2025-11-10
-**Last Updated:** 2025-11-10
+**Last Updated:** 2025-11-11
 **Tested By:** Claude Code QA
 **Next Review:** After critical fixes implemented

@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireSuperAdmin } from '@/lib/auth'
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Only super admins can update feedback
+    await requireSuperAdmin()
+
     const { id } = await params
     const { status, adminNotes } = await request.json()
 
@@ -32,6 +36,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Only super admins can delete feedback
+    await requireSuperAdmin()
+
     const { id } = await params
 
     await prisma.feedback.delete({

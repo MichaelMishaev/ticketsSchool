@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireSuperAdmin } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
+    // Only super admins can access feedback
+    await requireSuperAdmin()
+
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
 
