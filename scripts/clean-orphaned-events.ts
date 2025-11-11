@@ -6,11 +6,14 @@ async function cleanOrphanedEvents() {
   try {
     console.log('🔍 Looking for orphaned events (events without valid schools)...\n')
 
-    // Find events with null school relationship
-    const orphanedEvents = await prisma.event.findMany({
-      where: {
-        school: null
-      },
+    // Get all valid school IDs
+    const validSchools = await prisma.school.findMany({
+      select: { id: true }
+    })
+    const validSchoolIds = new Set(validSchools.map(s => s.id))
+
+    // Find all events
+    const allEvents = await prisma.event.findMany({
       select: {
         id: true,
         slug: true,
@@ -24,6 +27,9 @@ async function cleanOrphanedEvents() {
         }
       }
     })
+
+    // Filter orphaned events (schoolId not in valid schools)
+    const orphanedEvents = allEvents.filter(event => !validSchoolIds.has(event.schoolId))
 
     if (orphanedEvents.length === 0) {
       console.log('✅ No orphaned events found. Database is clean!')
@@ -53,9 +59,12 @@ async function cleanOrphanedEvents() {
     console.log('')
 
     // Delete orphaned events (cascade will delete registrations)
+    const orphanedEventIds = orphanedEvents.map(e => e.id)
     const result = await prisma.event.deleteMany({
       where: {
-        school: null
+        id: {
+          in: orphanedEventIds
+        }
       }
     })
 

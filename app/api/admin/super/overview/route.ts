@@ -12,10 +12,14 @@ export async function GET() {
     await requireSuperAdmin()
 
     // First, clean up any orphaned events (events without a valid school)
-    const orphanedEvents = await prisma.event.findMany({
-      where: {
-        school: null
-      },
+    // Get all valid school IDs
+    const validSchools = await prisma.school.findMany({
+      select: { id: true }
+    })
+    const validSchoolIds = new Set(validSchools.map(s => s.id))
+
+    // Find events with schoolIds that don't exist in schools table
+    const allEvents = await prisma.event.findMany({
       select: {
         id: true,
         title: true,
@@ -23,22 +27,28 @@ export async function GET() {
       }
     })
 
-    if (orphanedEvents.length > 0) {
-      console.warn(`Found ${orphanedEvents.length} orphaned events without valid schools:`, orphanedEvents)
+    const orphanedEventIds = allEvents
+      .filter(event => !validSchoolIds.has(event.schoolId))
+      .map(event => event.id)
+
+    if (orphanedEventIds.length > 0) {
+      console.warn(`Found ${orphanedEventIds.length} orphaned events without valid schools`)
       // Delete orphaned events
-      await prisma.event.deleteMany({
+      const deleted = await prisma.event.deleteMany({
         where: {
-          school: null
+          id: {
+            in: orphanedEventIds
+          }
         }
       })
-      console.log(`Deleted ${orphanedEvents.length} orphaned events`)
+      console.log(`Deleted ${deleted.count} orphaned events`)
     }
 
     // Fetch all events with school and registration data
     const events = await prisma.event.findMany({
       where: {
-        school: {
-          isNot: null
+        schoolId: {
+          in: Array.from(validSchoolIds)
         }
       },
       include: {

@@ -95,12 +95,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build where clause based on admin role
-    const where: any = {
-      // CRITICAL: Only fetch events with valid schools (exclude orphaned events)
-      school: {
-        isNot: null
-      }
-    }
+    const where: any = {}
 
     // Regular admins can only see their school's events (all roles except SUPER_ADMIN)
     if (admin.role !== 'SUPER_ADMIN') {
