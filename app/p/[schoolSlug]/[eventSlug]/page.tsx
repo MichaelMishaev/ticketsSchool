@@ -433,23 +433,71 @@ export default function EventPage() {
 
             {event.maxSpotsPerPerson > 1 && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-base font-semibold text-gray-800 mb-3">
                   מספר מקומות <span className="text-red-500 mr-1">*</span>
-                  <span className="text-xs text-gray-500 mr-2">(מקסימום: {event.maxSpotsPerPerson})</span>
                 </label>
-                <input
-                  type="number"
-                  min="1"
-                  max={isFull ? event.maxSpotsPerPerson : Math.min(event.maxSpotsPerPerson, spotsLeft)}
-                  value={spotsCount}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value) || 1;
-                    const max = isFull ? event.maxSpotsPerPerson : Math.min(event.maxSpotsPerPerson, spotsLeft);
-                    setSpotsCount(Math.min(Math.max(1, value), max));
-                  }}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
-                />
+                <div className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200">
+                  <div className="flex items-center gap-3" dir="rtl">
+                    {/* Decrement Button (Right side in RTL) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (spotsCount > 1) {
+                          setSpotsCount(spotsCount - 1);
+                        }
+                      }}
+                      disabled={spotsCount <= 1}
+                      className="w-14 h-14 flex items-center justify-center bg-white border-2 border-gray-300 rounded-xl hover:bg-blue-50 hover:border-blue-400 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300 transition-all text-gray-700 font-bold text-2xl shadow-sm active:scale-95"
+                      aria-label="הפחת מספר מקומות"
+                    >
+                      −
+                    </button>
+
+                    {/* Dropdown Selector */}
+                    <select
+                      value={spotsCount}
+                      onChange={(e) => setSpotsCount(parseInt(e.target.value))}
+                      required
+                      style={{ backgroundColor: schoolColor }}
+                      className="flex-1 px-4 py-4 rounded-xl focus:ring-2 focus:ring-blue-500 text-white text-center font-bold text-xl shadow-md border-0 appearance-none cursor-pointer"
+                    >
+                      {Array.from(
+                        { length: isFull ? event.maxSpotsPerPerson : Math.min(event.maxSpotsPerPerson, spotsLeft) },
+                        (_, i) => i + 1
+                      ).map((num) => (
+                        <option key={num} value={num} className="bg-white text-gray-900">
+                          {num}
+                        </option>
+                      ))}
+                    </select>
+
+                    {/* Increment Button (Left side in RTL) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const max = isFull ? event.maxSpotsPerPerson : Math.min(event.maxSpotsPerPerson, spotsLeft);
+                        if (spotsCount < max) {
+                          setSpotsCount(spotsCount + 1);
+                        }
+                      }}
+                      disabled={spotsCount >= (isFull ? event.maxSpotsPerPerson : Math.min(event.maxSpotsPerPerson, spotsLeft))}
+                      className="w-14 h-14 flex items-center justify-center bg-white border-2 border-gray-300 rounded-xl hover:bg-blue-50 hover:border-blue-400 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300 transition-all text-gray-700 font-bold text-2xl shadow-sm active:scale-95"
+                      aria-label="הוסף מספר מקומות"
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  {/* Info Text */}
+                  <div className="text-center mt-3">
+                    <p className="text-sm text-gray-600">
+                      {isFull
+                        ? `ניתן לבחור עד ${event.maxSpotsPerPerson} מקומות`
+                        : `זמינים ${spotsLeft} מקומות • מקסימום ${event.maxSpotsPerPerson} לאדם`
+                      }
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 

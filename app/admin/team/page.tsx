@@ -147,6 +147,18 @@ export default function TeamManagementPage() {
     )
   }
 
+  const getRoleLabel = (role: string) => {
+    const roleLabels: Record<string, string> = {
+      'ADMIN': 'מנהל',
+      'MANAGER': 'מנהל אירועים',
+      'VIEWER': 'צופה',
+      'SCHOOL_ADMIN': 'מנהל בית ספר',
+      'OWNER': 'בעלים',
+      'SUPER_ADMIN': 'מנהל על'
+    }
+    return roleLabels[role] || role
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -158,18 +170,18 @@ export default function TeamManagementPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">ניהול צוות</h1>
-          <p className="mt-1 text-sm text-gray-500">הזמן חברי צוות חדשים לבית הספר שלך</p>
+          <p className="mt-2 text-base text-gray-600">הזמן חברי צוות חדשים לבית הספר שלך</p>
         </div>
         <button
           disabled
-          className="inline-flex items-center gap-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-400 cursor-not-allowed opacity-60"
+          className="inline-flex items-center justify-center gap-2 px-5 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-gray-400 cursor-not-allowed opacity-60"
         >
-          <UserPlus className="w-5 h-5 ml-2" />
+          <UserPlus className="w-5 h-5" />
           הזמן חבר צוות
-          <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-400 text-gray-900">
+          <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-yellow-400 text-gray-900">
             בקרוב
           </span>
         </button>
@@ -177,12 +189,12 @@ export default function TeamManagementPage() {
 
       {/* Error/Success Messages */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        <div className="bg-red-50 border-2 border-red-200 text-red-700 px-5 py-4 rounded-lg text-base font-medium">
           {error}
         </div>
       )}
       {success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+        <div className="bg-green-50 border-2 border-green-200 text-green-700 px-5 py-4 rounded-lg text-base font-medium">
           {success}
         </div>
       )}
@@ -247,76 +259,110 @@ export default function TeamManagementPage() {
 
       {/* Invitations List */}
       <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">הזמנות</h2>
+        <div className="px-6 py-5 border-b border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-900">הזמנות</h2>
         </div>
 
         {invitations.length === 0 ? (
-          <div className="px-6 py-8 text-center text-gray-500">
+          <div className="px-6 py-12 text-center text-gray-500">
             אין הזמנות עדיין. לחץ על &quot;הזמן חבר צוות&quot; כדי להתחיל.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    אימייל
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    תפקיד
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    סטטוס
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    הוזמן על ידי
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    תאריך
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    פעולות
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {invitations.map((invitation) => (
-                  <tr key={invitation.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        {getStatusIcon(invitation.status)}
-                        <span className="mr-2 text-sm text-gray-900">{invitation.email}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {invitation.role}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(invitation.status)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {invitation.invitedBy}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(invitation.createdAt).toLocaleDateString('he-IL')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {invitation.status === 'PENDING' && (
-                        <button
-                          onClick={() => handleRevoke(invitation.id)}
-                          className="text-red-600 hover:text-red-800"
-                          title="בטל הזמנה"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      )}
-                    </td>
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
+                      אימייל
+                    </th>
+                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
+                      תפקיד
+                    </th>
+                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
+                      סטטוס
+                    </th>
+                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
+                      הוזמן על ידי
+                    </th>
+                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
+                      פעולות
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {invitations.map((invitation) => (
+                    <tr key={invitation.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-5 whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          {getStatusIcon(invitation.status)}
+                          <span className="text-base font-medium text-gray-900">{invitation.email}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5 whitespace-nowrap">
+                        <span className="text-base text-gray-700">{getRoleLabel(invitation.role)}</span>
+                      </td>
+                      <td className="px-6 py-5 whitespace-nowrap">
+                        {getStatusBadge(invitation.status)}
+                      </td>
+                      <td className="px-6 py-5 whitespace-nowrap">
+                        <span className="text-sm text-gray-500">{invitation.invitedBy}</span>
+                      </td>
+                      <td className="px-6 py-5 whitespace-nowrap text-right">
+                        {invitation.status === 'PENDING' && (
+                          <button
+                            onClick={() => handleRevoke(invitation.id)}
+                            className="text-red-600 hover:text-red-800 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                            title="בטל הזמנה"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden divide-y divide-gray-200">
+              {invitations.map((invitation) => (
+                <div key={invitation.id} className="p-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      {getStatusIcon(invitation.status)}
+                      <span className="text-base font-medium text-gray-900">{invitation.email}</span>
+                    </div>
+                    {invitation.status === 'PENDING' && (
+                      <button
+                        onClick={() => handleRevoke(invitation.id)}
+                        className="text-red-600 hover:text-red-800 p-2 -m-2"
+                        title="בטל הזמנה"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">תפקיד:</span>
+                      <span className="text-gray-900 font-medium">{getRoleLabel(invitation.role)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">סטטוס:</span>
+                      {getStatusBadge(invitation.status)}
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">הוזמן על ידי:</span>
+                      <span className="text-gray-700">{invitation.invitedBy}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>

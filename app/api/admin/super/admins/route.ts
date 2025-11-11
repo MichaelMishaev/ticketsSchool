@@ -59,10 +59,11 @@ export async function GET() {
 /**
  * DELETE /api/admin/super/admins
  * Super Admin only - Delete an admin by ID or email
+ * WARNING: This will CASCADE delete the admin's school and all associated events, registrations, etc.
  */
 export async function DELETE(request: NextRequest) {
   try {
-    await requireSuperAdmin()
+    const currentAdmin = await requireSuperAdmin()
 
     const body = await request.json()
     const { adminId, email } = body
@@ -80,7 +81,15 @@ export async function DELETE(request: NextRequest) {
       include: {
         school: {
           select: {
+            id: true,
             name: true,
+            slug: true,
+            _count: {
+              select: {
+                events: true,
+                admins: true,
+              }
+            }
           }
         }
       }
@@ -94,21 +103,60 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Prevent deleting yourself
-    // Note: You might want to add a check here to prevent deleting the current admin
+    if (adminToDelete.id === currentAdmin.adminId) {
+      return NextResponse.json(
+        { error: 'Cannot delete your own admin account' },
+        { status: 400 }
+      )
+    }
 
-    // Delete the admin
-    await prisma.admin.delete({
-      where: { id: adminToDelete.id }
-    })
+    // Prevent deleting other SUPER_ADMIN users
+    if (adminToDelete.role === 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { error: 'Cannot delete SUPER_ADMIN users' },
+        { status: 400 }
+      )
+    }
 
-    return NextResponse.json({
-      success: true,
-      deletedAdmin: {
+    let deletionResult = {
+      adminDeleted: {
         id: adminToDelete.id,
         email: adminToDelete.email,
         name: adminToDelete.name,
-        schoolName: adminToDelete.school?.name || null,
+      },
+      schoolDeleted: null as {
+        id: string
+        name: string
+        slug: string
+        eventsDeleted: number
+        adminsDeleted: number
+      } | null
+    }
+
+    // CASCADE DELETE: If admin has a school, delete the entire school (and all events, registrations, etc.)
+    if (adminToDelete.schoolId && adminToDelete.school) {
+      // Delete the school (Prisma cascade deletes will handle events, registrations, admins, etc.)
+      await prisma.school.delete({
+        where: { id: adminToDelete.schoolId }
+      })
+
+      deletionResult.schoolDeleted = {
+        id: adminToDelete.school.id,
+        name: adminToDelete.school.name,
+        slug: adminToDelete.school.slug,
+        eventsDeleted: adminToDelete.school._count.events,
+        adminsDeleted: adminToDelete.school._count.admins,
       }
+    } else {
+      // If no school, just delete the admin
+      await prisma.admin.delete({
+        where: { id: adminToDelete.id }
+      })
+    }
+
+    return NextResponse.json({
+      success: true,
+      ...deletionResult
     })
   } catch (error) {
     console.error('Delete admin error:', error)

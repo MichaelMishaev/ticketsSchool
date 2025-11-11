@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Calendar, Users, School, TrendingUp, Search, Filter, Trash2, UserX, Building2 } from 'lucide-react'
+import { Calendar, Users, School, TrendingUp, Search, Filter, Trash2, UserX, Building2, AlertTriangle } from 'lucide-react'
+import Modal from '@/components/Modal'
 
 interface EventStats {
   id: string
@@ -60,6 +61,16 @@ interface SchoolData {
 
 type ActiveTab = 'events' | 'admins' | 'schools'
 
+interface DeleteAdminModalState {
+  isOpen: boolean
+  admin: Admin | null
+}
+
+interface DeleteSchoolModalState {
+  isOpen: boolean
+  school: SchoolData | null
+}
+
 export default function SuperAdminDashboard() {
   const [events, setEvents] = useState<EventStats[]>([])
   const [statistics, setStatistics] = useState<Statistics | null>(null)
@@ -71,6 +82,9 @@ export default function SuperAdminDashboard() {
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
   const [activeTab, setActiveTab] = useState<ActiveTab>('events')
   const [sortByRegistrations, setSortByRegistrations] = useState(false)
+  const [deleteAdminModal, setDeleteAdminModal] = useState<DeleteAdminModalState>({ isOpen: false, admin: null })
+  const [deleteSchoolModal, setDeleteSchoolModal] = useState<DeleteSchoolModalState>({ isOpen: false, school: null })
+  const [isDeleting, setIsDeleting] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -113,16 +127,15 @@ export default function SuperAdminDashboard() {
     }
   }
 
-  const handleDeleteAdmin = async (adminId: string, email: string) => {
-    if (!confirm(`האם אתה בטוח שברצונך למחוק את המשתמש ${email}? פעולה זו לא ניתנת לביטול.`)) {
-      return
-    }
+  const handleDeleteAdmin = async () => {
+    if (!deleteAdminModal.admin) return
 
+    setIsDeleting(true)
     try {
       const response = await fetch('/api/admin/super/admins', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminId })
+        body: JSON.stringify({ adminId: deleteAdminModal.admin.id })
       })
 
       if (!response.ok) {
@@ -131,29 +144,36 @@ export default function SuperAdminDashboard() {
         return
       }
 
-      alert('המשתמש נמחק בהצלחה')
+      const result = await response.json()
+
+      // Build success message based on what was deleted
+      let message = `המשתמש ${result.adminDeleted.email} נמחק בהצלחה`
+      if (result.schoolDeleted) {
+        message += `\n\n⚠️ נמחק גם בית הספר "${result.schoolDeleted.name}"`
+        message += `\n• אירועים שנמחקו: ${result.schoolDeleted.eventsDeleted}`
+        message += `\n• משתמשים שנמחקו: ${result.schoolDeleted.adminsDeleted}`
+      }
+
+      alert(message)
+      setDeleteAdminModal({ isOpen: false, admin: null })
       fetchData()
     } catch (error) {
       console.error('Error deleting admin:', error)
       alert('שגיאה במחיקת המשתמש')
+    } finally {
+      setIsDeleting(false)
     }
   }
 
-  const handleDeleteSchool = async (schoolId: string, schoolName: string) => {
-    if (!confirm(`האם אתה בטוח שברצונך למחוק את בית הספר "${schoolName}"? פעולה זו תמחק גם את כל האירועים והמשתמשים המשוייכים לבית הספר. פעולה זו לא ניתנת לביטול!`)) {
-      return
-    }
+  const handleDeleteSchool = async () => {
+    if (!deleteSchoolModal.school) return
 
-    // Double confirmation for school deletion
-    if (!confirm(`אישור נוסף: פעולה זו תמחק לצמיתות את בית הספר "${schoolName}" וכל המידע הקשור אליו. האם להמשיך?`)) {
-      return
-    }
-
+    setIsDeleting(true)
     try {
       const response = await fetch('/api/admin/super/schools', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ schoolId })
+        body: JSON.stringify({ schoolId: deleteSchoolModal.school.id })
       })
 
       if (!response.ok) {
@@ -163,11 +183,14 @@ export default function SuperAdminDashboard() {
       }
 
       const result = await response.json()
-      alert(`בית הספר נמחק בהצלחה. נמחקו: ${result.deletedSchool.eventsDeleted} אירועים, ${result.deletedSchool.adminsDeleted} משתמשים`)
+      alert(`בית הספר נמחק בהצלחה.\n\nנמחקו:\n• ${result.deletedSchool.eventsDeleted} אירועים\n• ${result.deletedSchool.adminsDeleted} משתמשים`)
+      setDeleteSchoolModal({ isOpen: false, school: null })
       fetchData()
     } catch (error) {
       console.error('Error deleting school:', error)
       alert('שגיאה במחיקת בית הספר')
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -586,7 +609,7 @@ export default function SuperAdminDashboard() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <button
-                          onClick={() => handleDeleteAdmin(admin.id, admin.email)}
+                          onClick={() => setDeleteAdminModal({ isOpen: true, admin })}
                           disabled={admin.role === 'SUPER_ADMIN'}
                           className={`inline-flex items-center gap-1 px-3 py-1 rounded-md transition-colors ${
                             admin.role === 'SUPER_ADMIN'
@@ -682,7 +705,7 @@ export default function SuperAdminDashboard() {
                   </div>
 
                   <button
-                    onClick={() => handleDeleteSchool(school.id, school.name)}
+                    onClick={() => setDeleteSchoolModal({ isOpen: true, school })}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
                   >
                     <Building2 className="w-4 h-4" />
@@ -699,6 +722,163 @@ export default function SuperAdminDashboard() {
           )}
         </div>
       )}
+
+      {/* Delete Admin Modal */}
+      <Modal
+        isOpen={deleteAdminModal.isOpen}
+        onClose={() => !isDeleting && setDeleteAdminModal({ isOpen: false, admin: null })}
+        title="⚠️ מחיקת משתמש - אזהרה!"
+        type="error"
+        size="md"
+        closeOnBackdropClick={!isDeleting}
+        closeOnEsc={!isDeleting}
+        showCloseButton={!isDeleting}
+        buttons={[
+          {
+            label: 'ביטול',
+            onClick: () => setDeleteAdminModal({ isOpen: false, admin: null }),
+            variant: 'secondary',
+            disabled: isDeleting,
+          },
+          {
+            label: isDeleting ? 'מוחק...' : 'מחק לצמיתות',
+            onClick: handleDeleteAdmin,
+            variant: 'danger',
+            disabled: isDeleting,
+            icon: <Trash2 className="w-4 h-4" />,
+          },
+        ]}
+      >
+        {deleteAdminModal.admin && (
+          <div className="space-y-4" dir="rtl">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="font-semibold text-red-900 mb-2">פעולה זו תמחק לצמיתות:</h4>
+                  <ul className="space-y-2 text-sm text-red-800">
+                    <li className="flex items-center gap-2">
+                      <UserX className="w-4 h-4" />
+                      <span>את המשתמש: <strong>{deleteAdminModal.admin.email}</strong></span>
+                    </li>
+                    {deleteAdminModal.admin.schoolName && (
+                      <>
+                        <li className="flex items-center gap-2">
+                          <Building2 className="w-4 h-4" />
+                          <span>את בית הספר: <strong>{deleteAdminModal.admin.schoolName}</strong></span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4" />
+                          <span>את <strong>כל האירועים</strong> של בית הספר</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <Users className="w-4 h-4" />
+                          <span>את <strong>כל ההרשמות</strong> לאירועים</span>
+                        </li>
+                      </>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <p className="text-sm text-amber-900 font-medium">
+                ⚠️ פעולה זו לא ניתנת לביטול! כל המידע יימחק לצמיתות מהמערכת.
+              </p>
+            </div>
+
+            <div className="text-center">
+              <p className="text-gray-600 text-sm">
+                האם אתה בטוח לחלוטין שברצונך להמשיך?
+              </p>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Delete School Modal */}
+      <Modal
+        isOpen={deleteSchoolModal.isOpen}
+        onClose={() => !isDeleting && setDeleteSchoolModal({ isOpen: false, school: null })}
+        title="⚠️ מחיקת בית ספר - אזהרה!"
+        type="error"
+        size="md"
+        closeOnBackdropClick={!isDeleting}
+        closeOnEsc={!isDeleting}
+        showCloseButton={!isDeleting}
+        buttons={[
+          {
+            label: 'ביטול',
+            onClick: () => setDeleteSchoolModal({ isOpen: false, school: null }),
+            variant: 'secondary',
+            disabled: isDeleting,
+          },
+          {
+            label: isDeleting ? 'מוחק...' : 'מחק לצמיתות',
+            onClick: handleDeleteSchool,
+            variant: 'danger',
+            disabled: isDeleting,
+            icon: <Building2 className="w-4 h-4" />,
+          },
+        ]}
+      >
+        {deleteSchoolModal.school && (
+          <div className="space-y-4" dir="rtl">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="font-semibold text-red-900 mb-2">פעולה זו תמחק לצמיתות:</h4>
+                  <ul className="space-y-2 text-sm text-red-800">
+                    <li className="flex items-center gap-2">
+                      <Building2 className="w-4 h-4" />
+                      <span>את בית הספר: <strong>{deleteSchoolModal.school.name}</strong></span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4" />
+                      <span><strong>{deleteSchoolModal.school.eventCount}</strong> אירועים</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      <span><strong>{deleteSchoolModal.school.adminCount}</strong> משתמשים</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Trash2 className="w-4 h-4" />
+                      <span>את <strong>כל ההרשמות</strong> לאירועים</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {deleteSchoolModal.school.admins.length > 0 && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-xs font-medium text-blue-900 mb-2">משתמשים שיימחקו:</p>
+                <div className="flex flex-wrap gap-1">
+                  {deleteSchoolModal.school.admins.map((admin) => (
+                    <span key={admin.id} className="text-xs bg-white px-2 py-1 rounded border border-blue-300">
+                      {admin.email}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <p className="text-sm text-amber-900 font-medium">
+                ⚠️ פעולה זו לא ניתנת לביטול! כל המידע יימחק לצמיתות מהמערכת.
+              </p>
+            </div>
+
+            <div className="text-center">
+              <p className="text-gray-600 text-sm">
+                האם אתה בטוח לחלוטין שברצונך להמשיך?
+              </p>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }
