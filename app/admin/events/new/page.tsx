@@ -60,7 +60,7 @@ export default function NewEventPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              כותרת האירוע *
+              כותרת האירוע <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -88,19 +88,15 @@ export default function NewEventPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                סוג משחק
+                סוג אירוע
               </label>
-              <select
+              <input
+                type="text"
                 value={formData.gameType}
                 onChange={(e) => setFormData({ ...formData, gameType: e.target.value })}
                 className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">בחר סוג</option>
-                <option value="כדורגל">כדורגל</option>
-                <option value="כדורסל">כדורסל</option>
-                <option value="כדורעף">כדורעף</option>
-                <option value="אחר">אחר</option>
-              </select>
+                placeholder="כדורגל, כדורסל, טיול, הרצאה, מסיבה..."
+              />
             </div>
 
             <div>
@@ -119,7 +115,7 @@ export default function NewEventPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              תאריך ושעת התחלה *
+              תאריך ושעת התחלה <span className="text-red-500">*</span>
             </label>
             <input
               type="datetime-local"
@@ -137,7 +133,7 @@ export default function NewEventPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                מספר מקומות כולל *
+                מספר מקומות כולל <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -151,7 +147,7 @@ export default function NewEventPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                מקסימום מקומות לנרשם *
+                מקסימום מקומות לנרשם <span className="text-red-500">*</span>
                 <span className="text-xs text-gray-500 font-normal mr-2">(מינימום: 1, מקסימום: 10)</span>
               </label>
               <input
