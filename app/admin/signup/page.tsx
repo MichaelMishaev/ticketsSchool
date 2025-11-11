@@ -324,7 +324,7 @@ export default function AdminSignupPage() {
                     </div>
                   </div>
                   <div className="bg-gray-50 border border-gray-300 rounded p-2 text-xs text-gray-600">
-                    <p className="mb-1"><strong>רק אלה מותרים:</strong></p>
+                    <p className="mb-1"><strong>הסימנים המותרים:</strong></p>
                     <p className="text-gray-700">
                       אותיות אנגליות קטנות (a-z) • מספרים (0-9) • מקף (-)
                     </p>
