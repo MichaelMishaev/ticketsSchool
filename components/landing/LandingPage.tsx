@@ -132,7 +132,7 @@ export default function LandingPage() {
                 <div className="flex items-center justify-center gap-3">
                   <span className="text-3xl sm:text-4xl">🎟️</span>
                   <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-gray-900">
-                    יש לכם 40 כרטיסים? תנו למערכת לעשות את העבודה.
+                   לדוגמה:  יש לכם 40 כרטיסים שצריך לחלק? תנו למערכת לעשות את העבודה.
                   </h2>
                 </div>
                 <p className="text-sm sm:text-base text-gray-500 font-medium italic">
