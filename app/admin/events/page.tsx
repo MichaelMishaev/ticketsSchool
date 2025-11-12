@@ -116,16 +116,23 @@ export default function EventsPage() {
                     <h3 className="text-lg sm:text-xl font-bold text-gray-900 flex-1">
                       {event.title}
                     </h3>
-                    <select
-                      value={event.status}
-                      onChange={(e) => handleStatusChange(event.id, e.target.value as 'OPEN' | 'PAUSED' | 'CLOSED')}
-                      className="text-sm px-3 py-2 border-2 border-gray-300 rounded-lg min-h-[44px] min-w-[110px] font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <option value="OPEN">פתוח ✓</option>
-                      <option value="PAUSED">מושהה ⏸</option>
-                      <option value="CLOSED">סגור ✕</option>
-                    </select>
+                    <div className="flex flex-col gap-1.5">
+                      <select
+                        value={event.status}
+                        onChange={(e) => handleStatusChange(event.id, e.target.value as 'OPEN' | 'PAUSED' | 'CLOSED')}
+                        className="text-sm px-3 py-2 border-2 border-gray-300 rounded-lg min-h-[44px] min-w-[110px] font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <option value="OPEN">פתוח ✓</option>
+                        <option value="PAUSED">מושהה ⏸</option>
+                        <option value="CLOSED">סגור ✕</option>
+                      </select>
+                      <p className="text-xs text-gray-600 leading-snug max-w-[200px]">
+                        {event.status === 'OPEN' && 'משתמשים יכולים להירשם לאירוע'}
+                        {event.status === 'PAUSED' && 'השהיה זמנית - ניתן לפתוח מחדש מאוחר יותר (שימושי בעת ביצוע שינויים)'}
+                        {event.status === 'CLOSED' && 'סגירה סופית - האירוע הסתיים או תקופת ההרשמה עברה'}
+                      </p>
+                    </div>
                   </div>
 
                   {/* Metadata Row - All info grouped together */}
