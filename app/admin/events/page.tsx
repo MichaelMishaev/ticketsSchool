@@ -107,79 +107,70 @@ export default function EventsPage() {
           </Link>
         </div>
       ) : (
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
-          <ul className="divide-y divide-gray-200">
-            {events.map((event) => (
-              <li key={event.id}>
-                <div className="px-4 py-5 sm:px-6 hover:bg-gray-50">
+        <div className="space-y-4">
+          {events.map((event) => (
+            <div key={event.id} className="bg-white shadow-md rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
+              <div className="px-4 py-5 sm:px-6">
                   {/* Header Section - Title and Status */}
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
-                    <h3 className="text-lg sm:text-xl font-medium text-gray-900 flex-1">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 flex-1">
                       {event.title}
                     </h3>
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={event.status}
-                        onChange={(e) => handleStatusChange(event.id, e.target.value as 'OPEN' | 'PAUSED' | 'CLOSED')}
-                        className="text-sm px-3 py-1.5 border rounded-md min-h-[44px] min-w-[100px]"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <option value="OPEN">פתוח</option>
-                        <option value="PAUSED">מושהה</option>
-                        <option value="CLOSED">סגור</option>
-                      </select>
-                      <div className="hidden sm:block">
-                        {getStatusBadge(event.status)}
-                      </div>
-                    </div>
+                    <select
+                      value={event.status}
+                      onChange={(e) => handleStatusChange(event.id, e.target.value as 'OPEN' | 'PAUSED' | 'CLOSED')}
+                      className="text-sm px-3 py-2 border-2 border-gray-300 rounded-lg min-h-[44px] min-w-[110px] font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <option value="OPEN">פתוח ✓</option>
+                      <option value="PAUSED">מושהה ⏸</option>
+                      <option value="CLOSED">סגור ✕</option>
+                    </select>
                   </div>
 
-                  {/* Event Details */}
-                  <div className="space-y-2 mb-3">
-                    <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-4 text-sm text-gray-600">
-                      <div className="flex items-center min-h-[40px]">
-                        <Calendar className="w-5 h-5 ml-2 flex-shrink-0" />
-                        <span className="font-medium">{format(new Date(event.startAt), 'dd/MM/yyyy HH:mm')}</span>
-                      </div>
-                      <div className="flex items-center min-h-[40px]">
-                        <Users className="w-5 h-5 ml-2 flex-shrink-0" />
-                        <span className="font-medium">{event.totalSpotsTaken} / {event.capacity} מקומות</span>
-                      </div>
-                      {event.gameType && (
-                        <div className="flex items-center min-h-[40px]">
-                          <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded-md font-medium text-sm">
-                            {event.gameType}
-                          </span>
-                        </div>
-                      )}
-                      {event.school && (
-                        <div className="flex items-center min-h-[40px]">
-                          <span className="text-sm font-medium text-purple-600 bg-purple-50 px-3 py-1.5 rounded-md border border-purple-200">
-                            🏫 {event.school.name}
-                          </span>
-                        </div>
-                      )}
+                  {/* Metadata Row - All info grouped together */}
+                  <div className="flex flex-wrap gap-3 mb-4 pb-4 border-b border-gray-200">
+                    <div className="flex items-center text-sm text-gray-700">
+                      <Calendar className="w-4 h-4 ml-1.5 text-gray-500 flex-shrink-0" />
+                      <span className="font-medium">{format(new Date(event.startAt), 'dd/MM/yyyy HH:mm')}</span>
                     </div>
-
-                    {event.description && (
-                      <p className="text-sm text-gray-600 mt-2 line-clamp-2">{event.description}</p>
+                    <div className="flex items-center text-sm text-gray-700">
+                      <Users className="w-4 h-4 ml-1.5 text-gray-500 flex-shrink-0" />
+                      <span className="font-medium">{event.totalSpotsTaken} / {event.capacity}</span>
+                    </div>
+                    {event.school && (
+                      <span className="inline-flex items-center text-sm font-medium text-purple-700 bg-purple-50 px-2.5 py-1 rounded-md border border-purple-200">
+                        🏫 {event.school.name}
+                      </span>
+                    )}
+                    {event.gameType && (
+                      <span className="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md font-medium text-sm border border-blue-200">
+                        ⚽ {event.gameType}
+                      </span>
                     )}
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    <Link
-                      href={`/admin/events/${event.id}`}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 min-h-[44px]"
-                      title="ערוך וצפה בהרשמות"
-                    >
-                      <Edit className="w-4 h-4" />
-                      <span>ערוך וצפה בהרשמות</span>
-                    </Link>
+                  {/* Description */}
+                  {event.description && (
+                    <p className="text-sm text-gray-600 mb-4 leading-relaxed">{event.description}</p>
+                  )}
+
+                  {/* Primary Action - Full width, prominent */}
+                  <Link
+                    href={`/admin/events/${event.id}`}
+                    className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 active:bg-blue-800 min-h-[48px] w-full mb-3 shadow-sm hover:shadow transition-all"
+                    title="ערוך וצפה בהרשמות"
+                  >
+                    <Edit className="w-5 h-5" />
+                    <span>ערוך וצפה בהרשמות</span>
+                  </Link>
+
+                  {/* Secondary Actions */}
+                  <div className="flex flex-wrap gap-2 mb-4">
                     <Link
                       href={`/p/${event.school.slug}/${event.slug}`}
                       target="_blank"
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 min-h-[44px]"
+                      className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 min-h-[44px] transition-colors"
                       title="צפה בדף ההרשמה"
                     >
                       <ExternalLink className="w-4 h-4" />
@@ -191,7 +182,7 @@ export default function EventsPage() {
                           e.preventDefault()
                           handleDeleteEvent(event.id, event.title)
                         }}
-                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 min-h-[44px]"
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 active:bg-red-800 min-h-[44px] transition-colors"
                         title="מחק אירוע"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -200,23 +191,24 @@ export default function EventsPage() {
                     )}
                   </div>
 
-                  {/* Event Code - Collapsible on mobile */}
-                  <div className="mt-3 pt-3 border-t border-gray-100">
-                    <div className="text-xs text-gray-500 space-y-1">
-                      <div>
-                        קוד אירוע: <span className="font-mono font-medium">{event.slug}</span>
+                  {/* Event Code - Technical details */}
+                  <div className="pt-3 border-t border-gray-200">
+                    <div className="text-xs text-gray-500 space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-400">קוד:</span>
+                        <span className="font-mono font-medium text-gray-700">{event.slug}</span>
                       </div>
-                      <div className="hidden sm:block break-all">
-                        קישור: <span className="font-mono">{typeof window !== 'undefined' ? `${window.location.origin}/p/${event.school.slug}/${event.slug}` : ''}</span>
+                      <div className="hidden sm:flex items-start gap-2">
+                        <span className="text-gray-400 whitespace-nowrap">קישור:</span>
+                        <span className="font-mono text-gray-700 break-all">{typeof window !== 'undefined' ? `${window.location.origin}/p/${event.school.slug}/${event.slug}` : ''}</span>
                       </div>
                     </div>
                   </div>
                 </div>
-              </li>
+              </div>
             ))}
-          </ul>
-        </div>
-      )}
-    </div>
-  )
-}
+          </div>
+        )}
+      </div>
+    )
+  }

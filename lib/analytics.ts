@@ -206,3 +206,11 @@ export const trackExternalLinkClick = (url: string) => {
     label: url,
   })
 }
+
+export const trackWhatsAppHelpClick = (page: string) => {
+  trackEvent({
+    action: 'whatsapp_help_click',
+    category: 'engagement',
+    label: page,
+  })
+}

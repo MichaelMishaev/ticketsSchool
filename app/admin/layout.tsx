@@ -5,7 +5,7 @@ import { Calendar, Home, Plus, Menu, X, HelpCircle, LogOut, MessageSquare, Shiel
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { isAuthenticatedSync, clientLogout } from '@/lib/auth.client'
-import { trackHelpButtonClick, trackButtonClick, trackLogout } from '@/lib/analytics'
+import { trackHelpButtonClick, trackButtonClick, trackLogout, trackWhatsAppHelpClick } from '@/lib/analytics'
 
 interface AdminInfo {
   email: string
@@ -285,6 +285,33 @@ export default function AdminLayout({
           {children}
         </div>
       </main>
+
+      {/* Floating WhatsApp Help Button */}
+      <a
+        href="https://wa.me/972555020829"
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => trackWhatsAppHelpClick(pathname)}
+        className="fixed bottom-6 right-6 z-50 group"
+        aria-label="צור קשר דרך WhatsApp"
+      >
+        {/* Glow Effect */}
+        <div className="absolute -inset-1 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full blur opacity-0 group-hover:opacity-75 transition duration-300"></div>
+
+        {/* Main Button */}
+        <div className="relative flex items-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-3 sm:px-5 sm:py-4 rounded-full shadow-xl hover:shadow-green-500/50 transition-all duration-300 transform group-hover:scale-105">
+          {/* Pulsing Dot */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-white rounded-full animate-ping opacity-25"></div>
+            <MessageSquare className="w-6 h-6 sm:w-7 sm:h-7 relative z-10" />
+          </div>
+
+          {/* Text (hidden on mobile, visible on desktop) */}
+          <span className="hidden sm:block font-bold text-sm whitespace-nowrap">
+            זקוק לעזרה? דבר איתנו
+          </span>
+        </div>
+      </a>
     </div>
   )
 }
