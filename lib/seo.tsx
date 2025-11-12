@@ -214,7 +214,7 @@ export function generateSoftwareStructuredData() {
       '@type': 'Offer',
       price: '0',
       priceCurrency: 'ILS',
-      description: 'תוכנית חינמית לצמיתות',
+      description: 'תוכנית חינמית ',
     },
     description: 'מערכת ניהול כרטיסים לבתי ספר',
     aggregateRating: {

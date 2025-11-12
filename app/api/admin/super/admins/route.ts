@@ -65,7 +65,18 @@ export async function DELETE(request: NextRequest) {
   try {
     const currentAdmin = await requireSuperAdmin()
 
-    const body = await request.json()
+    // Safely parse request body
+    let body
+    try {
+      body = await request.json()
+    } catch (parseError) {
+      console.error('Failed to parse request body:', parseError)
+      return NextResponse.json(
+        { error: 'Invalid request body. Expected JSON.' },
+        { status: 400 }
+      )
+    }
+
     const { adminId, email } = body
 
     if (!adminId && !email) {
@@ -135,18 +146,22 @@ export async function DELETE(request: NextRequest) {
 
     // CASCADE DELETE: If admin has a school, delete the entire school (and all events, registrations, etc.)
     if (adminToDelete.schoolId && adminToDelete.school) {
-      // Delete the school (Prisma cascade deletes will handle events, registrations, admins, etc.)
-      await prisma.school.delete({
-        where: { id: adminToDelete.schoolId }
-      })
-
-      deletionResult.schoolDeleted = {
+      // Store school info before deletion (needed for response)
+      const schoolInfo = {
         id: adminToDelete.school.id,
         name: adminToDelete.school.name,
         slug: adminToDelete.school.slug,
         eventsDeleted: adminToDelete.school._count.events,
         adminsDeleted: adminToDelete.school._count.admins,
       }
+
+      // Delete the school (Prisma cascade deletes will handle events, registrations, admins, etc.)
+      // Note: This will also cascade delete the admin, so we don't need to delete it separately
+      await prisma.school.delete({
+        where: { id: adminToDelete.schoolId }
+      })
+
+      deletionResult.schoolDeleted = schoolInfo
     } else {
       // If no school, just delete the admin
       await prisma.admin.delete({
@@ -160,6 +175,12 @@ export async function DELETE(request: NextRequest) {
     })
   } catch (error) {
     console.error('Delete admin error:', error)
+    
+    // Log more details for debugging
+    if (error instanceof Error) {
+      console.error('Error message:', error.message)
+      console.error('Error stack:', error.stack)
+    }
 
     if (error instanceof Error && error.message.includes('Super admin required')) {
       return NextResponse.json(
@@ -168,8 +189,30 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
+    // Handle Prisma errors
+    if (error instanceof Error) {
+      // Check for foreign key constraint errors
+      if (error.message.includes('Foreign key constraint') || error.message.includes('violates foreign key constraint')) {
+        return NextResponse.json(
+          { error: 'Cannot delete admin: There are still references to this admin in the database' },
+          { status: 400 }
+        )
+      }
+      
+      // Check for record not found errors
+      if (error.message.includes('Record to delete does not exist')) {
+        return NextResponse.json(
+          { error: 'Admin not found' },
+          { status: 404 }
+        )
+      }
+    }
+
     return NextResponse.json(
-      { error: 'Failed to delete admin' },
+      { 
+        error: 'Failed to delete admin',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }

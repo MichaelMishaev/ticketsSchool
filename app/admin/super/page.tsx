@@ -139,12 +139,38 @@ export default function SuperAdminDashboard() {
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        alert(`שגיאה במחיקת המשתמש: ${error.error}`)
+        // Try to parse error response, but handle cases where it's not JSON
+        let errorMessage = 'שגיאה במחיקת המשתמש'
+        try {
+          const contentType = response.headers.get('content-type')
+          if (contentType && contentType.includes('application/json')) {
+            const error = await response.json()
+            errorMessage = error.error || error.details || errorMessage
+          } else {
+            // Response is not JSON (might be HTML error page)
+            const text = await response.text()
+            console.error('Non-JSON error response:', text)
+            errorMessage = `שגיאת שרת (${response.status}): ${response.statusText}`
+          }
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError)
+          errorMessage = `שגיאת שרת (${response.status}): ${response.statusText}`
+        }
+        alert(errorMessage)
         return
       }
 
-      const result = await response.json()
+      // Parse success response
+      let result
+      try {
+        result = await response.json()
+      } catch (parseError) {
+        console.error('Failed to parse success response:', parseError)
+        alert('המשתמש נמחק, אך לא ניתן היה לקרוא את תגובת השרת')
+        setDeleteAdminModal({ isOpen: false, admin: null })
+        fetchData()
+        return
+      }
 
       // Build success message based on what was deleted
       let message = `המשתמש ${result.adminDeleted.email} נמחק בהצלחה`
@@ -159,7 +185,8 @@ export default function SuperAdminDashboard() {
       fetchData()
     } catch (error) {
       console.error('Error deleting admin:', error)
-      alert('שגיאה במחיקת המשתמש')
+      const errorMessage = error instanceof Error ? error.message : 'שגיאה לא ידועה'
+      alert(`שגיאה במחיקת המשתמש: ${errorMessage}`)
     } finally {
       setIsDeleting(false)
     }

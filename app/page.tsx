@@ -20,7 +20,7 @@ export default function Home() {
             name: 'kartis.info',
             url: 'https://kartis.info',
             logo: 'https://kartis.info/images/logos/kartis-logo.png',
-            description: 'מערכת ניהול כרטיסים לבתי ספר ואירועים - חינמית לצמיתות',
+            description: 'מערכת ניהול כרטיסים לבתי ספר ואירועים ',
             address: {
               '@type': 'PostalAddress',
               addressCountry: 'IL',
@@ -48,7 +48,7 @@ export default function Home() {
               '@type': 'Offer',
               price: '0',
               priceCurrency: 'ILS',
-              description: 'תוכנית חינמית לצמיתות',
+              description: 'תוכנית חינמית ',
             },
             description: 'מערכת ניהול כרטיסים לבתי ספר',
             aggregateRating: {

@@ -42,7 +42,15 @@ export default function LandingPage() {
     }
   }, [])
 
-  const exampleUrl = 'http://localhost:9000/p/schooltest/mshchkhgrlhmvpa'
+  // Get base URL from environment variable or use current origin
+  const getBaseUrl = () => {
+    if (typeof window !== 'undefined') {
+      return window.location.origin
+    }
+    return process.env.NEXT_PUBLIC_BASE_URL || 'https://kartis.info'
+  }
+
+  const exampleUrl = `${getBaseUrl()}/p/schooltest/mshchkhgrlhmvpa`
   const shareText = 'צפו בדוגמה של דף רישום לאירוע:'
 
   const copyToClipboard = async () => {

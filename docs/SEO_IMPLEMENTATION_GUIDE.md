@@ -234,7 +234,7 @@ import { generateFAQStructuredData, StructuredData } from '@/lib/seo'
 const faqs = [
   {
     question: 'האם המערכת חינמית?',
-    answer: 'כן! המערכת חינמית לצמיתות.',
+    answer: 'כן! המערכת חינמית .',
   },
   // More FAQs...
 ]
