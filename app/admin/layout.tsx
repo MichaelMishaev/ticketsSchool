@@ -300,11 +300,7 @@ export default function AdminLayout({
 
         {/* Main Button */}
         <div className="relative flex items-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-3 sm:px-5 sm:py-4 rounded-full shadow-xl hover:shadow-green-500/50 transition-all duration-300 transform group-hover:scale-105">
-          {/* Pulsing Dot */}
-          <div className="relative">
-            <div className="absolute inset-0 bg-white rounded-full animate-ping opacity-25"></div>
-            <MessageSquare className="w-6 h-6 sm:w-7 sm:h-7 relative z-10" />
-          </div>
+          <MessageSquare className="w-6 h-6 sm:w-7 sm:h-7" />
 
           {/* Text (hidden on mobile, visible on desktop) */}
           <span className="hidden sm:block font-bold text-sm whitespace-nowrap">

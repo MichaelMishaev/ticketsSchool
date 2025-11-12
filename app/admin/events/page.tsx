@@ -112,11 +112,38 @@ export default function EventsPage() {
             <div key={event.id} className="bg-white shadow-md rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
               <div className="px-4 py-5 sm:px-6">
                   {/* Header Section - Title and Status */}
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 flex-1">
-                      {event.title}
-                    </h3>
-                    <div className="flex flex-col gap-1.5">
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4 pb-4 border-b border-gray-200">
+                    {/* Left side: Title and metadata */}
+                    <div className="flex-1">
+                      <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3">
+                        {event.title}
+                      </h3>
+
+                      {/* Metadata Row */}
+                      <div className="flex flex-wrap gap-3">
+                        <div className="flex items-center text-sm text-gray-700">
+                          <Calendar className="w-4 h-4 ml-1.5 text-gray-500 flex-shrink-0" />
+                          <span className="font-medium">{format(new Date(event.startAt), 'dd/MM/yyyy HH:mm')}</span>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-700">
+                          <Users className="w-4 h-4 ml-1.5 text-gray-500 flex-shrink-0" />
+                          <span className="font-medium">{event.totalSpotsTaken} / {event.capacity}</span>
+                        </div>
+                        {event.school && (
+                          <span className="inline-flex items-center text-sm font-medium text-purple-700 bg-purple-50 px-2.5 py-1 rounded-md border border-purple-200">
+                            🏫 {event.school.name}
+                          </span>
+                        )}
+                        {event.gameType && (
+                          <span className="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md font-medium text-sm border border-blue-200">
+                            ⚽ {event.gameType}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right side: Status dropdown with explanation */}
+                    <div className="flex flex-col gap-1.5 lg:items-end">
                       <select
                         value={event.status}
                         onChange={(e) => handleStatusChange(event.id, e.target.value as 'OPEN' | 'PAUSED' | 'CLOSED')}
@@ -127,34 +154,12 @@ export default function EventsPage() {
                         <option value="PAUSED">מושהה ⏸</option>
                         <option value="CLOSED">סגור ✕</option>
                       </select>
-                      <p className="text-xs text-gray-600 leading-snug max-w-[200px]">
+                      <p className="text-xs text-gray-600 leading-snug max-w-[280px] lg:text-left">
                         {event.status === 'OPEN' && 'משתמשים יכולים להירשם לאירוע'}
-                        {event.status === 'PAUSED' && 'השהיה זמנית - ניתן לפתוח מחדש מאוחר יותר (שימושי בעת ביצוע שינויים)'}
+                        {event.status === 'PAUSED' && 'השהיה זמנית - ניתן לפתוח מחדש מאוחר יותר'}
                         {event.status === 'CLOSED' && 'סגירה סופית - האירוע הסתיים או תקופת ההרשמה עברה'}
                       </p>
                     </div>
-                  </div>
-
-                  {/* Metadata Row - All info grouped together */}
-                  <div className="flex flex-wrap gap-3 mb-4 pb-4 border-b border-gray-200">
-                    <div className="flex items-center text-sm text-gray-700">
-                      <Calendar className="w-4 h-4 ml-1.5 text-gray-500 flex-shrink-0" />
-                      <span className="font-medium">{format(new Date(event.startAt), 'dd/MM/yyyy HH:mm')}</span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-700">
-                      <Users className="w-4 h-4 ml-1.5 text-gray-500 flex-shrink-0" />
-                      <span className="font-medium">{event.totalSpotsTaken} / {event.capacity}</span>
-                    </div>
-                    {event.school && (
-                      <span className="inline-flex items-center text-sm font-medium text-purple-700 bg-purple-50 px-2.5 py-1 rounded-md border border-purple-200">
-                        🏫 {event.school.name}
-                      </span>
-                    )}
-                    {event.gameType && (
-                      <span className="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md font-medium text-sm border border-blue-200">
-                        ⚽ {event.gameType}
-                      </span>
-                    )}
                   </div>
 
                   {/* Description */}
