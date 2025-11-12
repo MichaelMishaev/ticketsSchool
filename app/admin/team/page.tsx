@@ -199,11 +199,11 @@ export default function TeamManagementPage() {
           <p className="mt-2 text-base text-gray-600">הזמן חברי צוות חדשים לבית הספר שלך</p>
         </div>
         <button
-          onClick={() => setShowInviteForm(true)}
-          className="inline-flex items-center justify-center gap-2 px-5 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-purple-600 hover:bg-purple-700 transition-colors"
+          disabled
+          className="inline-flex items-center justify-center gap-2 px-5 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-gray-400 cursor-not-allowed opacity-60"
         >
           <UserPlus className="w-5 h-5" />
-          הזמן חבר צוות
+          בקרוב
         </button>
       </div>
 
