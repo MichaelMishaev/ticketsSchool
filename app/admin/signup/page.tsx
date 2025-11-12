@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { UserPlus, Mail, Lock, User, Building2, Link as LinkIcon, Home, ArrowRight, ArrowLeft } from 'lucide-react'
+import { trackSignup } from '@/lib/analytics'
 
 type SignupStep = 'auth' | 'organization'
 
@@ -129,6 +130,8 @@ export default function AdminSignupPage() {
       const data = await response.json()
 
       if (response.ok) {
+        // Track successful signup
+        trackSignup('email')
         setSuccess(true)
       } else {
         setError(data.error || 'שגיאה ביצירת החשבון')

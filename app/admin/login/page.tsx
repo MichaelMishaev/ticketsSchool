@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Lock, CheckCircle, AlertCircle, Home } from 'lucide-react'
 import { markLoggedIn } from '@/lib/auth.client'
+import { trackLogin } from '@/lib/analytics'
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('')
@@ -63,6 +64,9 @@ export default function AdminLoginPage() {
       const data = await response.json()
 
       if (response.ok) {
+        // Track successful login
+        trackLogin('email')
+
         markLoggedIn()
 
         // Check onboarding status and redirect appropriately

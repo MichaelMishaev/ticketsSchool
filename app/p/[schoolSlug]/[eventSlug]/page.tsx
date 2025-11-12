@@ -6,6 +6,7 @@ import { Calendar, MapPin, Clock, CheckCircle, AlertCircle, Loader2 } from 'luci
 import { format } from 'date-fns'
 import { he } from 'date-fns/locale'
 import FeedbackInline from '@/components/FeedbackInline'
+import { trackRegistrationStarted, trackRegistrationCompleted, trackRegistrationFailed } from '@/lib/analytics'
 
 interface School {
   id: string
@@ -108,6 +109,9 @@ export default function EventPage() {
       return
     }
 
+    // Track registration started
+    trackRegistrationStarted(eventSlug)
+
     setSubmitting(true)
     try {
       const response = await fetch(`/api/p/${schoolSlug}/${eventSlug}/register`, {
@@ -124,19 +128,26 @@ export default function EventPage() {
       if (!contentType || !contentType.includes('application/json')) {
         console.error('Server returned non-JSON response:', await response.text())
         alert('שגיאה בשרת. אנא נסה שוב מאוחר יותר.')
+        trackRegistrationFailed(eventSlug, 'Server error - non-JSON response')
         return
       }
 
       const result = await response.json()
       if (response.ok) {
+        // Track successful registration
+        const status = result.status === 'WAITLIST' ? 'waitlist' : 'confirmed'
+        trackRegistrationCompleted(eventSlug, spotsCount, status)
+
         setRegistered(true)
         setConfirmationCode(result.confirmationCode)
         setIsWaitlist(result.status === 'WAITLIST')
       } else {
+        trackRegistrationFailed(eventSlug, result.error || 'Unknown error')
         alert(result.error || 'שגיאה בהרשמה')
       }
     } catch (error) {
       console.error('Error submitting registration:', error)
+      trackRegistrationFailed(eventSlug, error instanceof Error ? error.message : 'Unknown error')
       alert('שגיאה בהרשמה. אנא בדוק את החיבור לאינטרנט ונסה שוב.')
     } finally {
       setSubmitting(false)

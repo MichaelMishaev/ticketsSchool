@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Rubik, Inter } from "next/font/google";
 import "./globals.css";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 const rubik = Rubik({
   subsets: ["hebrew", "latin"],
@@ -54,6 +55,7 @@ export default function RootLayout({
   return (
     <html lang="he" dir="rtl">
       <body className={`${rubik.variable} ${inter.variable} font-sans antialiased`}>
+        <GoogleAnalytics />
         {children}
       </body>
     </html>

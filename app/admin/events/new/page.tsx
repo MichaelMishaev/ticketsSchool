@@ -10,6 +10,7 @@ import StepWizard from '@/components/StepWizard'
 import EventPreviewModal from '@/components/EventPreviewModal'
 import DateTimePicker from '@/components/DateTimePicker'
 import Modal from '@/components/Modal'
+import { trackEventCreated } from '@/lib/analytics'
 import {
   Calendar,
   MapPin,
@@ -377,6 +378,10 @@ export default function NewEventPageTest() {
 
       if (response.ok) {
         const event = await response.json()
+
+        // Track event creation in Google Analytics
+        trackEventCreated(formData.title, formData.gameType || 'general')
+
         setShowSuccess(true)
         clearDraft()
         setHasUnsavedChanges(false)

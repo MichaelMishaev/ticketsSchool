@@ -5,6 +5,7 @@ import { Calendar, Home, Plus, Menu, X, HelpCircle, LogOut, MessageSquare, Shiel
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { isAuthenticatedSync, clientLogout } from '@/lib/auth.client'
+import { trackHelpButtonClick, trackButtonClick, trackLogout } from '@/lib/analytics'
 
 interface AdminInfo {
   email: string
@@ -55,6 +56,9 @@ export default function AdminLayout({
   }, [router, pathname, isPublicPage])
 
   const handleLogout = async () => {
+    // Track logout event
+    trackLogout()
+
     try {
       // Call logout API
       await fetch('/api/admin/logout', { method: 'POST' })
@@ -152,6 +156,7 @@ export default function AdminLayout({
               {adminInfo?.role !== 'SUPER_ADMIN' && (
                 <Link
                   href="/admin/help"
+                  onClick={() => trackHelpButtonClick(pathname)}
                   className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition border border-blue-300"
                 >
                   <HelpCircle className="w-4 h-4 ml-2" />
@@ -170,6 +175,7 @@ export default function AdminLayout({
               {adminInfo?.role !== 'SUPER_ADMIN' && (
                 <Link
                   href="/admin/help"
+                  onClick={() => trackHelpButtonClick(pathname)}
                   className="inline-flex items-center justify-center p-3 rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50 min-w-[44px] min-h-[44px]"
                 >
                   <HelpCircle className="h-6 w-6" />
