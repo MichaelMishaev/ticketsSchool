@@ -51,8 +51,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Copy public files
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
-# Copy Prisma schema and scripts
+# Copy Prisma schema and generated client from builder
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
+
+# Copy scripts
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 
 # Copy startup script
@@ -60,9 +64,6 @@ COPY --chown=nextjs:nodejs start.sh ./
 
 # Set permissions for startup script
 RUN chmod +x start.sh
-
-# Regenerate Prisma client in runner stage (ensures it's fresh and accessible)
-RUN npx prisma generate
 
 USER nextjs
 

@@ -38,13 +38,7 @@ if [ -n "$DATABASE_URL" ]; then
     # Always run migrations in production (unless explicitly disabled)
     if [ "$SKIP_MIGRATIONS" != "true" ]; then
         echo "🗃️  Running migrations..."
-        echo "📦 Verifying Prisma client..."
-        if ! npx prisma generate; then
-            echo "❌ Prisma generate failed! This will cause database queries to fail."
-            echo "   Continuing anyway, but expect errors..."
-        else
-            echo "✅ Prisma client generated successfully"
-        fi
+        echo "📦 Prisma client already bundled in Docker image"
 
         # ALWAYS ensure all tables exist (idempotent operation)
         echo "🔧 Ensuring all database tables exist..."
@@ -53,9 +47,13 @@ if [ -n "$DATABASE_URL" ]; then
             psql "$DATABASE_URL" -f scripts/fix-events-school-id.sql 2>&1 | head -20 || echo "⚠️  Table creation had warnings (likely tables already exist)"
         fi
 
+        # Install Prisma CLI temporarily for migrations
+        echo "📥 Installing Prisma CLI for migrations..."
+        npm install -g prisma@6.16.2 --silent
+
         # Try to run migrations (capture exit code properly)
         set +e  # Temporarily disable exit on error
-        npx prisma migrate deploy
+        prisma migrate deploy
         MIGRATION_EXIT_CODE=$?
         set -e  # Re-enable exit on error
 
@@ -74,8 +72,8 @@ if [ -n "$DATABASE_URL" ]; then
 
                         # Since we manually applied the changes, mark ALL affected migrations as applied
                         echo "🔧 Step 2: Marking migrations as manually applied..."
-                        npx prisma migrate resolve --applied 20251107211615_add_multi_school_support || echo "Could not mark multi_school migration"
-                        npx prisma migrate resolve --applied 20251107_add_spots_reserved || echo "Could not mark spots_reserved migration"
+                        prisma migrate resolve --applied 20251107211615_add_multi_school_support || echo "Could not mark multi_school migration"
+                        prisma migrate resolve --applied 20251107_add_spots_reserved || echo "Could not mark spots_reserved migration"
                         echo "✅ Migrations marked as applied"
                     else
                         echo "⚠️  Data fix script failed"
@@ -94,7 +92,7 @@ if [ -n "$DATABASE_URL" ]; then
 
                 for migration in "${FAILED_MIGRATIONS[@]}"; do
                     echo "Attempting to resolve migration: $migration"
-                    npx prisma migrate resolve --rolled-back "$migration" 2>/dev/null || true
+                    prisma migrate resolve --rolled-back "$migration" 2>/dev/null || true
                 done
             fi
 
@@ -106,7 +104,7 @@ if [ -n "$DATABASE_URL" ]; then
                 echo "🔄 Retry attempt $RETRY_COUNT of $MAX_RETRIES..."
 
                 set +e
-                npx prisma migrate deploy
+                prisma migrate deploy
                 RETRY_EXIT_CODE=$?
                 set -e
 
