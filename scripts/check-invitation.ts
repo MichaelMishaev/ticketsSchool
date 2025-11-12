@@ -15,7 +15,7 @@ async function checkInvitation() {
   if (admin) {
     console.log('✓ Admin EXISTS:')
     console.log({
-      id: admin.adminId,
+      id: admin.id,
       name: admin.name,
       email: admin.email,
       role: admin.role,
