@@ -180,7 +180,14 @@ export async function GET() {
     const where: any = {}
 
     // Regular admins see only their school's invitations
-    if (admin.role !== 'SUPER_ADMIN' && admin.schoolId) {
+    if (admin.role !== 'SUPER_ADMIN') {
+      // CRITICAL: Non-super admins MUST have a schoolId to prevent seeing all invitations
+      if (!admin.schoolId) {
+        return NextResponse.json(
+          { error: 'Admin must have a school assigned. Please logout and login again.' },
+          { status: 403 }
+        )
+      }
       where.schoolId = admin.schoolId
     }
 
@@ -212,14 +219,19 @@ export async function GET() {
         status: inv.status,
         expiresAt: inv.expiresAt,
         createdAt: inv.createdAt,
-        invitedBy: inv.invitedBy.name,
-        schoolName: inv.school.name
+        invitedBy: inv.invitedBy?.name || 'Unknown',
+        schoolName: inv.school?.name || 'Unknown'
       }))
     })
   } catch (error) {
     console.error('Error fetching invitations:', error)
+    // Log more details about the error for debugging
+    if (error instanceof Error) {
+      console.error('Error message:', error.message)
+      console.error('Error stack:', error.stack)
+    }
     return NextResponse.json(
-      { error: 'Failed to fetch invitations' },
+      { error: 'Failed to fetch invitations', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
