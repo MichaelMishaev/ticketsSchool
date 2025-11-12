@@ -128,16 +128,11 @@ export default function LandingPage() {
           <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border-2 border-purple-200 p-6 sm:p-8 lg:p-10">
             <div className="text-center space-y-4 sm:space-y-5">
               {/* Hook */}
-              <div className="flex flex-col items-center justify-center gap-2 mb-2">
-                <div className="flex items-center justify-center gap-3">
-                  <span className="text-3xl sm:text-4xl">🎟️</span>
-                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-gray-900">
-                    יש לכם 40 כרטיסים? תנו למערכת לעשות את העבודה.
-                  </h2>
-                </div>
-                <p className="text-sm sm:text-base text-gray-500 font-medium italic">
-                  (40 זו רק דוגמה – אפשר כל מספר שרוצים)
-                </p>
+              <div className="flex items-center justify-center gap-3 mb-2">
+                <span className="text-3xl sm:text-4xl">🎟️</span>
+                <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-gray-900">
+                  דוגמה: יש לכם 40 כרטיסים.......
+                </h2>
               </div>
 
               {/* Pain Points */}
