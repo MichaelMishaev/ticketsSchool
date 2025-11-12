@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { UserPlus, Mail, Clock, CheckCircle, XCircle, Trash2 } from 'lucide-react'
+import { UserPlus, Mail, Clock, CheckCircle, XCircle, Trash2, RefreshCw } from 'lucide-react'
 
 interface Invitation {
   id: string
@@ -111,6 +111,29 @@ export default function TeamManagementPage() {
     }
   }
 
+  const handleResend = async (id: string, email: string) => {
+    try {
+      setError('')
+      setSuccess('')
+
+      const response = await fetch(`/api/admin/team/invitations/${id}/resend`, {
+        method: 'POST'
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to resend invitation')
+      }
+
+      setSuccess(`Invitation resent to ${email}`)
+      await fetchInvitations()
+    } catch (error) {
+      console.error('Error resending invitation:', error)
+      setError(error instanceof Error ? error.message : 'Failed to resend invitation')
+    }
+  }
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'PENDING':
@@ -176,14 +199,11 @@ export default function TeamManagementPage() {
           <p className="mt-2 text-base text-gray-600">הזמן חברי צוות חדשים לבית הספר שלך</p>
         </div>
         <button
-          disabled
-          className="inline-flex items-center justify-center gap-2 px-5 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-gray-400 cursor-not-allowed opacity-60"
+          onClick={() => setShowInviteForm(true)}
+          className="inline-flex items-center justify-center gap-2 px-5 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-purple-600 hover:bg-purple-700 transition-colors"
         >
           <UserPlus className="w-5 h-5" />
           הזמן חבר צוות
-          <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-yellow-400 text-gray-900">
-            בקרוב
-          </span>
         </button>
       </div>
 
@@ -311,13 +331,22 @@ export default function TeamManagementPage() {
                       </td>
                       <td className="px-6 py-5 whitespace-nowrap text-right">
                         {invitation.status === 'PENDING' && (
-                          <button
-                            onClick={() => handleRevoke(invitation.id)}
-                            className="text-red-600 hover:text-red-800 hover:bg-red-50 p-2 rounded-lg transition-colors"
-                            title="בטל הזמנה"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
+                          <div className="flex items-center gap-2 justify-end">
+                            <button
+                              onClick={() => handleResend(invitation.id, invitation.email)}
+                              className="text-purple-600 hover:text-purple-800 hover:bg-purple-50 p-2 rounded-lg transition-colors"
+                              title="שלח הזמנה מחדש"
+                            >
+                              <RefreshCw className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() => handleRevoke(invitation.id)}
+                              className="text-red-600 hover:text-red-800 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                              title="בטל הזמנה"
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -330,19 +359,28 @@ export default function TeamManagementPage() {
             <div className="md:hidden divide-y divide-gray-200">
               {invitations.map((invitation) => (
                 <div key={invitation.id} className="p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
                       {getStatusIcon(invitation.status)}
-                      <span className="text-base font-medium text-gray-900">{invitation.email}</span>
+                      <span className="text-base font-medium text-gray-900 truncate">{invitation.email}</span>
                     </div>
                     {invitation.status === 'PENDING' && (
-                      <button
-                        onClick={() => handleRevoke(invitation.id)}
-                        className="text-red-600 hover:text-red-800 p-2 -m-2"
-                        title="בטל הזמנה"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button
+                          onClick={() => handleResend(invitation.id, invitation.email)}
+                          className="text-purple-600 hover:text-purple-800 p-1.5 hover:bg-purple-50 rounded-lg transition-colors"
+                          title="שלח הזמנה מחדש"
+                        >
+                          <RefreshCw className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => handleRevoke(invitation.id)}
+                          className="text-red-600 hover:text-red-800 p-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                          title="בטל הזמנה"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
                     )}
                   </div>
                   <div className="space-y-2 text-sm">

@@ -53,13 +53,27 @@ export async function POST(request: NextRequest) {
     })
 
     if (existingAdmin) {
-      return NextResponse.json(
-        { error: 'Admin with this email already exists' },
-        { status: 400 }
-      )
+      // Check if admin is already in this school
+      if (existingAdmin.schoolId === admin.schoolId) {
+        return NextResponse.json(
+          { error: 'This person is already a team member in your school' },
+          { status: 400 }
+        )
+      } else if (existingAdmin.schoolId) {
+        return NextResponse.json(
+          { error: 'This email is already registered with another school' },
+          { status: 400 }
+        )
+      } else {
+        // Admin exists but has no school (shouldn't happen in normal flow)
+        return NextResponse.json(
+          { error: 'This email is already registered' },
+          { status: 400 }
+        )
+      }
     }
 
-    // Check if there's already a pending invitation
+    // Check if there's already an invitation for this email and school
     const existingInvitation = await prisma.teamInvitation.findUnique({
       where: {
         email_schoolId: {
@@ -69,11 +83,19 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    if (existingInvitation && existingInvitation.status === 'PENDING') {
-      return NextResponse.json(
-        { error: 'Pending invitation already exists for this email' },
-        { status: 400 }
-      )
+    if (existingInvitation) {
+      if (existingInvitation.status === 'PENDING') {
+        return NextResponse.json(
+          { error: 'Pending invitation already exists for this email. Use the resend button to send it again.' },
+          { status: 400 }
+        )
+      } else if (existingInvitation.status === 'REVOKED' || existingInvitation.status === 'EXPIRED') {
+        // Delete old revoked/expired invitation so we can create a new one
+        await prisma.teamInvitation.delete({
+          where: { id: existingInvitation.id }
+        })
+      }
+      // If status is ACCEPTED, we continue (shouldn't happen because admin would exist)
     }
 
     // Generate secure token

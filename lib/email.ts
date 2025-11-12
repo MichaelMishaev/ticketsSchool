@@ -33,14 +33,24 @@ async function sendEmail({ to, subject, html }: EmailOptions): Promise<boolean> 
     }
 
     const client = getResendClient()
-    await client.emails.send({
+    const { data, error } = await client.emails.send({
       from: FROM_EMAIL,
       to,
       subject,
       html,
     })
 
-    console.log('Email sent successfully:', { to, subject })
+    if (error) {
+      console.error('Resend API error:', error)
+      return false
+    }
+
+    console.log('Email sent successfully:', {
+      to,
+      subject,
+      emailId: data?.id,
+      from: FROM_EMAIL
+    })
     return true
   } catch (error) {
     console.error('Failed to send email:', error)
