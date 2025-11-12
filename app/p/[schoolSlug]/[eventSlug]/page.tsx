@@ -57,19 +57,48 @@ export default function EventPage() {
 
   const fetchEvent = async () => {
     try {
-      const response = await fetch(`/api/p/${schoolSlug}/${eventSlug}`)
+      // Add timeout to prevent hanging
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+
+      const response = await fetch(`/api/p/${schoolSlug}/${eventSlug}`, {
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+
+      clearTimeout(timeoutId)
+
       if (response.ok) {
         const data = await response.json()
         setEvent(data)
         // Initialize form data
         const initialData: any = {}
-        data.fieldsSchema.forEach((field: any) => {
-          initialData[field.name] = ''
-        })
+        if (data.fieldsSchema && Array.isArray(data.fieldsSchema)) {
+          data.fieldsSchema.forEach((field: any) => {
+            initialData[field.name] = ''
+          })
+        }
         setFormData(initialData)
+      } else {
+        // Handle non-OK responses
+        let errorData
+        try {
+          errorData = await response.json()
+        } catch {
+          errorData = { error: `HTTP ${response.status}: ${response.statusText}` }
+        }
+        console.error('Error fetching event:', response.status, errorData)
+        setEvent(null) // Explicitly set to null to show error message
       }
     } catch (error) {
-      console.error('Error fetching event:', error)
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error('Request timeout while fetching event')
+      } else {
+        console.error('Error fetching event:', error)
+      }
+      setEvent(null) // Explicitly set to null to show error message
     } finally {
       setLoading(false)
     }
