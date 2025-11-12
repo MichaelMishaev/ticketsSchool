@@ -139,11 +139,12 @@ echo ""
 echo "========================================"
 echo "🌟 STARTING NEXT.JS SERVER"
 echo "========================================"
-echo "Command: node_modules/.bin/next start -p $PORT"
+echo "Command: node server.js (standalone mode)"
 echo "Starting at: $(date)"
 echo "========================================"
 echo ""
 
-# Start Next.js directly (not through npm to avoid wrapper issues)
-# Bind to 0.0.0.0 for Railway to access from outside container
-exec node_modules/.bin/next start -H 0.0.0.0 -p $PORT
+# Start Next.js standalone server
+# The standalone build creates a server.js that already binds to 0.0.0.0
+# and respects the PORT environment variable
+exec node server.js

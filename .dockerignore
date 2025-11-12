@@ -7,6 +7,11 @@ yarn-error.log*
 # Testing
 coverage
 .nyc_output
+tests/
+test-results/
+playwright-report/
+playwright.config.ts
+*.spec.ts
 
 # Next.js
 .next/
@@ -39,6 +44,8 @@ dist
 # Documentation
 README.md
 *.md
+CLAUDE.md
+app/docs/
 
 # CI/CD
 .github

@@ -38,24 +38,28 @@ WORKDIR /app
 # Set production environment
 ENV NODE_ENV=production
 
-# Copy only necessary files from builder
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/scripts ./scripts
-
-# Copy startup script
-COPY start.sh ./
-
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nextjs -u 1001
 
-# Set permissions before switching user
-RUN chmod +x start.sh && \
-    chown -R nextjs:nodejs /app
+# Copy standalone output (includes minimal node_modules)
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+
+# Copy static files for Next.js
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Copy public files
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+
+# Copy Prisma schema and scripts
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
+
+# Copy startup script
+COPY --chown=nextjs:nodejs start.sh ./
+
+# Set permissions for startup script
+RUN chmod +x start.sh
 
 # Regenerate Prisma client in runner stage (ensures it's fresh and accessible)
 RUN npx prisma generate
