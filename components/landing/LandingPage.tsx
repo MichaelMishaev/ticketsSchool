@@ -164,9 +164,9 @@ export default function LandingPage() {
                   והשאר נכנסים אוטומטית לרשימת המתנה מסודרת.
                 </p>
                 <div className="flex flex-wrap justify-center gap-3 sm:gap-4 text-sm sm:text-base font-bold text-green-800">
-                  <span>✓ בלי בלגן</span>
-                  <span>✓ בלי לחץ</span>
-                  <span>✓ בלי לריב</span>
+                  <span>בלי בלגן</span>
+                  <span>בלי לחץ</span>
+                  <span>בלי לריב</span>
                 </div>
                 <p className="mt-3 text-lg sm:text-xl font-black text-green-900">
                   רק סדר ונוחות.
