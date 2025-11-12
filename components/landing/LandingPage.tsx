@@ -57,8 +57,66 @@ export default function LandingPage() {
         </div>
       </nav>
 
+      {/* Problem/Solution Banner - Attention Grabber */}
+      <section className="pt-20 sm:pt-24 pb-6 sm:pb-8 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border-2 border-purple-200 p-6 sm:p-8 lg:p-10">
+            <div className="text-center space-y-4 sm:space-y-5">
+              {/* Hook */}
+              <div className="flex items-center justify-center gap-3 mb-2">
+                <span className="text-3xl sm:text-4xl">🎟️</span>
+                <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-gray-900">
+                  יש לכם 40 כרטיסים? תנו למערכת לעשות את העבודה.
+                </h2>
+              </div>
+
+              {/* Pain Points */}
+              <p className="text-base sm:text-lg lg:text-xl text-gray-700 leading-relaxed font-medium">
+                לא רוצים לריב, לספור, או לענות למאות הודעות?
+              </p>
+
+              {/* Solution Flow */}
+              <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-5 sm:p-6 border border-purple-200">
+                <p className="text-base sm:text-lg text-gray-800 leading-relaxed mb-3">
+                  פשוט יוצרים אירוע ב־<span className="font-bold text-red-600">Kartis.info</span>, מגדירים את התנאים,<br className="hidden sm:block" />
+                  והמערכת יוצרת לכם קישור הרשמה אוטומטי.
+                </p>
+                <div className="flex items-center justify-center gap-2 text-green-700 font-bold text-lg sm:text-xl">
+                  <span className="text-2xl">🔗</span>
+                  <span>שולחים את הקישור – וזהו!</span>
+                </div>
+              </div>
+
+              {/* Benefit */}
+              <div className="bg-green-50 rounded-xl p-5 sm:p-6 border-2 border-green-300">
+                <p className="text-base sm:text-lg text-gray-800 leading-relaxed mb-3">
+                  ה־40 הראשונים יקבלו כרטיס,<br className="hidden sm:block" />
+                  והשאר נכנסים אוטומטית לרשימת המתנה מסודרת.
+                </p>
+                <div className="flex flex-wrap justify-center gap-3 sm:gap-4 text-sm sm:text-base font-bold text-green-800">
+                  <span>✓ בלי בלגן</span>
+                  <span>✓ בלי לחץ</span>
+                  <span>✓ בלי לריב</span>
+                </div>
+                <p className="mt-3 text-lg sm:text-xl font-black text-green-900">
+                  רק סדר ונוחות.
+                </p>
+              </div>
+
+              {/* CTA */}
+              <Link
+                href="/admin/login"
+                className="inline-block px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold text-white bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl hover:scale-105 mt-2"
+              >
+                נסו עכשיו חינם
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Hero Section - Ultra Eye-Catching */}
-      <section className="pt-20 sm:pt-32 pb-12 sm:pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-red-50">
+      <section className="pt-12 sm:pb-20 pb-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-red-50">
         {/* Animated Background Elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-red-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
