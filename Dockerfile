@@ -54,7 +54,7 @@ ENV NODE_ENV=production
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nextjs -u 1001
 
-# Copy standalone output (includes minimal node_modules)
+# Copy standalone output (includes minimal node_modules with Prisma)
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 
 # Copy static files for Next.js
@@ -63,13 +63,13 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Copy public files
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
-# Copy Prisma schema and generated client from builder
+# Copy Prisma schema (for migrations at runtime)
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 
-# Copy scripts
+# Copy scripts (for migrations and startup)
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
+
+# Note: We do NOT copy Prisma client separately - standalone already includes it!
 
 # Copy startup script
 COPY --chown=nextjs:nodejs start.sh ./
