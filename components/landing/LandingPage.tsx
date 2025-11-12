@@ -78,17 +78,14 @@ export default function LandingPage() {
             </div>
 
             {/* Massive Headline */}
-            <h1 className="text-4xl sm:text-6xl lg:text-8xl font-black leading-tight">
-              <span className="block text-gray-900">נהלו אירועים</span>
-              <span className="block bg-gradient-to-r from-red-600 via-red-500 to-purple-600 bg-clip-text text-transparent">
-                בקלות מוחלטת
-              </span>
+            <h1 className="text-4xl sm:text-6xl lg:text-8xl font-black leading-tight text-gray-900">
+              נהלו אירועים – פשוט, חכם ומדויק
             </h1>
 
             {/* Compelling Value Proposition */}
             <p className="text-base sm:text-xl lg:text-2xl text-gray-600 leading-relaxed max-w-3xl mx-auto font-medium">
-              מערכת ניהול אירועים מלאה עם רישום מקוון, רשימת המתנה אוטומטית,
-              ניהול צוות וניתוח נתונים בזמן אמת. הכל במקום אחד.
+              מערכת ניהול אירועים מלאה עם רישום מקוון, מגבלת מקומות, רשימת המתנה חכמה וניהול משתתפים בזמן אמת.
+              כל מה שצריך כדי לארגן כל אירוע – במקום אחד.
             </p>
 
             {/* Use Case Carousel - Show Versatility */}
