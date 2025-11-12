@@ -1,6 +1,7 @@
 # Build stage
 FROM node:18-alpine AS builder
 
+# Cache bust for standalone mode optimization (2025-11-12)
 WORKDIR /app
 
 # Copy Prisma schema FIRST (before package.json to break cache)
