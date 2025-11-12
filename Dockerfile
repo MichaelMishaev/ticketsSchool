@@ -25,6 +25,17 @@ RUN mkdir -p public
 # Build application
 RUN npm run build
 
+# Debug: Check if standalone output was created
+RUN echo "=== Checking standalone output ===" && \
+    ls -lah .next/ && \
+    if [ -d ".next/standalone" ]; then \
+      echo "✅ Standalone directory exists" && \
+      du -sh .next/standalone && \
+      du -sh .next/standalone/node_modules; \
+    else \
+      echo "❌ ERROR: Standalone directory NOT created!"; \
+    fi
+
 # Prune dev dependencies after build
 RUN npm prune --production
 
