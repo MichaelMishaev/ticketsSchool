@@ -21,17 +21,82 @@ import {
   Phone,
   MessageCircle,
   Mail,
-  Trophy
+  Trophy,
+  Eye,
+  Share2,
+  Copy,
+  Check
 } from 'lucide-react'
 import UseCaseCarousel from './UseCaseCarousel'
 import UseCaseTabs from './UseCaseTabs'
 
 export default function LandingPage() {
   const [statsAnimated, setStatsAnimated] = useState(false)
+  const [linkCopied, setLinkCopied] = useState(false)
+  const [hasNativeShare, setHasNativeShare] = useState(false)
 
   useEffect(() => {
     setStatsAnimated(true)
+    if (typeof navigator !== 'undefined' && 'share' in navigator) {
+      setHasNativeShare(true)
+    }
   }, [])
+
+  const exampleUrl = 'http://localhost:9000/p/schooltest/mshchkhgrlhmvpa'
+  const shareText = 'צפו בדוגמה של דף רישום לאירוע:'
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(exampleUrl)
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy:', err)
+    }
+  }
+
+  const shareViaWhatsApp = () => {
+    const url = `https://wa.me/?text=${encodeURIComponent(`${shareText} ${exampleUrl}`)}`
+    window.open(url, '_blank')
+  }
+
+  const shareViaSMS = () => {
+    const url = `sms:?body=${encodeURIComponent(`${shareText} ${exampleUrl}`)}`
+    window.location.href = url
+  }
+
+  const shareViaEmail = () => {
+    const subject = encodeURIComponent('דוגמה של דף רישום לאירוע')
+    const body = encodeURIComponent(`${shareText}\n\n${exampleUrl}`)
+    const url = `mailto:?subject=${subject}&body=${body}`
+    window.location.href = url
+  }
+
+  const shareViaFacebook = () => {
+    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(exampleUrl)}`
+    window.open(url, '_blank', 'width=600,height=400')
+  }
+
+  const shareViaTwitter = () => {
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(exampleUrl)}`
+    window.open(url, '_blank', 'width=600,height=400')
+  }
+
+  const shareViaNative = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'דוגמה של דף רישום לאירוע',
+          text: shareText,
+          url: exampleUrl,
+        })
+      } catch (err) {
+        console.error('Error sharing:', err)
+      }
+    } else {
+      copyToClipboard()
+    }
+  }
 
   return (
     <div className="min-h-screen bg-white text-gray-900 overflow-x-hidden">
@@ -48,7 +113,7 @@ export default function LandingPage() {
             <div className="flex gap-2 sm:gap-3">
               <Link
                 href="/admin/login"
-                className="px-3 sm:px-5 py-2.5 sm:py-2.5 text-xs sm:text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors whitespace-nowrap min-h-[44px] flex items-center"
+                className="px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-red-600 rounded-lg sm:rounded-xl hover:from-red-600 hover:to-red-700 transition-all shadow-md hover:shadow-lg whitespace-nowrap min-h-[44px] flex items-center justify-center"
               >
                 התחבר
               </Link>
@@ -74,7 +139,7 @@ export default function LandingPage() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
               </span>
-              <span className="text-xs sm:text-sm font-bold text-gray-900">מערכת ניהול אירועים מקצועית</span>
+              <span className="text-xs sm:text-sm font-bold text-gray-900">מערכת ניהול כרטיסים </span>
             </div>
 
             {/* Massive Headline */}
@@ -84,9 +149,133 @@ export default function LandingPage() {
 
             {/* Compelling Value Proposition */}
             <p className="text-base sm:text-xl lg:text-2xl text-gray-600 leading-relaxed max-w-3xl mx-auto font-medium">
-              מערכת ניהול אירועים מלאה עם רישום מקוון, מגבלת מקומות, רשימת המתנה חכמה וניהול משתתפים בזמן אמת.
+              מערכת ניהול כרטיסים מלאה עם רישום מקוון, מגבלת מקומות, רשימת המתנה חכמה וניהול משתתפים בזמן אמת.
               כל מה שצריך כדי לארגן כל אירוע – במקום אחד.
             </p>
+
+            {/* Example Ticket Registration - Show What Attendees See */}
+            <div className="pt-6 sm:pt-8">
+              <div className="max-w-4xl mx-auto">
+                <div className="bg-white rounded-2xl shadow-xl border-2 border-purple-200 p-4 sm:p-6">
+                  <div className="text-center space-y-4">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <Eye className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
+                      <h3 className="text-base sm:text-lg font-bold text-gray-900">
+                        כך נראה דף הרישום למשתתפים שלכם:
+                      </h3>
+                    </div>
+                    <p className="text-sm sm:text-base text-gray-600 mb-4">
+                      לחצו על הכפתור כדי לראות דוגמה של דף רישום לאירוע
+                    </p>
+                    <a
+                      href={exampleUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 sm:gap-3 px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-bold text-white bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl hover:scale-105 mb-4"
+                    >
+                      <Ticket className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <span>צפו בדוגמה של דף רישום</span>
+                      <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </a>
+                    
+                    {/* Share Section */}
+                    <div className="pt-4 border-t border-gray-200">
+                      <p className="text-xs sm:text-sm font-semibold text-gray-700 mb-3">
+                        אפשר לשתף בקלות ב-
+                      </p>
+                      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+                        {/* WhatsApp */}
+                        <button
+                          onClick={shareViaWhatsApp}
+                          className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-all shadow-md hover:shadow-lg hover:scale-105 text-xs sm:text-sm font-semibold"
+                          title="שתף בוואטסאפ"
+                        >
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                          </svg>
+                          <span className="hidden sm:inline">וואטסאפ</span>
+                        </button>
+
+                        {/* SMS */}
+                        <button
+                          onClick={shareViaSMS}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-all shadow-md hover:shadow-lg hover:scale-105 text-xs sm:text-sm font-semibold"
+                          title="שתף ב-SMS"
+                        >
+                          <Phone className="w-4 h-4" />
+                          <span className="hidden sm:inline">SMS</span>
+                        </button>
+
+                        {/* Email */}
+                        <button
+                          onClick={shareViaEmail}
+                          className="flex items-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-all shadow-md hover:shadow-lg hover:scale-105 text-xs sm:text-sm font-semibold"
+                          title="שתף באימייל"
+                        >
+                          <Mail className="w-4 h-4" />
+                          <span className="hidden sm:inline">אימייל</span>
+                        </button>
+
+                        {/* Facebook */}
+                        <button
+                          onClick={shareViaFacebook}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg transition-all shadow-md hover:shadow-lg hover:scale-105 text-xs sm:text-sm font-semibold"
+                          title="שתף בפייסבוק"
+                        >
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path fillRule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clipRule="evenodd" />
+                          </svg>
+                          <span className="hidden sm:inline">פייסבוק</span>
+                        </button>
+
+                        {/* Twitter */}
+                        <button
+                          onClick={shareViaTwitter}
+                          className="flex items-center gap-2 px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg transition-all shadow-md hover:shadow-lg hover:scale-105 text-xs sm:text-sm font-semibold"
+                          title="שתף בטוויטר"
+                        >
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
+                          </svg>
+                          <span className="hidden sm:inline">טוויטר</span>
+                        </button>
+
+                        {/* Copy Link */}
+                        <button
+                          onClick={copyToClipboard}
+                          className="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-all shadow-md hover:shadow-lg hover:scale-105 text-xs sm:text-sm font-semibold"
+                          title="העתק קישור"
+                        >
+                          {linkCopied ? (
+                            <>
+                              <Check className="w-4 h-4" />
+                              <span className="hidden sm:inline">הועתק!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-4 h-4" />
+                              <span className="hidden sm:inline">העתק</span>
+                            </>
+                          )}
+                        </button>
+
+                        {/* Native Share (Mobile) */}
+                        {hasNativeShare && (
+                          <button
+                            onClick={shareViaNative}
+                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg transition-all shadow-md hover:shadow-lg hover:scale-105 text-xs sm:text-sm font-semibold"
+                            title="שתף"
+                          >
+                            <Share2 className="w-4 h-4" />
+                            <span className="hidden sm:inline">שתף</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {/* Use Case Carousel - Show Versatility */}
             <div className="pt-8">
@@ -629,7 +818,7 @@ export default function LandingPage() {
                 </div>
               </div>
               <p className="text-gray-400 leading-relaxed">
-                מערכת ניהול אירועים מתקדמת לכל סוג של ארגון וקבוצה
+                מערכת ניהול כרטיסים מתקדמת לכל סוג של ארגון וקבוצה
               </p>
             </div>
 
