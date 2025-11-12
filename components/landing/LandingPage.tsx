@@ -393,28 +393,6 @@ export default function LandingPage() {
                   </div>
                 </div>
 
-                {/* URL/Slug Explanation - Full Width */}
-                <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-4 sm:p-6 w-full">
-                  <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4">
-                    <Globe className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 flex-shrink-0" />
-                    <span className="text-base sm:text-xl font-bold text-purple-900 text-center">תקבלו כתובת ייחודית לארגון שלכם!</span>
-                  </div>
-                  <div className="bg-white rounded-lg p-4 sm:p-6 mb-4 w-full">
-                    <p className="text-gray-700 text-sm sm:text-lg mb-4 text-center font-medium">לדוגמה: אם הארגון שלכם נקרא "קבוצת הרצל"</p>
-                    <div className="space-y-3 w-full">
-                      <div className="text-gray-700 font-bold text-sm sm:text-lg text-center">הכתובת שלכם תהיה:</div>
-                      <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg p-3 sm:p-4 w-full">
-                        <div className="bg-purple-600 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-lg font-mono text-sm sm:text-lg font-bold text-center w-full break-all">
-                          kartis.info/p/herzl
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <p className="text-purple-800 text-sm sm:text-base leading-relaxed text-center">
-                    את הקישור הזה תשתפו עם המשתתפים הפוטנציאליים כדי שיוכלו להירשם לאירועים שלכם!
-                  </p>
-                </div>
-
                 <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 sm:p-6 w-full text-center">
                   <p className="text-sm sm:text-lg text-blue-900 font-semibold">
                     💡 לא צריך להבין בטכנולוגיה! המערכת פשוטה ואינטואיטיבית.
