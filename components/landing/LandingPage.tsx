@@ -50,7 +50,7 @@ export default function LandingPage() {
     return process.env.NEXT_PUBLIC_BASE_URL || 'https://kartis.info'
   }
 
-  const exampleUrl = `${getBaseUrl()}/p/schooltest/mshchkhgrlhmvpa`
+  const exampleUrl = `${getBaseUrl()}/p/default/ayrva-mhsrtym`
   const shareText = 'צפו בדוגמה של דף רישום לאירוע:'
 
   const copyToClipboard = async () => {
