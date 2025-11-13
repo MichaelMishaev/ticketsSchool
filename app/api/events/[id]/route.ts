@@ -97,8 +97,14 @@ export async function PATCH(
     if (data.description !== undefined) updateData.description = data.description
     if (data.gameType !== undefined) updateData.gameType = data.gameType
     if (data.location !== undefined) updateData.location = data.location
-    if (data.startAt !== undefined) updateData.startAt = new Date(data.startAt)
-    if (data.endAt !== undefined) updateData.endAt = data.endAt ? new Date(data.endAt) : null
+
+    // Handle datetime fields
+    if (data.startAt !== undefined) {
+      updateData.startAt = new Date(data.startAt)
+    }
+    if (data.endAt !== undefined) {
+      updateData.endAt = data.endAt ? new Date(data.endAt) : null
+    }
     if (data.capacity !== undefined) updateData.capacity = parseInt(data.capacity)
     if (data.maxSpotsPerPerson !== undefined) updateData.maxSpotsPerPerson = parseInt(data.maxSpotsPerPerson)
     if (data.fieldsSchema !== undefined) updateData.fieldsSchema = data.fieldsSchema

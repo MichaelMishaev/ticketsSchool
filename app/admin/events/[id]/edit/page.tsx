@@ -64,10 +64,17 @@ export default function EditEventPage() {
     setIsLoading(true)
 
     try {
+      // Convert datetime-local strings to ISO strings with timezone
+      const payload = {
+        ...formData,
+        startAt: formData.startAt ? new Date(formData.startAt).toISOString() : undefined,
+        endAt: formData.endAt ? new Date(formData.endAt).toISOString() : null,
+      }
+
       const response = await fetch(`/api/events/${eventId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       })
 
       if (response.ok) {
