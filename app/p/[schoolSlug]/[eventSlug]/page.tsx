@@ -63,8 +63,10 @@ export default function EventPage() {
 
       const response = await fetch(`/api/p/${schoolSlug}/${eventSlug}`, {
         signal: controller.signal,
+        cache: 'no-store', // Disable browser caching
         headers: {
           'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
         }
       })
 
@@ -388,9 +390,16 @@ export default function EventPage() {
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <Calendar className="w-5 h-5 text-gray-400" />
-                <span className="text-gray-700">
-                  {format(new Date(event.startAt), 'EEEE, dd בMMMM yyyy בשעה HH:mm', { locale: he })}
-                </span>
+                <div className="flex-1">
+                  <span className="text-gray-700 block">
+                    {format(new Date(event.startAt), 'EEEE, dd בMMMM yyyy בשעה HH:mm', { locale: he })}
+                  </span>
+                  {event.endAt && (
+                    <span className="text-gray-600 text-sm block mt-1">
+                      עד: {format(new Date(event.endAt), 'EEEE, dd בMMMM yyyy בשעה HH:mm', { locale: he })}
+                    </span>
+                  )}
+                </div>
               </div>
 
               {event.location && (

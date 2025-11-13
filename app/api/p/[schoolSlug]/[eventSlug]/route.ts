@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+// Disable caching for this route to ensure fresh data
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 /**
  * GET /api/p/[schoolSlug]/[eventSlug]
  * Fetch event by school slug + event slug
@@ -82,7 +86,7 @@ export async function GET(
       0
     )
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       type: 'event',
       id: event.id,
       title: event.title,
@@ -102,6 +106,13 @@ export async function GET(
       _count: event._count,
       totalSpotsTaken
     })
+
+    // Add cache control headers to prevent caching
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+
+    return response
   } catch (error) {
     console.error('Error fetching event:', error)
     return NextResponse.json(
