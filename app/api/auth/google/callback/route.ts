@@ -185,7 +185,15 @@ export async function GET(request: NextRequest) {
 
     return response
   } catch (error) {
+    // Enhanced error logging for debugging
     console.error('[Google OAuth Callback] Error:', error)
-    return NextResponse.redirect(new URL('/admin/login?error=oauth_failed', BASE_URL))
+    console.error('[Google OAuth Callback] Error type:', error instanceof Error ? error.constructor.name : typeof error)
+    console.error('[Google OAuth Callback] Error message:', error instanceof Error ? error.message : String(error))
+    console.error('[Google OAuth Callback] Error stack:', error instanceof Error ? error.stack : 'No stack trace')
+
+    // Include error details in redirect for debugging (remove in production after fixing)
+    const errorMessage = error instanceof Error ? error.message : 'unknown_error'
+    const encodedError = encodeURIComponent(errorMessage.substring(0, 100))
+    return NextResponse.redirect(new URL(`/admin/login?error=oauth_failed&details=${encodedError}`, BASE_URL))
   }
 }

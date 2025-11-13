@@ -41,7 +41,17 @@ export default function AdminLoginPage() {
       } else if (errorParam === 'email_exists_with_password') {
         setError('כתובת המייל הזאת כבר קיימת עם סיסמה. אנא התחבר עם סיסמה במקום Google.')
       } else if (errorParam === 'oauth_failed') {
-        setError('שגיאה בהתחברות עם Google. נסה שוב.')
+        const details = params.get('details')
+        const errorMsg = details
+          ? `שגיאה בהתחברות עם Google: ${decodeURIComponent(details)}`
+          : 'שגיאה בהתחברות עם Google. נסה שוב.'
+        setError(errorMsg)
+      } else if (errorParam === 'oauth_init_failed') {
+        const details = params.get('details')
+        const errorMsg = details
+          ? `שגיאה ביצירת התחברות Google: ${decodeURIComponent(details)}`
+          : 'שגיאה ביצירת התחברות Google. נסה שוב.'
+        setError(errorMsg)
       }
     }
   }, [])
