@@ -47,6 +47,13 @@ if [ -n "$DATABASE_URL" ]; then
             psql "$DATABASE_URL" -f scripts/fix-events-school-id.sql 2>&1 | head -20 || echo "⚠️  Table creation had warnings (likely tables already exist)"
         fi
 
+        # Ensure OAuthState table exists (critical for Google OAuth)
+        echo "🔧 Ensuring OAuthState table exists..."
+        if [ -f "scripts/ensure-oauth-state-table.sql" ] && [ -n "$DATABASE_URL" ]; then
+            echo "Running OAuthState table creation script..."
+            psql "$DATABASE_URL" -f scripts/ensure-oauth-state-table.sql 2>&1 || echo "⚠️  OAuthState table creation had warnings"
+        fi
+
         # Install Prisma CLI temporarily for migrations
         echo "📥 Installing Prisma CLI for migrations..."
         npm install -g prisma@6.16.2 --silent
