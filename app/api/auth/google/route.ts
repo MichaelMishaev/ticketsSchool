@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { OAuth2Client } from 'google-auth-library'
+import { prisma } from '@/lib/prisma'
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
@@ -22,6 +23,24 @@ export async function GET(request: NextRequest) {
     // Generate a secure random state parameter
     const state = crypto.randomUUID()
 
+    // Store state in database (more reliable than cookies for OAuth)
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+    await prisma.oAuthState.create({
+      data: {
+        state,
+        expiresAt,
+      },
+    })
+
+    // Clean up expired states (older than 10 minutes)
+    await prisma.oAuthState.deleteMany({
+      where: {
+        expiresAt: {
+          lt: new Date(),
+        },
+      },
+    })
+
     // Generate the authorization URL
     const authorizationUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline',
@@ -34,19 +53,10 @@ export async function GET(request: NextRequest) {
       prompt: 'select_account',
     })
 
-    console.log('[Google OAuth] Redirecting to Google authorization')
+    console.log('[Google OAuth] State stored in DB, redirecting to Google')
 
-    // Store state in cookie for verification in callback
-    const response = NextResponse.redirect(authorizationUrl)
-    response.cookies.set('oauth_state', state, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 600, // 10 minutes
-      path: '/',
-    })
-
-    return response
+    // Simply redirect - no cookies needed
+    return NextResponse.redirect(authorizationUrl)
   } catch (error) {
     console.error('[Google OAuth] Error initiating OAuth flow:', error)
     return NextResponse.redirect(new URL('/admin/login?error=oauth_failed', BASE_URL))

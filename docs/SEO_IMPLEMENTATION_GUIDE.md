@@ -352,8 +352,8 @@ Change this value to adjust how often the sitemap updates.
 
 **Example**:
 ```typescript
-title: 'ניהול כרטיסים לאירועי בית ספר | kartis.info'
-description: 'מערכת חינמית לניהול כרטיסים ורישומים לאירועי בית ספר. התחל עכשיו ללא כרטיס אשראי ✓'
+title: 'ניהול כרטיסים לאירועים | kartis.info'
+description: 'מערכת לניהול כרטיסים ורישומים לאירועים. התחל עכשיו✓'
 ```
 
 ### 2. Keywords

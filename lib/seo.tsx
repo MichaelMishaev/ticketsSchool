@@ -15,8 +15,8 @@ import { Metadata } from 'next'
 export const SEO_CONFIG = {
   siteName: 'kartis.info',
   siteUrl: 'https://kartis.info',
-  defaultTitle: 'kartis.info - מערכת ניהול כרטיסים לבתי ספר | חינם לצמיתות',
-  defaultDescription: 'מערכת ניהול כרטיסים חכמה לאירועי בית ספר - תשלומים מאובטחים, ניהול פשוט. תוכנית חינמית לצמיתות ללא כרטיס אשראי',
+  defaultTitle: 'kartis.info - מערכת ניהול כרטיסים לבתי ספר',
+  defaultDescription: 'מערכת ניהול כרטיסים חכמה לאירועי בית ספר - תשלומים מאובטחים, ניהול פשוט',
   defaultKeywords: [
     'ניהול כרטיסים',
     'בית ספר',
@@ -31,7 +31,7 @@ export const SEO_CONFIG = {
   ],
   locale: 'he_IL',
   twitterHandle: '@kartisinfo',
-  ogImage: '/images/og-image.png',
+  ogImage: '/images/og-image.png?v=2',
   logo: '/images/logos/kartis-logo.png',
 }
 
@@ -214,7 +214,7 @@ export function generateSoftwareStructuredData() {
       '@type': 'Offer',
       price: '0',
       priceCurrency: 'ILS',
-      description: 'תוכנית חינמית ',
+      description: 'מערכת ניהול כרטיסים מקצועית',
     },
     description: 'מערכת ניהול כרטיסים לבתי ספר',
     aggregateRating: {

@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     siteName: "kartis.info",
     images: [
       {
-        url: "/images/og-image.png",
+        url: "/images/og-image.png?v=2",
         width: 1200,
         height: 630,
         alt: "kartis.info - ניהול כרטיסים לאירועים ומשחקים",
@@ -42,7 +42,10 @@ export const metadata: Metadata = {
     images: ["/images/og-image.png"],
   },
   icons: {
-    icon: "/images/ticketcap-logo.png",
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/images/ticketcap-logo.png", sizes: "192x192", type: "image/png" },
+    ],
     apple: "/images/ticketcap-logo.png",
   },
 };

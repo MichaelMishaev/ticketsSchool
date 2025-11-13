@@ -27,14 +27,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/admin/login?error=oauth_invalid', BASE_URL))
     }
 
-    // Verify state parameter - READ FROM REQUEST COOKIES (not cookies() API)
-    // This avoids mixing cookies() API with response.cookies (Next.js 15 issue)
-    const storedState = request.cookies.get('oauth_state')?.value
+    // Verify state parameter - READ FROM DATABASE
+    const storedOAuthState = await prisma.oAuthState.findUnique({
+      where: { state },
+    })
 
-    if (!storedState || storedState !== state) {
-      console.error('[Google OAuth Callback] State mismatch')
+    if (!storedOAuthState) {
+      console.error('[Google OAuth Callback] State not found in database')
       return NextResponse.redirect(new URL('/admin/login?error=oauth_state_mismatch', BASE_URL))
     }
+
+    // Check if state has expired
+    if (storedOAuthState.expiresAt < new Date()) {
+      console.error('[Google OAuth Callback] State expired')
+      await prisma.oAuthState.delete({ where: { id: storedOAuthState.id } })
+      return NextResponse.redirect(new URL('/admin/login?error=oauth_state_expired', BASE_URL))
+    }
+
+    // Delete the state now that we've verified it (one-time use)
+    await prisma.oAuthState.delete({ where: { id: storedOAuthState.id } })
 
     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
       console.error('[Google OAuth Callback] Missing Google OAuth credentials')
@@ -171,9 +182,6 @@ export async function GET(request: NextRequest) {
       maxAge: SESSION_DURATION / 1000,
       path: '/',
     })
-
-    // Delete OAuth state cookie
-    response.cookies.delete('oauth_state')
 
     return response
   } catch (error) {
