@@ -120,10 +120,10 @@ export default function LandingPage() {
             </div>
             <div className="flex gap-2 sm:gap-3">
               <Link
-                href="/admin/login"
-                className="px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-red-600 rounded-lg sm:rounded-xl hover:from-red-600 hover:to-red-700 transition-all shadow-md hover:shadow-lg whitespace-nowrap min-h-[44px] flex items-center justify-center"
+                href="/admin/signup"
+                className="px-5 sm:px-8 py-2 sm:py-3 text-sm sm:text-base font-bold text-gray-900 bg-white border-2 border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-lg transition-all whitespace-nowrap min-h-[44px] flex items-center justify-center"
               >
-                התחבר
+                כניסה למערכת
               </Link>
             </div>
           </div>
@@ -290,11 +290,11 @@ export default function LandingPage() {
               <UseCaseCarousel autoPlayInterval={3000} pauseOnHover={true} />
             </div>
 
-            {/* Powerful CTAs */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
+            {/* Powerful CTA */}
+            <div className="flex justify-center items-center pt-4">
               <Link
-                href="/admin/login"
-                className="px-8 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold text-gray-900 bg-white border-2 border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-xl transition-all max-w-[80%] sm:max-w-none"
+                href="/admin/signup"
+                className="px-8 sm:px-12 py-4 sm:py-5 text-lg sm:text-xl font-bold text-gray-900 bg-white border-2 border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-xl transition-all max-w-[80%] sm:max-w-none"
               >
                 כניסה למערכת
               </Link>
@@ -375,7 +375,7 @@ export default function LandingPage() {
                 href="/admin/login"
                 className="inline-block px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold text-white bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl hover:scale-105 mt-2"
               >
-                נסו עכשיו חינם
+                נסו עכשיו
               </Link>
             </div>
           </div>

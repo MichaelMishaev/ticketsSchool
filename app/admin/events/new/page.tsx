@@ -1073,8 +1073,13 @@ export default function NewEventPageTest() {
         <form
           onSubmit={handleSubmit}
           onKeyDown={(e) => {
-            // Prevent Enter key from submitting form unless clicking the submit button
-            if (e.key === 'Enter' && e.target instanceof HTMLElement && e.target.tagName !== 'BUTTON') {
+            // Prevent Enter key from submitting form, but allow it in textareas and buttons
+            if (
+              e.key === 'Enter' &&
+              e.target instanceof HTMLElement &&
+              e.target.tagName !== 'BUTTON' &&
+              e.target.tagName !== 'TEXTAREA'
+            ) {
               e.preventDefault()
             }
           }}

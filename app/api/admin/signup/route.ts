@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import * as bcrypt from 'bcryptjs'
 import * as jwt from 'jsonwebtoken'
 import { sendVerificationEmail } from '@/lib/email'
+import { encodeSession, SESSION_COOKIE_NAME, type AuthSession } from '@/lib/auth.server'
 
 // Lazy getter for JWT_SECRET - only validates when actually used (not at import time)
 function getJWTSecret(): string {
@@ -17,16 +18,14 @@ interface SignupRequest {
   email: string
   password: string
   name: string
-  schoolName?: string
-  schoolSlug?: string
 }
 
 export async function POST(request: NextRequest) {
   try {
     console.log('[Signup] Starting signup process')
     const body: SignupRequest = await request.json()
-    const { email, password, name, schoolName, schoolSlug } = body
-    console.log('[Signup] Received data:', { email, name, schoolName, schoolSlug })
+    const { email, password, name } = body
+    console.log('[Signup] Received data:', { email, name })
 
     // Validation
     if (!email || !password || !name) {
@@ -72,6 +71,65 @@ export async function POST(request: NextRequest) {
     console.log('[Signup] Hashing password')
     const passwordHash = await bcrypt.hash(password, 10)
 
+    // ====== TEMPORARY: SKIP EMAIL VERIFICATION ======
+    // TODO: Remove this section and uncomment email verification code below when ready for production
+    console.log('[Signup] TEMPORARY: Skipping email verification')
+
+    // Create admin without school (onboarding will be completed after signup)
+    console.log('[Signup] Creating admin account')
+    const admin = await prisma.admin.create({
+      data: {
+        email: email.toLowerCase(),
+        passwordHash,
+        name,
+        role: 'OWNER',
+        schoolId: null, // Will be set during onboarding
+        emailVerified: true, // TEMPORARY: Set to true to skip verification
+        verificationToken: null, // TEMPORARY: No token needed
+        onboardingCompleted: false, // Will be completed after onboarding
+      },
+    })
+    console.log('[Signup] Admin account created successfully')
+
+    // TEMPORARY: Auto-login by creating session
+    const session: AuthSession = {
+      adminId: admin.id,
+      email: admin.email,
+      name: admin.name,
+      role: admin.role,
+      schoolId: undefined, // No school yet
+      schoolName: undefined,
+    }
+
+    const sessionToken = encodeSession(session)
+
+    // Create response and set session cookie
+    const response = NextResponse.json({
+      success: true,
+      message: 'החשבון נוצר בהצלחה!',
+      admin: {
+        id: admin.id,
+        email: admin.email,
+        name: admin.name,
+      },
+      requiresOnboarding: true, // Frontend should redirect to onboarding
+    })
+
+    // Set session cookie
+    response.cookies.set(SESSION_COOKIE_NAME, sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: '/',
+    })
+
+    console.log('[Signup] TEMPORARY: Auto-login completed, redirecting to onboarding')
+    return response
+
+    // ====== PRODUCTION CODE (COMMENTED OUT) ======
+    // Uncomment this section when ready to re-enable email verification
+    /*
     // Generate email verification token (24 hour expiry)
     console.log('[Signup] Generating verification token')
     const verificationToken = jwt.sign(
@@ -80,38 +138,7 @@ export async function POST(request: NextRequest) {
       { expiresIn: '24h' }
     )
 
-    // Create school if schoolName and schoolSlug are provided
-    let createdSchoolId: string | null = null
-    let requiresOnboarding = true
-
-    if (schoolName && schoolSlug) {
-      console.log('[Signup] Creating school:', { schoolName, schoolSlug })
-
-      // Check if slug already exists
-      const existingSchool = await prisma.school.findUnique({
-        where: { slug: schoolSlug }
-      })
-
-      if (existingSchool) {
-        console.log('[Signup] School slug already exists')
-        return NextResponse.json(
-          { error: 'הקישור הזה כבר תפוס. אנא בחר קישור אחר.' },
-          { status: 409 }
-        )
-      }
-
-      const school = await prisma.school.create({
-        data: {
-          name: schoolName,
-          slug: schoolSlug,
-        }
-      })
-      createdSchoolId = school.id
-      requiresOnboarding = false
-      console.log('[Signup] School created successfully:', school.id)
-    }
-
-    // Create admin
+    // Create admin without school (onboarding will be completed after email verification)
     console.log('[Signup] Creating admin account')
     const admin = await prisma.admin.create({
       data: {
@@ -119,10 +146,10 @@ export async function POST(request: NextRequest) {
         passwordHash,
         name,
         role: 'OWNER',
-        schoolId: createdSchoolId, // Will be null if onboarding required
+        schoolId: null, // Will be set during onboarding
         emailVerified: false,
         verificationToken,
-        onboardingCompleted: !requiresOnboarding, // True if school was created
+        onboardingCompleted: false, // Will be completed after onboarding
       },
     })
     console.log('[Signup] Admin account created successfully')
@@ -151,8 +178,8 @@ export async function POST(request: NextRequest) {
         name: admin.name,
       },
       emailSent,
-      requiresOnboarding,
     })
+    */
   } catch (error) {
     console.error('Signup error:', error)
     console.error('Error details:', {
