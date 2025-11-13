@@ -160,17 +160,34 @@ export default function EditEventPage() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              תאריך ושעת התחלה *
-            </label>
-            <input
-              type="datetime-local"
-              required
-              value={formData.startAt}
-              onChange={(e) => setFormData({ ...formData, startAt: e.target.value })}
-              className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                תאריך ושעת התחלה *
+              </label>
+              <input
+                type="datetime-local"
+                required
+                value={formData.startAt}
+                onChange={(e) => setFormData({ ...formData, startAt: e.target.value })}
+                className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                תאריך ושעת סיום
+              </label>
+              <input
+                type="datetime-local"
+                value={formData.endAt}
+                onChange={(e) => setFormData({ ...formData, endAt: e.target.value })}
+                className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                אופציונלי - מתי האירוע מסתיים
+              </p>
+            </div>
           </div>
         </div>
 
