@@ -41,13 +41,6 @@ export const metadata: Metadata = {
     description: "מערכת ניהול כרטיסים לאירועים ומשחקים",
     images: ["/images/og-image.png"],
   },
-  icons: {
-    icon: [
-      { url: "/favicon.ico" },
-      { url: "/images/ticketcap-logo.png", sizes: "192x192", type: "image/png" },
-    ],
-    apple: "/images/ticketcap-logo.png",
-  },
 };
 
 export default function RootLayout({
