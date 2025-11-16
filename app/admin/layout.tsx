@@ -128,13 +128,6 @@ export default function AdminLayout({
                       אירועים
                     </Link>
                     <Link
-                      href="/admin/events/new"
-                      className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-900"
-                    >
-                      <Plus className="w-4 h-4 ml-2" />
-                      אירוע חדש
-                    </Link>
-                    <Link
                       href="/admin/team"
                       className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-900"
                     >
@@ -154,14 +147,26 @@ export default function AdminLayout({
             </div>
             <div className="hidden sm:flex sm:items-center sm:gap-2">
               {adminInfo?.role !== 'SUPER_ADMIN' && (
-                <Link
-                  href="/admin/help"
-                  onClick={() => trackHelpButtonClick(pathname)}
-                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition border border-blue-300"
-                >
-                  <HelpCircle className="w-4 h-4 ml-2" />
-                  הסבר איך להוסיף אירוע
-                </Link>
+                <>
+                  <Link
+                    href="/admin/events/new"
+                    onClick={() => trackButtonClick('create_event', 'header_desktop')}
+                    className="group inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-blue-600 bg-gradient-to-r from-blue-50 to-sky-50 hover:from-blue-100 hover:to-sky-100 rounded-xl border border-blue-200/50 hover:border-blue-300 shadow-sm hover:shadow transition-all duration-200"
+                  >
+                    <div className="w-5 h-5 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Plus className="w-3.5 h-3.5 text-blue-600" />
+                    </div>
+                    <span className="font-semibold">אירוע חדש</span>
+                  </Link>
+                  <Link
+                    href="/admin/help"
+                    onClick={() => trackHelpButtonClick(pathname)}
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition border border-blue-300"
+                  >
+                    <HelpCircle className="w-4 h-4 ml-2" />
+                    הסבר איך להוסיף אירוע
+                  </Link>
+                </>
               )}
               <button
                 onClick={handleLogout}
@@ -173,13 +178,25 @@ export default function AdminLayout({
             </div>
             <div className="sm:hidden flex items-center gap-2">
               {adminInfo?.role !== 'SUPER_ADMIN' && (
-                <Link
-                  href="/admin/help"
-                  onClick={() => trackHelpButtonClick(pathname)}
-                  className="inline-flex items-center justify-center p-3 rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50 min-w-[44px] min-h-[44px]"
-                >
-                  <HelpCircle className="h-6 w-6" />
-                </Link>
+                <>
+                  <Link
+                    href="/admin/events/new"
+                    onClick={() => trackButtonClick('create_event', 'header_mobile')}
+                    className="group inline-flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-blue-600 bg-gradient-to-r from-blue-50 to-sky-50 hover:from-blue-100 hover:to-sky-100 rounded-xl border border-blue-200/50 hover:border-blue-300 shadow-sm hover:shadow transition-all duration-200 min-h-[44px]"
+                  >
+                    <div className="w-5 h-5 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Plus className="w-3.5 h-3.5 text-blue-600" />
+                    </div>
+                    <span className="font-semibold">אירוע חדש</span>
+                  </Link>
+                  <Link
+                    href="/admin/help"
+                    onClick={() => trackHelpButtonClick(pathname)}
+                    className="inline-flex items-center justify-center p-3 rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50 min-w-[44px] min-h-[44px]"
+                  >
+                    <HelpCircle className="h-6 w-6" />
+                  </Link>
+                </>
               )}
               <button
                 type="button"
@@ -230,16 +247,6 @@ export default function AdminLayout({
                     <div className="flex items-center">
                       <Calendar className="w-5 h-5 ml-3" />
                       אירועים
-                    </div>
-                  </Link>
-                  <Link
-                    href="/admin/events/new"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="block pr-4 py-3 border-r-4 border-transparent text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:border-gray-300 min-h-[44px]"
-                  >
-                    <div className="flex items-center">
-                      <Plus className="w-5 h-5 ml-3" />
-                      אירוע חדש
                     </div>
                   </Link>
                   <Link
