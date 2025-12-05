@@ -16,6 +16,8 @@ export async function GET() {
     memory: {
       used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
       total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024)
-    }
+    },
+    // Deployment marker to track restarts
+    deployment: 'qa-db-migration-2025-12-05'
   })
 }
