@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Calendar, Users, Clock, Edit, ExternalLink, Trash2 } from 'lucide-react'
+import { Calendar, Users, Clock, Edit, ExternalLink, Trash2, UtensilsCrossed, Copy, Check } from 'lucide-react'
 import { format } from 'date-fns'
 
 export default function EventsPage() {
   const [events, setEvents] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [copiedEventId, setCopiedEventId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchEvents()
@@ -61,6 +62,13 @@ export default function EventsPage() {
     }
   }
 
+  const copyShareLink = (event: any) => {
+    const link = `${window.location.origin}/p/${event.school.slug}/${event.slug}`
+    navigator.clipboard.writeText(link)
+    setCopiedEventId(event.id)
+    setTimeout(() => setCopiedEventId(null), 2000)
+  }
+
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { text: string; className: string }> = {
       OPEN: { text: 'פתוח', className: 'bg-green-100 text-green-800' },
@@ -87,12 +95,21 @@ export default function EventsPage() {
     <div>
       <div className="sm:flex sm:items-center sm:justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">אירועים</h1>
-        <Link
-          href="/admin/events/new"
-          className="mt-3 sm:mt-0 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
-        >
-          צור אירוע חדש
-        </Link>
+        <div className="mt-3 sm:mt-0 flex flex-col sm:flex-row gap-2">
+          <Link
+            href="/admin/events/new"
+            className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+          >
+            צור אירוע חדש
+          </Link>
+          <Link
+            href="/admin/events/new-restaurant"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700"
+          >
+            <UtensilsCrossed className="w-4 h-4" />
+            צור אירוע מסעדה
+          </Link>
+        </div>
       </div>
 
       {events.length === 0 ? (
@@ -179,6 +196,23 @@ export default function EventsPage() {
 
                   {/* Secondary Actions */}
                   <div className="flex flex-wrap gap-2 mb-4">
+                    <button
+                      onClick={() => copyShareLink(event)}
+                      className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-white bg-green-600 rounded-lg hover:bg-green-700 active:bg-green-800 min-h-[44px] transition-colors shadow-sm"
+                      title="העתק קישור שיתוף"
+                    >
+                      {copiedEventId === event.id ? (
+                        <>
+                          <Check className="w-4 h-4" />
+                          <span>הועתק! ✓</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4" />
+                          <span>העתק קישור</span>
+                        </>
+                      )}
+                    </button>
                     <Link
                       href={`/p/${event.school.slug}/${event.slug}`}
                       target="_blank"
@@ -186,7 +220,7 @@ export default function EventsPage() {
                       title="צפה בדף ההרשמה"
                     >
                       <ExternalLink className="w-4 h-4" />
-                      <span>צפה בדף</span>
+                      <span>תצוגה מקדימה</span>
                     </Link>
                     {event._count.registrations === 0 && (
                       <button
@@ -205,14 +239,14 @@ export default function EventsPage() {
 
                   {/* Event Code - Technical details */}
                   <div className="pt-3 border-t border-gray-200">
-                    <div className="text-xs text-gray-500 space-y-1.5">
+                    <div className="text-xs space-y-2">
                       <div className="flex items-center gap-2">
                         <span className="text-gray-400">קוד:</span>
                         <span className="font-mono font-medium text-gray-700">{event.slug}</span>
                       </div>
-                      <div className="hidden sm:flex items-start gap-2">
-                        <span className="text-gray-400 whitespace-nowrap">קישור:</span>
-                        <span className="font-mono text-gray-700 break-all">{typeof window !== 'undefined' ? `${window.location.origin}/p/${event.school.slug}/${event.slug}` : ''}</span>
+                      <div className="flex items-start gap-2 bg-blue-50 p-2 rounded border border-blue-200">
+                        <span className="text-blue-600 whitespace-nowrap font-medium">🔗 קישור שיתוף:</span>
+                        <span className="font-mono text-blue-800 break-all select-all">{typeof window !== 'undefined' ? `${window.location.origin}/p/${event.school.slug}/${event.slug}` : ''}</span>
                       </div>
                     </div>
                   </div>
