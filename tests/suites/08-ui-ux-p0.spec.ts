@@ -77,6 +77,7 @@ test.describe('UI/UX & Accessibility P0 - Critical Tests', () => {
 
       await page.goto(`http://localhost:9000/p/${school.slug}/${event.slug}`)
 
+      await page.waitForSelector('input[name="name"]', { state: 'visible' })
       // Check name input text color and background
       const nameInput = page.locator('input[name="name"]').first()
       await nameInput.waitFor({ state: 'visible' })
@@ -120,6 +121,7 @@ test.describe('UI/UX & Accessibility P0 - Critical Tests', () => {
 
       await page.goto(`http://localhost:9000/p/${school.slug}/${event.slug}`)
 
+      await page.waitForSelector('input[name="name"]', { state: 'visible' })
       // Type in name field
       await page.fill('input[name="name"]', 'Test User')
 
@@ -153,6 +155,7 @@ test.describe('UI/UX & Accessibility P0 - Critical Tests', () => {
 
       await page.goto(`http://localhost:9000/p/${school.slug}/${event.slug}`)
 
+      await page.waitForSelector('input[name="name"]', { state: 'visible' })
       // Check if HTML or body has dir="rtl"
       const htmlDir = await page.evaluate(() => {
         return document.documentElement.getAttribute('dir') || document.body.getAttribute('dir')
@@ -176,6 +179,7 @@ test.describe('UI/UX & Accessibility P0 - Critical Tests', () => {
 
       await page.goto(`http://localhost:9000/p/${school.slug}/${event.slug}`)
 
+      await page.waitForSelector('input[name="name"]', { state: 'visible' })
       // Check text-align of Hebrew content
       const bodyTextAlign = await page.evaluate(() => {
         const body = document.body
@@ -222,6 +226,7 @@ test.describe('UI/UX & Accessibility P0 - Critical Tests', () => {
 
       await page.goto(`http://localhost:9000/p/${school.slug}/${event.slug}`)
 
+      await page.waitForSelector('input[name="name"]', { state: 'visible' })
       const submitButton = page.locator('button[type="submit"]').first()
       await submitButton.waitFor({ state: 'visible' })
 
@@ -243,6 +248,7 @@ test.describe('UI/UX & Accessibility P0 - Critical Tests', () => {
 
       await page.goto(`http://localhost:9000/p/${school.slug}/${event.slug}`)
 
+      await page.waitForSelector('input[name="name"]', { state: 'visible' })
       // Check name input
       const nameInput = page.locator('input[name="name"]').first()
       const nameBox = await nameInput.boundingBox()
@@ -296,6 +302,7 @@ test.describe('UI/UX & Accessibility P0 - Critical Tests', () => {
 
       await page.goto(`http://localhost:9000/p/${school.slug}/${event.slug}`)
 
+      await page.waitForSelector('input[name="name"]', { state: 'visible' })
       // Fill form (email not used in public registration)
       await page.fill('input[name="name"]', 'Test User')
       await page.fill('input[name="phone"]', generateIsraeliPhone())
@@ -355,6 +362,7 @@ test.describe('UI/UX & Accessibility P0 - Critical Tests', () => {
 
       await page.goto(`http://localhost:9000/p/${school.slug}/${event.slug}`)
 
+      await page.waitForSelector('input[name="name"]', { state: 'visible' })
       // Wait for form to load
       await page.waitForSelector('input[name="name"]', { state: 'visible' })
 
@@ -380,6 +388,7 @@ test.describe('UI/UX & Accessibility P0 - Critical Tests', () => {
 
       await page.goto(`http://localhost:9000/p/${school.slug}/${event.slug}`)
 
+      await page.waitForSelector('input[name="name"]', { state: 'visible' })
       // Wait for form to load
       await page.waitForSelector('input[name="name"]', { state: 'visible' })
 
@@ -404,6 +413,7 @@ test.describe('UI/UX & Accessibility P0 - Critical Tests', () => {
 
       await page.goto(`http://localhost:9000/p/${school.slug}/${event.slug}`)
 
+      await page.waitForSelector('input[name="name"]', { state: 'visible' })
       // Wait for form to load
       await page.waitForSelector('input[name="name"]', { state: 'visible' })
 
@@ -429,6 +439,7 @@ test.describe('UI/UX & Accessibility P0 - Critical Tests', () => {
 
       await page.goto(`http://localhost:9000/p/${school.slug}/${event.slug}`)
 
+      await page.waitForSelector('input[name="name"]', { state: 'visible' })
       const nameInput = page.locator('input[name="name"]').first()
 
       // Focus the input
@@ -467,6 +478,7 @@ test.describe('UI/UX & Accessibility P0 - Critical Tests', () => {
 
       await page.goto(`http://localhost:9000/p/${school.slug}/${event.slug}`)
 
+      await page.waitForSelector('input[name="name"]', { state: 'visible' })
       // Get body text color and background
       const bodyStyles = await page.evaluate(() => {
         const body = document.body
@@ -499,6 +511,7 @@ test.describe('UI/UX & Accessibility P0 - Critical Tests', () => {
 
       await page.goto(`http://localhost:9000/p/${school.slug}/${event.slug}`)
 
+      await page.waitForSelector('input[name="name"]', { state: 'visible' })
       // Check all input fields (public registration has name and phone only)
       const inputs = ['input[name="name"]', 'input[name="phone"]']
 
@@ -533,6 +546,7 @@ test.describe('UI/UX & Accessibility P0 - Critical Tests', () => {
 
       await page.goto(`http://localhost:9000/p/${school.slug}/${event.slug}`)
 
+      await page.waitForSelector('input[name="name"]', { state: 'visible' })
       // Start at top of page
       await page.keyboard.press('Tab')
 
@@ -569,6 +583,7 @@ test.describe('UI/UX & Accessibility P0 - Critical Tests', () => {
 
       await page.goto(`http://localhost:9000/p/${school.slug}/${event.slug}`)
 
+      await page.waitForSelector('input[name="name"]', { state: 'visible' })
       // Fill form fields (email not used in public registration)
       await page.fill('input[name="name"]', 'Keyboard User')
       await page.fill('input[name="phone"]', generateIsraeliPhone())
@@ -603,6 +618,7 @@ test.describe('UI/UX & Accessibility P0 - Critical Tests', () => {
 
       await page.goto(`http://localhost:9000/p/${school.slug}/${event.slug}`)
 
+      await page.waitForSelector('input[name="name"]', { state: 'visible' })
       // Check that title is displayed
       const pageText = await page.textContent('body')
 

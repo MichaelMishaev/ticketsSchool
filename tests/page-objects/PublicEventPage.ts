@@ -5,6 +5,8 @@ export class PublicEventPage {
 
   async goto(schoolSlug: string, eventSlug: string) {
     await this.page.goto(`/p/${schoolSlug}/${eventSlug}`)
+    // Wait for form to load before proceeding (fixes race condition)
+    await this.page.waitForSelector('input[name="name"]', { state: 'visible', timeout: 15000 })
   }
 
   async fillRegistrationForm(data: {
