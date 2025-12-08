@@ -1,0 +1,122 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e5]:
+        - link "Edit Reg School" [ref=e8] [cursor=pointer]:
+          - /url: /admin
+        - generic [ref=e9]:
+          - button "צור אירוע חדש" [ref=e11]:
+            - img [ref=e13]
+            - generic [ref=e14]: אירוע חדש
+            - img [ref=e15]
+          - link [ref=e17] [cursor=pointer]:
+            - /url: /admin/help
+            - img [ref=e18] [cursor=pointer]
+          - button [ref=e21]:
+            - img [ref=e22]
+    - main [ref=e23]:
+      - generic [ref=e25]:
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - generic [ref=e29]:
+              - img [ref=e30]
+              - paragraph [ref=e34]: 🔗 קישור להרשמה (שתף עם משתתפים)
+            - generic [ref=e35]: http://localhost:9000/p/edit-reg-school-69f6d3c5/edit-event-57982eed
+          - button "העתק קישור" [ref=e36]:
+            - img [ref=e37]
+            - generic [ref=e40]: העתק קישור
+        - generic [ref=e42]:
+          - generic [ref=e43]:
+            - generic [ref=e44]:
+              - heading "Edit Event" [level=1] [ref=e45]
+              - generic [ref=e46]: פתוח
+            - generic [ref=e47]:
+              - generic [ref=e49]: "🏢 ארגון: Edit Reg School"
+              - generic [ref=e50]:
+                - img [ref=e51]
+                - text: 09/12/2025 18:00
+              - generic [ref=e53]:
+                - img [ref=e54]
+                - text: Test Location
+              - generic [ref=e57]:
+                - img [ref=e58]
+                - text: 1 / 50 נרשמים (49 מקומות פנויים)
+          - generic [ref=e63]:
+            - generic [ref=e65]:
+              - button "ערוך אירוע" [ref=e66]:
+                - img [ref=e67]
+                - generic [ref=e70]: ערוך אירוע
+              - link "תצוגה מקדימה" [ref=e71] [cursor=pointer]:
+                - /url: /p/edit-reg-school-69f6d3c5/edit-event-57982eed
+                - img [ref=e72] [cursor=pointer]
+                - generic [ref=e76] [cursor=pointer]: תצוגה מקדימה
+            - generic [ref=e77]:
+              - generic [ref=e78]:
+                - paragraph [ref=e79]: שליטה בהרשמות
+                - paragraph [ref=e80]: פתוח - מאפשר הרשמה חדשה | מושהה - זמנית | סגור - חסום
+              - combobox [ref=e81]:
+                - option "✅ פתוח להרשמה" [selected]
+                - option "⏸️ מושהה"
+                - option "🚫 סגור"
+        - generic [ref=e83]:
+          - generic [ref=e85]:
+            - img [ref=e86]
+            - textbox "חיפוש לפי שם, טלפון או קוד אישור (כמו OF9ZEC)..." [ref=e89]
+          - combobox [ref=e90]:
+            - option "כל הסטטוסים" [selected]
+            - option "אושר"
+            - option "רשימת המתנה"
+            - option "בוטל"
+          - button "ייצא CSV" [ref=e91]:
+            - img [ref=e92]
+            - text: ייצא CSV
+        - table [ref=e97]:
+          - rowgroup [ref=e98]:
+            - row "# פרטים מקומות סטטוס קוד אישור נרשם ב פעולות" [ref=e99]:
+              - cell "#" [ref=e100]
+              - cell "פרטים" [ref=e101]
+              - cell "מקומות" [ref=e102]
+              - cell "סטטוס" [ref=e103]
+              - cell "קוד אישור" [ref=e104]
+              - cell "נרשם ב" [ref=e105]
+              - cell "פעולות" [ref=e106]
+          - rowgroup [ref=e107]:
+            - row "1 Original Name 0503203732 1 אושר XNV4XT 08/12 11:33" [ref=e108] [cursor=pointer]:
+              - cell "1" [ref=e109] [cursor=pointer]
+              - cell "Original Name 0503203732" [ref=e110] [cursor=pointer]:
+                - generic [ref=e111] [cursor=pointer]:
+                  - generic [ref=e112] [cursor=pointer]: Original Name
+                  - generic [ref=e113] [cursor=pointer]: "0503203732"
+              - cell "1" [ref=e114] [cursor=pointer]
+              - cell "אושר" [ref=e115] [cursor=pointer]:
+                - generic [ref=e116] [cursor=pointer]: אושר
+              - cell "XNV4XT" [ref=e117] [cursor=pointer]:
+                - generic [ref=e118] [cursor=pointer]: XNV4XT
+              - cell "08/12 11:33" [ref=e119] [cursor=pointer]
+              - cell [ref=e120] [cursor=pointer]:
+                - generic [ref=e121] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e122]:
+                    - img [ref=e123]
+                  - button "מחק לצמיתות" [ref=e126]:
+                    - img [ref=e127]
+                  - button [ref=e130]:
+                    - img [ref=e131]
+            - 'row "שם: Original Name אימייל: original@test.com" [ref=e133]':
+              - 'cell "שם: Original Name אימייל: original@test.com" [ref=e134]':
+                - generic [ref=e135]:
+                  - generic [ref=e136]:
+                    - generic [ref=e137]: "שם:"
+                    - generic [ref=e138]: Original Name
+                  - generic [ref=e139]:
+                    - generic [ref=e140]: "אימייל:"
+                    - generic [ref=e141]: original@test.com
+    - link "צור קשר דרך WhatsApp" [ref=e142] [cursor=pointer]:
+      - /url: https://wa.me/972555020829
+      - img [ref=e145] [cursor=pointer]
+  - button "Open Next.js Dev Tools" [ref=e152] [cursor=pointer]:
+    - img [ref=e153] [cursor=pointer]
+  - alert [ref=e156]
+```

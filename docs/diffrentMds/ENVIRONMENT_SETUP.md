@@ -12,7 +12,7 @@ NEXT_PUBLIC_BASE_URL="http://localhost:9000"
 
 # Email Service (Resend)
 RESEND_API_KEY="re_U3t7D7ox_LLJQfESpnZ1DoXoZUSD8RcWC"
-EMAIL_FROM="noreply@ticketcap.com"
+EMAIL_FROM="noreply@kartis.info"
 
 # JWT Secret
 JWT_SECRET="3m2lnDrTwXUHGaVttix0jsw57rrTY4N2kYGwHDF+uyU="
@@ -30,7 +30,7 @@ In your Railway dashboard (**Variables** tab), add these **3 variables**:
 
 ```env
 RESEND_API_KEY=re_U3t7D7ox_LLJQfESpnZ1DoXoZUSD8RcWC
-EMAIL_FROM=noreply@ticketcap.com
+EMAIL_FROM=noreply@kartis.info
 JWT_SECRET=3m2lnDrTwXUHGaVttix0jsw57rrTY4N2kYGwHDF+uyU=
 ```
 

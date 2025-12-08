@@ -1,0 +1,893 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e5]:
+        - link "Capacity Decrease" [ref=e8]:
+          - /url: /admin
+        - generic [ref=e9]:
+          - button "צור אירוע חדש" [ref=e11]:
+            - img [ref=e13]
+            - generic [ref=e14]: אירוע חדש
+            - img [ref=e15]
+          - link [ref=e17]:
+            - /url: /admin/help
+            - img [ref=e18]
+          - button [ref=e21]:
+            - img [ref=e22]
+    - main [ref=e23]:
+      - generic [ref=e25]:
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - generic [ref=e29]:
+              - img [ref=e30]
+              - paragraph [ref=e34]: 🔗 קישור להרשמה (שתף עם משתתפים)
+            - generic [ref=e35]: http://localhost:9000/p/capacity-decrease-9822afa9/full-event-76bb1338
+          - button "העתק קישור" [ref=e36]:
+            - img [ref=e37]
+            - generic [ref=e40]: העתק קישור
+        - generic [ref=e42]:
+          - generic [ref=e43]:
+            - generic [ref=e44]:
+              - heading "Full Event" [level=1] [ref=e45]
+              - generic [ref=e46]: פתוח
+            - generic [ref=e47]:
+              - generic [ref=e49]: "🏢 ארגון: Capacity Decrease"
+              - generic [ref=e50]:
+                - img [ref=e51]
+                - text: 09/12/2025 18:00
+              - generic [ref=e53]:
+                - img [ref=e54]
+                - text: Test Location
+              - generic [ref=e57]:
+                - img [ref=e58]
+                - text: 40 / 50 נרשמים (10 מקומות פנויים)
+          - generic [ref=e63]:
+            - generic [ref=e65]:
+              - button "ערוך אירוע" [ref=e66]:
+                - img [ref=e67]
+                - generic [ref=e70]: ערוך אירוע
+              - link "תצוגה מקדימה" [ref=e71]:
+                - /url: /p/capacity-decrease-9822afa9/full-event-76bb1338
+                - img [ref=e72]
+                - generic [ref=e76]: תצוגה מקדימה
+            - generic [ref=e77]:
+              - generic [ref=e78]:
+                - paragraph [ref=e79]: שליטה בהרשמות
+                - paragraph [ref=e80]: פתוח - מאפשר הרשמה חדשה | מושהה - זמנית | סגור - חסום
+              - combobox [ref=e81]:
+                - option "✅ פתוח להרשמה" [selected]
+                - option "⏸️ מושהה"
+                - option "🚫 סגור"
+        - generic [ref=e83]:
+          - generic [ref=e85]:
+            - img [ref=e86]
+            - textbox "חיפוש לפי שם, טלפון או קוד אישור (כמו OF9ZEC)..." [ref=e89]
+          - combobox [ref=e90]:
+            - option "כל הסטטוסים" [selected]
+            - option "אושר"
+            - option "רשימת המתנה"
+            - option "בוטל"
+          - button "ייצא CSV" [ref=e91]:
+            - img [ref=e92]
+            - text: ייצא CSV
+        - table [ref=e97]:
+          - rowgroup [ref=e98]:
+            - row "# פרטים מקומות סטטוס קוד אישור נרשם ב פעולות" [ref=e99]:
+              - cell "#" [ref=e100]
+              - cell "פרטים" [ref=e101]
+              - cell "מקומות" [ref=e102]
+              - cell "סטטוס" [ref=e103]
+              - cell "קוד אישור" [ref=e104]
+              - cell "נרשם ב" [ref=e105]
+              - cell "פעולות" [ref=e106]
+          - rowgroup [ref=e107]:
+            - row "1 User 39 0501636490 1 אושר 89TJS7 08/12 11:36" [ref=e108] [cursor=pointer]:
+              - cell "1" [ref=e109] [cursor=pointer]
+              - cell "User 39 0501636490" [ref=e110] [cursor=pointer]:
+                - generic [ref=e111] [cursor=pointer]:
+                  - generic [ref=e112] [cursor=pointer]: User 39
+                  - generic [ref=e113] [cursor=pointer]: "0501636490"
+              - cell "1" [ref=e114] [cursor=pointer]
+              - cell "אושר" [ref=e115] [cursor=pointer]:
+                - generic [ref=e116] [cursor=pointer]: אושר
+              - cell "89TJS7" [ref=e117] [cursor=pointer]:
+                - generic [ref=e118] [cursor=pointer]: 89TJS7
+              - cell "08/12 11:36" [ref=e119] [cursor=pointer]
+              - cell [ref=e120] [cursor=pointer]:
+                - generic [ref=e121] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e122]:
+                    - img [ref=e123]
+                  - button "מחק לצמיתות" [ref=e126]:
+                    - img [ref=e127]
+                  - button [ref=e130]:
+                    - img [ref=e131]
+            - row "2 User 38 0500710116 1 אושר JUHAC5 08/12 11:36" [ref=e133] [cursor=pointer]:
+              - cell "2" [ref=e134] [cursor=pointer]
+              - cell "User 38 0500710116" [ref=e135] [cursor=pointer]:
+                - generic [ref=e136] [cursor=pointer]:
+                  - generic [ref=e137] [cursor=pointer]: User 38
+                  - generic [ref=e138] [cursor=pointer]: "0500710116"
+              - cell "1" [ref=e139] [cursor=pointer]
+              - cell "אושר" [ref=e140] [cursor=pointer]:
+                - generic [ref=e141] [cursor=pointer]: אושר
+              - cell "JUHAC5" [ref=e142] [cursor=pointer]:
+                - generic [ref=e143] [cursor=pointer]: JUHAC5
+              - cell "08/12 11:36" [ref=e144] [cursor=pointer]
+              - cell [ref=e145] [cursor=pointer]:
+                - generic [ref=e146] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e147]:
+                    - img [ref=e148]
+                  - button "מחק לצמיתות" [ref=e151]:
+                    - img [ref=e152]
+                  - button [ref=e155]:
+                    - img [ref=e156]
+            - row "3 User 37 0509298890 1 אושר U3YDVH 08/12 11:36" [ref=e158] [cursor=pointer]:
+              - cell "3" [ref=e159] [cursor=pointer]
+              - cell "User 37 0509298890" [ref=e160] [cursor=pointer]:
+                - generic [ref=e161] [cursor=pointer]:
+                  - generic [ref=e162] [cursor=pointer]: User 37
+                  - generic [ref=e163] [cursor=pointer]: "0509298890"
+              - cell "1" [ref=e164] [cursor=pointer]
+              - cell "אושר" [ref=e165] [cursor=pointer]:
+                - generic [ref=e166] [cursor=pointer]: אושר
+              - cell "U3YDVH" [ref=e167] [cursor=pointer]:
+                - generic [ref=e168] [cursor=pointer]: U3YDVH
+              - cell "08/12 11:36" [ref=e169] [cursor=pointer]
+              - cell [ref=e170] [cursor=pointer]:
+                - generic [ref=e171] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e172]:
+                    - img [ref=e173]
+                  - button "מחק לצמיתות" [ref=e176]:
+                    - img [ref=e177]
+                  - button [ref=e180]:
+                    - img [ref=e181]
+            - row "4 User 36 0509113156 1 אושר LVVHKX 08/12 11:36" [ref=e183] [cursor=pointer]:
+              - cell "4" [ref=e184] [cursor=pointer]
+              - cell "User 36 0509113156" [ref=e185] [cursor=pointer]:
+                - generic [ref=e186] [cursor=pointer]:
+                  - generic [ref=e187] [cursor=pointer]: User 36
+                  - generic [ref=e188] [cursor=pointer]: "0509113156"
+              - cell "1" [ref=e189] [cursor=pointer]
+              - cell "אושר" [ref=e190] [cursor=pointer]:
+                - generic [ref=e191] [cursor=pointer]: אושר
+              - cell "LVVHKX" [ref=e192] [cursor=pointer]:
+                - generic [ref=e193] [cursor=pointer]: LVVHKX
+              - cell "08/12 11:36" [ref=e194] [cursor=pointer]
+              - cell [ref=e195] [cursor=pointer]:
+                - generic [ref=e196] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e197]:
+                    - img [ref=e198]
+                  - button "מחק לצמיתות" [ref=e201]:
+                    - img [ref=e202]
+                  - button [ref=e205]:
+                    - img [ref=e206]
+            - row "5 User 35 0500938520 1 אושר NN8ZKK 08/12 11:36" [ref=e208] [cursor=pointer]:
+              - cell "5" [ref=e209] [cursor=pointer]
+              - cell "User 35 0500938520" [ref=e210] [cursor=pointer]:
+                - generic [ref=e211] [cursor=pointer]:
+                  - generic [ref=e212] [cursor=pointer]: User 35
+                  - generic [ref=e213] [cursor=pointer]: "0500938520"
+              - cell "1" [ref=e214] [cursor=pointer]
+              - cell "אושר" [ref=e215] [cursor=pointer]:
+                - generic [ref=e216] [cursor=pointer]: אושר
+              - cell "NN8ZKK" [ref=e217] [cursor=pointer]:
+                - generic [ref=e218] [cursor=pointer]: NN8ZKK
+              - cell "08/12 11:36" [ref=e219] [cursor=pointer]
+              - cell [ref=e220] [cursor=pointer]:
+                - generic [ref=e221] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e222]:
+                    - img [ref=e223]
+                  - button "מחק לצמיתות" [ref=e226]:
+                    - img [ref=e227]
+                  - button [ref=e230]:
+                    - img [ref=e231]
+            - row "6 User 34 0509001708 1 אושר LG63L8 08/12 11:36" [ref=e233] [cursor=pointer]:
+              - cell "6" [ref=e234] [cursor=pointer]
+              - cell "User 34 0509001708" [ref=e235] [cursor=pointer]:
+                - generic [ref=e236] [cursor=pointer]:
+                  - generic [ref=e237] [cursor=pointer]: User 34
+                  - generic [ref=e238] [cursor=pointer]: "0509001708"
+              - cell "1" [ref=e239] [cursor=pointer]
+              - cell "אושר" [ref=e240] [cursor=pointer]:
+                - generic [ref=e241] [cursor=pointer]: אושר
+              - cell "LG63L8" [ref=e242] [cursor=pointer]:
+                - generic [ref=e243] [cursor=pointer]: LG63L8
+              - cell "08/12 11:36" [ref=e244] [cursor=pointer]
+              - cell [ref=e245] [cursor=pointer]:
+                - generic [ref=e246] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e247]:
+                    - img [ref=e248]
+                  - button "מחק לצמיתות" [ref=e251]:
+                    - img [ref=e252]
+                  - button [ref=e255]:
+                    - img [ref=e256]
+            - row "7 User 32 0506951765 1 אושר QE62ME 08/12 11:36" [ref=e258] [cursor=pointer]:
+              - cell "7" [ref=e259] [cursor=pointer]
+              - cell "User 32 0506951765" [ref=e260] [cursor=pointer]:
+                - generic [ref=e261] [cursor=pointer]:
+                  - generic [ref=e262] [cursor=pointer]: User 32
+                  - generic [ref=e263] [cursor=pointer]: "0506951765"
+              - cell "1" [ref=e264] [cursor=pointer]
+              - cell "אושר" [ref=e265] [cursor=pointer]:
+                - generic [ref=e266] [cursor=pointer]: אושר
+              - cell "QE62ME" [ref=e267] [cursor=pointer]:
+                - generic [ref=e268] [cursor=pointer]: QE62ME
+              - cell "08/12 11:36" [ref=e269] [cursor=pointer]
+              - cell [ref=e270] [cursor=pointer]:
+                - generic [ref=e271] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e272]:
+                    - img [ref=e273]
+                  - button "מחק לצמיתות" [ref=e276]:
+                    - img [ref=e277]
+                  - button [ref=e280]:
+                    - img [ref=e281]
+            - row "8 User 33 0508556084 1 אושר GFCV4F 08/12 11:36" [ref=e283] [cursor=pointer]:
+              - cell "8" [ref=e284] [cursor=pointer]
+              - cell "User 33 0508556084" [ref=e285] [cursor=pointer]:
+                - generic [ref=e286] [cursor=pointer]:
+                  - generic [ref=e287] [cursor=pointer]: User 33
+                  - generic [ref=e288] [cursor=pointer]: "0508556084"
+              - cell "1" [ref=e289] [cursor=pointer]
+              - cell "אושר" [ref=e290] [cursor=pointer]:
+                - generic [ref=e291] [cursor=pointer]: אושר
+              - cell "GFCV4F" [ref=e292] [cursor=pointer]:
+                - generic [ref=e293] [cursor=pointer]: GFCV4F
+              - cell "08/12 11:36" [ref=e294] [cursor=pointer]
+              - cell [ref=e295] [cursor=pointer]:
+                - generic [ref=e296] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e297]:
+                    - img [ref=e298]
+                  - button "מחק לצמיתות" [ref=e301]:
+                    - img [ref=e302]
+                  - button [ref=e305]:
+                    - img [ref=e306]
+            - row "9 User 31 0506796225 1 אושר M2AD5Y 08/12 11:36" [ref=e308] [cursor=pointer]:
+              - cell "9" [ref=e309] [cursor=pointer]
+              - cell "User 31 0506796225" [ref=e310] [cursor=pointer]:
+                - generic [ref=e311] [cursor=pointer]:
+                  - generic [ref=e312] [cursor=pointer]: User 31
+                  - generic [ref=e313] [cursor=pointer]: "0506796225"
+              - cell "1" [ref=e314] [cursor=pointer]
+              - cell "אושר" [ref=e315] [cursor=pointer]:
+                - generic [ref=e316] [cursor=pointer]: אושר
+              - cell "M2AD5Y" [ref=e317] [cursor=pointer]:
+                - generic [ref=e318] [cursor=pointer]: M2AD5Y
+              - cell "08/12 11:36" [ref=e319] [cursor=pointer]
+              - cell [ref=e320] [cursor=pointer]:
+                - generic [ref=e321] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e322]:
+                    - img [ref=e323]
+                  - button "מחק לצמיתות" [ref=e326]:
+                    - img [ref=e327]
+                  - button [ref=e330]:
+                    - img [ref=e331]
+            - row "10 User 30 0505179116 1 אושר 2QRY9D 08/12 11:36" [ref=e333] [cursor=pointer]:
+              - cell "10" [ref=e334] [cursor=pointer]
+              - cell "User 30 0505179116" [ref=e335] [cursor=pointer]:
+                - generic [ref=e336] [cursor=pointer]:
+                  - generic [ref=e337] [cursor=pointer]: User 30
+                  - generic [ref=e338] [cursor=pointer]: "0505179116"
+              - cell "1" [ref=e339] [cursor=pointer]
+              - cell "אושר" [ref=e340] [cursor=pointer]:
+                - generic [ref=e341] [cursor=pointer]: אושר
+              - cell "2QRY9D" [ref=e342] [cursor=pointer]:
+                - generic [ref=e343] [cursor=pointer]: 2QRY9D
+              - cell "08/12 11:36" [ref=e344] [cursor=pointer]
+              - cell [ref=e345] [cursor=pointer]:
+                - generic [ref=e346] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e347]:
+                    - img [ref=e348]
+                  - button "מחק לצמיתות" [ref=e351]:
+                    - img [ref=e352]
+                  - button [ref=e355]:
+                    - img [ref=e356]
+            - row "11 User 29 0501550744 1 אושר M3BYY2 08/12 11:36" [ref=e358] [cursor=pointer]:
+              - cell "11" [ref=e359] [cursor=pointer]
+              - cell "User 29 0501550744" [ref=e360] [cursor=pointer]:
+                - generic [ref=e361] [cursor=pointer]:
+                  - generic [ref=e362] [cursor=pointer]: User 29
+                  - generic [ref=e363] [cursor=pointer]: "0501550744"
+              - cell "1" [ref=e364] [cursor=pointer]
+              - cell "אושר" [ref=e365] [cursor=pointer]:
+                - generic [ref=e366] [cursor=pointer]: אושר
+              - cell "M3BYY2" [ref=e367] [cursor=pointer]:
+                - generic [ref=e368] [cursor=pointer]: M3BYY2
+              - cell "08/12 11:36" [ref=e369] [cursor=pointer]
+              - cell [ref=e370] [cursor=pointer]:
+                - generic [ref=e371] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e372]:
+                    - img [ref=e373]
+                  - button "מחק לצמיתות" [ref=e376]:
+                    - img [ref=e377]
+                  - button [ref=e380]:
+                    - img [ref=e381]
+            - row "12 User 28 0505198133 1 אושר S8TTCM 08/12 11:36" [ref=e383] [cursor=pointer]:
+              - cell "12" [ref=e384] [cursor=pointer]
+              - cell "User 28 0505198133" [ref=e385] [cursor=pointer]:
+                - generic [ref=e386] [cursor=pointer]:
+                  - generic [ref=e387] [cursor=pointer]: User 28
+                  - generic [ref=e388] [cursor=pointer]: "0505198133"
+              - cell "1" [ref=e389] [cursor=pointer]
+              - cell "אושר" [ref=e390] [cursor=pointer]:
+                - generic [ref=e391] [cursor=pointer]: אושר
+              - cell "S8TTCM" [ref=e392] [cursor=pointer]:
+                - generic [ref=e393] [cursor=pointer]: S8TTCM
+              - cell "08/12 11:36" [ref=e394] [cursor=pointer]
+              - cell [ref=e395] [cursor=pointer]:
+                - generic [ref=e396] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e397]:
+                    - img [ref=e398]
+                  - button "מחק לצמיתות" [ref=e401]:
+                    - img [ref=e402]
+                  - button [ref=e405]:
+                    - img [ref=e406]
+            - row "13 User 27 0501484090 1 אושר GHZ5A7 08/12 11:36" [ref=e408] [cursor=pointer]:
+              - cell "13" [ref=e409] [cursor=pointer]
+              - cell "User 27 0501484090" [ref=e410] [cursor=pointer]:
+                - generic [ref=e411] [cursor=pointer]:
+                  - generic [ref=e412] [cursor=pointer]: User 27
+                  - generic [ref=e413] [cursor=pointer]: "0501484090"
+              - cell "1" [ref=e414] [cursor=pointer]
+              - cell "אושר" [ref=e415] [cursor=pointer]:
+                - generic [ref=e416] [cursor=pointer]: אושר
+              - cell "GHZ5A7" [ref=e417] [cursor=pointer]:
+                - generic [ref=e418] [cursor=pointer]: GHZ5A7
+              - cell "08/12 11:36" [ref=e419] [cursor=pointer]
+              - cell [ref=e420] [cursor=pointer]:
+                - generic [ref=e421] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e422]:
+                    - img [ref=e423]
+                  - button "מחק לצמיתות" [ref=e426]:
+                    - img [ref=e427]
+                  - button [ref=e430]:
+                    - img [ref=e431]
+            - row "14 User 26 0506728809 1 אושר VTXJ6Z 08/12 11:36" [ref=e433] [cursor=pointer]:
+              - cell "14" [ref=e434] [cursor=pointer]
+              - cell "User 26 0506728809" [ref=e435] [cursor=pointer]:
+                - generic [ref=e436] [cursor=pointer]:
+                  - generic [ref=e437] [cursor=pointer]: User 26
+                  - generic [ref=e438] [cursor=pointer]: "0506728809"
+              - cell "1" [ref=e439] [cursor=pointer]
+              - cell "אושר" [ref=e440] [cursor=pointer]:
+                - generic [ref=e441] [cursor=pointer]: אושר
+              - cell "VTXJ6Z" [ref=e442] [cursor=pointer]:
+                - generic [ref=e443] [cursor=pointer]: VTXJ6Z
+              - cell "08/12 11:36" [ref=e444] [cursor=pointer]
+              - cell [ref=e445] [cursor=pointer]:
+                - generic [ref=e446] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e447]:
+                    - img [ref=e448]
+                  - button "מחק לצמיתות" [ref=e451]:
+                    - img [ref=e452]
+                  - button [ref=e455]:
+                    - img [ref=e456]
+            - row "15 User 25 0506405523 1 אושר FPLKWG 08/12 11:36" [ref=e458] [cursor=pointer]:
+              - cell "15" [ref=e459] [cursor=pointer]
+              - cell "User 25 0506405523" [ref=e460] [cursor=pointer]:
+                - generic [ref=e461] [cursor=pointer]:
+                  - generic [ref=e462] [cursor=pointer]: User 25
+                  - generic [ref=e463] [cursor=pointer]: "0506405523"
+              - cell "1" [ref=e464] [cursor=pointer]
+              - cell "אושר" [ref=e465] [cursor=pointer]:
+                - generic [ref=e466] [cursor=pointer]: אושר
+              - cell "FPLKWG" [ref=e467] [cursor=pointer]:
+                - generic [ref=e468] [cursor=pointer]: FPLKWG
+              - cell "08/12 11:36" [ref=e469] [cursor=pointer]
+              - cell [ref=e470] [cursor=pointer]:
+                - generic [ref=e471] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e472]:
+                    - img [ref=e473]
+                  - button "מחק לצמיתות" [ref=e476]:
+                    - img [ref=e477]
+                  - button [ref=e480]:
+                    - img [ref=e481]
+            - row "16 User 24 0500271025 1 אושר PRQWD7 08/12 11:36" [ref=e483] [cursor=pointer]:
+              - cell "16" [ref=e484] [cursor=pointer]
+              - cell "User 24 0500271025" [ref=e485] [cursor=pointer]:
+                - generic [ref=e486] [cursor=pointer]:
+                  - generic [ref=e487] [cursor=pointer]: User 24
+                  - generic [ref=e488] [cursor=pointer]: "0500271025"
+              - cell "1" [ref=e489] [cursor=pointer]
+              - cell "אושר" [ref=e490] [cursor=pointer]:
+                - generic [ref=e491] [cursor=pointer]: אושר
+              - cell "PRQWD7" [ref=e492] [cursor=pointer]:
+                - generic [ref=e493] [cursor=pointer]: PRQWD7
+              - cell "08/12 11:36" [ref=e494] [cursor=pointer]
+              - cell [ref=e495] [cursor=pointer]:
+                - generic [ref=e496] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e497]:
+                    - img [ref=e498]
+                  - button "מחק לצמיתות" [ref=e501]:
+                    - img [ref=e502]
+                  - button [ref=e505]:
+                    - img [ref=e506]
+            - row "17 User 23 0502068148 1 אושר WL3XVA 08/12 11:36" [ref=e508] [cursor=pointer]:
+              - cell "17" [ref=e509] [cursor=pointer]
+              - cell "User 23 0502068148" [ref=e510] [cursor=pointer]:
+                - generic [ref=e511] [cursor=pointer]:
+                  - generic [ref=e512] [cursor=pointer]: User 23
+                  - generic [ref=e513] [cursor=pointer]: "0502068148"
+              - cell "1" [ref=e514] [cursor=pointer]
+              - cell "אושר" [ref=e515] [cursor=pointer]:
+                - generic [ref=e516] [cursor=pointer]: אושר
+              - cell "WL3XVA" [ref=e517] [cursor=pointer]:
+                - generic [ref=e518] [cursor=pointer]: WL3XVA
+              - cell "08/12 11:36" [ref=e519] [cursor=pointer]
+              - cell [ref=e520] [cursor=pointer]:
+                - generic [ref=e521] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e522]:
+                    - img [ref=e523]
+                  - button "מחק לצמיתות" [ref=e526]:
+                    - img [ref=e527]
+                  - button [ref=e530]:
+                    - img [ref=e531]
+            - row "18 User 22 0506021309 1 אושר KYTHFJ 08/12 11:36" [ref=e533] [cursor=pointer]:
+              - cell "18" [ref=e534] [cursor=pointer]
+              - cell "User 22 0506021309" [ref=e535] [cursor=pointer]:
+                - generic [ref=e536] [cursor=pointer]:
+                  - generic [ref=e537] [cursor=pointer]: User 22
+                  - generic [ref=e538] [cursor=pointer]: "0506021309"
+              - cell "1" [ref=e539] [cursor=pointer]
+              - cell "אושר" [ref=e540] [cursor=pointer]:
+                - generic [ref=e541] [cursor=pointer]: אושר
+              - cell "KYTHFJ" [ref=e542] [cursor=pointer]:
+                - generic [ref=e543] [cursor=pointer]: KYTHFJ
+              - cell "08/12 11:36" [ref=e544] [cursor=pointer]
+              - cell [ref=e545] [cursor=pointer]:
+                - generic [ref=e546] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e547]:
+                    - img [ref=e548]
+                  - button "מחק לצמיתות" [ref=e551]:
+                    - img [ref=e552]
+                  - button [ref=e555]:
+                    - img [ref=e556]
+            - row "19 User 21 0509925508 1 אושר X292YX 08/12 11:36" [ref=e558] [cursor=pointer]:
+              - cell "19" [ref=e559] [cursor=pointer]
+              - cell "User 21 0509925508" [ref=e560] [cursor=pointer]:
+                - generic [ref=e561] [cursor=pointer]:
+                  - generic [ref=e562] [cursor=pointer]: User 21
+                  - generic [ref=e563] [cursor=pointer]: "0509925508"
+              - cell "1" [ref=e564] [cursor=pointer]
+              - cell "אושר" [ref=e565] [cursor=pointer]:
+                - generic [ref=e566] [cursor=pointer]: אושר
+              - cell "X292YX" [ref=e567] [cursor=pointer]:
+                - generic [ref=e568] [cursor=pointer]: X292YX
+              - cell "08/12 11:36" [ref=e569] [cursor=pointer]
+              - cell [ref=e570] [cursor=pointer]:
+                - generic [ref=e571] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e572]:
+                    - img [ref=e573]
+                  - button "מחק לצמיתות" [ref=e576]:
+                    - img [ref=e577]
+                  - button [ref=e580]:
+                    - img [ref=e581]
+            - row "20 User 20 0502488125 1 אושר DE8467 08/12 11:36" [ref=e583] [cursor=pointer]:
+              - cell "20" [ref=e584] [cursor=pointer]
+              - cell "User 20 0502488125" [ref=e585] [cursor=pointer]:
+                - generic [ref=e586] [cursor=pointer]:
+                  - generic [ref=e587] [cursor=pointer]: User 20
+                  - generic [ref=e588] [cursor=pointer]: "0502488125"
+              - cell "1" [ref=e589] [cursor=pointer]
+              - cell "אושר" [ref=e590] [cursor=pointer]:
+                - generic [ref=e591] [cursor=pointer]: אושר
+              - cell "DE8467" [ref=e592] [cursor=pointer]:
+                - generic [ref=e593] [cursor=pointer]: DE8467
+              - cell "08/12 11:36" [ref=e594] [cursor=pointer]
+              - cell [ref=e595] [cursor=pointer]:
+                - generic [ref=e596] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e597]:
+                    - img [ref=e598]
+                  - button "מחק לצמיתות" [ref=e601]:
+                    - img [ref=e602]
+                  - button [ref=e605]:
+                    - img [ref=e606]
+            - row "21 User 19 0500522158 1 אושר SRHZ92 08/12 11:36" [ref=e608] [cursor=pointer]:
+              - cell "21" [ref=e609] [cursor=pointer]
+              - cell "User 19 0500522158" [ref=e610] [cursor=pointer]:
+                - generic [ref=e611] [cursor=pointer]:
+                  - generic [ref=e612] [cursor=pointer]: User 19
+                  - generic [ref=e613] [cursor=pointer]: "0500522158"
+              - cell "1" [ref=e614] [cursor=pointer]
+              - cell "אושר" [ref=e615] [cursor=pointer]:
+                - generic [ref=e616] [cursor=pointer]: אושר
+              - cell "SRHZ92" [ref=e617] [cursor=pointer]:
+                - generic [ref=e618] [cursor=pointer]: SRHZ92
+              - cell "08/12 11:36" [ref=e619] [cursor=pointer]
+              - cell [ref=e620] [cursor=pointer]:
+                - generic [ref=e621] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e622]:
+                    - img [ref=e623]
+                  - button "מחק לצמיתות" [ref=e626]:
+                    - img [ref=e627]
+                  - button [ref=e630]:
+                    - img [ref=e631]
+            - row "22 User 18 0507915657 1 אושר BMMTH5 08/12 11:36" [ref=e633] [cursor=pointer]:
+              - cell "22" [ref=e634] [cursor=pointer]
+              - cell "User 18 0507915657" [ref=e635] [cursor=pointer]:
+                - generic [ref=e636] [cursor=pointer]:
+                  - generic [ref=e637] [cursor=pointer]: User 18
+                  - generic [ref=e638] [cursor=pointer]: "0507915657"
+              - cell "1" [ref=e639] [cursor=pointer]
+              - cell "אושר" [ref=e640] [cursor=pointer]:
+                - generic [ref=e641] [cursor=pointer]: אושר
+              - cell "BMMTH5" [ref=e642] [cursor=pointer]:
+                - generic [ref=e643] [cursor=pointer]: BMMTH5
+              - cell "08/12 11:36" [ref=e644] [cursor=pointer]
+              - cell [ref=e645] [cursor=pointer]:
+                - generic [ref=e646] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e647]:
+                    - img [ref=e648]
+                  - button "מחק לצמיתות" [ref=e651]:
+                    - img [ref=e652]
+                  - button [ref=e655]:
+                    - img [ref=e656]
+            - row "23 User 17 0502820024 1 אושר UPNDUH 08/12 11:36" [ref=e658] [cursor=pointer]:
+              - cell "23" [ref=e659] [cursor=pointer]
+              - cell "User 17 0502820024" [ref=e660] [cursor=pointer]:
+                - generic [ref=e661] [cursor=pointer]:
+                  - generic [ref=e662] [cursor=pointer]: User 17
+                  - generic [ref=e663] [cursor=pointer]: "0502820024"
+              - cell "1" [ref=e664] [cursor=pointer]
+              - cell "אושר" [ref=e665] [cursor=pointer]:
+                - generic [ref=e666] [cursor=pointer]: אושר
+              - cell "UPNDUH" [ref=e667] [cursor=pointer]:
+                - generic [ref=e668] [cursor=pointer]: UPNDUH
+              - cell "08/12 11:36" [ref=e669] [cursor=pointer]
+              - cell [ref=e670] [cursor=pointer]:
+                - generic [ref=e671] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e672]:
+                    - img [ref=e673]
+                  - button "מחק לצמיתות" [ref=e676]:
+                    - img [ref=e677]
+                  - button [ref=e680]:
+                    - img [ref=e681]
+            - row "24 User 16 0509375769 1 אושר 7VZT54 08/12 11:36" [ref=e683] [cursor=pointer]:
+              - cell "24" [ref=e684] [cursor=pointer]
+              - cell "User 16 0509375769" [ref=e685] [cursor=pointer]:
+                - generic [ref=e686] [cursor=pointer]:
+                  - generic [ref=e687] [cursor=pointer]: User 16
+                  - generic [ref=e688] [cursor=pointer]: "0509375769"
+              - cell "1" [ref=e689] [cursor=pointer]
+              - cell "אושר" [ref=e690] [cursor=pointer]:
+                - generic [ref=e691] [cursor=pointer]: אושר
+              - cell "7VZT54" [ref=e692] [cursor=pointer]:
+                - generic [ref=e693] [cursor=pointer]: 7VZT54
+              - cell "08/12 11:36" [ref=e694] [cursor=pointer]
+              - cell [ref=e695] [cursor=pointer]:
+                - generic [ref=e696] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e697]:
+                    - img [ref=e698]
+                  - button "מחק לצמיתות" [ref=e701]:
+                    - img [ref=e702]
+                  - button [ref=e705]:
+                    - img [ref=e706]
+            - row "25 User 14 0500959219 1 אושר VB8L8Y 08/12 11:36" [ref=e708] [cursor=pointer]:
+              - cell "25" [ref=e709] [cursor=pointer]
+              - cell "User 14 0500959219" [ref=e710] [cursor=pointer]:
+                - generic [ref=e711] [cursor=pointer]:
+                  - generic [ref=e712] [cursor=pointer]: User 14
+                  - generic [ref=e713] [cursor=pointer]: "0500959219"
+              - cell "1" [ref=e714] [cursor=pointer]
+              - cell "אושר" [ref=e715] [cursor=pointer]:
+                - generic [ref=e716] [cursor=pointer]: אושר
+              - cell "VB8L8Y" [ref=e717] [cursor=pointer]:
+                - generic [ref=e718] [cursor=pointer]: VB8L8Y
+              - cell "08/12 11:36" [ref=e719] [cursor=pointer]
+              - cell [ref=e720] [cursor=pointer]:
+                - generic [ref=e721] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e722]:
+                    - img [ref=e723]
+                  - button "מחק לצמיתות" [ref=e726]:
+                    - img [ref=e727]
+                  - button [ref=e730]:
+                    - img [ref=e731]
+            - row "26 User 15 0505505879 1 אושר 9XWHRZ 08/12 11:36" [ref=e733] [cursor=pointer]:
+              - cell "26" [ref=e734] [cursor=pointer]
+              - cell "User 15 0505505879" [ref=e735] [cursor=pointer]:
+                - generic [ref=e736] [cursor=pointer]:
+                  - generic [ref=e737] [cursor=pointer]: User 15
+                  - generic [ref=e738] [cursor=pointer]: "0505505879"
+              - cell "1" [ref=e739] [cursor=pointer]
+              - cell "אושר" [ref=e740] [cursor=pointer]:
+                - generic [ref=e741] [cursor=pointer]: אושר
+              - cell "9XWHRZ" [ref=e742] [cursor=pointer]:
+                - generic [ref=e743] [cursor=pointer]: 9XWHRZ
+              - cell "08/12 11:36" [ref=e744] [cursor=pointer]
+              - cell [ref=e745] [cursor=pointer]:
+                - generic [ref=e746] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e747]:
+                    - img [ref=e748]
+                  - button "מחק לצמיתות" [ref=e751]:
+                    - img [ref=e752]
+                  - button [ref=e755]:
+                    - img [ref=e756]
+            - row "27 User 13 0504259513 1 אושר BFR5G6 08/12 11:36" [ref=e758] [cursor=pointer]:
+              - cell "27" [ref=e759] [cursor=pointer]
+              - cell "User 13 0504259513" [ref=e760] [cursor=pointer]:
+                - generic [ref=e761] [cursor=pointer]:
+                  - generic [ref=e762] [cursor=pointer]: User 13
+                  - generic [ref=e763] [cursor=pointer]: "0504259513"
+              - cell "1" [ref=e764] [cursor=pointer]
+              - cell "אושר" [ref=e765] [cursor=pointer]:
+                - generic [ref=e766] [cursor=pointer]: אושר
+              - cell "BFR5G6" [ref=e767] [cursor=pointer]:
+                - generic [ref=e768] [cursor=pointer]: BFR5G6
+              - cell "08/12 11:36" [ref=e769] [cursor=pointer]
+              - cell [ref=e770] [cursor=pointer]:
+                - generic [ref=e771] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e772]:
+                    - img [ref=e773]
+                  - button "מחק לצמיתות" [ref=e776]:
+                    - img [ref=e777]
+                  - button [ref=e780]:
+                    - img [ref=e781]
+            - row "28 User 11 0506021598 1 אושר CA7ZNC 08/12 11:36" [ref=e783] [cursor=pointer]:
+              - cell "28" [ref=e784] [cursor=pointer]
+              - cell "User 11 0506021598" [ref=e785] [cursor=pointer]:
+                - generic [ref=e786] [cursor=pointer]:
+                  - generic [ref=e787] [cursor=pointer]: User 11
+                  - generic [ref=e788] [cursor=pointer]: "0506021598"
+              - cell "1" [ref=e789] [cursor=pointer]
+              - cell "אושר" [ref=e790] [cursor=pointer]:
+                - generic [ref=e791] [cursor=pointer]: אושר
+              - cell "CA7ZNC" [ref=e792] [cursor=pointer]:
+                - generic [ref=e793] [cursor=pointer]: CA7ZNC
+              - cell "08/12 11:36" [ref=e794] [cursor=pointer]
+              - cell [ref=e795] [cursor=pointer]:
+                - generic [ref=e796] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e797]:
+                    - img [ref=e798]
+                  - button "מחק לצמיתות" [ref=e801]:
+                    - img [ref=e802]
+                  - button [ref=e805]:
+                    - img [ref=e806]
+            - row "29 User 12 0501301607 1 אושר 2XX3C2 08/12 11:36" [ref=e808] [cursor=pointer]:
+              - cell "29" [ref=e809] [cursor=pointer]
+              - cell "User 12 0501301607" [ref=e810] [cursor=pointer]:
+                - generic [ref=e811] [cursor=pointer]:
+                  - generic [ref=e812] [cursor=pointer]: User 12
+                  - generic [ref=e813] [cursor=pointer]: "0501301607"
+              - cell "1" [ref=e814] [cursor=pointer]
+              - cell "אושר" [ref=e815] [cursor=pointer]:
+                - generic [ref=e816] [cursor=pointer]: אושר
+              - cell "2XX3C2" [ref=e817] [cursor=pointer]:
+                - generic [ref=e818] [cursor=pointer]: 2XX3C2
+              - cell "08/12 11:36" [ref=e819] [cursor=pointer]
+              - cell [ref=e820] [cursor=pointer]:
+                - generic [ref=e821] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e822]:
+                    - img [ref=e823]
+                  - button "מחק לצמיתות" [ref=e826]:
+                    - img [ref=e827]
+                  - button [ref=e830]:
+                    - img [ref=e831]
+            - row "30 User 10 0501903609 1 אושר 8YNNZ5 08/12 11:36" [ref=e833] [cursor=pointer]:
+              - cell "30" [ref=e834] [cursor=pointer]
+              - cell "User 10 0501903609" [ref=e835] [cursor=pointer]:
+                - generic [ref=e836] [cursor=pointer]:
+                  - generic [ref=e837] [cursor=pointer]: User 10
+                  - generic [ref=e838] [cursor=pointer]: "0501903609"
+              - cell "1" [ref=e839] [cursor=pointer]
+              - cell "אושר" [ref=e840] [cursor=pointer]:
+                - generic [ref=e841] [cursor=pointer]: אושר
+              - cell "8YNNZ5" [ref=e842] [cursor=pointer]:
+                - generic [ref=e843] [cursor=pointer]: 8YNNZ5
+              - cell "08/12 11:36" [ref=e844] [cursor=pointer]
+              - cell [ref=e845] [cursor=pointer]:
+                - generic [ref=e846] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e847]:
+                    - img [ref=e848]
+                  - button "מחק לצמיתות" [ref=e851]:
+                    - img [ref=e852]
+                  - button [ref=e855]:
+                    - img [ref=e856]
+            - row "31 User 9 0501627494 1 אושר LKHYGK 08/12 11:36" [ref=e858] [cursor=pointer]:
+              - cell "31" [ref=e859] [cursor=pointer]
+              - cell "User 9 0501627494" [ref=e860] [cursor=pointer]:
+                - generic [ref=e861] [cursor=pointer]:
+                  - generic [ref=e862] [cursor=pointer]: User 9
+                  - generic [ref=e863] [cursor=pointer]: "0501627494"
+              - cell "1" [ref=e864] [cursor=pointer]
+              - cell "אושר" [ref=e865] [cursor=pointer]:
+                - generic [ref=e866] [cursor=pointer]: אושר
+              - cell "LKHYGK" [ref=e867] [cursor=pointer]:
+                - generic [ref=e868] [cursor=pointer]: LKHYGK
+              - cell "08/12 11:36" [ref=e869] [cursor=pointer]
+              - cell [ref=e870] [cursor=pointer]:
+                - generic [ref=e871] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e872]:
+                    - img [ref=e873]
+                  - button "מחק לצמיתות" [ref=e876]:
+                    - img [ref=e877]
+                  - button [ref=e880]:
+                    - img [ref=e881]
+            - row "32 User 8 0505412343 1 אושר 3H8QDN 08/12 11:36" [ref=e883] [cursor=pointer]:
+              - cell "32" [ref=e884] [cursor=pointer]
+              - cell "User 8 0505412343" [ref=e885] [cursor=pointer]:
+                - generic [ref=e886] [cursor=pointer]:
+                  - generic [ref=e887] [cursor=pointer]: User 8
+                  - generic [ref=e888] [cursor=pointer]: "0505412343"
+              - cell "1" [ref=e889] [cursor=pointer]
+              - cell "אושר" [ref=e890] [cursor=pointer]:
+                - generic [ref=e891] [cursor=pointer]: אושר
+              - cell "3H8QDN" [ref=e892] [cursor=pointer]:
+                - generic [ref=e893] [cursor=pointer]: 3H8QDN
+              - cell "08/12 11:36" [ref=e894] [cursor=pointer]
+              - cell [ref=e895] [cursor=pointer]:
+                - generic [ref=e896] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e897]:
+                    - img [ref=e898]
+                  - button "מחק לצמיתות" [ref=e901]:
+                    - img [ref=e902]
+                  - button [ref=e905]:
+                    - img [ref=e906]
+            - row "33 User 7 0506484338 1 אושר 4P3TMR 08/12 11:36" [ref=e908] [cursor=pointer]:
+              - cell "33" [ref=e909] [cursor=pointer]
+              - cell "User 7 0506484338" [ref=e910] [cursor=pointer]:
+                - generic [ref=e911] [cursor=pointer]:
+                  - generic [ref=e912] [cursor=pointer]: User 7
+                  - generic [ref=e913] [cursor=pointer]: "0506484338"
+              - cell "1" [ref=e914] [cursor=pointer]
+              - cell "אושר" [ref=e915] [cursor=pointer]:
+                - generic [ref=e916] [cursor=pointer]: אושר
+              - cell "4P3TMR" [ref=e917] [cursor=pointer]:
+                - generic [ref=e918] [cursor=pointer]: 4P3TMR
+              - cell "08/12 11:36" [ref=e919] [cursor=pointer]
+              - cell [ref=e920] [cursor=pointer]:
+                - generic [ref=e921] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e922]:
+                    - img [ref=e923]
+                  - button "מחק לצמיתות" [ref=e926]:
+                    - img [ref=e927]
+                  - button [ref=e930]:
+                    - img [ref=e931]
+            - row "34 User 6 0506854295 1 אושר 89L4YY 08/12 11:36" [ref=e933] [cursor=pointer]:
+              - cell "34" [ref=e934] [cursor=pointer]
+              - cell "User 6 0506854295" [ref=e935] [cursor=pointer]:
+                - generic [ref=e936] [cursor=pointer]:
+                  - generic [ref=e937] [cursor=pointer]: User 6
+                  - generic [ref=e938] [cursor=pointer]: "0506854295"
+              - cell "1" [ref=e939] [cursor=pointer]
+              - cell "אושר" [ref=e940] [cursor=pointer]:
+                - generic [ref=e941] [cursor=pointer]: אושר
+              - cell "89L4YY" [ref=e942] [cursor=pointer]:
+                - generic [ref=e943] [cursor=pointer]: 89L4YY
+              - cell "08/12 11:36" [ref=e944] [cursor=pointer]
+              - cell [ref=e945] [cursor=pointer]:
+                - generic [ref=e946] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e947]:
+                    - img [ref=e948]
+                  - button "מחק לצמיתות" [ref=e951]:
+                    - img [ref=e952]
+                  - button [ref=e955]:
+                    - img [ref=e956]
+            - row "35 User 5 0503280115 1 אושר H9A4DH 08/12 11:36" [ref=e958] [cursor=pointer]:
+              - cell "35" [ref=e959] [cursor=pointer]
+              - cell "User 5 0503280115" [ref=e960] [cursor=pointer]:
+                - generic [ref=e961] [cursor=pointer]:
+                  - generic [ref=e962] [cursor=pointer]: User 5
+                  - generic [ref=e963] [cursor=pointer]: "0503280115"
+              - cell "1" [ref=e964] [cursor=pointer]
+              - cell "אושר" [ref=e965] [cursor=pointer]:
+                - generic [ref=e966] [cursor=pointer]: אושר
+              - cell "H9A4DH" [ref=e967] [cursor=pointer]:
+                - generic [ref=e968] [cursor=pointer]: H9A4DH
+              - cell "08/12 11:36" [ref=e969] [cursor=pointer]
+              - cell [ref=e970] [cursor=pointer]:
+                - generic [ref=e971] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e972]:
+                    - img [ref=e973]
+                  - button "מחק לצמיתות" [ref=e976]:
+                    - img [ref=e977]
+                  - button [ref=e980]:
+                    - img [ref=e981]
+            - row "36 User 4 0502384992 1 אושר PJFS5P 08/12 11:36" [ref=e983] [cursor=pointer]:
+              - cell "36" [ref=e984] [cursor=pointer]
+              - cell "User 4 0502384992" [ref=e985] [cursor=pointer]:
+                - generic [ref=e986] [cursor=pointer]:
+                  - generic [ref=e987] [cursor=pointer]: User 4
+                  - generic [ref=e988] [cursor=pointer]: "0502384992"
+              - cell "1" [ref=e989] [cursor=pointer]
+              - cell "אושר" [ref=e990] [cursor=pointer]:
+                - generic [ref=e991] [cursor=pointer]: אושר
+              - cell "PJFS5P" [ref=e992] [cursor=pointer]:
+                - generic [ref=e993] [cursor=pointer]: PJFS5P
+              - cell "08/12 11:36" [ref=e994] [cursor=pointer]
+              - cell [ref=e995] [cursor=pointer]:
+                - generic [ref=e996] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e997]:
+                    - img [ref=e998]
+                  - button "מחק לצמיתות" [ref=e1001]:
+                    - img [ref=e1002]
+                  - button [ref=e1005]:
+                    - img [ref=e1006]
+            - row "37 User 3 0503882552 1 אושר P9GR6B 08/12 11:36" [ref=e1008] [cursor=pointer]:
+              - cell "37" [ref=e1009] [cursor=pointer]
+              - cell "User 3 0503882552" [ref=e1010] [cursor=pointer]:
+                - generic [ref=e1011] [cursor=pointer]:
+                  - generic [ref=e1012] [cursor=pointer]: User 3
+                  - generic [ref=e1013] [cursor=pointer]: "0503882552"
+              - cell "1" [ref=e1014] [cursor=pointer]
+              - cell "אושר" [ref=e1015] [cursor=pointer]:
+                - generic [ref=e1016] [cursor=pointer]: אושר
+              - cell "P9GR6B" [ref=e1017] [cursor=pointer]:
+                - generic [ref=e1018] [cursor=pointer]: P9GR6B
+              - cell "08/12 11:36" [ref=e1019] [cursor=pointer]
+              - cell [ref=e1020] [cursor=pointer]:
+                - generic [ref=e1021] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e1022]:
+                    - img [ref=e1023]
+                  - button "מחק לצמיתות" [ref=e1026]:
+                    - img [ref=e1027]
+                  - button [ref=e1030]:
+                    - img [ref=e1031]
+            - row "38 User 2 0501675831 1 אושר Z5N7F4 08/12 11:36" [ref=e1033] [cursor=pointer]:
+              - cell "38" [ref=e1034] [cursor=pointer]
+              - cell "User 2 0501675831" [ref=e1035] [cursor=pointer]:
+                - generic [ref=e1036] [cursor=pointer]:
+                  - generic [ref=e1037] [cursor=pointer]: User 2
+                  - generic [ref=e1038] [cursor=pointer]: "0501675831"
+              - cell "1" [ref=e1039] [cursor=pointer]
+              - cell "אושר" [ref=e1040] [cursor=pointer]:
+                - generic [ref=e1041] [cursor=pointer]: אושר
+              - cell "Z5N7F4" [ref=e1042] [cursor=pointer]:
+                - generic [ref=e1043] [cursor=pointer]: Z5N7F4
+              - cell "08/12 11:36" [ref=e1044] [cursor=pointer]
+              - cell [ref=e1045] [cursor=pointer]:
+                - generic [ref=e1046] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e1047]:
+                    - img [ref=e1048]
+                  - button "מחק לצמיתות" [ref=e1051]:
+                    - img [ref=e1052]
+                  - button [ref=e1055]:
+                    - img [ref=e1056]
+            - row "39 User 1 0509057596 1 אושר E8DKFH 08/12 11:36" [ref=e1058] [cursor=pointer]:
+              - cell "39" [ref=e1059] [cursor=pointer]
+              - cell "User 1 0509057596" [ref=e1060] [cursor=pointer]:
+                - generic [ref=e1061] [cursor=pointer]:
+                  - generic [ref=e1062] [cursor=pointer]: User 1
+                  - generic [ref=e1063] [cursor=pointer]: "0509057596"
+              - cell "1" [ref=e1064] [cursor=pointer]
+              - cell "אושר" [ref=e1065] [cursor=pointer]:
+                - generic [ref=e1066] [cursor=pointer]: אושר
+              - cell "E8DKFH" [ref=e1067] [cursor=pointer]:
+                - generic [ref=e1068] [cursor=pointer]: E8DKFH
+              - cell "08/12 11:36" [ref=e1069] [cursor=pointer]
+              - cell [ref=e1070] [cursor=pointer]:
+                - generic [ref=e1071] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e1072]:
+                    - img [ref=e1073]
+                  - button "מחק לצמיתות" [ref=e1076]:
+                    - img [ref=e1077]
+                  - button [ref=e1080]:
+                    - img [ref=e1081]
+            - row "40 User 0 0508147908 1 אושר ZK6Y2W 08/12 11:36" [ref=e1083] [cursor=pointer]:
+              - cell "40" [ref=e1084] [cursor=pointer]
+              - cell "User 0 0508147908" [ref=e1085] [cursor=pointer]:
+                - generic [ref=e1086] [cursor=pointer]:
+                  - generic [ref=e1087] [cursor=pointer]: User 0
+                  - generic [ref=e1088] [cursor=pointer]: "0508147908"
+              - cell "1" [ref=e1089] [cursor=pointer]
+              - cell "אושר" [ref=e1090] [cursor=pointer]:
+                - generic [ref=e1091] [cursor=pointer]: אושר
+              - cell "ZK6Y2W" [ref=e1092] [cursor=pointer]:
+                - generic [ref=e1093] [cursor=pointer]: ZK6Y2W
+              - cell "08/12 11:36" [ref=e1094] [cursor=pointer]
+              - cell [ref=e1095] [cursor=pointer]:
+                - generic [ref=e1096] [cursor=pointer]:
+                  - button "בטל הרשמה" [ref=e1097]:
+                    - img [ref=e1098]
+                  - button "מחק לצמיתות" [ref=e1101]:
+                    - img [ref=e1102]
+                  - button [ref=e1105]:
+                    - img [ref=e1106]
+    - link "צור קשר דרך WhatsApp" [ref=e1108]:
+      - /url: https://wa.me/972555020829
+      - img [ref=e1111]
+  - button "Open Next.js Dev Tools" [ref=e1118] [cursor=pointer]:
+    - img [ref=e1119] [cursor=pointer]
+  - alert [ref=e1124]
+```

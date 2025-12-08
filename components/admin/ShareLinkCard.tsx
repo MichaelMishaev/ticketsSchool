@@ -34,13 +34,14 @@ export default function ShareLinkCard({ schoolSlug, eventSlug }: ShareLinkCardPr
 
       <div className="relative p-4">
         {/* Compact header */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
+        <div className="mb-3">
+          <div className="flex items-center gap-2 mb-1">
             <div className="p-1.5 bg-purple-100 rounded-lg">
               <Share2 className="w-4 h-4 text-purple-600" />
             </div>
             <h3 className="text-sm font-semibold text-gray-900">קישור לשיתוף</h3>
           </div>
+          <p className="text-xs text-gray-600 mr-8">שתף קישור זה עם אנשים כדי שיוכלו להירשם לאירוע</p>
         </div>
 
         {/* Compact URL display */}

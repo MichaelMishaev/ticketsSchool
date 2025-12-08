@@ -14,7 +14,7 @@ Copy and paste these **EXACT** values into Railway:
 ```env
 # Email Service (Resend) - REQUIRED for signup/verification
 RESEND_API_KEY=re_U3t7D7ox_LLJQfESpnZ1DoXoZUSD8RcWC
-EMAIL_FROM=noreply@ticketcap.com
+EMAIL_FROM=noreply@kartis.info
 
 # JWT Secret - REQUIRED for email verification and password reset
 JWT_SECRET=3m2lnDrTwXUHGaVttix0jsw57rrTY4N2kYGwHDF+uyU=

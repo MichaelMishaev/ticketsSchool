@@ -1,6 +1,6 @@
 'use client'
 
-import { Edit2, Trash2, ChevronUp, ChevronDown, Users, UserCheck } from 'lucide-react'
+import { Edit2, Trash2, ChevronUp, ChevronDown, Users, UserCheck, Ban } from 'lucide-react'
 
 interface TableCardProps {
   table: {
@@ -10,6 +10,7 @@ interface TableCardProps {
     minOrder: number
     status: 'AVAILABLE' | 'RESERVED' | 'INACTIVE'
     reservation?: {
+      id?: string
       confirmationCode: string
       guestsCount: number | null
       phoneNumber: string | null
@@ -19,6 +20,7 @@ interface TableCardProps {
   hasWaitlistMatch?: boolean
   onEdit?: () => void
   onDelete?: () => void
+  onCancel?: (reservationId: string) => void
   onMoveUp?: () => void
   onMoveDown?: () => void
   readOnly?: boolean
@@ -29,6 +31,7 @@ export default function TableCard({
   hasWaitlistMatch = false,
   onEdit,
   onDelete,
+  onCancel,
   onMoveUp,
   onMoveDown,
   readOnly = false
@@ -138,7 +141,7 @@ export default function TableCard({
 
       {/* Reservation Details (if RESERVED) */}
       {table.status === 'RESERVED' && table.reservation && (
-        <div className="bg-white rounded-md p-3 text-sm space-y-1 mb-3">
+        <div className="bg-white rounded-md p-3 text-sm space-y-2 mb-3">
           <div className="font-semibold text-gray-900">
             קוד: {table.reservation.confirmationCode}
           </div>
@@ -156,6 +159,17 @@ export default function TableCard({
             <div className="text-gray-600">
               שם: {(table.reservation.data as any).name}
             </div>
+          )}
+
+          {/* Cancel Button */}
+          {!readOnly && onCancel && table.reservation.id && (
+            <button
+              onClick={() => onCancel(table.reservation!.id!)}
+              className="w-full mt-2 flex items-center justify-center gap-2 px-3 py-2 bg-red-50 text-red-700 rounded-md hover:bg-red-100 transition-colors text-sm font-medium"
+            >
+              <Ban className="w-4 h-4" />
+              <span>בטל הזמנה</span>
+            </button>
           )}
         </div>
       )}

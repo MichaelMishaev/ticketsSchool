@@ -30,6 +30,7 @@ interface Event {
   startAt: string
   endAt?: string
   capacity: number
+  spotsReserved: number
   status: string
   maxSpotsPerPerson: number
   fieldsSchema: any[]
@@ -310,7 +311,10 @@ export default function EventManagementPage() {
               )}
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
-                {confirmedCount} / {event.capacity} נרשמים ({spotsLeft} מקומות פנויים)
+                {confirmedCount} / {event.capacity} נרשמים
+                <span className="spots-reserved" data-testid="spots-reserved">
+                  ({event.spotsReserved} תפוסים)
+                </span>
               </div>
               {waitlistCount > 0 && (
                 <div className="flex items-center gap-2">
@@ -393,6 +397,8 @@ export default function EventManagementPage() {
           </div>
 
           <select
+            name="status"
+            data-testid="status-filter"
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as any)}
             className="px-4 py-2 border rounded-lg"

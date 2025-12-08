@@ -15,8 +15,9 @@ export async function getSessionCookie(context: BrowserContext): Promise<string 
  */
 export async function loginViaUI(page: Page, email: string, password: string): Promise<string | null> {
   await page.goto('/admin/login')
-  await page.fill('input[type="email"]', email)
-  await page.fill('input[type="password"]', password)
+  await page.waitForLoadState('networkidle') // Wait for page to fully load
+  await page.fill('input[name="email"]', email) // Email field has name="email", not type="email"
+  await page.fill('input[name="password"]', password)
   await page.click('button[type="submit"]')
 
   await page.waitForURL(/\/admin/, { timeout: 10000 })

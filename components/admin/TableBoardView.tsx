@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import TableCard from './TableCard'
+import TableBoardClient from './TableBoardClient'
 import TableBoardTabs from './TableBoardTabs'
 import WaitlistManager from './WaitlistManager'
 import ShareLinkCard from './ShareLinkCard'
@@ -138,16 +138,7 @@ export default async function TableBoardView({ eventId }: TableBoardViewProps) {
           </a>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {tables.map((table) => (
-            <TableCard
-              key={table.id}
-              table={table}
-              hasWaitlistMatch={table.hasWaitlistMatch}
-              readOnly
-            />
-          ))}
-        </div>
+        <TableBoardClient tables={tables} eventId={eventId} />
       )}
 
       {stats.matchAvailable > 0 && (

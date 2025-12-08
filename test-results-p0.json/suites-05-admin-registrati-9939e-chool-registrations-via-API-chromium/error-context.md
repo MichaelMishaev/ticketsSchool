@@ -1,0 +1,98 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e6] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e7] [cursor=pointer]:
+      - img [ref=e8] [cursor=pointer]
+    - generic [ref=e11] [cursor=pointer]:
+      - button "Open issues overlay" [ref=e12] [cursor=pointer]:
+        - generic [ref=e13] [cursor=pointer]:
+          - generic [ref=e14] [cursor=pointer]: "0"
+          - generic [ref=e15] [cursor=pointer]: "1"
+        - generic [ref=e16] [cursor=pointer]: Issue
+      - button "Collapse issues badge" [ref=e17] [cursor=pointer]:
+        - img [ref=e18] [cursor=pointer]
+  - alert [ref=e20]
+  - generic [ref=e21]:
+    - navigation [ref=e22]:
+      - generic [ref=e24]:
+        - generic [ref=e25]:
+          - link "kartis.info" [ref=e27] [cursor=pointer]:
+            - /url: /admin
+          - generic [ref=e28]:
+            - link "ראשי" [ref=e29] [cursor=pointer]:
+              - /url: /admin
+              - img [ref=e30] [cursor=pointer]
+              - text: ראשי
+            - link "אירועים" [ref=e33] [cursor=pointer]:
+              - /url: /admin/events
+              - img [ref=e34] [cursor=pointer]
+              - text: אירועים
+            - link "לידים" [ref=e36] [cursor=pointer]:
+              - /url: /admin/leads
+              - img [ref=e37] [cursor=pointer]
+              - text: לידים
+            - link "צוות" [ref=e42] [cursor=pointer]:
+              - /url: /admin/team
+              - img [ref=e43] [cursor=pointer]
+              - text: צוות
+            - link "הגדרות" [ref=e48] [cursor=pointer]:
+              - /url: /admin/settings
+              - img [ref=e49] [cursor=pointer]
+              - text: הגדרות
+        - generic [ref=e52]:
+          - button "צור אירוע חדש" [ref=e54]:
+            - img [ref=e56]
+            - generic [ref=e57]: אירוע חדש
+            - img [ref=e58]
+          - link "הסבר איך להוסיף אירוע" [ref=e60] [cursor=pointer]:
+            - /url: /admin/help
+            - img [ref=e61] [cursor=pointer]
+            - text: הסבר איך להוסיף אירוע
+          - button "התנתק" [ref=e64]:
+            - img [ref=e65]
+            - text: התנתק
+    - main [ref=e68]:
+      - generic [ref=e70]:
+        - heading "לוח בקרה" [level=2] [ref=e72]
+        - generic [ref=e73]:
+          - button "אירועים פעילים" [ref=e74] [cursor=pointer]:
+            - generic [ref=e76] [cursor=pointer]:
+              - img [ref=e78] [cursor=pointer]
+              - generic [ref=e80] [cursor=pointer]:
+                - term [ref=e81] [cursor=pointer]: אירועים פעילים
+                - definition
+          - button "סה\"כ נרשמים" [ref=e82] [cursor=pointer]:
+            - generic [ref=e84] [cursor=pointer]:
+              - img [ref=e86] [cursor=pointer]
+              - generic [ref=e91] [cursor=pointer]:
+                - term [ref=e92] [cursor=pointer]: סה"כ נרשמים
+                - definition
+          - button "ממתינים ברשימת המתנה" [ref=e93] [cursor=pointer]:
+            - generic [ref=e95] [cursor=pointer]:
+              - img [ref=e97] [cursor=pointer]
+              - generic [ref=e100] [cursor=pointer]:
+                - term [ref=e101] [cursor=pointer]: ממתינים ברשימת המתנה
+                - definition
+          - button "אחוז תפוסה %" [ref=e102] [cursor=pointer]:
+            - generic [ref=e104] [cursor=pointer]:
+              - img [ref=e106] [cursor=pointer]
+              - generic [ref=e109] [cursor=pointer]:
+                - term [ref=e110] [cursor=pointer]: אחוז תפוסה
+                - definition [ref=e111] [cursor=pointer]: "%"
+        - generic [ref=e112]:
+          - heading "אירועים אחרונים" [level=3] [ref=e114]
+          - generic [ref=e116]:
+            - img [ref=e117]
+            - paragraph [ref=e119]: אין אירועים עדיין
+            - button "צור אירוע חדש" [ref=e122]:
+              - img [ref=e123]
+              - generic [ref=e124]: צור אירוע חדש
+              - img [ref=e125]
+    - link "צור קשר דרך WhatsApp" [ref=e127] [cursor=pointer]:
+      - /url: https://wa.me/972555020829
+      - generic [ref=e129] [cursor=pointer]:
+        - img [ref=e130] [cursor=pointer]
+        - generic [ref=e132] [cursor=pointer]: זקוק לעזרה? דבר איתנו
+```

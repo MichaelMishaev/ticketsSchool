@@ -6,8 +6,28 @@
 
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import { randomUUID } from 'crypto'
 
 const prisma = new PrismaClient()
+
+/**
+ * Generate a truly unique slug for test data
+ * Uses UUID to ensure uniqueness even in parallel test execution
+ */
+function generateUniqueSlug(prefix: string = 'test-school'): string {
+  // UUID guarantees uniqueness across all parallel workers
+  const uuid = randomUUID().split('-')[0] // Use first segment (8 chars)
+  return `${prefix}-${uuid}`
+}
+
+/**
+ * Generate unique ID for test data
+ * Combines timestamp with UUID for readability and guaranteed uniqueness
+ */
+function generateUniqueId(): string {
+  const uuid = randomUUID().split('-')[0]
+  return `${Date.now()}-${uuid}`
+}
 
 export interface TestSchool {
   id: string
@@ -61,7 +81,9 @@ export class SchoolBuilder {
   withName(name: string) {
     this.data.name = name
     if (!this.data.slug) {
-      this.data.slug = name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now()
+      const baseSlug = name.toLowerCase().replace(/\s+/g, '-')
+      const uuid = randomUUID().split('-')[0]
+      this.data.slug = `${baseSlug}-${uuid}`
     }
     return this
   }
@@ -78,10 +100,12 @@ export class SchoolBuilder {
 
   async create(): Promise<TestSchool> {
     if (!this.data.name) {
-      this.data.name = 'Test School ' + Date.now()
+      const uniqueId = generateUniqueId()
+      this.data.name = 'Test School ' + uniqueId
     }
     if (!this.data.slug) {
-      this.data.slug = 'test-school-' + Date.now()
+      // Generate unique slug using UUID - guaranteed unique in parallel tests
+      this.data.slug = generateUniqueSlug('test-school')
     }
 
     const school = await prisma.school.create({
@@ -100,6 +124,7 @@ export class AdminBuilder {
     name: 'Test Admin',
     emailVerified: true,
     role: 'ADMIN',
+    onboardingCompleted: true, // Skip onboarding for test admins
   }
 
   withEmail(email: string) {
@@ -134,7 +159,9 @@ export class AdminBuilder {
 
   async create(): Promise<TestAdmin> {
     if (!this.data.email) {
-      this.data.email = `test-${Date.now()}@test.com`
+      // Generate unique email using UUID - guaranteed unique in parallel tests
+      const uniqueId = generateUniqueId()
+      this.data.email = `test-${uniqueId}@test.com`
     }
 
     const password = this.data.password || 'TestPassword123!'
@@ -171,7 +198,9 @@ export class EventBuilder {
   withTitle(title: string) {
     this.data.title = title
     if (!this.data.slug) {
-      this.data.slug = title.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now()
+      const baseSlug = title.toLowerCase().replace(/\s+/g, '-')
+      const uuid = randomUUID().split('-')[0]
+      this.data.slug = `${baseSlug}-${uuid}`
     }
     return this
   }
@@ -239,10 +268,11 @@ export class EventBuilder {
 
   async create(): Promise<TestEvent> {
     if (!this.data.title) {
-      this.data.title = 'Test Event ' + Date.now()
+      const uniqueId = generateUniqueId()
+      this.data.title = 'Test Event ' + uniqueId
     }
     if (!this.data.slug) {
-      this.data.slug = 'test-event-' + Date.now()
+      this.data.slug = generateUniqueSlug('test-event')
     }
     if (!this.data.startDate) {
       this.inFuture()
@@ -251,11 +281,31 @@ export class EventBuilder {
       throw new Error('Event must have a schoolId')
     }
 
+    // Map builder fields to schema fields
+    const { startDate, startTime, ...rest } = this.data
+
+    // Combine startDate and startTime into startAt DateTime
+    let startAt = startDate
+    if (startTime && startDate) {
+      const [hours, minutes] = startTime.split(':')
+      startAt = new Date(startDate)
+      startAt.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+    }
+
+    const eventData = {
+      ...rest,
+      startAt,
+    }
+
     const event = await prisma.event.create({
-      data: this.data as any,
+      data: eventData as any,
     })
 
-    return event as TestEvent
+    return {
+      ...event,
+      startDate,
+      startTime,
+    } as TestEvent
   }
 }
 
@@ -319,11 +369,14 @@ export class RegistrationBuilder {
   }
 
   async create(): Promise<TestRegistration> {
+    // Set defaults
     if (!this.data.name) {
-      this.data.name = 'Test User ' + Date.now()
+      const uniqueId = generateUniqueId()
+      this.data.name = 'Test User ' + uniqueId
     }
     if (!this.data.email) {
-      this.data.email = `test-user-${Date.now()}@test.com`
+      const uniqueId = generateUniqueId()
+      this.data.email = `test-user-${uniqueId}@test.com`
     }
     if (!this.data.phone) {
       this.data.phone = `050${Math.floor(Math.random() * 10000000).toString().padStart(7, '0')}`
@@ -335,11 +388,33 @@ export class RegistrationBuilder {
       this.data.confirmationCode = this.generateConfirmationCode()
     }
 
+    // Map builder fields to schema fields
+    const { name, email, phone, spots, customFields, ...rest } = this.data
+
+    const registrationData = {
+      ...rest,
+      phoneNumber: phone, // Schema uses phoneNumber
+      spotsCount: spots || 1, // Schema uses spotsCount
+      data: {
+        // Schema stores name/email in JSON data field
+        name,
+        email,
+        ...(customFields || {}),
+      },
+    }
+
     const registration = await prisma.registration.create({
-      data: this.data as any,
+      data: registrationData as any,
     })
 
-    return registration as TestRegistration
+    // Return with builder field names for test convenience
+    return {
+      ...registration,
+      name,
+      email,
+      phone,
+      spots: registration.spotsCount,
+    } as TestRegistration
   }
 
   private generateConfirmationCode(): string {
@@ -405,12 +480,12 @@ export async function createCompleteTestScenario() {
   // School A
   const schoolA = await createSchool()
     .withName('School A Test')
-    .withSlug('school-a-test-' + Date.now())
+    .withSlug(generateUniqueSlug('school-a-test'))
     .withPlan('STARTER')
     .create()
 
   const schoolAAdmin = await createAdmin()
-    .withEmail(`school-a-admin-${Date.now()}@test.com`)
+    .withEmail(`school-a-admin-${randomUUID().split('-')[0]}@test.com`)
     .withPassword('TestPassword123!')
     .withRole('ADMIN')
     .withSchool(schoolA.id)
@@ -426,12 +501,12 @@ export async function createCompleteTestScenario() {
   // School B
   const schoolB = await createSchool()
     .withName('School B Test')
-    .withSlug('school-b-test-' + Date.now())
+    .withSlug(generateUniqueSlug('school-b-test'))
     .withPlan('PRO')
     .create()
 
   const schoolBAdmin = await createAdmin()
-    .withEmail(`school-b-admin-${Date.now()}@test.com`)
+    .withEmail(`school-b-admin-${randomUUID().split('-')[0]}@test.com`)
     .withPassword('TestPassword123!')
     .withRole('ADMIN')
     .withSchool(schoolB.id)

@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       authenticated: true,
       admin: {
         email: adminData.email,
@@ -61,6 +61,12 @@ export async function GET(request: NextRequest) {
         slug: adminData.school.slug,
       } : null
     })
+
+    // Cache for 60 seconds to reduce database load
+    // Admin info rarely changes, safe to cache briefly
+    response.headers.set('Cache-Control', 'private, max-age=60, stale-while-revalidate=120')
+
+    return response
   } catch (error) {
     console.error('Get current admin error:', error)
     return NextResponse.json(

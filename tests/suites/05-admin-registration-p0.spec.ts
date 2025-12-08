@@ -223,17 +223,17 @@ test.describe('Admin Registration Management P0', () => {
       // Click registration
       await page.click('text=User to Cancel')
 
-      // Click cancel button
-      await page.click('button:has-text("ביטול"), button:has-text("Cancel")')
+      // Click cancel button (icon button with title="בטל הרשמה")
+      await page.click('button[title="בטל הרשמה"]')
 
-      // Confirm
-      await page.click('button:has-text("אשר"), button:has-text("Confirm")')
+      // Confirm in modal (button says "בטל הרשמה")
+      await page.click('button:has-text("בטל הרשמה")')
 
       await page.waitForTimeout(1000)
 
-      // Should show cancelled status
+      // Should show cancelled status badge (not the dropdown option)
       await expect(
-        page.locator('text=/בוטל|cancelled|CANCELLED/i')
+        page.locator('span:has-text("בוטל")').filter({ hasText: /^בוטל$/ })
       ).toBeVisible()
     })
 
@@ -249,8 +249,7 @@ test.describe('Admin Registration Management P0', () => {
         .withTitle('Capacity Free Event')
         .withSchool(school.id)
         .withCapacity(10)
-        .withSpotsReserved(10)
-        .full()
+        .withSpotsReserved(3) // Match the registration's 3 spots
         .create()
 
       const registration = await createRegistration()
@@ -270,16 +269,19 @@ test.describe('Admin Registration Management P0', () => {
 
       // Cancel registration
       await page.click('text=Free Up User')
-      await page.click('button:has-text("ביטול"), button:has-text("Cancel")')
-      await page.click('button:has-text("אשר"), button:has-text("Confirm")')
+      await page.click('button[title="בטל הרשמה"]')
+      await page.click('button:has-text("בטל הרשמה")')
 
       await page.waitForTimeout(1000)
 
       // Reload to see updated capacity
-      await page.reload()
+      await page.reload({ waitUntil: 'networkidle' })
 
-      // Capacity should be reduced by 3 (10 -> 7)
-      await expect(page.locator('text=/7|הפחית/i')).toBeVisible()
+      // Wait for page to fully load by checking for event title
+      await expect(page.locator('h1:has-text("Capacity Free Event")')).toBeVisible()
+
+      // Capacity should be reduced by 3 (3 -> 0)
+      await expect(page.locator('[data-testid="spots-reserved"], .spots-reserved')).toContainText('0')
     })
   })
 
@@ -385,14 +387,14 @@ test.describe('Admin Registration Management P0', () => {
       // Click on waitlist registration
       await page.click('text=Waitlist User')
 
-      // Click promote/confirm button
-      await page.click('button:has-text("העבר לאישור"), button:has-text("Confirm"), button:has-text("Promote")')
+      // Click promote/confirm button (icon button with title="אשר הרשמה")
+      await page.click('button[title="אשר הרשמה"]')
 
       await page.waitForTimeout(1000)
 
-      // Should now show as confirmed
+      // Should now show as confirmed status badge (not the dropdown option)
       await expect(
-        page.locator('text=/אושר|confirmed|CONFIRMED/i')
+        page.locator('span:has-text("אושר")').filter({ hasText: /^אושר$/ })
       ).toBeVisible()
     })
   })
@@ -428,7 +430,7 @@ test.describe('Admin Registration Management P0', () => {
 
       // Click export button
       const downloadPromise = page.waitForEvent('download')
-      await page.click('button:has-text("יצוא"), button:has-text("Export")')
+      await page.click('button:has-text("ייצא CSV")')
 
       const download = await downloadPromise
 
@@ -466,7 +468,7 @@ test.describe('Admin Registration Management P0', () => {
 
         // Export
         const downloadPromise = page.waitForEvent('download')
-        await page.click('button:has-text("יצוא"), button:has-text("Export")')
+        await page.click('button:has-text("ייצא CSV")')
 
         const download = await downloadPromise
         expect(download.suggestedFilename()).toContain('.csv')
@@ -506,7 +508,7 @@ test.describe('Admin Registration Management P0', () => {
 
       // Export
       const downloadPromise = page.waitForEvent('download')
-      await page.click('button:has-text("יצוא"), button:has-text("Export")')
+      await page.click('button:has-text("ייצא CSV")')
 
       const download = await downloadPromise
       expect(download.suggestedFilename()).toContain('.csv')
@@ -591,11 +593,13 @@ test.describe('Admin Registration Management P0', () => {
     })
 
     test('SUPER_ADMIN can view all school registrations', async ({ page }) => {
+      // SUPER_ADMIN needs a school to complete onboarding, but can access all schools
+      const superSchool = await createSchool().withName('Super HQ').create()
       const superAdmin = await createAdmin()
         .withEmail(generateEmail('super-reg'))
         .withPassword('SuperPassword123!')
         .withRole('SUPER_ADMIN')
-        .withSchool(null)
+        .withSchool(superSchool.id)
         .create()
 
       const schoolA = await createSchool().withName('Super A').create()

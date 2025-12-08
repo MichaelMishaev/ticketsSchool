@@ -25,7 +25,7 @@ test.describe('School Management P0 - Critical Tests', () => {
       await prisma.admin.create({
         data: {
           email,
-          password: hashedPassword,
+          passwordHash: hashedPassword,
           name: 'Onboarding Test User',
           role: 'OWNER',
           emailVerified: true,
@@ -74,7 +74,7 @@ test.describe('School Management P0 - Critical Tests', () => {
       await prisma.admin.create({
         data: {
           email,
-          password: hashedPassword,
+          passwordHash: hashedPassword,
           name: 'Validation Test User',
           role: 'OWNER',
           emailVerified: true,
@@ -115,7 +115,7 @@ test.describe('School Management P0 - Critical Tests', () => {
       await prisma.admin.create({
         data: {
           email,
-          password: hashedPassword,
+          passwordHash: hashedPassword,
           name: 'Slug Test User',
           role: 'OWNER',
           emailVerified: true,
@@ -157,7 +157,7 @@ test.describe('School Management P0 - Critical Tests', () => {
       await prisma.admin.create({
         data: {
           email,
-          password: hashedPassword,
+          passwordHash: hashedPassword,
           name: 'Skip Test User',
           role: 'OWNER',
           emailVerified: true,
@@ -186,7 +186,7 @@ test.describe('School Management P0 - Critical Tests', () => {
       await prisma.admin.create({
         data: {
           email,
-          password: hashedPassword,
+          passwordHash: hashedPassword,
           name: 'Skip Events Test',
           role: 'OWNER',
           emailVerified: true,
@@ -320,6 +320,7 @@ test.describe('School Management P0 - Critical Tests', () => {
           email: inviteeEmail,
           role: 'ADMIN',
           schoolId: school.id,
+          invitedById: owner.id, // Required field - who sent the invitation
           token: `test-token-${timestamp}`,
           expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         },
@@ -363,6 +364,12 @@ test.describe('School Management P0 - Critical Tests', () => {
         .withRole('ADMIN')
         .create()
 
+      // Create owner for School B (who will send the invitation)
+      const schoolBOwner = await createAdmin()
+        .withSchool(schoolB.id)
+        .withRole('OWNER')
+        .create()
+
       // Create invitation to School B
       const timestamp = Date.now()
       const invitation = await prisma.teamInvitation.create({
@@ -370,6 +377,7 @@ test.describe('School Management P0 - Critical Tests', () => {
           email: existingUser.email,
           role: 'MANAGER',
           schoolId: schoolB.id,
+          invitedById: schoolBOwner.id, // Required field - who sent the invitation
           token: `test-token-existing-${timestamp}`,
           expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         },
@@ -694,6 +702,10 @@ test.describe('School Management P0 - Critical Tests', () => {
   test.describe('[02.3.5] Expired Invitation', () => {
     test('expired invitation cannot be accepted', async ({ page }) => {
       const school = await createSchool().create()
+      const owner = await createAdmin()
+        .withSchool(school.id)
+        .withRole('OWNER')
+        .create()
 
       const timestamp = Date.now()
 
@@ -703,6 +715,7 @@ test.describe('School Management P0 - Critical Tests', () => {
           email: `expired-${timestamp}@test.com`,
           role: 'ADMIN',
           schoolId: school.id,
+          invitedById: owner.id, // Required field - who sent the invitation
           token: `expired-token-${timestamp}`,
           expiresAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // Expired yesterday
         },

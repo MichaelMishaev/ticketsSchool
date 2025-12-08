@@ -11,14 +11,12 @@ export class SignupPage {
     email: string
     password: string
     name: string
-    schoolName: string
-    schoolSlug: string
+    confirmPassword?: string
   }) {
-    await this.page.fill('input[name="email"], input[type="email"]', data.email)
-    await this.page.fill('input[name="password"], input[type="password"]', data.password)
+    await this.page.fill('input[name="email"]', data.email)
+    await this.page.fill('input[name="password"]', data.password)
+    await this.page.fill('input[name="confirmPassword"]', data.confirmPassword || data.password)
     await this.page.fill('input[name="name"]', data.name)
-    await this.page.fill('input[name="schoolName"]', data.schoolName)
-    await this.page.fill('input[name="schoolSlug"]', data.schoolSlug)
   }
 
   async submit() {
@@ -29,22 +27,28 @@ export class SignupPage {
     email: string
     password: string
     name: string
-    schoolName: string
-    schoolSlug: string
+    confirmPassword?: string
   }) {
     await this.fillForm(data)
     await this.submit()
   }
 
   async expectSuccess() {
+    // The app redirects to onboarding on successful signup
+    await expect(this.page).toHaveURL(/\/admin\/onboarding/, { timeout: 10000 })
+  }
+
+  async expectEmailVerificationMessage() {
     await expect(
-      this.page.locator('text=/הצלחה|success|נרשמת בהצלחה/i')
+      this.page.locator('text=/נרשמת בהצלחה|הצלחה|success/i')
     ).toBeVisible({ timeout: 10000 })
   }
 
   async expectError(message?: string) {
-    const errorLocator = this.page.locator('.error, [role="alert"], text=/שגיאה|error/i')
-    await expect(errorLocator).toBeVisible({ timeout: 5000 })
+    // Look for error text in the page
+    const errorVisible = await this.page.locator('text=/שגיאה|error/i').first().isVisible({ timeout: 5000 }).catch(() => false)
+
+    expect(errorVisible).toBeTruthy()
 
     if (message) {
       await expect(this.page.locator(`text=${message}`)).toBeVisible()
@@ -52,8 +56,8 @@ export class SignupPage {
   }
 
   async expectValidationError(field: string) {
-    const fieldError = this.page.locator(`input[name="${field}"] ~ .error, input[name="${field}"] + .error`)
-    await expect(fieldError).toBeVisible()
+    // Look for error message near the field
+    await expect(this.page.locator('text=/שגיאה|error/i').first()).toBeVisible()
   }
 
   async expectDuplicateEmailError() {

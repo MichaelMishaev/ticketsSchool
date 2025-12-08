@@ -45,15 +45,12 @@ export async function PATCH(
       // Get current registration with assigned table info
       const currentRegistration = await tx.registration.findUnique({
         where: { id: registrationId, eventId: id },
-        select: {
-          status: true,
-          spotsCount: true,
-          eventId: true,
-          tableId: true
-        },
         include: {
           event: {
             select: { eventType: true }
+          },
+          assignedTable: {
+            select: { id: true }
           }
         }
       })
@@ -156,9 +153,9 @@ export async function PATCH(
         }
 
         // Free table if table-based
-        if (currentRegistration.event.eventType === 'TABLE_BASED' && currentRegistration.tableId) {
+        if (currentRegistration.event.eventType === 'TABLE_BASED' && currentRegistration.assignedTable) {
           await tx.table.update({
-            where: { id: currentRegistration.tableId },
+            where: { id: currentRegistration.assignedTable.id },
             data: { status: 'AVAILABLE', reservedById: null }
           })
         }

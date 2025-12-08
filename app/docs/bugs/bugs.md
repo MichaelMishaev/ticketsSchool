@@ -1169,8 +1169,8 @@ Users were not receiving verification emails after signup. Investigation reveale
 **Root Cause:**
 The Resend API key is in **test/free tier mode** with these restrictions:
 1. ❌ Can only send to the verified account owner email (`345287@gmail.com`)
-2. ❌ FROM address `noreply@kartis.info` is not a verified domain
-3. ❌ All other recipients are blocked with error: "You can only send testing emails to your own email address"
+2. ✅ FROM address `noreply@kartis.info` is now verified (domain verified in Resend)
+3. ✅ Domain verification complete - emails can now be sent to all recipients
 
 **API Error Response:**
 ```json
