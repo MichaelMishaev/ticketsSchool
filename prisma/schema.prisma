@@ -183,6 +183,14 @@ model Event {
   conditions        String?
   requireAcceptance Boolean        @default(false)
   completionMessage String?
+
+  // Table-based events
+  eventType                   EventType      @default(CAPACITY_BASED)
+  tables                      Table[]
+  allowCancellation           Boolean        @default(true)
+  cancellationDeadlineHours   Int            @default(2)
+  requireCancellationReason   Boolean        @default(false)
+
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
   registrations     Registration[]
@@ -191,6 +199,12 @@ model Event {
   @@index([status])
   @@index([schoolId])
   @@index([schoolId, status])
+  @@index([eventType])
+}
+
+enum EventType {
+  CAPACITY_BASED
+  TABLE_BASED
 }
 
 model Registration {
@@ -201,8 +215,20 @@ model Registration {
   spotsCount   Int                  @default(1)
   status       RegistrationStatus   @default(CONFIRMED)
   confirmationCode String           @unique
-  phoneNumber  String?
+  phoneNumber  String               // REQUIRED - contact information is mandatory
   email        String?
+
+  // Table-based events
+  guestsCount        Int?
+  assignedTable      Table?               @relation("TableReservation")
+  waitlistPriority   Int?
+
+  // Cancellation
+  cancellationToken  String?              @unique
+  cancelledAt        DateTime?
+  cancellationReason String?
+  cancelledBy        CancellationSource   @default(CUSTOMER)
+
   createdAt    DateTime             @default(now())
   updatedAt    DateTime             @updatedAt
 
@@ -211,6 +237,8 @@ model Registration {
   @@index([phoneNumber])
   @@index([confirmationCode])
   @@index([eventId, phoneNumber])
+  @@index([cancellationToken])
+  @@index([eventId, waitlistPriority])
 }
 
 enum EventStatus {
@@ -223,6 +251,38 @@ enum RegistrationStatus {
   CONFIRMED
   WAITLIST
   CANCELLED
+}
+
+enum CancellationSource {
+  CUSTOMER
+  ADMIN
+  SYSTEM
+}
+
+model Table {
+  id              String         @id @default(cuid())
+  eventId         String
+  event           Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  tableNumber     String         // "1", "Patio-3", "Window"
+  tableOrder      Int            // Display order (admin reorders with ↑↓)
+  capacity        Int            // Max seats
+  minOrder        Int            // Min guests required
+
+  status          TableStatus    @default(AVAILABLE)
+  reservedById    String?        @unique
+  reservation     Registration?  @relation("TableReservation", fields: [reservedById], references: [id], onDelete: SetNull)
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([eventId, status])
+}
+
+enum TableStatus {
+  AVAILABLE
+  RESERVED
+  INACTIVE
 }
 
 model Log {

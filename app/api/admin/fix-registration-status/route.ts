@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireSuperAdmin } from '@/lib/auth.server'
 
 export async function POST() {
   try {
+    // This is a system-wide operation - require SUPER_ADMIN access
+    await requireSuperAdmin()
+
     console.log('🔧 Starting registration status fix...')
 
     const events = await prisma.event.findMany({

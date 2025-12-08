@@ -80,6 +80,39 @@ export default function EventPage() {
 
       if (response.ok) {
         const data = await response.json()
+
+        // CRITICAL: Ensure fieldsSchema always has required phone and name fields
+        // This is a safety fallback in case an event was created without proper fields
+        if (!data.fieldsSchema || !Array.isArray(data.fieldsSchema)) {
+          data.fieldsSchema = []
+        }
+
+        const hasPhoneField = data.fieldsSchema.some((f: any) => f.name === 'phone')
+        const hasNameField = data.fieldsSchema.some((f: any) => f.name === 'name')
+
+        // Add missing required fields at the beginning
+        if (!hasPhoneField) {
+          data.fieldsSchema.unshift({
+            id: 'phone',
+            name: 'phone',
+            label: 'טלפון',
+            type: 'text',
+            required: true,
+            placeholder: '05X-XXX-XXXX'
+          })
+        }
+
+        if (!hasNameField) {
+          data.fieldsSchema.unshift({
+            id: 'name',
+            name: 'name',
+            label: 'שם מלא',
+            type: 'text',
+            required: true,
+            placeholder: 'שם פרטי ומשפחה'
+          })
+        }
+
         setEvent(data)
         // Initialize form data
         const initialData: any = {}
@@ -327,8 +360,8 @@ export default function EventPage() {
             </div>
 
             {event.completionMessage && (
-              <div className="mt-6 p-5 bg-red-50 rounded-lg border-2 border-red-400">
-                <p className="text-lg text-red-900 font-bold mb-2">⚠️ הודעה חשובה מהמארגן:</p>
+              <div className="mt-6 p-5 bg-blue-50 rounded-lg border-2 border-blue-300">
+                <p className="text-lg text-blue-900 font-bold mb-2">📌 הודעה חשובה מהמארגן:</p>
                 <p className="text-base text-gray-900 font-bold whitespace-pre-wrap leading-relaxed">
                   {event.completionMessage}
                 </p>
@@ -494,6 +527,7 @@ export default function EventPage() {
                 </label>
                 {field.type === 'dropdown' ? (
                   <select
+                    name={field.name}
                     required={field.required}
                     value={formData[field.name] || ''}
                     onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
@@ -506,6 +540,7 @@ export default function EventPage() {
                   </select>
                 ) : field.type === 'checkbox' ? (
                   <input
+                    name={field.name}
                     type="checkbox"
                     checked={formData[field.name] || false}
                     onChange={(e) => setFormData({ ...formData, [field.name]: e.target.checked })}
@@ -513,6 +548,7 @@ export default function EventPage() {
                   />
                 ) : (
                   <input
+                    name={field.name}
                     type={field.type === 'number' ? 'number' : 'text'}
                     required={field.required}
                     value={formData[field.name] || ''}

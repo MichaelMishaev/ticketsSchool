@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import {
   Calendar, MapPin, Users, Clock, Trash2, UserCheck,
   Download, Search, ChevronDown, ChevronUp,
-  ExternalLink, Copy, Check, Edit
+  ExternalLink, Copy, Check, Edit, X, Ban
 } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -54,6 +54,8 @@ export default function EventManagementPage() {
   const [filterStatus, setFilterStatus] = useState<'all' | 'CONFIRMED' | 'WAITLIST' | 'CANCELLED'>('all')
   const [expandedRow, setExpandedRow] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [cancelModal, setCancelModal] = useState<{ show: boolean; registrationId: string | null }>({ show: false, registrationId: null })
+  const [cancelReason, setCancelReason] = useState('')
 
   useEffect(() => {
     fetchEvent()
@@ -103,8 +105,34 @@ export default function EventManagementPage() {
     }
   }
 
+  const handleCancelRegistration = async () => {
+    if (!cancelModal.registrationId) return
+
+    try {
+      const response = await fetch(`/api/events/${eventId}/registrations/${cancelModal.registrationId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'CANCELLED',
+          cancellationReason: cancelReason.trim() || undefined
+        })
+      })
+      if (response.ok) {
+        fetchEvent()
+        setCancelModal({ show: false, registrationId: null })
+        setCancelReason('')
+      } else {
+        const error = await response.json()
+        alert(error.error || 'שגיאה בביטול ההרשמה')
+      }
+    } catch (error) {
+      console.error('Error cancelling registration:', error)
+      alert('שגיאה בביטול ההרשמה')
+    }
+  }
+
   const handleDeleteRegistration = async (registrationId: string) => {
-    if (!confirm('האם למחוק הרשמה זו?')) return
+    if (!confirm('האם למחוק הרשמה זו לצמיתות? פעולה זו אינה ניתנת לביטול.')) return
 
     try {
       const response = await fetch(`/api/events/${eventId}/registrations/${registrationId}`, {
@@ -455,13 +483,25 @@ export default function EventManagementPage() {
                             <UserCheck className="w-4 h-4" />
                           </button>
                         )}
+                        {registration.status !== 'CANCELLED' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCancelModal({ show: true, registrationId: registration.id })
+                            }}
+                            className="p-1 text-amber-600 hover:text-amber-800"
+                            title="בטל הרשמה"
+                          >
+                            <Ban className="w-4 h-4" />
+                          </button>
+                        )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
                             handleDeleteRegistration(registration.id)
                           }}
                           className="p-1 text-red-600 hover:text-red-800"
-                          title="מחק"
+                          title="מחק לצמיתות"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -500,6 +540,65 @@ export default function EventManagementPage() {
           </div>
         )}
       </div>
+
+      {/* Cancel Modal */}
+      {cancelModal.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" dir="rtl">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-900">ביטול הרשמה</h2>
+              <button
+                onClick={() => {
+                  setCancelModal({ show: false, registrationId: null })
+                  setCancelReason('')
+                }}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <p className="text-gray-700 mb-4">
+              האם לבטל הרשמה זו? ההרשמה תישמר במערכת אך תסומן כמבוטלת.
+            </p>
+
+            <div className="mb-4">
+              <label htmlFor="cancelReason" className="block text-sm font-medium text-gray-700 mb-2">
+                סיבת ביטול (אופציונלי)
+              </label>
+              <textarea
+                id="cancelReason"
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                placeholder="למשל: נרשם ביקש לבטל בטלפון"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                הסיבה תישמר לצורך רישום ומעקב
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleCancelRegistration}
+                className="flex-1 bg-amber-600 text-white py-2 px-4 rounded-lg hover:bg-amber-700 transition-colors font-medium"
+              >
+                בטל הרשמה
+              </button>
+              <button
+                onClick={() => {
+                  setCancelModal({ show: false, registrationId: null })
+                  setCancelReason('')
+                }}
+                className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

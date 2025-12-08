@@ -288,7 +288,7 @@ export default function AdminLayout({
         )}
       </nav>
       <main className="py-4 sm:py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 sm:pb-0">
           {children}
         </div>
       </main>
@@ -299,15 +299,15 @@ export default function AdminLayout({
         target="_blank"
         rel="noopener noreferrer"
         onClick={() => trackWhatsAppHelpClick(pathname)}
-        className="fixed bottom-6 right-6 z-50 group"
+        className="fixed bottom-4 left-4 sm:bottom-6 sm:right-6 sm:left-auto z-50 group"
         aria-label="צור קשר דרך WhatsApp"
       >
         {/* Glow Effect */}
         <div className="absolute -inset-1 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full blur opacity-0 group-hover:opacity-75 transition duration-300"></div>
 
         {/* Main Button */}
-        <div className="relative flex items-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-3 sm:px-5 sm:py-4 rounded-full shadow-xl hover:shadow-green-500/50 transition-all duration-300 transform group-hover:scale-105">
-          <MessageSquare className="w-6 h-6 sm:w-7 sm:h-7" />
+        <div className="relative flex items-center justify-center gap-2 sm:gap-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white p-3 sm:px-5 sm:py-4 rounded-full shadow-xl hover:shadow-green-500/50 transition-all duration-300 transform group-hover:scale-105 min-w-[56px] min-h-[56px] sm:min-w-0 sm:min-h-0">
+          <MessageSquare className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0" />
 
           {/* Text (hidden on mobile, visible on desktop) */}
           <span className="hidden sm:block font-bold text-sm whitespace-nowrap">

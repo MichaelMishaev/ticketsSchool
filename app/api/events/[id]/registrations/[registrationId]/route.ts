@@ -1,20 +1,61 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getCurrentAdmin } from '@/lib/auth.server'
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; registrationId: string }> }
 ) {
   try {
+    // Check authentication
+    const admin = await getCurrentAdmin()
+    if (!admin) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     const { id, registrationId } = await params
     const data = await request.json()
 
+    // Verify admin has access to this event's school
+    const event = await prisma.event.findUnique({
+      where: { id },
+      select: { schoolId: true }
+    })
+
+    if (!event) {
+      return NextResponse.json(
+        { error: 'Event not found' },
+        { status: 404 }
+      )
+    }
+
+    // Check school access (SUPER_ADMIN can access all, others must match schoolId)
+    if (admin.role !== 'SUPER_ADMIN' && admin.schoolId !== event.schoolId) {
+      return NextResponse.json(
+        { error: 'Forbidden: You do not have access to this event' },
+        { status: 403 }
+      )
+    }
+
     // Use transaction to ensure atomic operation and prevent race conditions
     const registration = await prisma.$transaction(async (tx) => {
-      // Get current registration
+      // Get current registration with assigned table info
       const currentRegistration = await tx.registration.findUnique({
         where: { id: registrationId, eventId: id },
-        select: { status: true, spotsCount: true, eventId: true }
+        select: {
+          status: true,
+          spotsCount: true,
+          eventId: true,
+          tableId: true
+        },
+        include: {
+          event: {
+            select: { eventType: true }
+          }
+        }
       })
 
       if (!currentRegistration) {
@@ -101,29 +142,50 @@ export async function PATCH(
           }
         }
       } else if (oldStatus === 'CONFIRMED' && newStatus !== 'CONFIRMED') {
-        // Freeing up spots - update counter if it exists
-        try {
-          await tx.$executeRaw`
-            UPDATE "Event"
-            SET "spotsReserved" = GREATEST(0, "spotsReserved" - ${oldSpotsCount})
-            WHERE id = ${id}
-          `
-        } catch (error) {
-          // Column doesn't exist yet (migration not applied) - that's OK
+        // Freeing up spots - update counter if it exists (capacity-based)
+        if (currentRegistration.event.eventType === 'CAPACITY_BASED') {
+          try {
+            await tx.$executeRaw`
+              UPDATE "Event"
+              SET "spotsReserved" = GREATEST(0, "spotsReserved" - ${oldSpotsCount})
+              WHERE id = ${id}
+            `
+          } catch (error) {
+            // Column doesn't exist yet (migration not applied) - that's OK
+          }
+        }
+
+        // Free table if table-based
+        if (currentRegistration.event.eventType === 'TABLE_BASED' && currentRegistration.tableId) {
+          await tx.table.update({
+            where: { id: currentRegistration.tableId },
+            data: { status: 'AVAILABLE', reservedById: null }
+          })
         }
       }
 
       // Update registration status
+      const updateData: any = {
+        status: newStatus,
+        ...(data.spotsCount && { spotsCount: data.spotsCount }),
+        ...(data.data && { data: data.data })
+      }
+
+      // If cancelling, record cancellation details
+      if (newStatus === 'CANCELLED' && oldStatus !== 'CANCELLED') {
+        updateData.cancelledAt = new Date()
+        updateData.cancelledBy = 'ADMIN'
+        if (data.cancellationReason) {
+          updateData.cancellationReason = data.cancellationReason
+        }
+      }
+
       return await tx.registration.update({
         where: {
           id: registrationId,
           eventId: id
         },
-        data: {
-          status: newStatus,
-          ...(data.spotsCount && { spotsCount: data.spotsCount }),
-          ...(data.data && { data: data.data })
-        }
+        data: updateData
       })
     }, {
       isolationLevel: 'Serializable',
@@ -161,7 +223,37 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; registrationId: string }> }
 ) {
   try {
+    // Check authentication
+    const admin = await getCurrentAdmin()
+    if (!admin) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     const { id, registrationId } = await params
+
+    // Verify admin has access to this event's school
+    const event = await prisma.event.findUnique({
+      where: { id },
+      select: { schoolId: true }
+    })
+
+    if (!event) {
+      return NextResponse.json(
+        { error: 'Event not found' },
+        { status: 404 }
+      )
+    }
+
+    // Check school access (SUPER_ADMIN can access all, others must match schoolId)
+    if (admin.role !== 'SUPER_ADMIN' && admin.schoolId !== event.schoolId) {
+      return NextResponse.json(
+        { error: 'Forbidden: You do not have access to this event' },
+        { status: 403 }
+      )
+    }
 
     // Use transaction to atomically delete and update counter
     await prisma.$transaction(async (tx) => {
