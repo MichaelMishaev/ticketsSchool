@@ -1,10 +1,75 @@
 # Bug Report - Authentication & Onboarding Flow
 **Date:** 2025-11-10
+**Last Updated:** 2025-12-06
 **Severity Levels:** =4 CRITICAL | =� MODERATE | =� LOW
 
 ---
 
 ## =4 CRITICAL BUGS
+
+### Bug #0: TABLE_BASED Events Show "No Spots Available" on Public Page ✅ FIXED
+**File:** `/app/p/[schoolSlug]/[eventSlug]/page.tsx` (lines 244-248)
+**Severity:** =4 CRITICAL (blocks all table-based event registrations)
+**Status:** ✅ FIXED (2025-12-06)
+
+**Description:**
+When users try to register for TABLE_BASED (restaurant) events, the public registration page incorrectly shows "אין מקומות פנויים" (no spots available) even when tables are available. This completely blocks all registrations for table-based events.
+
+**Root Cause:**
+The page calculates availability by checking `event.capacity` field, which is **0** for TABLE_BASED events (capacity is managed through individual tables, not a global counter). This causes:
+```typescript
+spotsLeft = event.capacity - event.totalSpotsTaken  // 0 - 0 = 0
+isFull = spotsLeft <= 0  // true ❌
+```
+
+**Impact:**
+- Users cannot register for any TABLE_BASED event
+- Restaurants cannot accept bookings
+- System shows misleading "no spots" message when 4+ tables are available
+
+**Fix Applied:**
+```typescript
+// Before (BROKEN):
+const spotsLeft = event.capacity - event.totalSpotsTaken
+const isFull = spotsLeft <= 0
+
+// After (FIXED):
+const spotsLeft = event.eventType === 'TABLE_BASED' ? Infinity : (event.capacity - event.totalSpotsTaken)
+const isFull = event.eventType === 'TABLE_BASED' ? false : (spotsLeft <= 0)
+const percentage = event.eventType === 'TABLE_BASED' ? 0 : Math.min(100, (event.totalSpotsTaken / event.capacity) * 100)
+```
+
+**UI Changes:**
+- TABLE_BASED events now show "סטטוס: ✓ פתוח" instead of capacity bar
+- Form title: "הרשמה לאירוע" instead of "הרשמה לרשימת המתנה"
+- Submit button: "אשר הזמנה" instead of "הרשמה לרשימת המתנה"
+- Backend `reserveTableForGuests()` handles actual table availability
+
+**Files Modified:**
+- `/app/p/[schoolSlug]/[eventSlug]/page.tsx:244-248` - Capacity check logic
+- `/app/p/[schoolSlug]/[eventSlug]/page.tsx:447-476` - Capacity indicator UI
+- `/app/p/[schoolSlug]/[eventSlug]/page.tsx:483-485` - Form title
+- `/app/p/[schoolSlug]/[eventSlug]/page.tsx:668-672` - Submit button text
+
+**Verification:**
+- Event ID: `cmiu88wvi0003itshqi3m12mi`
+- Type: `TABLE_BASED`
+- Tables: 4 available (capacity 4-8 guests each)
+- Before fix: Showed "אין מקומות פנויים" ❌
+- After fix: Shows "✓ פתוח" with registration form ✅
+
+**Additional Fix - Dynamic Max Guest Count:**
+- **Issue:** Guest selector showed "1-12 אורחים" regardless of actual table capacity
+- **Root Cause:** Hardcoded max value in GuestCountSelector component
+- **Fix:** API now returns `maxTableCapacity` (max from all tables = 8 guests)
+- **Files Modified:**
+  - `/app/api/p/[schoolSlug]/[eventSlug]/route.ts:89-99` - Calculate max table capacity
+  - `/app/api/p/[schoolSlug]/[eventSlug]/route.ts:114` - Add to API response
+  - `/app/p/[schoolSlug]/[eventSlug]/page.tsx:31` - Add to Event interface
+  - `/app/p/[schoolSlug]/[eventSlug]/page.tsx:534` - Use dynamic max
+- **Result:** Now shows "1-8 אורחים" matching largest table (שולחן 2: 8 guests) ✅
+
+---
 
 ### Bug #1: Account Takeover via OAuth Auto-Linking
 **File:** `/app/api/auth/google/callback/route.ts` (lines 84-92)
@@ -1104,8 +1169,8 @@ Users were not receiving verification emails after signup. Investigation reveale
 **Root Cause:**
 The Resend API key is in **test/free tier mode** with these restrictions:
 1. ❌ Can only send to the verified account owner email (`345287@gmail.com`)
-2. ❌ FROM address `noreply@kartis.info` is not a verified domain
-3. ❌ All other recipients are blocked with error: "You can only send testing emails to your own email address"
+2. ✅ FROM address `noreply@kartis.info` is now verified (domain verified in Resend)
+3. ✅ Domain verification complete - emails can now be sent to all recipients
 
 **API Error Response:**
 ```json

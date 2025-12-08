@@ -1,0 +1,78 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e5]:
+        - link "Validation School" [ref=e8] [cursor=pointer]:
+          - /url: /admin
+        - generic [ref=e9]:
+          - button "צור אירוע חדש" [ref=e11]:
+            - img [ref=e13]
+            - generic [ref=e14]: אירוע חדש
+            - img [ref=e15]
+          - link [ref=e17] [cursor=pointer]:
+            - /url: /admin/help
+            - img [ref=e18] [cursor=pointer]
+          - button [ref=e21]:
+            - img [ref=e22]
+    - main [ref=e23]:
+      - generic [ref=e25]:
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - heading "יצירת אירוע חדש" [level=1] [ref=e29]:
+              - img [ref=e30]
+              - text: יצירת אירוע חדש
+            - paragraph [ref=e32]: מערכת משופרת עם שמירה אוטומטית ותצוגה מקדימה
+          - generic [ref=e33]:
+            - button "Ctrl+S" [ref=e34]:
+              - img [ref=e35]
+            - button "Ctrl+P" [disabled] [ref=e39]:
+              - img [ref=e40]
+        - generic [ref=e46]:
+          - generic [ref=e47]:
+            - generic [ref=e48]: שלב 1 מתוך 4
+            - generic [ref=e49]: 25%
+          - generic [ref=e52]:
+            - heading "פרטים" [level=3] [ref=e53]
+            - paragraph [ref=e54]: מידע בסיסי
+        - generic [ref=e55]:
+          - generic [ref=e57]:
+            - generic [ref=e58]:
+              - img [ref=e59]
+              - heading "פרטי האירוע" [level=2] [ref=e62]
+            - generic [ref=e63]:
+              - generic [ref=e64]:
+                - text: סוג אירוע
+                - generic [ref=e65]: "*"
+              - textbox "סוג אירוע *" [ref=e66]
+              - paragraph [ref=e67]: "קטגוריה של האירוע (לדוגמה: כדורגל, הרצאה, טיול)"
+            - generic [ref=e68]:
+              - generic [ref=e69]:
+                - text: כותרת האירוע
+                - generic [ref=e70]: "*"
+              - textbox "כותרת האירוע *" [ref=e71]
+              - generic [ref=e74]: 0 / 100
+            - generic [ref=e75]:
+              - generic [ref=e76]: תיאור
+              - textbox "תיאור" [ref=e77]
+              - generic [ref=e80]: 0 / 500
+            - generic [ref=e81]:
+              - generic [ref=e82]: מיקום
+              - generic [ref=e83]:
+                - img
+                - textbox "מיקום" [ref=e84]
+          - generic [ref=e85]:
+            - button "ביטול" [ref=e87]
+            - button "המשך" [disabled] [ref=e89]:
+              - generic [ref=e90]: המשך
+              - img [ref=e91]
+          - paragraph [ref=e94]: "קיצורי מקלדת: Ctrl+S לשמירה | Ctrl+P לתצוגה מקדימה"
+    - link "צור קשר דרך WhatsApp" [ref=e95] [cursor=pointer]:
+      - /url: https://wa.me/972555020829
+      - img [ref=e98] [cursor=pointer]
+  - button "Open Next.js Dev Tools" [ref=e105] [cursor=pointer]:
+    - img [ref=e106] [cursor=pointer]
+  - alert [ref=e109]
+```

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getCurrentAdmin } from '@/lib/auth.server'
 
 function generateCSV(event: any): string {
   const headers = ['#', 'קוד אישור', 'סטטוס', 'מקומות', 'תאריך הרשמה']
@@ -48,6 +49,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check authentication
+    const admin = await getCurrentAdmin()
+    if (!admin) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     const { id } = await params;
     const event = await prisma.event.findUnique({
       where: { id },
@@ -62,6 +72,14 @@ export async function GET(
       return NextResponse.json(
         { error: 'Event not found' },
         { status: 404 }
+      )
+    }
+
+    // Check school access (SUPER_ADMIN can access all, others must match schoolId)
+    if (admin.role !== 'SUPER_ADMIN' && admin.schoolId !== event.schoolId) {
+      return NextResponse.json(
+        { error: 'Forbidden: You do not have access to this event' },
+        { status: 403 }
       )
     }
 

@@ -12,6 +12,9 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+# Ensure public directory exists
+RUN mkdir -p public
+
 # Build Next.js app (output: 'standalone' creates optimized bundle)
 RUN npm run build
 
@@ -30,7 +33,11 @@ RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 # Copy standalone bundle (single layer)
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Copy public directory
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+
+# Copy other necessary files
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 COPY --chown=nextjs:nodejs start.sh ./

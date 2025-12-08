@@ -1,0 +1,128 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e5]:
+        - link "Search School" [ref=e8]:
+          - /url: /admin
+        - generic [ref=e9]:
+          - button "צור אירוע חדש" [ref=e11]:
+            - img [ref=e13]
+            - generic [ref=e14]: אירוע חדש
+            - img [ref=e15]
+          - link [ref=e17]:
+            - /url: /admin/help
+            - img [ref=e18]
+          - button [ref=e21]:
+            - img [ref=e22]
+    - main [ref=e23]:
+      - generic [ref=e25]:
+        - heading "אירועים" [level=1] [ref=e27]
+        - generic [ref=e28]:
+          - heading "סינון" [level=2] [ref=e30]
+          - generic [ref=e31]:
+            - button "כל האירועים 2" [ref=e32]:
+              - generic [ref=e33]:
+                - generic [ref=e34]: כל האירועים
+                - generic [ref=e35]: "2"
+            - button "אירועים 2" [ref=e36]:
+              - generic [ref=e37]:
+                - generic [ref=e38]: אירועים
+                - generic [ref=e39]: "2"
+            - button "🍽️ מסעדות 0" [ref=e40]:
+              - generic [ref=e41]:
+                - generic [ref=e42]: 🍽️
+                - generic [ref=e43]: מסעדות
+                - generic [ref=e44]: "0"
+        - generic [ref=e45]:
+          - generic [ref=e47]:
+            - generic [ref=e48]:
+              - generic [ref=e49]:
+                - heading "Basketball Game" [level=3] [ref=e50]
+                - generic [ref=e51]:
+                  - generic [ref=e52]:
+                    - img [ref=e53]
+                    - generic [ref=e55]: 09/12/2025 18:00
+                  - generic [ref=e56]:
+                    - img [ref=e57]
+                    - generic [ref=e62]: 0 / 50
+                  - generic [ref=e63]: 🏫 Search School
+              - generic [ref=e64]:
+                - combobox [ref=e65]:
+                  - option "פתוח ✓" [selected]
+                  - option "מושהה ⏸"
+                  - option "סגור ✕"
+                - paragraph [ref=e66]: משתמשים יכולים להירשם לאירוע
+            - paragraph [ref=e67]: Test event description
+            - link "ערוך וצפה בהרשמות" [ref=e68]:
+              - /url: /admin/events/cmiwyih4i000gxgq0mfongl6x
+              - img [ref=e69]
+              - generic [ref=e72]: ערוך וצפה בהרשמות
+            - generic [ref=e73]:
+              - button "העתק קישור" [ref=e74]:
+                - img [ref=e75]
+                - generic [ref=e78]: העתק קישור
+              - link "תצוגה מקדימה" [ref=e79]:
+                - /url: /p/search-school-5b5b3984/basketball-game-ea79eb5c
+                - img [ref=e80]
+                - generic [ref=e84]: תצוגה מקדימה
+              - button "מחק" [ref=e85]:
+                - img [ref=e86]
+                - generic [ref=e89]: מחק
+            - generic [ref=e91]:
+              - generic [ref=e92]:
+                - generic [ref=e93]: "קוד:"
+                - generic [ref=e94]: basketball-game-ea79eb5c
+              - generic [ref=e95]:
+                - generic [ref=e96]: "🔗 קישור שיתוף:"
+                - generic [ref=e97]: http://localhost:9000/p/search-school-5b5b3984/basketball-game-ea79eb5c
+          - generic [ref=e99]:
+            - generic [ref=e100]:
+              - generic [ref=e101]:
+                - heading "Soccer Match" [level=3] [ref=e102]
+                - generic [ref=e103]:
+                  - generic [ref=e104]:
+                    - img [ref=e105]
+                    - generic [ref=e107]: 09/12/2025 18:00
+                  - generic [ref=e108]:
+                    - img [ref=e109]
+                    - generic [ref=e114]: 0 / 50
+                  - generic [ref=e115]: 🏫 Search School
+              - generic [ref=e116]:
+                - combobox [ref=e117]:
+                  - option "פתוח ✓" [selected]
+                  - option "מושהה ⏸"
+                  - option "סגור ✕"
+                - paragraph [ref=e118]: משתמשים יכולים להירשם לאירוע
+            - paragraph [ref=e119]: Test event description
+            - link "ערוך וצפה בהרשמות" [ref=e120]:
+              - /url: /admin/events/cmiwyih4g000exgq0sgatkvwn
+              - img [ref=e121]
+              - generic [ref=e124]: ערוך וצפה בהרשמות
+            - generic [ref=e125]:
+              - button "העתק קישור" [ref=e126]:
+                - img [ref=e127]
+                - generic [ref=e130]: העתק קישור
+              - link "תצוגה מקדימה" [ref=e131]:
+                - /url: /p/search-school-5b5b3984/soccer-match-b166eace
+                - img [ref=e132]
+                - generic [ref=e136]: תצוגה מקדימה
+              - button "מחק" [ref=e137]:
+                - img [ref=e138]
+                - generic [ref=e141]: מחק
+            - generic [ref=e143]:
+              - generic [ref=e144]:
+                - generic [ref=e145]: "קוד:"
+                - generic [ref=e146]: soccer-match-b166eace
+              - generic [ref=e147]:
+                - generic [ref=e148]: "🔗 קישור שיתוף:"
+                - generic [ref=e149]: http://localhost:9000/p/search-school-5b5b3984/soccer-match-b166eace
+    - link "צור קשר דרך WhatsApp" [ref=e150]:
+      - /url: https://wa.me/972555020829
+      - img [ref=e153]
+  - button "Open Next.js Dev Tools" [ref=e160] [cursor=pointer]:
+    - img [ref=e161] [cursor=pointer]
+  - alert [ref=e166]
+```

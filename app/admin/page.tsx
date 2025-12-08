@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import DrilldownModal from '@/components/DrilldownModal'
+import CreateEventDropdown from '@/components/CreateEventDropdown'
 
 interface AdminInfo {
   role: 'SUPER_ADMIN' | 'OWNER' | 'ADMIN' | 'MANAGER'
@@ -31,7 +32,8 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchDashboardData()
-    fetchAdminInfo()
+    // Removed fetchAdminInfo() - layout already fetches this
+    // If needed, we can fetch it lazily after dashboard loads
   }, [])
 
   const fetchDashboardData = async () => {
@@ -67,6 +69,13 @@ export default function AdminDashboard() {
       console.error('Error fetching admin info:', error)
     }
   }
+
+  // Lazy load admin info only if needed (for SUPER_ADMIN button)
+  useEffect(() => {
+    // Delay fetching admin info to not block initial render
+    const timer = setTimeout(fetchAdminInfo, 100)
+    return () => clearTimeout(timer)
+  }, [])
 
   const handleCardClick = async (type: 'activeEvents' | 'registrations' | 'waitlist' | 'occupancy') => {
     try {
@@ -253,13 +262,10 @@ export default function AdminDashboard() {
           ) : (
             <div className="text-center text-gray-500">
               <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <p className="text-lg">אין אירועים עדיין</p>
-              <Link
-                href="/admin/events/new"
-                className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                צור אירוע חדש
-              </Link>
+              <p className="text-lg mb-4">אין אירועים עדיין</p>
+              <div className="flex justify-center">
+                <CreateEventDropdown variant="page" />
+              </div>
             </div>
           )}
         </div>

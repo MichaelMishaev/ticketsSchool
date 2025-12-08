@@ -1,0 +1,70 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e7] [cursor=pointer]:
+    - img [ref=e8] [cursor=pointer]
+  - alert [ref=e13]
+  - generic [ref=e14]:
+    - navigation [ref=e15]:
+      - generic [ref=e17]:
+        - link "kartis.info" [ref=e20]:
+          - /url: /admin
+        - generic [ref=e21]:
+          - button "צור אירוע חדש" [ref=e23]:
+            - img [ref=e25]
+            - generic [ref=e26]: אירוע חדש
+            - img [ref=e27]
+          - link [ref=e29]:
+            - /url: /admin/help
+            - img [ref=e30]
+          - button [ref=e33]:
+            - img [ref=e34]
+    - main [ref=e35]:
+      - generic [ref=e37]:
+        - heading "לוח בקרה" [level=2] [ref=e39]
+        - generic [ref=e40]:
+          - button "אירועים פעילים 1" [ref=e41] [cursor=pointer]:
+            - generic [ref=e43] [cursor=pointer]:
+              - img [ref=e45] [cursor=pointer]
+              - generic [ref=e47] [cursor=pointer]:
+                - term [ref=e48] [cursor=pointer]: אירועים פעילים
+                - definition [ref=e49] [cursor=pointer]: "1"
+          - button "סה\"כ נרשמים 1" [ref=e50] [cursor=pointer]:
+            - generic [ref=e52] [cursor=pointer]:
+              - img [ref=e54] [cursor=pointer]
+              - generic [ref=e59] [cursor=pointer]:
+                - term [ref=e60] [cursor=pointer]: סה"כ נרשמים
+                - definition [ref=e61] [cursor=pointer]: "1"
+          - button "ממתינים ברשימת המתנה 0" [ref=e62] [cursor=pointer]:
+            - generic [ref=e64] [cursor=pointer]:
+              - img [ref=e66] [cursor=pointer]
+              - generic [ref=e69] [cursor=pointer]:
+                - term [ref=e70] [cursor=pointer]: ממתינים ברשימת המתנה
+                - definition [ref=e71] [cursor=pointer]: "0"
+          - button "אחוז תפוסה 2%" [ref=e72] [cursor=pointer]:
+            - generic [ref=e74] [cursor=pointer]:
+              - img [ref=e76] [cursor=pointer]
+              - generic [ref=e79] [cursor=pointer]:
+                - term [ref=e80] [cursor=pointer]: אחוז תפוסה
+                - definition [ref=e81] [cursor=pointer]: 2%
+        - generic [ref=e82]:
+          - heading "אירועים אחרונים" [level=3] [ref=e84]
+          - generic [ref=e86]:
+            - generic [ref=e88]:
+              - generic [ref=e89]:
+                - link "Test Event 1765186717671-84dbf1f3" [ref=e90]:
+                  - /url: /admin/events/cmiwylgbr000txgseagsmzb40
+                - generic [ref=e91]:
+                  - paragraph [ref=e92]: 09/12/2025 18:00
+                  - generic [ref=e93]: •
+                  - generic [ref=e94]: Test School 1765186717544-a1ec6447
+              - generic [ref=e95]:
+                - paragraph [ref=e96]: 1/50
+                - paragraph [ref=e97]: נרשמים
+            - link "צפה בכל האירועים →" [ref=e98]:
+              - /url: /admin/events
+    - link "צור קשר דרך WhatsApp" [ref=e99]:
+      - /url: https://wa.me/972555020829
+      - img [ref=e102]
+```

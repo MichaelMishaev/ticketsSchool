@@ -1,0 +1,124 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - link "Test School 1765186075549-f40c06d4" [ref=e8] [cursor=pointer]:
+            - /url: /admin
+          - generic [ref=e9]:
+            - link "ראשי" [ref=e10] [cursor=pointer]:
+              - /url: /admin
+              - img [ref=e11] [cursor=pointer]
+              - text: ראשי
+            - link "אירועים" [ref=e14] [cursor=pointer]:
+              - /url: /admin/events
+              - img [ref=e15] [cursor=pointer]
+              - text: אירועים
+            - link "לידים" [ref=e17] [cursor=pointer]:
+              - /url: /admin/leads
+              - img [ref=e18] [cursor=pointer]
+              - text: לידים
+            - link "צוות" [ref=e23] [cursor=pointer]:
+              - /url: /admin/team
+              - img [ref=e24] [cursor=pointer]
+              - text: צוות
+            - link "הגדרות" [ref=e29] [cursor=pointer]:
+              - /url: /admin/settings
+              - img [ref=e30] [cursor=pointer]
+              - text: הגדרות
+        - generic [ref=e33]:
+          - button "צור אירוע חדש" [ref=e35]:
+            - img [ref=e37]
+            - generic [ref=e38]: אירוע חדש
+            - img [ref=e39]
+          - link "הסבר איך להוסיף אירוע" [ref=e41] [cursor=pointer]:
+            - /url: /admin/help
+            - img [ref=e42] [cursor=pointer]
+            - text: הסבר איך להוסיף אירוע
+          - button "התנתק" [ref=e45]:
+            - img [ref=e46]
+            - text: התנתק
+    - main [ref=e49]:
+      - generic [ref=e51]:
+        - generic [ref=e53]:
+          - generic [ref=e54]:
+            - heading "יצירת אירוע חדש" [level=1] [ref=e55]:
+              - img [ref=e56]
+              - text: יצירת אירוע חדש
+            - paragraph [ref=e58]: מערכת משופרת עם שמירה אוטומטית ותצוגה מקדימה
+          - generic [ref=e59]:
+            - button "שמור טיוטה" [ref=e60]:
+              - img [ref=e61]
+              - generic [ref=e65]: שמור טיוטה
+            - button "תצוגה מקדימה" [disabled] [ref=e66]:
+              - img [ref=e67]
+              - generic [ref=e70]: תצוגה מקדימה
+        - generic [ref=e74]:
+          - generic [ref=e76]:
+            - button "1" [disabled] [ref=e77]:
+              - generic [ref=e78]: "1"
+            - generic [ref=e80]:
+              - generic [ref=e81]: פרטים
+              - generic [ref=e82]: מידע בסיסי
+          - generic [ref=e86]:
+            - button "2" [disabled] [ref=e87]:
+              - generic [ref=e88]: "2"
+            - generic [ref=e89]:
+              - generic [ref=e90]: תזמון
+              - generic [ref=e91]: תאריכים ושעות
+          - generic [ref=e95]:
+            - button "3" [disabled] [ref=e96]:
+              - generic [ref=e97]: "3"
+            - generic [ref=e98]:
+              - generic [ref=e99]: מקומות
+              - generic [ref=e100]: כמויות ומגבלות
+          - generic [ref=e104]:
+            - button "4" [disabled] [ref=e105]:
+              - generic [ref=e106]: "4"
+            - generic [ref=e107]:
+              - generic [ref=e108]: מתקדם
+              - generic [ref=e109]: תנאים ושדות
+        - generic [ref=e110]:
+          - generic [ref=e112]:
+            - generic [ref=e113]:
+              - img [ref=e114]
+              - heading "פרטי האירוע" [level=2] [ref=e117]
+            - generic [ref=e118]:
+              - generic [ref=e119]:
+                - text: סוג אירוע
+                - generic [ref=e120]: "*"
+              - textbox "סוג אירוע *" [ref=e121]
+              - paragraph [ref=e122]: "קטגוריה של האירוע (לדוגמה: כדורגל, הרצאה, טיול)"
+            - generic [ref=e123]:
+              - generic [ref=e124]:
+                - text: כותרת האירוע
+                - generic [ref=e125]: "*"
+              - textbox "כותרת האירוע *" [ref=e126]
+              - generic [ref=e129]: 0 / 100
+            - generic [ref=e130]:
+              - generic [ref=e131]: תיאור
+              - textbox "תיאור" [ref=e132]
+              - generic [ref=e135]: 0 / 500
+            - generic [ref=e136]:
+              - generic [ref=e137]: מיקום
+              - generic [ref=e138]:
+                - img
+                - textbox "מיקום" [ref=e139]
+          - generic [ref=e140]:
+            - button "ביטול" [ref=e142]
+            - button "המשך" [disabled] [ref=e144]:
+              - generic [ref=e145]: המשך
+              - img [ref=e146]
+          - paragraph [ref=e149]: "קיצורי מקלדת: Ctrl+S לשמירה | Ctrl+P לתצוגה מקדימה"
+    - link "צור קשר דרך WhatsApp" [ref=e150] [cursor=pointer]:
+      - /url: https://wa.me/972555020829
+      - generic [ref=e152] [cursor=pointer]:
+        - img [ref=e153] [cursor=pointer]
+        - generic [ref=e155] [cursor=pointer]: זקוק לעזרה? דבר איתנו
+  - button "Open Next.js Dev Tools" [ref=e161] [cursor=pointer]:
+    - img [ref=e162] [cursor=pointer]
+  - alert [ref=e165]
+```

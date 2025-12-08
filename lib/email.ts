@@ -13,7 +13,7 @@ function getResendClient(): Resend {
   return resend
 }
 
-const FROM_EMAIL = process.env.EMAIL_FROM || 'noreply@ticketcap.com'
+const FROM_EMAIL = process.env.EMAIL_FROM || 'noreply@kartis.info'
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9000'
 
 interface EmailOptions {

@@ -1,0 +1,54 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - link "kartis.info" [ref=e8] [cursor=pointer]:
+            - /url: /admin
+          - generic [ref=e9]:
+            - link "ראשי" [ref=e10] [cursor=pointer]:
+              - /url: /admin
+              - img [ref=e11] [cursor=pointer]
+              - text: ראשי
+            - link "אירועים" [ref=e14] [cursor=pointer]:
+              - /url: /admin/events
+              - img [ref=e15] [cursor=pointer]
+              - text: אירועים
+            - link "לידים" [ref=e17] [cursor=pointer]:
+              - /url: /admin/leads
+              - img [ref=e18] [cursor=pointer]
+              - text: לידים
+            - link "צוות" [ref=e23] [cursor=pointer]:
+              - /url: /admin/team
+              - img [ref=e24] [cursor=pointer]
+              - text: צוות
+            - link "הגדרות" [ref=e29] [cursor=pointer]:
+              - /url: /admin/settings
+              - img [ref=e30] [cursor=pointer]
+              - text: הגדרות
+        - generic [ref=e33]:
+          - button "צור אירוע חדש" [ref=e35]:
+            - img [ref=e37]
+            - generic [ref=e38]: אירוע חדש
+            - img [ref=e39]
+          - link "הסבר איך להוסיף אירוע" [ref=e41] [cursor=pointer]:
+            - /url: /admin/help
+            - img [ref=e42] [cursor=pointer]
+            - text: הסבר איך להוסיף אירוע
+          - button "התנתק" [ref=e45]:
+            - img [ref=e46]
+            - text: התנתק
+    - main [ref=e49]:
+      - paragraph [ref=e52]: האירוע לא נמצא
+    - link "צור קשר דרך WhatsApp" [ref=e53] [cursor=pointer]:
+      - /url: https://wa.me/972555020829
+      - generic [ref=e55] [cursor=pointer]:
+        - img [ref=e56] [cursor=pointer]
+        - generic [ref=e58] [cursor=pointer]: זקוק לעזרה? דבר איתנו
+  - button "Open Next.js Dev Tools" [ref=e64] [cursor=pointer]:
+    - img [ref=e65] [cursor=pointer]
+  - alert [ref=e68]
+```

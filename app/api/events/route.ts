@@ -240,18 +240,23 @@ export async function POST(request: NextRequest) {
     const capacity = Number(data.capacity)
     const maxSpotsPerPerson = Number(data.maxSpotsPerPerson)
 
-    if (isNaN(capacity) || capacity < 1) {
-      return NextResponse.json(
-        { error: 'Capacity must be a positive number' },
-        { status: 400 }
-      )
-    }
+    // For CAPACITY_BASED events, validate capacity
+    // For TABLE_BASED events, capacity is not used (set to 0)
+    const eventType = (data as any).eventType || 'CAPACITY_BASED'
+    if (eventType === 'CAPACITY_BASED') {
+      if (isNaN(capacity) || capacity < 1) {
+        return NextResponse.json(
+          { error: 'Capacity must be a positive number' },
+          { status: 400 }
+        )
+      }
 
-    if (isNaN(maxSpotsPerPerson) || maxSpotsPerPerson < 1) {
-      return NextResponse.json(
-        { error: 'Max spots per person must be a positive number' },
-        { status: 400 }
-      )
+      if (isNaN(maxSpotsPerPerson) || maxSpotsPerPerson < 1) {
+        return NextResponse.json(
+          { error: 'Max spots per person must be a positive number' },
+          { status: 400 }
+        )
+      }
     }
 
     // Generate unique slug from event title
@@ -273,6 +278,11 @@ export async function POST(request: NextRequest) {
         conditions: data.conditions,
         requireAcceptance: data.requireAcceptance,
         completionMessage: data.completionMessage,
+        // Table-based event fields
+        eventType: (data as any).eventType || 'CAPACITY_BASED',
+        allowCancellation: (data as any).allowCancellation ?? true,
+        cancellationDeadlineHours: (data as any).cancellationDeadlineHours ?? 2,
+        requireCancellationReason: (data as any).requireCancellationReason ?? false,
       },
       include: {
         school: true

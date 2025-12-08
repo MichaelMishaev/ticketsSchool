@@ -66,7 +66,7 @@ test.describe('Working E2E Test', () => {
       await page.goto('/admin');
 
       // Check page title
-      await expect(page).toHaveTitle(/TicketCap/);
+      await expect(page).toHaveTitle(/kartis\.info/);
 
       // Check Hebrew text is present
       await expect(page.locator('text=לוח בקרה')).toBeVisible();

@@ -110,3 +110,15 @@ DESIGN_INSTRUCTIONS.md
 
 # Ideogram API documentation (contains API key)
 app/docs/ideogram.md
+
+# Database backups (may contain sensitive data)
+backups/
+*.sql
+*.dump
+*_backup*.sql
+*_backup*.dump
+
+# Database credentials and connection strings
+*DATABASE_URL*
+*database_url*
+*db_credentials*

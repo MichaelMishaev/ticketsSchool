@@ -1,0 +1,46 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e7] [cursor=pointer]:
+    - img [ref=e8] [cursor=pointer]
+  - alert [ref=e11]
+  - generic [ref=e13]:
+    - generic [ref=e14]:
+      - img [ref=e16]
+      - heading "בואו נגדיר את הארגון שלך" [level=2] [ref=e20]
+      - paragraph [ref=e21]: רק עוד שלב אחד קטן ותוכל להתחיל
+      - paragraph [ref=e23]:
+        - text: "💡 אין לך ארגון? השתמש בשם שלך (למשל: \"דני כהן\" →"
+        - generic [ref=e24]: ticketcap.com/p/dny-khn
+        - text: )
+    - generic [ref=e26]:
+      - generic [ref=e27]:
+        - generic [ref=e28]:
+          - text: שם הארגון
+          - generic [ref=e29]: "*"
+        - generic [ref=e30]:
+          - generic:
+            - img
+          - textbox "שם הארגון *" [ref=e31]
+        - paragraph [ref=e32]: שם הארגון/בית הספר שלך (יכול להיות כל שם - אפילו השם שלך)
+      - generic [ref=e33]:
+        - generic [ref=e34]:
+          - text: שם הארגון באנגלית
+          - generic [ref=e35]: "*"
+        - generic [ref=e36]:
+          - generic:
+            - img
+          - textbox "שם הארגון באנגלית *" [ref=e37]
+        - generic [ref=e39]:
+          - paragraph [ref=e40]: "📝 כללי כתיבה:"
+          - paragraph [ref=e41]:
+            - text: רק
+            - strong [ref=e42]: אותיות אנגליות קטנות
+            - text: (a-z),
+            - strong [ref=e43]: מספרים
+            - text: (0-9) ו
+            - strong [ref=e44]: מקף
+            - text: (-)
+      - button "המשך לדשבורד" [ref=e46]
+```

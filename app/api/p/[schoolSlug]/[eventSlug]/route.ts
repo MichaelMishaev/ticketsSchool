@@ -86,6 +86,18 @@ export async function GET(
       0
     )
 
+    // For TABLE_BASED events, get max table capacity
+    let maxTableCapacity = null
+    if (event.eventType === 'TABLE_BASED') {
+      const tables = await prisma.table.findMany({
+        where: { eventId: event.id },
+        select: { capacity: true }
+      })
+      maxTableCapacity = tables.length > 0
+        ? Math.max(...tables.map(t => t.capacity))
+        : 12 // fallback
+    }
+
     const response = NextResponse.json({
       type: 'event',
       id: event.id,
@@ -97,6 +109,9 @@ export async function GET(
       endAt: event.endAt,
       capacity: event.capacity,
       status: event.status,
+      eventType: event.eventType,
+      allowCancellation: event.allowCancellation,
+      maxTableCapacity: maxTableCapacity,
       maxSpotsPerPerson: event.maxSpotsPerPerson,
       fieldsSchema: event.fieldsSchema,
       conditions: event.conditions,

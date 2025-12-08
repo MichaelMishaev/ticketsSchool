@@ -6,6 +6,7 @@ import { Calendar, MapPin, Clock, CheckCircle, AlertCircle, Loader2 } from 'luci
 import { format } from 'date-fns'
 import { he } from 'date-fns/locale'
 import FeedbackInline from '@/components/FeedbackInline'
+import GuestCountSelector from '@/components/GuestCountSelector'
 import { trackRegistrationStarted, trackRegistrationCompleted, trackRegistrationFailed } from '@/lib/analytics'
 
 interface School {
@@ -26,10 +27,13 @@ interface Event {
   endAt?: string
   capacity: number
   maxSpotsPerPerson: number
+  eventType: 'CAPACITY_BASED' | 'TABLE_BASED'
+  maxTableCapacity?: number | null
   fieldsSchema: any[]
   conditions?: string
   requireAcceptance: boolean
   completionMessage?: string
+  allowCancellation?: boolean
   _count: { registrations: number }
   totalSpotsTaken: number
   status: string
@@ -46,8 +50,10 @@ export default function EventPage() {
   const [submitting, setSubmitting] = useState(false)
   const [formData, setFormData] = useState<any>({})
   const [spotsCount, setSpotsCount] = useState(1)
+  const [guestsCount, setGuestsCount] = useState(2) // For table-based events
   const [registered, setRegistered] = useState(false)
   const [confirmationCode, setConfirmationCode] = useState('')
+  const [cancellationToken, setCancellationToken] = useState('')
   const [isWaitlist, setIsWaitlist] = useState(false)
   const [acceptedTerms, setAcceptedTerms] = useState(false)
 
@@ -74,6 +80,39 @@ export default function EventPage() {
 
       if (response.ok) {
         const data = await response.json()
+
+        // CRITICAL: Ensure fieldsSchema always has required phone and name fields
+        // This is a safety fallback in case an event was created without proper fields
+        if (!data.fieldsSchema || !Array.isArray(data.fieldsSchema)) {
+          data.fieldsSchema = []
+        }
+
+        const hasPhoneField = data.fieldsSchema.some((f: any) => f.name === 'phone')
+        const hasNameField = data.fieldsSchema.some((f: any) => f.name === 'name')
+
+        // Add missing required fields at the beginning
+        if (!hasPhoneField) {
+          data.fieldsSchema.unshift({
+            id: 'phone',
+            name: 'phone',
+            label: 'טלפון',
+            type: 'text',
+            required: true,
+            placeholder: '05X-XXX-XXXX'
+          })
+        }
+
+        if (!hasNameField) {
+          data.fieldsSchema.unshift({
+            id: 'name',
+            name: 'name',
+            label: 'שם מלא',
+            type: 'text',
+            required: true,
+            placeholder: 'שם פרטי ומשפחה'
+          })
+        }
+
         setEvent(data)
         // Initialize form data
         const initialData: any = {}
@@ -145,13 +184,15 @@ export default function EventPage() {
 
     setSubmitting(true)
     try {
+      // Build request body based on event type
+      const requestBody = event?.eventType === 'TABLE_BASED'
+        ? { ...formData, guestsCount }  // Table-based: send guestsCount
+        : { ...formData, spotsCount }   // Capacity-based: send spotsCount
+
       const response = await fetch(`/api/p/${schoolSlug}/${eventSlug}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          spotsCount
-        })
+        body: JSON.stringify(requestBody)
       })
 
       // Check if response is JSON
@@ -171,6 +212,7 @@ export default function EventPage() {
 
         setRegistered(true)
         setConfirmationCode(result.confirmationCode)
+        setCancellationToken(result.cancellationToken || '')
         setIsWaitlist(result.status === 'WAITLIST')
       } else {
         trackRegistrationFailed(eventSlug, result.error || 'Unknown error')
@@ -233,9 +275,11 @@ export default function EventPage() {
     )
   }
 
-  const spotsLeft = event.capacity - event.totalSpotsTaken
-  const isFull = spotsLeft <= 0
-  const percentage = Math.min(100, (event.totalSpotsTaken / event.capacity) * 100)
+  // For TABLE_BASED events, don't check capacity (backend handles table availability)
+  // For CAPACITY_BASED events, check if spots are available
+  const spotsLeft = event.eventType === 'TABLE_BASED' ? Infinity : (event.capacity - event.totalSpotsTaken)
+  const isFull = event.eventType === 'TABLE_BASED' ? false : (spotsLeft <= 0)
+  const percentage = event.eventType === 'TABLE_BASED' ? 0 : Math.min(100, (event.totalSpotsTaken / event.capacity) * 100)
 
   if (registered) {
     if (isWaitlist) {
@@ -265,6 +309,17 @@ export default function EventPage() {
                   קוד אישור לרשימת המתנה: <span className="font-mono font-bold">{confirmationCode}</span>
                 </p>
               </div>
+
+              {cancellationToken && event?.allowCancellation && (
+                <div className="mt-4">
+                  <a
+                    href={`/cancel/${cancellationToken}`}
+                    className="block text-center text-sm text-red-600 hover:text-red-700 underline"
+                  >
+                    לביטול ההזמנה לחץ כאן
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -305,8 +360,8 @@ export default function EventPage() {
             </div>
 
             {event.completionMessage && (
-              <div className="mt-6 p-5 bg-red-50 rounded-lg border-2 border-red-400">
-                <p className="text-lg text-red-900 font-bold mb-2">⚠️ הודעה חשובה מהמארגן:</p>
+              <div className="mt-6 p-5 bg-blue-50 rounded-lg border-2 border-blue-300">
+                <p className="text-lg text-blue-900 font-bold mb-2">📌 הודעה חשובה מהמארגן:</p>
                 <p className="text-base text-gray-900 font-bold whitespace-pre-wrap leading-relaxed">
                   {event.completionMessage}
                 </p>
@@ -318,6 +373,17 @@ export default function EventPage() {
                 💡 מומלץ לצלם מסך זה לשמירה
               </p>
             </div>
+
+            {cancellationToken && event.allowCancellation && (
+              <div className="mt-4">
+                <a
+                  href={`/cancel/${cancellationToken}`}
+                  className="block text-center text-sm text-red-600 hover:text-red-700 underline"
+                >
+                  לביטול ההזמנה לחץ כאן
+                </a>
+              </div>
+            )}
 
             <div className="mt-4">
               <FeedbackInline />
@@ -412,24 +478,35 @@ export default function EventPage() {
 
             {/* Capacity Indicator */}
             <div className="pt-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-700">מקומות פנויים</span>
-                <span className={`text-sm font-bold ${isFull ? 'text-red-600' : spotsLeft < 10 ? 'text-yellow-600' : 'text-green-600'}`}>
-                  {isFull ? 'אין מקומות פנויים' : `${spotsLeft} מתוך ${event.capacity}`}
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    isFull ? 'bg-red-500' : percentage > 80 ? 'bg-yellow-500' : 'bg-green-500'
-                  }`}
-                  style={{ width: `${percentage}%` }}
-                />
-              </div>
-              {isFull && (
-                <p className="text-sm text-yellow-600 mt-2 font-medium">
-                  ⚠️ תתבצע הרשמה לרשימת המתנה
-                </p>
+              {event.eventType === 'TABLE_BASED' ? (
+                // Table-based event: Show table availability status
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">סטטוס</span>
+                  <span className="text-sm font-bold text-green-600">✓ פתוח</span>
+                </div>
+              ) : (
+                // Capacity-based event: Show capacity bar
+                <>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-700">מקומות פנויים</span>
+                    <span className={`text-sm font-bold ${isFull ? 'text-red-600' : spotsLeft < 10 ? 'text-yellow-600' : 'text-green-600'}`}>
+                      {isFull ? 'אין מקומות פנויים' : `${spotsLeft} מתוך ${event.capacity}`}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        isFull ? 'bg-red-500' : percentage > 80 ? 'bg-yellow-500' : 'bg-green-500'
+                      }`}
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+                  {isFull && (
+                    <p className="text-sm text-yellow-600 mt-2 font-medium">
+                      ⚠️ תתבצע הרשמה לרשימת המתנה
+                    </p>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -438,7 +515,7 @@ export default function EventPage() {
         {/* Registration Form */}
         <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
           <h2 className="text-xl font-bold text-gray-900 mb-6">
-            {isFull ? 'הרשמה לרשימת המתנה' : 'טופס הרשמה'}
+            {event.eventType === 'TABLE_BASED' ? 'הרשמה לאירוע' : (isFull ? 'הרשמה לרשימת המתנה' : 'טופס הרשמה')}
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -450,6 +527,7 @@ export default function EventPage() {
                 </label>
                 {field.type === 'dropdown' ? (
                   <select
+                    name={field.name}
                     required={field.required}
                     value={formData[field.name] || ''}
                     onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
@@ -462,6 +540,7 @@ export default function EventPage() {
                   </select>
                 ) : field.type === 'checkbox' ? (
                   <input
+                    name={field.name}
                     type="checkbox"
                     checked={formData[field.name] || false}
                     onChange={(e) => setFormData({ ...formData, [field.name]: e.target.checked })}
@@ -469,6 +548,7 @@ export default function EventPage() {
                   />
                 ) : (
                   <input
+                    name={field.name}
                     type={field.type === 'number' ? 'number' : 'text'}
                     required={field.required}
                     value={formData[field.name] || ''}
@@ -480,7 +560,24 @@ export default function EventPage() {
               </div>
             ))}
 
-            {event.maxSpotsPerPerson > 1 && (
+            {/* Table-based events: Guest count selector */}
+            {event.eventType === 'TABLE_BASED' && (
+              <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-200">
+                <GuestCountSelector
+                  value={guestsCount}
+                  onChange={setGuestsCount}
+                  min={1}
+                  max={event.maxTableCapacity || 12}
+                  label="כמה אורחים?"
+                />
+                <p className="text-center text-xs text-gray-600 mt-4">
+                  נמצא עבורך את השולחן המתאים ביותר
+                </p>
+              </div>
+            )}
+
+            {/* Capacity-based events: Spots selector */}
+            {event.eventType === 'CAPACITY_BASED' && event.maxSpotsPerPerson > 1 && (
               <div>
                 <label className="block text-base font-semibold text-gray-800 mb-3">
                   מספר מקומות <span className="text-red-500 mr-1">*</span>
@@ -605,6 +702,8 @@ export default function EventPage() {
                 </span>
               ) : !isFormValid ? (
                 'נא למלא את כל השדות החובה'
+              ) : event.eventType === 'TABLE_BASED' ? (
+                'אשר הזמנה'
               ) : (
                 isFull ? 'הרשמה לרשימת המתנה' : 'שלח הרשמה'
               )}

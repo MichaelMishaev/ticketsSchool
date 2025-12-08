@@ -8,7 +8,7 @@ test.describe('TicketCap E2E Event Flow', () => {
     // Step 1: Admin creates a new event
     await test.step('Admin navigates to create event', async () => {
       await page.goto('/admin');
-      await expect(page).toHaveTitle(/TicketCap/);
+      await expect(page).toHaveTitle(/kartis\.info/);
 
       // Click on "צור אירוע חדש" button
       await page.click('text=צור אירוע חדש');
