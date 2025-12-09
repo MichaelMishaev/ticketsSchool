@@ -55,8 +55,8 @@ test.describe('Basic TicketCap Tests', () => {
 
     await expect(page).toHaveURL(/\/admin/);
 
-    // Click create event button - wait for the dropdown to be visible
-    const createButton = page.locator('button[aria-label="צור אירוע חדש"]');
+    // Click create event button - use first() to handle multiple buttons (header + content)
+    const createButton = page.locator('button[aria-label="צור אירוע חדש"]').first();
     await expect(createButton).toBeVisible();
     await createButton.click();
 
