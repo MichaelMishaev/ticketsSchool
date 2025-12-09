@@ -64,15 +64,68 @@ async function getTableBoardData(eventId: string) {
   // Get available tables for matching
   const availableTables = tables.filter((t) => t.status === 'AVAILABLE')
 
-  // Compute matching tables for each waitlist entry
-  const waitlistWithMatches = waitlist.map((entry) => {
+  // Compute matching tables for each waitlist entry with priority-aware recommendations
+  const waitlistWithMatches = waitlist.map((entry, index) => {
     const guestCount = entry.guestsCount || 0
+
+    // Show all tables that fit within capacity (admin can override minimum with confirmation)
     const matchingTables = availableTables.filter(
-      (table) => guestCount >= table.minOrder && guestCount <= table.capacity
+      (table) => guestCount <= table.capacity
     )
-    const bestTable = matchingTables.length > 0
-      ? matchingTables.sort((a, b) => a.capacity - b.capacity)[0]
-      : null
+
+    // Best table is the one that meets minimum AND has closest capacity (best fit)
+    let bestTable: typeof matchingTables[0] | null = null
+
+    if (matchingTables.length > 0) {
+      const sortedTables = matchingTables
+        .filter((t) => guestCount >= t.minOrder) // Prefer tables that meet minimum
+        .sort((a, b) => {
+          // Sort by best fit: prefer tables where guest count is closer to capacity
+          // This prioritizes larger parties for larger tables (better capacity utilization)
+          const gapA = a.capacity - guestCount
+          const gapB = b.capacity - guestCount
+          return gapA - gapB // Smallest gap first (best fit)
+        })
+
+      bestTable = sortedTables[0] || matchingTables.sort((a, b) => {
+        const gapA = a.capacity - guestCount
+        const gapB = b.capacity - guestCount
+        return gapA - gapB
+      })[0] // Fallback to best fit if none meet minimum
+
+      // Check if this table is a better fit for a higher-priority entry
+      // If so, don't recommend it to this entry
+      if (bestTable && index > 0) {
+        const currentGap = bestTable.capacity - guestCount
+
+        // Check all higher-priority entries (earlier in waitlist)
+        for (let i = 0; i < index; i++) {
+          const higherPriorityEntry = waitlist[i]
+          const higherGuestCount = higherPriorityEntry.guestsCount || 0
+
+          // Check if this table fits the higher-priority entry
+          if (higherGuestCount <= bestTable.capacity) {
+            const higherGap = bestTable.capacity - higherGuestCount
+
+            // If higher-priority entry has a better or equal fit, don't recommend this table
+            if (higherGap <= currentGap) {
+              // Find next best table that isn't claimed by higher-priority entries
+              const alternativeTables = matchingTables.filter(t => t.id !== bestTable!.id)
+              if (alternativeTables.length > 0) {
+                bestTable = alternativeTables.sort((a, b) => {
+                  const gapA = a.capacity - guestCount
+                  const gapB = b.capacity - guestCount
+                  return gapA - gapB
+                })[0]
+              } else {
+                bestTable = null // No alternative, show all matches but no specific recommendation
+              }
+              break
+            }
+          }
+        }
+      }
+    }
 
     return {
       ...entry,

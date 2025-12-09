@@ -69,59 +69,56 @@ export default function RestaurantsLandingPage() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 sm:px-5 py-2.5 rounded-full shadow-lg border border-purple-100">
               <UtensilsCrossed className="w-5 h-5 text-purple-600" />
-              <span className="text-xs sm:text-sm font-bold text-gray-900">מערכת ניהול שולחנות מתקדמת</span>
+              <span className="text-xs sm:text-sm font-bold text-gray-900">מערכת הזמנת מקומות מתקדמת</span>
             </div>
 
             {/* Main Headline */}
             <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black leading-tight text-gray-900">
-              נהלו את המסעדה שלכם
+              ניהול הזמנות מקומות
               <br />
               <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 bg-clip-text text-transparent">
-                בצורה המקצועית ביותר
+                למסעדות ומקומות בילוי
               </span>
             </h1>
 
             {/* Value Proposition */}
             <p className="text-base sm:text-xl lg:text-2xl text-gray-600 leading-relaxed max-w-3xl mx-auto font-medium">
-              מערכת ניהול הזמנות ושולחנות חכמה למסעדות, בתי קפה ובארים.
+              מערכת חכמה לניהול הזמנות במסעדות, בתי קפה, בארים ואירועים.
               <br />
-              הפכו כל הזמנה לחוויה מושלמת עם ניהול אוטומטי מלא.
+              לקוחות מזמינים מקום ישיבה, ואתם מנהלים הכל אוטומטית.
             </p>
 
             {/* Hero Images Showcase */}
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto pt-6">
-              <div className="relative h-48 rounded-2xl overflow-hidden shadow-xl border-4 border-white">
+              <div className="relative h-48 rounded-2xl overflow-hidden shadow-xl border-4 border-white group">
                 <Image
                   src="/restaurants/hero-1.jpg"
                   alt="מסעדה מודרנית"
                   fill
-                  className="object-cover"
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
                   sizes="(max-width: 768px) 100vw, 33vw"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                <div className="absolute bottom-3 right-3 text-white font-bold">דוגמה: מסעדה מודרנית</div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
               </div>
-              <div className="relative h-48 rounded-2xl overflow-hidden shadow-xl border-4 border-white">
+              <div className="relative h-48 rounded-2xl overflow-hidden shadow-xl border-4 border-white group">
                 <Image
                   src="/restaurants/hero-2.jpg"
                   alt="בית קפה אלגנטי"
                   fill
-                  className="object-cover"
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
                   sizes="(max-width: 768px) 100vw, 33vw"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                <div className="absolute bottom-3 right-3 text-white font-bold">דוגמה: בית קפה אלגנטי</div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
               </div>
-              <div className="relative h-48 rounded-2xl overflow-hidden shadow-xl border-4 border-white sm:col-span-2 lg:col-span-1">
+              <div className="relative h-48 rounded-2xl overflow-hidden shadow-xl border-4 border-white sm:col-span-2 lg:col-span-1 group">
                 <Image
                   src="/restaurants/hero-3.jpg"
                   alt="בר טרנדי"
                   fill
-                  className="object-cover"
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
                   sizes="(max-width: 768px) 100vw, 33vw"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                <div className="absolute bottom-3 right-3 text-white font-bold">דוגמה: בר מרכזי</div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
               </div>
             </div>
 
@@ -131,8 +128,8 @@ export default function RestaurantsLandingPage() {
                 href="/admin/events/new-restaurant"
                 className="px-8 sm:px-12 py-4 sm:py-5 text-lg sm:text-xl font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 hover:shadow-xl transition-all max-w-[80%] sm:max-w-none flex items-center gap-2 shadow-lg"
               >
-                <UtensilsCrossed className="w-6 h-6" />
-                <span>צרו אירוע מסעדה עכשיו</span>
+                <span className="text-2xl">🍽️</span>
+                <span>פתחו מערכת הזמנות</span>
                 <ArrowLeft className="w-5 h-5" />
               </Link>
               <Link
@@ -223,9 +220,9 @@ export default function RestaurantsLandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
             <h2 className="text-3xl sm:text-5xl font-black mb-6">
-              <span className="text-gray-900">תכונות מיוחדות</span>
+              <span className="text-gray-900">תכונות מתקדמות</span>
               <br />
-              <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">למסעדות ובתי קפה</span>
+              <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">לניהול הזמנות מקומות</span>
             </h2>
           </div>
 
@@ -233,8 +230,8 @@ export default function RestaurantsLandingPage() {
             {[
               {
                 icon: <UtensilsCrossed className="w-10 h-10" />,
-                title: 'ניהול שולחנות גמיש',
-                description: 'הגדירו מספר שולחן, קיבולת, מינימום הזמנה וסדר תפיסה. שליטה מלאה על סידור השולחנות במסעדה',
+                title: 'ניהול מקומות ישיבה גמיש',
+                description: 'הגדירו מספר מקום, קיבולת, מינימום הזמנה וסדר תפיסה. שליטה מלאה על הסידור במקום',
                 color: 'from-purple-500 to-purple-600',
                 bgColor: 'bg-purple-50',
                 image: '/restaurants/italian-restaurant.jpg',
@@ -306,6 +303,161 @@ export default function RestaurantsLandingPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How Reservations Work - Detailed Explanation */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 to-indigo-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-5xl font-black mb-6">
+              <span className="text-gray-900">איך מערכת ההזמנות</span>
+              <br />
+              <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">עובדת בפועל?</span>
+            </h2>
+            <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
+              הבנת המערכת תעזור לכם לנצל אותה בצורה המיטבית
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-12 mb-16">
+            {/* What are Tables */}
+            <div className="bg-white rounded-3xl p-8 shadow-xl border-2 border-purple-200">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center flex-shrink-0">
+                  <UtensilsCrossed className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-gray-900 mb-2">מה זה שולחנות?</h3>
+                  <p className="text-gray-600">יחידות הזמנה נפרדות במסעדה</p>
+                </div>
+              </div>
+
+              <div className="space-y-4 text-right">
+                <div className="bg-purple-50 rounded-xl p-4 border-2 border-purple-200">
+                  <p className="font-bold text-purple-900 mb-2">🪑 כל שולחן כולל:</p>
+                  <ul className="space-y-2 text-gray-700">
+                    <li>• <strong>מספר שולחן</strong> - למשל "שולחן 1", "שולחן VIP"</li>
+                    <li>• <strong>קיבולת</strong> - כמה אנשים יכולים לשבת (2, 4, 6, 8...)</li>
+                    <li>• <strong>מינימום הזמנה</strong> - סכום מינימלי בש"ח (אופציונלי)</li>
+                    <li>• <strong>סדר תפיסה</strong> - באיזה סדר השולחנות מוצגים ללקוחות</li>
+                  </ul>
+                </div>
+
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border-2 border-green-200">
+                  <p className="font-bold text-green-900 mb-2">✅ היתרון:</p>
+                  <p className="text-gray-700">
+                    לקוחות רואים בדיוק איזה שולחנות פנויים וכמה אנשים יכולים לשבת.
+                    זה יותר ברור ומקצועי מאשר "נשארו 10 מקומות".
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* How Customers Book */}
+            <div className="bg-white rounded-3xl p-8 shadow-xl border-2 border-pink-200">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-14 h-14 bg-gradient-to-br from-pink-500 to-pink-600 rounded-2xl flex items-center justify-center flex-shrink-0">
+                  <Users className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-gray-900 mb-2">איך לקוחות מזמינים?</h3>
+                  <p className="text-gray-600">תהליך פשוט ונוח בנייד</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center text-pink-700 font-bold flex-shrink-0">1</div>
+                  <p className="text-gray-700">לקוח נכנס לקישור ההזמנה שלכם</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center text-pink-700 font-bold flex-shrink-0">2</div>
+                  <p className="text-gray-700">רואה רשימה של שולחנות פנויים עם קיבולת</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center text-pink-700 font-bold flex-shrink-0">3</div>
+                  <p className="text-gray-700">בוחר שולחן מתאים (לפי גודל החבורה)</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center text-pink-700 font-bold flex-shrink-0">4</div>
+                  <p className="text-gray-700">ממלא פרטים (טלפון, כמות סועדים, העדפות)</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center text-pink-700 font-bold flex-shrink-0">5</div>
+                  <p className="text-gray-700">לוחץ "אישור" ומקבל קוד הזמנה ייחודי</p>
+                </div>
+
+                <div className="bg-pink-50 rounded-xl p-4 border-2 border-pink-200 mt-4">
+                  <p className="text-pink-900 font-bold mb-1">⚡ תהליך מהיר!</p>
+                  <p className="text-gray-700 text-sm">
+                    ממוצע של 30 שניות להזמנה. הכל ברור, פשוט ועובד מכל טלפון.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tables vs Capacity Comparison */}
+          <div className="bg-white rounded-3xl p-8 sm:p-12 shadow-2xl border-2 border-indigo-200">
+            <h3 className="text-2xl sm:text-3xl font-black text-center mb-8 text-gray-900">
+              מערכת שולחנות 🆚 מערכת קיבולת רגילה
+            </h3>
+
+            <div className="grid md:grid-cols-2 gap-8">
+              {/* Regular Capacity System */}
+              <div className="bg-gray-50 rounded-2xl p-6 border-2 border-gray-300">
+                <div className="text-center mb-4">
+                  <div className="text-3xl mb-2">📊</div>
+                  <h4 className="text-xl font-bold text-gray-900">מערכת קיבולת רגילה</h4>
+                  <p className="text-sm text-gray-600">טובה לאירועים כמו הרצאות</p>
+                </div>
+
+                <div className="space-y-3 text-right">
+                  <div className="flex items-start gap-2">
+                    <span className="text-gray-500">❌</span>
+                    <p className="text-gray-700 text-sm">לקוח רואה רק "נשארו 20 מקומות"</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-gray-500">❌</span>
+                    <p className="text-gray-700 text-sm">אין אפשרות לבחור מיקום מסוים</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-gray-500">❌</span>
+                    <p className="text-gray-700 text-sm">לא מתאים למסעדות עם שולחנות שונים</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Table-Based System */}
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border-2 border-purple-300 shadow-lg">
+                <div className="text-center mb-4">
+                  <div className="text-3xl mb-2">🪑</div>
+                  <h4 className="text-xl font-bold text-purple-900">מערכת שולחנות חכמה</h4>
+                  <p className="text-sm text-purple-700">מושלמת למסעדות ובתי קפה</p>
+                </div>
+
+                <div className="space-y-3 text-right">
+                  <div className="flex items-start gap-2">
+                    <span className="text-green-600">✅</span>
+                    <p className="text-gray-700 text-sm">לקוח רואה "שולחן 1 (4 מקומות) - פנוי"</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-green-600">✅</span>
+                    <p className="text-gray-700 text-sm">יכול לבחור שולחן מתאים לגודל החבורה</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-green-600">✅</span>
+                    <p className="text-gray-700 text-sm">שליטה מלאה על קיבולת ומינימום הזמנה</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-green-600">✅</span>
+                    <p className="text-gray-700 text-sm">ניהול מקצועי עם רשימת המתנה אוטומטית</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -404,7 +556,7 @@ export default function RestaurantsLandingPage() {
             מוכנים להתחיל?
           </h2>
           <p className="text-xl sm:text-2xl mb-12 opacity-95">
-            הצטרפו למסעדות שכבר מנהלות הזמנות בצורה מקצועית עם kartis.info
+            הצטרפו לעסקים שכבר מנהלים הזמנות מקומות בצורה מקצועית עם kartis.info
           </p>
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
@@ -412,8 +564,8 @@ export default function RestaurantsLandingPage() {
               href="/admin/events/new-restaurant"
               className="px-10 py-5 text-xl font-bold text-purple-700 bg-white rounded-2xl hover:bg-gray-50 transition-all shadow-2xl hover:scale-110 flex items-center gap-3"
             >
-              <UtensilsCrossed className="w-6 h-6" />
-              <span>צרו אירוע מסעדה עכשיו</span>
+              <span className="text-2xl">🍽️</span>
+              <span>פתחו מערכת הזמנות</span>
               <ArrowLeft className="w-6 h-6" />
             </Link>
             <Link
@@ -435,10 +587,10 @@ export default function RestaurantsLandingPage() {
         <div className="max-w-7xl mx-auto text-center">
           <div className="flex items-center justify-center gap-3 mb-6">
             <Ticket className="w-8 h-8 text-red-400" />
-            <span className="text-2xl font-black">kartis.info למסעדות</span>
+            <span className="text-2xl font-black">kartis.info - הזמנת שולחנות</span>
           </div>
           <p className="text-gray-400 mb-6">
-            מערכת ניהול שולחנות והזמנות חכמה למסעדות, בתי קפה ובארים
+            מערכת ניהול הזמנות מקומות ישיבה למסעדות, בתי קפה, בארים ואירועים
           </p>
           <div className="flex justify-center gap-6 flex-wrap">
             <Link href="/" className="text-gray-400 hover:text-white transition-colors">

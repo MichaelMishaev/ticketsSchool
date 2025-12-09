@@ -15,7 +15,7 @@ export async function POST(
     const admin = await requireAdmin()
     const { id: eventId, regId: registrationId } = await params
     const body = await request.json()
-    const { tableId } = body
+    const { tableId, force } = body
 
     if (!tableId) {
       return NextResponse.json(
@@ -123,12 +123,15 @@ export async function POST(
 
         // Verify guest count fits table constraints
         const guestCount = registration.guestsCount || 0
-        if (guestCount < table.minOrder) {
+
+        // Check minimum order (can be overridden with force flag)
+        if (guestCount < table.minOrder && !force) {
           throw new Error(
             `Guest count (${guestCount}) is below table minimum order (${table.minOrder})`
           )
         }
 
+        // Always enforce capacity limit (no override)
         if (guestCount > table.capacity) {
           throw new Error(
             `Guest count (${guestCount}) exceeds table capacity (${table.capacity})`
