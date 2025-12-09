@@ -120,12 +120,6 @@ export default function LandingPage() {
             </div>
             <div className="flex gap-2 sm:gap-3">
               <Link
-                href="/restaurants"
-                className="px-3 sm:px-5 py-2 sm:py-3 text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-purple-600 to-purple-700 border-2 border-purple-600 rounded-xl hover:from-purple-700 hover:to-purple-800 hover:shadow-lg transition-all whitespace-nowrap min-h-[44px] flex items-center justify-center gap-1.5"
-              >
-                🍽️ למסעדות
-              </Link>
-              <Link
                 href="/admin/signup"
                 className="px-5 sm:px-8 py-2 sm:py-3 text-sm sm:text-base font-bold text-gray-900 bg-white border-2 border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-lg transition-all whitespace-nowrap min-h-[44px] flex items-center justify-center"
               >
@@ -154,6 +148,25 @@ export default function LandingPage() {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
               </span>
               <span className="text-xs sm:text-sm font-bold text-gray-900">מערכת ניהול כרטיסים </span>
+            </div>
+
+            {/* NEW!! Table Reservation Feature */}
+            <div className="relative inline-block">
+              <div className="absolute -top-3 -right-3 z-10">
+                <div className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-black px-3 py-1 rounded-full shadow-lg animate-pulse">
+                  חדש! NEW
+                </div>
+              </div>
+              <Link
+                href="/restaurants"
+                className="inline-flex flex-col items-center gap-2 px-6 sm:px-8 py-4 sm:py-5 text-base sm:text-xl font-bold text-white bg-gradient-to-r from-purple-600 to-purple-700 border-2 border-purple-600 rounded-2xl hover:from-purple-700 hover:to-purple-800 hover:shadow-2xl transition-all shadow-lg hover:scale-105"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🍽️</span>
+                  <span>מסעדות, בתי קפה ובארים</span>
+                </div>
+                <span className="text-sm opacity-90">ניהול הזמנות מקום במקומות בילוי</span>
+              </Link>
             </div>
 
             {/* Massive Headline */}
@@ -299,13 +312,13 @@ export default function LandingPage() {
             {/* Powerful CTA */}
             <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4">
               <Link
-                href="/restaurants"
-                className="px-6 sm:px-10 py-4 sm:py-5 text-base sm:text-xl font-bold text-white bg-gradient-to-r from-purple-600 to-purple-700 border-2 border-purple-600 rounded-xl hover:from-purple-700 hover:to-purple-800 hover:shadow-xl transition-all max-w-[80%] sm:max-w-none flex items-center gap-2"
+                href="/admin/signup"
+                className="px-8 sm:px-12 py-4 sm:py-5 text-lg sm:text-xl font-bold text-white bg-gradient-to-r from-red-600 to-purple-600 rounded-xl hover:from-red-700 hover:to-purple-700 hover:shadow-xl transition-all max-w-[80%] sm:max-w-none"
               >
-                🍽️ <span>למסעדות - ניהול שולחנות</span>
+                התחילו עכשיו בחינם
               </Link>
               <Link
-                href="/admin/signup"
+                href="/admin/login"
                 className="px-8 sm:px-12 py-4 sm:py-5 text-lg sm:text-xl font-bold text-gray-900 bg-white border-2 border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-xl transition-all max-w-[80%] sm:max-w-none"
               >
                 כניסה למערכת

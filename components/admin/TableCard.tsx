@@ -21,6 +21,7 @@ interface TableCardProps {
   onEdit?: () => void
   onDelete?: () => void
   onCancel?: (reservationId: string) => void
+  onToggleHold?: (tableId: string) => void
   onMoveUp?: () => void
   onMoveDown?: () => void
   readOnly?: boolean
@@ -32,6 +33,7 @@ export default function TableCard({
   onEdit,
   onDelete,
   onCancel,
+  onToggleHold,
   onMoveUp,
   onMoveDown,
   readOnly = false
@@ -64,12 +66,12 @@ export default function TableCard({
           label: 'פנוי'
         },
     INACTIVE: {
-      color: 'gray',
-      bgColor: 'bg-gray-50',
-      borderColor: 'border-gray-400',
-      textColor: 'text-gray-600',
-      icon: '⚫',
-      label: 'לא פעיל'
+      color: 'orange',
+      bgColor: 'bg-orange-50',
+      borderColor: 'border-orange-400',
+      textColor: 'text-orange-700',
+      icon: '🟠',
+      label: 'רזרבה (מוחזק)'
     }
   }
 
@@ -138,6 +140,30 @@ export default function TableCard({
           </span>
         </div>
       </div>
+
+      {/* Toggle Hold/Reserve Button (for AVAILABLE or INACTIVE tables without actual reservations) */}
+      {!readOnly && onToggleHold && table.status !== 'RESERVED' && (
+        <button
+          onClick={() => onToggleHold(table.id)}
+          className={`w-full mb-3 flex items-center justify-center gap-2 px-3 py-2 rounded-md transition-colors text-sm font-medium ${
+            table.status === 'INACTIVE'
+              ? 'bg-green-50 text-green-700 hover:bg-green-100'
+              : 'bg-orange-50 text-orange-700 hover:bg-orange-100'
+          }`}
+        >
+          {table.status === 'INACTIVE' ? (
+            <>
+              <Users className="w-4 h-4" />
+              <span>שחרר שולחן</span>
+            </>
+          ) : (
+            <>
+              <Ban className="w-4 h-4" />
+              <span>סמן כרזרבה</span>
+            </>
+          )}
+        </button>
+      )}
 
       {/* Reservation Details (if RESERVED) */}
       {table.status === 'RESERVED' && table.reservation && (

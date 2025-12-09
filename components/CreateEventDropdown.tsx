@@ -111,9 +111,9 @@ export default function CreateEventDropdown({
                   <UtensilsCrossed className="w-5 h-5 text-purple-600" />
                 </div>
                 <div className="flex-1 text-right">
-                  <div className="font-bold text-gray-900 mb-1">אירוע מסעדה</div>
+                  <div className="font-bold text-gray-900 mb-1">אירוע עם מקומות ישיבה</div>
                   <div className="text-xs text-gray-600 leading-relaxed">
-                    ניהול שולחנות והזמנות למסעדות ובתי קפה
+                    לניהול הזמנות מקומות במסעדות, בתי קפה ואירועים
                   </div>
                 </div>
               </div>
@@ -183,9 +183,9 @@ export default function CreateEventDropdown({
                 <UtensilsCrossed className="w-6 h-6 text-purple-600" />
               </div>
               <div className="flex-1 text-right min-w-0">
-                <div className="font-bold text-gray-900 mb-1.5 text-base">🍽️ אירוע מסעדה (שולחנות)</div>
+                <div className="font-bold text-gray-900 mb-1.5 text-base">🍽️ אירוע עם מקומות ישיבה</div>
                 <div className="text-sm text-gray-600 leading-relaxed mb-2">
-                  ניהול שולחנות והזמנות למסעדות ובתי קפה
+                  לניהול הזמנות מקומות במסעדות, בתי קפה ואירועים
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded whitespace-nowrap">✓ ניהול שולחנות</span>

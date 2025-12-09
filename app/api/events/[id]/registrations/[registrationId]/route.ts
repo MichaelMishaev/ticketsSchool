@@ -9,12 +9,20 @@ export async function PATCH(
   try {
     // Check authentication
     const admin = await getCurrentAdmin()
+    console.log('[Registration PATCH] Authentication check:', admin ? 'Authenticated' : 'Not authenticated')
     if (!admin) {
+      console.error('[Registration PATCH] Unauthorized: No admin session found')
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
+    console.log('[Registration PATCH] Admin authenticated:', {
+      adminId: admin.adminId,
+      email: admin.email,
+      role: admin.role,
+      schoolId: admin.schoolId
+    })
 
     const { id, registrationId } = await params
     const data = await request.json()
@@ -161,11 +169,30 @@ export async function PATCH(
         }
       }
 
-      // Update registration status
+      // Prepare registration data update
       const updateData: any = {
         status: newStatus,
         ...(data.spotsCount && { spotsCount: data.spotsCount }),
-        ...(data.data && { data: data.data })
+      }
+
+      // Handle data field updates (merge with existing data)
+      if (data.removedFromTable || data.data) {
+        const existingData = (currentRegistration.data as any) || {}
+        updateData.data = {
+          ...existingData,
+          ...(data.data || {}),
+          ...(data.removedFromTable && { removedFromTable: true, removedAt: new Date().toISOString() })
+        }
+      }
+
+      // If moving to waitlist from confirmed, assign priority
+      if (newStatus === 'WAITLIST' && oldStatus === 'CONFIRMED') {
+        // Get the highest priority in waitlist and add 1
+        const highestPriority = await tx.registration.aggregate({
+          where: { eventId: id, status: 'WAITLIST' },
+          _max: { waitlistPriority: true }
+        })
+        updateData.waitlistPriority = (highestPriority._max.waitlistPriority || 0) + 1
       }
 
       // If cancelling, record cancellation details

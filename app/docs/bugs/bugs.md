@@ -1,7 +1,87 @@
 # Bug Report - Authentication & Onboarding Flow
 **Date:** 2025-11-10
-**Last Updated:** 2025-12-06
+**Last Updated:** 2025-12-09
 **Severity Levels:** =4 CRITICAL | =� MODERATE | =� LOW
+
+---
+
+### Bug #1: User Session Isolation - Previous User's Menu Shows After Logout/Login ✅ FIXED
+**Files:**
+- `/app/admin/layout.tsx` (lines 35-70)
+- `/lib/auth.server.ts` (line 183)
+
+**Severity:** 🔴 CRITICAL (multi-tenancy data leak vulnerability)
+**Status:** ✅ FIXED (2025-12-09)
+
+**Description:**
+When switching users (logout → login with different account), the new user saw the previous user's menu, navigation items, and school name. This is a **severe multi-tenancy security vulnerability** that could expose:
+- School names from other tenants
+- Navigation items the user shouldn't see
+- Role information from previous user
+- Potential access to unauthorized features
+
+**Root Cause:**
+The AdminLayout component fetched admin info **only once on mount** using `useEffect` with empty dependency array `[]`. When a user logged out and another logged in:
+```typescript
+// BEFORE (BROKEN):
+useEffect(() => {
+  // Fetch admin info
+  fetch('/api/admin/me')
+    .then(data => setAdminInfo(data.admin))
+}, []) // ❌ Only runs once - never updates!
+```
+
+**What Happened:**
+1. User A logs in → `adminInfo` state set to User A's data
+2. User A logs out → redirects to `/admin/login` (but layout stays mounted!)
+3. User B logs in → redirects to `/admin`
+4. **`useEffect` doesn't run again** (empty dependency array)
+5. User B sees User A's school name and menu 🚨
+
+**Fix Applied:**
+```typescript
+// AFTER (FIXED):
+useEffect(() => {
+  if (isPublicPage) {
+    // Clear admin info when on public pages (logout scenario)
+    setAdminInfo(null) // ✅ Clear state
+    setIsChecking(false)
+    return
+  }
+
+  // Fetch admin info from server
+  setIsChecking(true)
+  fetch('/api/admin/me')
+    .then(data => setAdminInfo(data.admin))
+    .finally(() => setIsChecking(false))
+}, [pathname]) // ✅ Refetch when pathname changes!
+```
+
+**Additional Fix - Logout Cookie Cleanup:**
+```typescript
+// lib/auth.server.ts
+export async function logout(): Promise<void> {
+  const cookieStore = await cookies()
+  cookieStore.delete(SESSION_COOKIE_NAME)
+  cookieStore.delete('admin_logged_in') // ✅ Also clear client hint cookie
+}
+```
+
+**Impact:**
+- **BEFORE:** Multi-tenant data leakage - users could see other schools' data
+- **AFTER:** Proper session isolation - each login fetches fresh user data
+
+**Testing Checklist:**
+- ✅ Logout as User A
+- ✅ Login as User B
+- ✅ Verify menu shows User B's school name
+- ✅ Verify navigation matches User B's role
+- ✅ Test with different roles (OWNER, ADMIN, MANAGER, SUPER_ADMIN)
+- ✅ Test on mobile and desktop
+
+**Files Modified:**
+- `/app/admin/layout.tsx:35-70` - Clear state on public pages, refetch on protected pages
+- `/lib/auth.server.ts:183` - Delete both session and hint cookies on logout
 
 ---
 
@@ -402,6 +482,55 @@ if (!emailSent) {
 2. **Add "Resend Verification Email" feature** (better UX)
 
 **Status:** =� OPEN
+
+---
+
+### Bug #9: Create Event Dropdown Clipped on Desktop (Empty State)
+**File:** `/app/admin/page.tsx` (line 211)
+**Severity:** =� MODERATE
+**Status:** ✅ FIXED (2025-12-08)
+
+**Description:**
+When the admin dashboard has no events (empty state), clicking the "צור אירוע חדש" button opens a dropdown menu that gets visually cut off on desktop. The bottom portion of the dropdown (restaurant event option) is clipped and not fully visible.
+
+**Root Cause:**
+The parent container has `overflow-hidden` class which clips the absolutely-positioned dropdown menu:
+```tsx
+// /app/admin/page.tsx:211
+<div className="bg-white shadow overflow-hidden sm:rounded-md">
+  {/* ... */}
+  <CreateEventDropdown variant="page" />
+</div>
+```
+
+The dropdown uses `sm:absolute` positioning on desktop, which positions it relative to the parent. When the parent has `overflow-hidden`, any content extending beyond the container boundaries is clipped.
+
+**Impact:**
+- Users cannot see the full dropdown content on desktop
+- Restaurant event option is partially or fully hidden
+- Poor UX - appears broken or buggy
+- Mobile is unaffected (uses `fixed` positioning)
+
+**Fix Applied:**
+```tsx
+// Before:
+<div className="bg-white shadow overflow-hidden sm:rounded-md">
+
+// After:
+<div className="bg-white shadow sm:rounded-md">
+```
+
+Removed `overflow-hidden` from the parent container since it's not necessary for the rounded corners styling.
+
+**Files Modified:**
+- `/app/admin/page.tsx:211` - Removed `overflow-hidden` class
+
+**Test Added:**
+- `/tests/create-event-dropdown.spec.ts` - New test "dropdown is fully visible when opened on desktop (no clipping)"
+- Verifies all dropdown options are visible and not cut off by parent overflow
+
+**Why It Passed Existing Tests:**
+The existing test at line 251-273 checked if the dropdown was "visible" but didn't verify that ALL content within the dropdown was fully visible. The test passed because the top of the dropdown was visible, even though the bottom was clipped.
 
 ---
 

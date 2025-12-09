@@ -71,65 +71,6 @@ export async function POST(request: NextRequest) {
     console.log('[Signup] Hashing password')
     const passwordHash = await bcrypt.hash(password, 10)
 
-    // ====== TEMPORARY: SKIP EMAIL VERIFICATION ======
-    // TODO: Remove this section and uncomment email verification code below when ready for production
-    console.log('[Signup] TEMPORARY: Skipping email verification')
-
-    // Create admin without school (onboarding will be completed after signup)
-    console.log('[Signup] Creating admin account')
-    const admin = await prisma.admin.create({
-      data: {
-        email: email.toLowerCase(),
-        passwordHash,
-        name,
-        role: 'OWNER',
-        schoolId: null, // Will be set during onboarding
-        emailVerified: true, // TEMPORARY: Set to true to skip verification
-        verificationToken: null, // TEMPORARY: No token needed
-        onboardingCompleted: false, // Will be completed after onboarding
-      },
-    })
-    console.log('[Signup] Admin account created successfully')
-
-    // TEMPORARY: Auto-login by creating session
-    const session: AuthSession = {
-      adminId: admin.id,
-      email: admin.email,
-      name: admin.name,
-      role: admin.role,
-      schoolId: undefined, // No school yet
-      schoolName: undefined,
-    }
-
-    const sessionToken = encodeSession(session)
-
-    // Create response and set session cookie
-    const response = NextResponse.json({
-      success: true,
-      message: 'החשבון נוצר בהצלחה!',
-      admin: {
-        id: admin.id,
-        email: admin.email,
-        name: admin.name,
-      },
-      requiresOnboarding: true, // Frontend should redirect to onboarding
-    })
-
-    // Set session cookie
-    response.cookies.set(SESSION_COOKIE_NAME, sessionToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60, // 7 days
-      path: '/',
-    })
-
-    console.log('[Signup] TEMPORARY: Auto-login completed, redirecting to onboarding')
-    return response
-
-    // ====== PRODUCTION CODE (COMMENTED OUT) ======
-    // Uncomment this section when ready to re-enable email verification
-    /*
     // Generate email verification token (24 hour expiry)
     console.log('[Signup] Generating verification token')
     const verificationToken = jwt.sign(
@@ -177,9 +118,7 @@ export async function POST(request: NextRequest) {
         email: admin.email,
         name: admin.name,
       },
-      emailSent,
     })
-    */
   } catch (error) {
     console.error('Signup error:', error)
     console.error('Error details:', {

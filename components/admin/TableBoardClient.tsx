@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import TableCard from './TableCard'
-import { X } from 'lucide-react'
+import { X, Plus } from 'lucide-react'
+import Link from 'next/link'
 
 interface Table {
   id: string
@@ -34,6 +35,37 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
   })
   const [cancelReason, setCancelReason] = useState('')
   const [cancelling, setCancelling] = useState(false)
+  const [togglingHold, setTogglingHold] = useState(false)
+
+  const handleToggleHold = async (tableId: string) => {
+    setTogglingHold(true)
+
+    try {
+      const table = tables.find((t) => t.id === tableId)
+      if (!table) return
+
+      const newStatus = table.status === 'INACTIVE' ? 'AVAILABLE' : 'INACTIVE'
+
+      const response = await fetch(`/api/events/${eventId}/tables/${tableId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      })
+
+      if (response.ok) {
+        router.refresh() // Refresh server component data
+      } else {
+        const error = await response.json()
+        console.error('API Error:', error)
+        alert(error.error || 'שגיאה בעדכון סטטוס שולחן')
+      }
+    } catch (error) {
+      console.error('Error toggling hold:', error)
+      alert('שגיאה בעדכון סטטוס שולחן')
+    } finally {
+      setTogglingHold(false)
+    }
+  }
 
   const handleCancelReservation = async () => {
     if (!cancelModal.registrationId) return
@@ -44,9 +76,12 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
       const response = await fetch(`/api/events/${eventId}/registrations/${cancelModal.registrationId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin', // Explicitly include cookies
         body: JSON.stringify({
-          status: 'CANCELLED',
-          cancellationReason: cancelReason.trim() || undefined
+          status: 'WAITLIST', // Move to waitlist instead of cancelling
+          cancellationReason: cancelReason.trim() || undefined,
+          moveToWaitlist: true, // Flag to indicate this was removed from table
+          removedFromTable: true // Add metadata to registration
         })
       })
 
@@ -56,11 +91,20 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
         router.refresh() // Refresh server component data
       } else {
         const error = await response.json()
-        alert(error.error || 'שגיאה בביטול ההזמנה')
+        console.error('API Error:', error)
+
+        // If unauthorized, redirect to login
+        if (response.status === 401) {
+          alert('הפג תוקף ההתחברות. אנא התחבר מחדש.')
+          window.location.href = '/admin/login'
+          return
+        }
+
+        alert(error.error || 'שגיאה בהעברה לרשימת המתנה')
       }
     } catch (error) {
-      console.error('Error cancelling reservation:', error)
-      alert('שגיאה בביטול ההזמנה')
+      console.error('Error moving to waitlist:', error)
+      alert('שגיאה בהעברה לרשימת המתנה')
     } finally {
       setCancelling(false)
     }
@@ -77,9 +121,29 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
             onCancel={(reservationId) => {
               setCancelModal({ show: true, registrationId: reservationId })
             }}
+            onToggleHold={handleToggleHold}
             readOnly={false}
           />
         ))}
+
+        {/* Add Table Card */}
+        <Link
+          href={`/admin/events/${eventId}/edit`}
+          className="border-2 border-dashed border-blue-300 bg-blue-50 hover:bg-blue-100 hover:border-blue-400 rounded-lg p-6 transition-all flex flex-col items-center justify-center gap-3 min-h-[200px] group"
+          dir="rtl"
+        >
+          <div className="w-12 h-12 bg-blue-500 group-hover:bg-blue-600 rounded-full flex items-center justify-center transition-colors">
+            <Plus className="w-6 h-6 text-white" />
+          </div>
+          <div className="text-center">
+            <div className="text-lg font-bold text-blue-900 group-hover:text-blue-950 transition-colors">
+              הוסף שולחן
+            </div>
+            <div className="text-sm text-blue-700 mt-1">
+              לחץ להוספת שולחן חדש
+            </div>
+          </div>
+        </Link>
       </div>
 
       {/* Cancel Modal */}
@@ -101,7 +165,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
             </div>
 
             <p className="text-gray-700 mb-4">
-              האם לבטל הזמנה זו? השולחן ישוחרר ויהפוך להיות זמין לאורחים אחרים.
+              האם להסיר הזמנה זו משולחן זה? האורחים יועברו לרשימת ההמתנה והשולחן ישוחרר.
             </p>
 
             <div className="mb-4">
@@ -126,9 +190,9 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
               <button
                 onClick={handleCancelReservation}
                 disabled={cancelling}
-                className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-amber-600 text-white py-2 px-4 rounded-lg hover:bg-amber-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {cancelling ? 'מבטל...' : 'בטל הזמנה'}
+                {cancelling ? 'מעביר לרשימת המתנה...' : 'העבר לרשימת המתנה'}
               </button>
               <button
                 onClick={() => {

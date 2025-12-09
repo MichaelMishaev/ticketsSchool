@@ -251,8 +251,8 @@ test.describe('CreateEventDropdown - Mobile & Desktop UI/UX Tests', () => {
       await page.goto('http://localhost:9000/admin')
       await waitForDashboardLoad(page)
 
-      // Find the create event dropdown button (desktop)
-      const dropdownButton = getDropdownButton(page, false)
+      // Find the create event dropdown button in navigation (header)
+      const dropdownButton = page.locator('nav button[aria-label="צור אירוע חדש"]')
       await expect(dropdownButton).toBeVisible()
     })
 
@@ -268,7 +268,7 @@ test.describe('CreateEventDropdown - Mobile & Desktop UI/UX Tests', () => {
       await waitForDashboardLoad(page)
 
       // Click dropdown button in navigation (header)
-      await getDropdownButton(page, false).click()
+      await page.click('nav button[aria-label="צור אירוע חדש"]')
       await page.waitForTimeout(300)
 
       // Check that dropdown menu is visible
@@ -292,7 +292,7 @@ test.describe('CreateEventDropdown - Mobile & Desktop UI/UX Tests', () => {
       await waitForDashboardLoad(page)
 
       // Open dropdown
-      await getDropdownButton(page, false).click()
+      await page.click('nav button[aria-label="צור אירוע חדש"]')
       await page.waitForTimeout(300)
 
       // Hover over regular event option
@@ -322,7 +322,7 @@ test.describe('CreateEventDropdown - Mobile & Desktop UI/UX Tests', () => {
       await waitForDashboardLoad(page)
 
       // Click dropdown button in navigation (header)
-      await getDropdownButton(page, false).click()
+      await page.click('nav button[aria-label="צור אירוע חדש"]')
       await page.waitForTimeout(300)
 
       // Get dropdown menu and both options
@@ -360,9 +360,10 @@ test.describe('CreateEventDropdown - Mobile & Desktop UI/UX Tests', () => {
         expect(restaurantBox.height).toBeGreaterThan(40)
       }
 
-      // Verify both options are clickable (not obscured)
-      await expect(regularOption).toBeEnabled()
-      await expect(restaurantOption).toBeEnabled()
+      // Additional check: Verify we can click the restaurant option (proves it's not clipped)
+      await restaurantOption.click()
+      await page.waitForURL('**/admin/events/new-restaurant')
+      expect(page.url()).toContain('/admin/events/new-restaurant')
     })
   })
 
@@ -439,8 +440,7 @@ test.describe('CreateEventDropdown - Mobile & Desktop UI/UX Tests', () => {
       await page.goto('http://localhost:9000/admin')
       await waitForDashboardLoad(page)
 
-      // Default viewport is desktop (1280x720)
-      const dropdownButton = getDropdownButton(page, false)
+      const dropdownButton = page.locator('nav button[aria-label="צור אירוע חדש"]')
 
       // Check aria-label
       const ariaLabel = await dropdownButton.getAttribute('aria-label')
@@ -480,17 +480,15 @@ test.describe('CreateEventDropdown - Mobile & Desktop UI/UX Tests', () => {
       await page.goto('http://localhost:9000/admin')
       await waitForDashboardLoad(page)
 
-      // Default viewport is desktop (1280x720)
-      const dropdownButton = getDropdownButton(page, false)
-
       // Open dropdown
-      await dropdownButton.click()
+      await page.click('nav button[aria-label="צור אירוע חדש"]')
       await page.waitForTimeout(300)
 
       // Get dropdown menu position
       const dropdownMenu = page.locator('[role="menu"]')
       const menuBox = await dropdownMenu.boundingBox()
-      const buttonBox = await dropdownButton.boundingBox()
+      const button = page.locator('nav button[aria-label="צור אירוע חדש"]')
+      const buttonBox = await button.boundingBox()
 
       // Dropdown should align to the RIGHT of the button (RTL)
       if (menuBox && buttonBox) {

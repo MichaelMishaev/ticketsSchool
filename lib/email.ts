@@ -73,14 +73,14 @@ export async function sendVerificationEmail(email: string, token: string, name: 
     </head>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; direction: rtl;">
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-        <h1 style="color: white; margin: 0; font-size: 28px;">TicketCap</h1>
+        <h1 style="color: white; margin: 0; font-size: 28px;">Kartis</h1>
         <p style="color: #e0e7ff; margin: 10px 0 0;">מערכת ניהול כרטיסים</p>
       </div>
 
       <div style="background: #f7fafc; padding: 30px; border-radius: 0 0 10px 10px;">
         <h2 style="color: #2d3748; margin-top: 0;">שלום ${name},</h2>
         <p style="font-size: 16px; color: #4a5568;">
-          ברוך הבא ל-TicketCap! אנחנו שמחים שהצטרפת אלינו.
+          ברוך הבא ל-Kartis! אנחנו שמחים שהצטרפת אלינו.
         </p>
         <p style="font-size: 16px; color: #4a5568;">
           כדי להשלים את ההרשמה ולאמת את כתובת המייל שלך, לחץ על הכפתור למטה:
@@ -110,7 +110,7 @@ export async function sendVerificationEmail(email: string, token: string, name: 
 
   return sendEmail({
     to: email,
-    subject: 'אימות כתובת מייל - TicketCap',
+    subject: 'אימות כתובת מייל - Kartis',
     html,
   })
 }
@@ -130,7 +130,7 @@ export async function sendPasswordResetEmail(email: string, token: string, name:
     </head>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; direction: rtl;">
       <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-        <h1 style="color: white; margin: 0; font-size: 28px;">TicketCap</h1>
+        <h1 style="color: white; margin: 0; font-size: 28px;">Kartis</h1>
         <p style="color: #ffe0e7; margin: 10px 0 0;">איפוס סיסמה</p>
       </div>
 
@@ -167,7 +167,7 @@ export async function sendPasswordResetEmail(email: string, token: string, name:
 
   return sendEmail({
     to: email,
-    subject: 'איפוס סיסמה - TicketCap',
+    subject: 'איפוס סיסמה - Kartis',
     html,
   })
 }
@@ -202,14 +202,14 @@ export async function sendTeamInvitationEmail(
     </head>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; direction: rtl;">
       <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-        <h1 style="color: white; margin: 0; font-size: 28px;">TicketCap</h1>
+        <h1 style="color: white; margin: 0; font-size: 28px;">Kartis</h1>
         <p style="color: #e0f7ff; margin: 10px 0 0;">הזמנה לצוות</p>
       </div>
 
       <div style="background: #f7fafc; padding: 30px; border-radius: 0 0 10px 10px;">
         <h2 style="color: #2d3748; margin-top: 0;">שלום!</h2>
         <p style="font-size: 16px; color: #4a5568;">
-          <strong>${inviterName}</strong> הזמין אותך להצטרף לצוות של <strong>${schoolName}</strong> ב-TicketCap.
+          <strong>${inviterName}</strong> הזמין אותך להצטרף לצוות של <strong>${schoolName}</strong> ב-Kartis.
         </p>
         <p style="font-size: 16px; color: #4a5568;">
           תפקידך: <strong style="color: #667eea;">${roleName}</strong>
@@ -239,7 +239,7 @@ export async function sendTeamInvitationEmail(
 
   return sendEmail({
     to: email,
-    subject: `הזמנה לצוות ${schoolName} - TicketCap`,
+    subject: `הזמנה לצוות ${schoolName} - Kartis`,
     html,
   })
 }
@@ -299,7 +299,7 @@ export async function sendWelcomeEmail(email: string, name: string, schoolName: 
 
   return sendEmail({
     to: email,
-    subject: 'ברוך הבא ל-TicketCap! 🎉',
+    subject: 'ברוך הבא ל-Kartis! 🎉',
     html,
   })
 }

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { Calendar, Home, Plus, Menu, X, HelpCircle, LogOut, MessageSquare, Shield, Settings, Users, UserSearch } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { isAuthenticatedSync, clientLogout } from '@/lib/auth.client'
 import { trackHelpButtonClick, trackButtonClick, trackLogout, trackWhatsAppHelpClick } from '@/lib/analytics'
@@ -24,6 +24,7 @@ export default function AdminLayout({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
+  const prevPathnameRef = useRef(pathname)
 
   // Check if current page is public BEFORE any state initialization
   const publicPages = ['/admin/login', '/admin/signup', '/admin/forgot-password', '/admin/onboarding']
@@ -35,6 +36,10 @@ export default function AdminLayout({
   useEffect(() => {
     // Skip auth check on public admin pages
     if (isPublicPage) {
+      // Clear admin info when on public pages (logout scenario)
+      setAdminInfo(null)
+      setIsChecking(false)
+      prevPathnameRef.current = pathname
       return
     }
 
@@ -42,21 +47,45 @@ export default function AdminLayout({
     // This is just a UX optimization - server will verify the HTTP-only cookie
     if (!isAuthenticatedSync()) {
       router.push('/admin/login')
-    } else {
-      // Fetch admin info ONCE on mount
-      // No need to refetch on every navigation - admin info is static
-      fetch('/api/admin/me')
-        .then(res => res.json())
-        .then(data => {
-          if (data.authenticated && data.admin) {
-            setAdminInfo(data.admin)
-          }
-        })
-        .catch(err => console.error('Failed to fetch admin info:', err))
-        .finally(() => setIsChecking(false))
+      prevPathnameRef.current = pathname
+      return
     }
+
+    // Determine if we need to fetch admin info
+    const wasPublicPage = publicPages.includes(prevPathnameRef.current)
+    const needsFetch = !adminInfo || wasPublicPage
+
+    // Only fetch if:
+    // 1. We don't have admin info yet (first load)
+    // 2. We're coming from a public page (login → dashboard transition)
+    // Don't fetch when navigating between protected pages (admin info is static)
+    if (!needsFetch) {
+      prevPathnameRef.current = pathname
+      return
+    }
+
+    // Fetch admin info from server
+    setIsChecking(true)
+    fetch('/api/admin/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.authenticated && data.admin) {
+          setAdminInfo(data.admin)
+        } else {
+          // Not authenticated - redirect to login
+          router.push('/admin/login')
+        }
+      })
+      .catch(err => {
+        console.error('Failed to fetch admin info:', err)
+        router.push('/admin/login')
+      })
+      .finally(() => {
+        setIsChecking(false)
+        prevPathnameRef.current = pathname
+      })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // ⚡ Only run once on mount - removed pathname dependency
+  }, [pathname, adminInfo, isPublicPage]) // ✅ Refetch only when needed (login → dashboard, or first load)
 
   const handleLogout = async () => {
     // Track logout event
