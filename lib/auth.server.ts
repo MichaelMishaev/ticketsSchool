@@ -179,4 +179,6 @@ export async function requireSchoolAccess(schoolId: string): Promise<AuthSession
 export async function logout(): Promise<void> {
   const cookieStore = await cookies()
   cookieStore.delete(SESSION_COOKIE_NAME)
+  // Also delete the client-side hint cookie
+  cookieStore.delete('admin_logged_in')
 }

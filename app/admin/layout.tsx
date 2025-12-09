@@ -35,6 +35,9 @@ export default function AdminLayout({
   useEffect(() => {
     // Skip auth check on public admin pages
     if (isPublicPage) {
+      // Clear admin info when on public pages (logout scenario)
+      setAdminInfo(null)
+      setIsChecking(false)
       return
     }
 
@@ -43,20 +46,28 @@ export default function AdminLayout({
     if (!isAuthenticatedSync()) {
       router.push('/admin/login')
     } else {
-      // Fetch admin info ONCE on mount
-      // No need to refetch on every navigation - admin info is static
+      // Fetch admin info from server
+      // This runs every time we navigate to a protected page
+      // This ensures we always have the current user's info after login
+      setIsChecking(true)
       fetch('/api/admin/me')
         .then(res => res.json())
         .then(data => {
           if (data.authenticated && data.admin) {
             setAdminInfo(data.admin)
+          } else {
+            // Not authenticated - redirect to login
+            router.push('/admin/login')
           }
         })
-        .catch(err => console.error('Failed to fetch admin info:', err))
+        .catch(err => {
+          console.error('Failed to fetch admin info:', err)
+          router.push('/admin/login')
+        })
         .finally(() => setIsChecking(false))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // ⚡ Only run once on mount - removed pathname dependency
+  }, [pathname]) // ✅ Refetch when pathname changes (detects login → dashboard navigation)
 
   const handleLogout = async () => {
     // Track logout event
