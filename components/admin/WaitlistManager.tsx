@@ -108,7 +108,7 @@ export default function WaitlistManager({ eventId, waitlist, onAssign }: Waitlis
           show: true,
           tableId,
           tableName: selectedTable.tableNumber,
-          recommendedTableName: selectedEntry.bestTable.tableNumber
+          recommendedTableName: selectedEntry.bestTable!.tableNumber
         })
         return
       } else if (!hasRecommendation && selectedEntry.matchingTables.length > 0) {
