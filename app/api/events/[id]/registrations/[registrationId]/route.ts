@@ -18,7 +18,7 @@ export async function PATCH(
       )
     }
     console.log('[Registration PATCH] Admin authenticated:', {
-      adminId: admin.id,
+      adminId: admin.adminId,
       email: admin.email,
       role: admin.role,
       schoolId: admin.schoolId
