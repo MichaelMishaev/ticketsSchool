@@ -64,10 +64,16 @@ export default function AdminLayout({
       return
     }
 
-    // Fetch admin info from server
+    // Fetch admin info from server with timeout
     setIsChecking(true)
-    fetch('/api/admin/me')
-      .then(res => res.json())
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+
+    fetch('/api/admin/me', { signal: controller.signal })
+      .then(res => {
+        clearTimeout(timeoutId)
+        return res.json()
+      })
       .then(data => {
         if (data.authenticated && data.admin) {
           setAdminInfo(data.admin)
@@ -77,7 +83,19 @@ export default function AdminLayout({
         }
       })
       .catch(err => {
+        clearTimeout(timeoutId)
         console.error('Failed to fetch admin info:', err)
+
+        // Don't redirect on timeout/network errors - only on auth failures
+        // If it's a timeout, the user is still authenticated (HTTP-only cookie exists)
+        // Just show the layout without admin info
+        if (err.name === 'AbortError') {
+          console.warn('Admin info fetch timed out - continuing with cached state')
+          // Keep existing adminInfo or show generic layout
+          return
+        }
+
+        // Only redirect to login on actual authentication failures
         router.push('/admin/login')
       })
       .finally(() => {
@@ -85,7 +103,7 @@ export default function AdminLayout({
         prevPathnameRef.current = pathname
       })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, adminInfo, isPublicPage]) // ✅ Refetch only when needed (login → dashboard, or first load)
+  }, [pathname, isPublicPage]) // ✅ Refetch only when pathname/auth state changes (not when adminInfo updates)
 
   const handleLogout = async () => {
     // Track logout event

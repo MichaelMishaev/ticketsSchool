@@ -164,6 +164,12 @@ export class AdminBuilder {
       this.data.email = `test-${uniqueId}@test.com`
     }
 
+    // Auto-create school if not provided and not SUPER_ADMIN
+    if (!this.data.schoolId && this.data.role !== 'SUPER_ADMIN') {
+      const school = await new SchoolBuilder().create()
+      this.data.schoolId = school.id
+    }
+
     const password = this.data.password || 'TestPassword123!'
     const hashedPassword = await bcrypt.hash(password, 10)
 

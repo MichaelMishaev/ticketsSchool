@@ -781,3 +781,4 @@ See `scripts/` directory for utility scripts (run with `tsx scripts/<script-name
 - `/app/docs/bugs/bugs.md` - Bug tracking
 - `/app/admin/help/page.tsx` - User-facing help (soccer-focused examples)
 - `.env.example` - Environment variables reference
+- when have schema change, add it to next commit, for the reason that we do not want to have bugs cos of schema change
