@@ -740,4 +740,195 @@ test.describe('Admin Registration Management P0', () => {
       expect(editVisible).toBe(false)
     })
   })
+
+  test.describe('Search by Confirmation Code', () => {
+    test('admin can search registration by confirmation code', async ({ page }) => {
+      const school = await createSchool().withName('Code Search School').create()
+      const admin = await createAdmin()
+        .withEmail(generateEmail('code-search'))
+        .withPassword('TestPassword123!')
+        .withSchool(school.id)
+        .create()
+
+      const event = await createEvent()
+        .withTitle('Code Search Event')
+        .withSchool(school.id)
+        .create()
+
+      const registration = await createRegistration()
+        .withEvent(event.id)
+        .withName('John Doe')
+        .withEmail(generateEmail('john-doe'))
+        .withPhone('0501234567')
+        .confirmed()
+        .create()
+
+      const loginPage = new LoginPage(page)
+      await loginPage.goto()
+      await loginPage.login(admin.email, 'TestPassword123!')
+
+      // Go to events page
+      await page.goto('/admin/events')
+
+      // Search by confirmation code
+      const searchInput = page.locator('input[placeholder*="קוד אישור"]')
+      await searchInput.fill(registration.confirmationCode)
+      await page.click('button:has-text("חפש")')
+
+      await page.waitForTimeout(1000)
+
+      // Should show search result within the green success box
+      const searchResultBox = page.locator('.bg-green-50')
+      await expect(searchResultBox.locator('text=נמצאה הרשמה!')).toBeVisible()
+      await expect(searchResultBox.locator(`text=${registration.confirmationCode}`)).toBeVisible()
+      await expect(searchResultBox.locator('text=John Doe')).toBeVisible()
+      await expect(searchResultBox.locator('text=Code Search Event')).toBeVisible()
+    })
+
+    test('search shows not found error for invalid code', async ({ page }) => {
+      const school = await createSchool().withName('Invalid Code School').create()
+      const admin = await createAdmin()
+        .withEmail(generateEmail('invalid-code'))
+        .withPassword('TestPassword123!')
+        .withSchool(school.id)
+        .create()
+
+      const loginPage = new LoginPage(page)
+      await loginPage.goto()
+      await loginPage.login(admin.email, 'TestPassword123!')
+
+      await page.goto('/admin/events')
+
+      // Search with invalid code
+      const searchInput = page.locator('input[placeholder*="קוד אישור"]')
+      await searchInput.fill('INVALID123')
+      await page.click('button:has-text("חפש")')
+
+      await page.waitForTimeout(1000)
+
+      // Should show error
+      await expect(page.locator('text=/לא נמצאה הרשמה/i')).toBeVisible()
+    })
+
+    test('school admin cannot search other school codes', async ({ page }) => {
+      const schoolA = await createSchool().withName('School A Code').create()
+      const adminA = await createAdmin()
+        .withEmail(generateEmail('school-a-code'))
+        .withPassword('TestPassword123!')
+        .withSchool(schoolA.id)
+        .create()
+
+      const schoolB = await createSchool().withName('School B Code').create()
+      const eventB = await createEvent()
+        .withTitle('Event B')
+        .withSchool(schoolB.id)
+        .create()
+
+      const registrationB = await createRegistration()
+        .withEvent(eventB.id)
+        .withName('User B')
+        .confirmed()
+        .create()
+
+      const loginPage = new LoginPage(page)
+      await loginPage.goto()
+      await loginPage.login(adminA.email, 'TestPassword123!')
+
+      await page.goto('/admin/events')
+
+      // Try to search School B's confirmation code
+      const searchInput = page.locator('input[placeholder*="קוד אישור"]')
+      await searchInput.fill(registrationB.confirmationCode)
+      await page.click('button:has-text("חפש")')
+
+      await page.waitForTimeout(1000)
+
+      // Should show error (403 or not found)
+      await expect(page.locator('text=/אין לך הרשאה|לא נמצאה הרשמה/i')).toBeVisible()
+    })
+
+    test('SUPER_ADMIN can search codes from any school', async ({ page }) => {
+      const superSchool = await createSchool().withName('Super Code HQ').create()
+      const superAdmin = await createAdmin()
+        .withEmail(generateEmail('super-code'))
+        .withPassword('SuperPassword123!')
+        .withRole('SUPER_ADMIN')
+        .withSchool(superSchool.id)
+        .create()
+
+      const schoolA = await createSchool().withName('School A Super Code').create()
+      const eventA = await createEvent()
+        .withTitle('Super Event A')
+        .withSchool(schoolA.id)
+        .create()
+
+      const registrationA = await createRegistration()
+        .withEvent(eventA.id)
+        .withName('User A')
+        .confirmed()
+        .create()
+
+      const loginPage = new LoginPage(page)
+      await loginPage.goto()
+      await loginPage.login(superAdmin.email, 'SuperPassword123!')
+
+      await page.goto('/admin/events')
+
+      // Search code from School A
+      const searchInput = page.locator('input[placeholder*="קוד אישור"]')
+      await searchInput.fill(registrationA.confirmationCode)
+      await page.click('button:has-text("חפש")')
+
+      await page.waitForTimeout(1000)
+
+      // Should find it - check within search result box
+      const searchResultBox = page.locator('.bg-green-50')
+      await expect(searchResultBox.locator('text=נמצאה הרשמה!')).toBeVisible()
+      await expect(searchResultBox.locator('text=User A')).toBeVisible()
+    })
+
+    test('search link navigates to correct event page', async ({ page }) => {
+      const school = await createSchool().withName('Nav School').create()
+      const admin = await createAdmin()
+        .withEmail(generateEmail('nav-admin'))
+        .withPassword('TestPassword123!')
+        .withSchool(school.id)
+        .create()
+
+      const event = await createEvent()
+        .withTitle('Nav Event')
+        .withSchool(school.id)
+        .create()
+
+      const registration = await createRegistration()
+        .withEvent(event.id)
+        .withName('Nav User')
+        .confirmed()
+        .create()
+
+      const loginPage = new LoginPage(page)
+      await loginPage.goto()
+      await loginPage.login(admin.email, 'TestPassword123!')
+
+      await page.goto('/admin/events')
+
+      // Search
+      const searchInput = page.locator('input[placeholder*="קוד אישור"]')
+      await searchInput.fill(registration.confirmationCode)
+      await page.click('button:has-text("חפש")')
+
+      await page.waitForTimeout(1000)
+
+      // Click link to event
+      await page.click('a:has-text("עבור לאירוע")')
+
+      // Wait for navigation
+      await page.waitForURL(`/admin/events/${event.id}`)
+      await page.waitForTimeout(2000)
+
+      // Should navigate to event page and show event title
+      await expect(page).toHaveURL(`/admin/events/${event.id}`)
+      await expect(page.locator('h1, h2, h3').filter({ hasText: 'Nav Event' }).first()).toBeVisible()
+    })
+  })
 })

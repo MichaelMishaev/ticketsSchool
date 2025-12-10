@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Calendar, Users, Clock, Edit, ExternalLink, Trash2, UtensilsCrossed, Copy, Check } from 'lucide-react'
+import { Calendar, Users, Clock, Edit, ExternalLink, Trash2, UtensilsCrossed, Copy, Check, Search, X } from 'lucide-react'
 import { format } from 'date-fns'
 import CreateEventDropdown from '@/components/CreateEventDropdown'
 
@@ -13,6 +13,12 @@ export default function EventsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [copiedEventId, setCopiedEventId] = useState<string | null>(null)
   const [eventTypeFilter, setEventTypeFilter] = useState<EventTypeFilter>('ALL')
+
+  // Search by confirmation code
+  const [searchCode, setSearchCode] = useState('')
+  const [isSearching, setIsSearching] = useState(false)
+  const [searchResult, setSearchResult] = useState<any>(null)
+  const [searchError, setSearchError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchEvents()
@@ -73,6 +79,39 @@ export default function EventsPage() {
     setTimeout(() => setCopiedEventId(null), 2000)
   }
 
+  const handleSearchByCode = async () => {
+    if (!searchCode.trim()) {
+      setSearchError('נא להזין קוד אישור')
+      return
+    }
+
+    setIsSearching(true)
+    setSearchError(null)
+    setSearchResult(null)
+
+    try {
+      const response = await fetch(`/api/registrations/search?code=${encodeURIComponent(searchCode.trim())}`)
+      const data = await response.json()
+
+      if (response.ok) {
+        setSearchResult(data.data)
+      } else {
+        setSearchError(data.error || 'שגיאה בחיפוש')
+      }
+    } catch (error) {
+      console.error('Error searching by code:', error)
+      setSearchError('שגיאה בחיפוש קוד אישור')
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  const clearSearch = () => {
+    setSearchCode('')
+    setSearchResult(null)
+    setSearchError(null)
+  }
+
   const getGameTypeIcon = (gameType: string): string => {
     const normalizedType = gameType.toLowerCase().trim()
 
@@ -129,6 +168,109 @@ export default function EventsPage() {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">אירועים</h1>
+      </div>
+
+      {/* Search by Confirmation Code */}
+      <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <h2 className="text-base font-semibold text-gray-900 mb-3">חיפוש לפי קוד אישור</h2>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1">
+            <input
+              type="text"
+              value={searchCode}
+              onChange={(e) => setSearchCode(e.target.value.toUpperCase())}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearchByCode()}
+              placeholder="הזן קוד אישור (לדוגמה: 49CKLZ)"
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500 font-medium text-center tracking-wider"
+              dir="ltr"
+            />
+          </div>
+          <button
+            onClick={handleSearchByCode}
+            disabled={isSearching || !searchCode.trim()}
+            className="sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed min-h-[48px] flex items-center justify-center gap-2"
+          >
+            <Search className="w-5 h-5" />
+            <span>{isSearching ? 'מחפש...' : 'חפש'}</span>
+          </button>
+        </div>
+
+        {/* Search Error */}
+        {searchError && (
+          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+            <X className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-red-800">{searchError}</p>
+          </div>
+        )}
+
+        {/* Search Result */}
+        {searchResult && (
+          <div className="mt-4 p-4 bg-green-50 border-2 border-green-300 rounded-lg">
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <h3 className="text-lg font-bold text-green-900">נמצאה הרשמה!</h3>
+              <button
+                onClick={clearSearch}
+                className="text-green-700 hover:text-green-900"
+                title="נקה חיפוש"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-gray-700">קוד אישור:</span>
+                <span className="font-mono font-bold text-green-800">{searchResult.confirmationCode}</span>
+              </div>
+              {searchResult.data?.name && (
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-gray-700">שם:</span>
+                  <span className="text-gray-900">{searchResult.data.name}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-gray-700">טלפון:</span>
+                <span className="text-gray-900 font-mono" dir="ltr">{searchResult.phoneNumber}</span>
+              </div>
+              {searchResult.data?.email && (
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-gray-700">אימייל:</span>
+                  <span className="text-gray-900" dir="ltr">{searchResult.data.email}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-gray-700">סטטוס:</span>
+                <span className={`font-semibold ${
+                  searchResult.status === 'CONFIRMED' ? 'text-green-700' :
+                  searchResult.status === 'WAITLIST' ? 'text-yellow-700' :
+                  'text-red-700'
+                }`}>
+                  {searchResult.status === 'CONFIRMED' ? '✓ אושר' :
+                   searchResult.status === 'WAITLIST' ? '⏳ רשימת המתנה' :
+                   '✕ בוטל'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-gray-700">אירוע:</span>
+                <span className="text-gray-900">{searchResult.event.title}</span>
+              </div>
+              {searchResult.event.school && (
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-gray-700">בית ספר:</span>
+                  <span className="text-gray-900">{searchResult.event.school.name}</span>
+                </div>
+              )}
+            </div>
+
+            <Link
+              href={`/admin/events/${searchResult.eventId}`}
+              className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 min-h-[48px]"
+            >
+              <Edit className="w-5 h-5" />
+              <span>עבור לאירוע וההרשמה</span>
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Event Type Filter - 2025 UX Best Practices */}
@@ -245,7 +387,7 @@ export default function EventsPage() {
                         </div>
                         <div className="flex items-center text-sm text-gray-700">
                           <Users className="w-4 h-4 ml-1.5 text-gray-500 flex-shrink-0" />
-                          <span className="font-medium">{event.totalSpotsTaken} / {event.capacity}</span>
+                          <span className="font-medium">{event.totalSpotsTaken} / {event.totalCapacity || event.capacity}</span>
                         </div>
                         {event.school && (
                           <span className="inline-flex items-center text-sm font-medium text-purple-700 bg-purple-50 px-2.5 py-1 rounded-md border border-purple-200">
