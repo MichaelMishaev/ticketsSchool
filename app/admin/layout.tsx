@@ -85,6 +85,17 @@ export default function AdminLayout({
       .catch(err => {
         clearTimeout(timeoutId)
         console.error('Failed to fetch admin info:', err)
+
+        // Don't redirect on timeout/network errors - only on auth failures
+        // If it's a timeout, the user is still authenticated (HTTP-only cookie exists)
+        // Just show the layout without admin info
+        if (err.name === 'AbortError') {
+          console.warn('Admin info fetch timed out - continuing with cached state')
+          // Keep existing adminInfo or show generic layout
+          return
+        }
+
+        // Only redirect to login on actual authentication failures
         router.push('/admin/login')
       })
       .finally(() => {
