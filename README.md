@@ -171,3 +171,4 @@ Optimized for Israeli mobile users:
 
 **Built with ❤️ for Israeli schools, clubs, and organizations managing limited-capacity events.**# Domain fix trigger
 # Testing hooks
+# CI Test Thu Dec 18 23:26:04 IST 2025
