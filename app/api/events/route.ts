@@ -140,21 +140,50 @@ export async function GET(request: NextRequest) {
           select: {
             spotsCount: true
           }
+        },
+        tables: {
+          select: {
+            capacity: true,
+            status: true,
+            reservation: {
+              select: {
+                guestsCount: true,
+                spotsCount: true
+              }
+            }
+          }
         }
       }
     })
 
-    // Calculate total spots taken for each event
+    // Calculate total spots taken and table capacity for each event
     const eventsWithSpots = events.map(event => {
-      const totalSpotsTaken = event.registrations.reduce(
-        (sum, reg) => sum + reg.spotsCount,
-        0
-      )
-      // Remove registrations array from response and add totalSpotsTaken
-      const { registrations, ...eventData } = event
+      let totalSpotsTaken = 0
+      let totalCapacity = event.capacity
+
+      // For TABLE_BASED events, count guests from reserved tables
+      if (event.eventType === 'TABLE_BASED') {
+        totalCapacity = event.tables.reduce((sum, table) => sum + table.capacity, 0)
+        totalSpotsTaken = event.tables.reduce((sum, table) => {
+          if (table.reservation) {
+            return sum + (table.reservation.guestsCount || table.reservation.spotsCount || 0)
+          }
+          return sum
+        }, 0)
+      } else {
+        // For CAPACITY_BASED events, count confirmed registrations
+        totalSpotsTaken = event.registrations.reduce(
+          (sum, reg) => sum + reg.spotsCount,
+          0
+        )
+      }
+
+      // Remove registrations and tables arrays from response and add calculated values
+      const { registrations, tables, ...eventData } = event
       return {
         ...eventData,
-        totalSpotsTaken
+        totalSpotsTaken,
+        totalCapacity
       }
     })
 
