@@ -64,6 +64,10 @@ export default function NewEventPageTest() {
     completionMessage: '',
   })
 
+  // String inputs for better UX on number fields
+  const [capacityInput, setCapacityInput] = useState('50')
+  const [maxSpotsInput, setMaxSpotsInput] = useState('1')
+
   // Character limits
   const CHAR_LIMITS = {
     title: 100,
@@ -98,6 +102,8 @@ export default function NewEventPageTest() {
   const handleLoadDraft = () => {
     if (draftData) {
       setFormData(draftData.formData)
+      setCapacityInput(String(draftData.formData.capacity || 50))
+      setMaxSpotsInput(String(draftData.formData.maxSpotsPerPerson || 1))
       setCurrentStep(draftData.currentStep || 0)
       setCompletedSteps(new Set(draftData.completedSteps || []))
       setShowDraftModal(false)
@@ -251,6 +257,60 @@ export default function NewEventPageTest() {
     if (typeof value !== 'boolean') {
       validateField(name, value)
     }
+  }
+
+  // Handle capacity input change
+  const handleCapacityChange = (value: string) => {
+    if (value === '') {
+      setCapacityInput('')
+      return
+    }
+
+    const numValue = parseInt(value)
+    if (!isNaN(numValue)) {
+      const clampedValue = Math.max(1, numValue)
+      setCapacityInput(String(clampedValue))
+      setFormData(prev => ({ ...prev, capacity: clampedValue }))
+      validateField('capacity', clampedValue)
+    }
+  }
+
+  // Handle max spots input change
+  const handleMaxSpotsChange = (value: string) => {
+    if (value === '') {
+      setMaxSpotsInput('')
+      return
+    }
+
+    const numValue = parseInt(value)
+    if (!isNaN(numValue)) {
+      const clampedValue = Math.max(1, Math.min(10, numValue))
+      setMaxSpotsInput(String(clampedValue))
+      setFormData(prev => ({ ...prev, maxSpotsPerPerson: clampedValue }))
+      validateField('maxSpotsPerPerson', clampedValue)
+    }
+  }
+
+  // Handle blur - ensure valid values
+  const handleCapacityBlur = () => {
+    if (capacityInput === '' || formData.capacity < 1) {
+      setCapacityInput('1')
+      setFormData(prev => ({ ...prev, capacity: 1 }))
+      validateField('capacity', 1)
+    }
+  }
+
+  const handleMaxSpotsBlur = () => {
+    if (maxSpotsInput === '' || formData.maxSpotsPerPerson < 1) {
+      setMaxSpotsInput('1')
+      setFormData(prev => ({ ...prev, maxSpotsPerPerson: 1 }))
+      validateField('maxSpotsPerPerson', 1)
+    }
+  }
+
+  // Auto-select text on focus for easy replacement
+  const handleNumberFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.select()
   }
 
   const saveDraft = () => {
@@ -717,8 +777,10 @@ export default function NewEventPageTest() {
                       type="number"
                       required
                       min="1"
-                      value={formData.capacity}
-                      onChange={(e) => handleChange('capacity', parseInt(e.target.value) || 0)}
+                      value={capacityInput}
+                      onChange={(e) => handleCapacityChange(e.target.value)}
+                      onBlur={handleCapacityBlur}
+                      onFocus={handleNumberFocus}
                       className={`
                         w-full pl-4 pr-12 py-3 border-2 rounded-lg text-lg
                         focus:ring-2 focus:ring-blue-500 focus:border-blue-500
@@ -750,8 +812,10 @@ export default function NewEventPageTest() {
                       required
                       min="1"
                       max="10"
-                      value={formData.maxSpotsPerPerson}
-                      onChange={(e) => handleChange('maxSpotsPerPerson', parseInt(e.target.value) || 0)}
+                      value={maxSpotsInput}
+                      onChange={(e) => handleMaxSpotsChange(e.target.value)}
+                      onBlur={handleMaxSpotsBlur}
+                      onFocus={handleNumberFocus}
                       className={`
                         w-full pl-4 pr-12 py-3 border-2 rounded-lg text-lg
                         focus:ring-2 focus:ring-blue-500 focus:border-blue-500

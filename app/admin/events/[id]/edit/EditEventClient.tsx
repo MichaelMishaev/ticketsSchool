@@ -59,9 +59,21 @@ export default function EditEventClient({
         throw new Error(data.error || 'Failed to add table')
       }
 
-      // Add to local state
-      setTables((prev) => [...prev, data.table])
-      setSuccessMessage('שולחן נוסף בהצלחה')
+      // Handle both single table and multiple tables responses
+      if (data.tables && Array.isArray(data.tables)) {
+        // Multiple tables created (bulk creation)
+        setTables((prev) => [...prev, ...data.tables])
+        const totalCapacity = data.tables.reduce((sum: number, t: any) => sum + t.capacity, 0)
+        setSuccessMessage(`✨ נוצרו ${data.count} שולחנות בהצלחה! סה"כ ${totalCapacity} מקומות`)
+      } else if (data.table) {
+        // Single table created
+        setTables((prev) => [...prev, data.table])
+        setSuccessMessage('שולחן נוסף בהצלחה')
+      }
+
+      // Close modal after successful creation
+      closeModal()
+
       setTimeout(() => setSuccessMessage(null), 3000)
     } catch (err: any) {
       setError(err.message)
@@ -269,17 +281,63 @@ export default function EditEventClient({
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {tables.map((table) => (
-              <TableCard
-                key={table.id}
-                table={table}
-                onEdit={() => openEditModal(table)}
-                onDelete={() => handleDeleteTable(table.id)}
-                onToggleHold={handleToggleHold}
-              />
-            ))}
-          </div>
+          <>
+            {/* Summary Statistics - Show when 6+ tables */}
+            {tables.length >= 6 && (
+              <div className="mb-6 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-4 border-2 border-blue-200 shadow-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                    <Save className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">{tables.length} שולחנות</div>
+                    <div className="text-sm text-gray-600">סה״כ {tables.reduce((sum, t) => sum + t.capacity, 0)} מקומות</div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="bg-white rounded-lg p-3 border border-blue-100">
+                    <div className="text-gray-600 mb-1">קיבולת ממוצעת</div>
+                    <div className="text-xl font-bold text-blue-600">
+                      {(tables.reduce((sum, t) => sum + t.capacity, 0) / tables.length).toFixed(1)}
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-blue-100">
+                    <div className="text-gray-600 mb-1">מינימום ממוצע</div>
+                    <div className="text-xl font-bold text-blue-600">
+                      {(tables.reduce((sum, t) => sum + t.minOrder, 0) / tables.length).toFixed(1)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Table Cards - Show max 6, then summary */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {tables.slice(0, 6).map((table) => (
+                <TableCard
+                  key={table.id}
+                  table={table}
+                  onEdit={() => openEditModal(table)}
+                  onDelete={() => handleDeleteTable(table.id)}
+                  onToggleHold={handleToggleHold}
+                />
+              ))}
+
+              {/* "And X more" card */}
+              {tables.length > 6 && (
+                <div className="border-2 border-dashed border-gray-300 bg-gray-50 rounded-lg p-6 flex flex-col items-center justify-center min-h-[200px]">
+                  <div className="text-5xl font-bold text-gray-400 mb-2">+{tables.length - 6}</div>
+                  <div className="text-gray-600 text-center">
+                    שולחנות נוספים
+                  </div>
+                  <div className="text-sm text-gray-500 mt-2">
+                    {tables.slice(6).map(t => t.tableNumber).slice(0, 3).join(', ')}
+                    {tables.length > 9 && '...'}
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
         )}
 
         {/* Table Form Modal */}

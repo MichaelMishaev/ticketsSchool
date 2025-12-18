@@ -238,6 +238,7 @@ function EventRegistrationPage({ eventData }: { eventData: Event }) {
   const [submitting, setSubmitting] = useState(false)
   const [formData, setFormData] = useState<any>({})
   const [spotsCount, setSpotsCount] = useState(1)
+  const [spotsCountInput, setSpotsCountInput] = useState('1')
   const [registered, setRegistered] = useState(false)
   const [confirmationCode, setConfirmationCode] = useState('')
   const [isWaitlist, setIsWaitlist] = useState(false)
@@ -251,6 +252,34 @@ function EventRegistrationPage({ eventData }: { eventData: Event }) {
     })
     setFormData(initialData)
   }, [eventData])
+
+  // Handle spots count input change
+  const handleSpotsCountChange = (value: string, maxAllowed: number) => {
+    if (value === '') {
+      setSpotsCountInput('')
+      return
+    }
+
+    const numValue = parseInt(value)
+    if (!isNaN(numValue)) {
+      const clampedValue = Math.max(1, Math.min(maxAllowed, numValue))
+      setSpotsCountInput(String(clampedValue))
+      setSpotsCount(clampedValue)
+    }
+  }
+
+  // Handle blur - ensure valid value
+  const handleSpotsCountBlur = () => {
+    if (spotsCountInput === '' || spotsCount < 1) {
+      setSpotsCountInput('1')
+      setSpotsCount(1)
+    }
+  }
+
+  // Auto-select text on focus for easy replacement
+  const handleNumberFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.select()
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -572,12 +601,13 @@ function EventRegistrationPage({ eventData }: { eventData: Event }) {
                   type="number"
                   min="1"
                   max={isFull ? event.maxSpotsPerPerson : Math.min(event.maxSpotsPerPerson, spotsLeft)}
-                  value={spotsCount}
+                  value={spotsCountInput}
                   onChange={(e) => {
-                    const value = parseInt(e.target.value) || 1;
                     const max = isFull ? event.maxSpotsPerPerson : Math.min(event.maxSpotsPerPerson, spotsLeft);
-                    setSpotsCount(Math.min(Math.max(1, value), max));
+                    handleSpotsCountChange(e.target.value, max);
                   }}
+                  onBlur={handleSpotsCountBlur}
+                  onFocus={handleNumberFocus}
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />

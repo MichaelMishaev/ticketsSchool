@@ -23,6 +23,7 @@ import {
   UtensilsCrossed,
   Ban,
   FormInput,
+  Users,
 } from 'lucide-react'
 
 interface TableDataWithId extends TableFormData {
@@ -41,7 +42,6 @@ export default function NewRestaurantEventPage() {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    gameType: 'מסעדה',
     location: '',
     startAt: '',
     endAt: '',
@@ -51,6 +51,7 @@ export default function NewRestaurantEventPage() {
   const [tables, setTables] = useState<TableDataWithId[]>([])
   const [isTableModalOpen, setIsTableModalOpen] = useState(false)
   const [editingTable, setEditingTable] = useState<TableDataWithId | null>(null)
+  const [editingGroup, setEditingGroup] = useState<TableDataWithId[] | null>(null)
 
   // Step 4 data (Registration Fields)
   const [fieldsSchema, setFieldsSchema] = useState<FieldSchema[]>(defaultFields)
@@ -58,6 +59,7 @@ export default function NewRestaurantEventPage() {
   // Step 5 data (Cancellation)
   const [allowCancellation, setAllowCancellation] = useState(true)
   const [deadlineHours, setDeadlineHours] = useState(2)
+  const [deadlineHoursInput, setDeadlineHoursInput] = useState('2')
   const [requireReason, setRequireReason] = useState(false)
 
   const steps = [
@@ -72,10 +74,38 @@ export default function NewRestaurantEventPage() {
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
+  // Handle deadline hours input change
+  const handleDeadlineHoursChange = (value: string) => {
+    if (value === '') {
+      setDeadlineHoursInput('')
+      return
+    }
+
+    const numValue = parseInt(value)
+    if (!isNaN(numValue)) {
+      const clampedValue = Math.max(0, Math.min(72, numValue))
+      setDeadlineHoursInput(String(clampedValue))
+      setDeadlineHours(clampedValue)
+    }
+  }
+
+  // Handle blur - ensure valid value
+  const handleDeadlineHoursBlur = () => {
+    if (deadlineHoursInput === '') {
+      setDeadlineHoursInput('0')
+      setDeadlineHours(0)
+    }
+  }
+
+  // Auto-select text on focus for easy replacement
+  const handleNumberFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.select()
+  }
+
   const validateStep = (stepIndex: number): boolean => {
     switch (stepIndex) {
       case 0: // Details
-        return formData.title.length >= 3 && formData.gameType.length >= 2
+        return formData.title.length >= 3
       case 1: // Timing
         return formData.startAt !== ''
       case 2: // Tables
@@ -104,8 +134,6 @@ export default function NewRestaurantEventPage() {
         case 0: // Details
           if (formData.title.length < 3) {
             addToast('שם האירוע חייב להכיל לפחות 3 תווים', 'error')
-          } else if (formData.gameType.length < 2) {
-            addToast('סוג האירוע חייב להכיל לפחות 2 תווים', 'error')
           } else {
             addToast('אנא מלא את כל השדות החובה', 'error')
           }
@@ -133,17 +161,160 @@ export default function NewRestaurantEventPage() {
 
   // Table management functions
   const handleAddTable = (tableData: TableFormData) => {
-    const newTable: TableDataWithId = {
-      ...tableData,
-      tempId: `temp-${Date.now()}`,
-      order: tables.length + 1,
+    const count = tableData.count || 1
+
+    // Single table creation
+    if (count === 1) {
+      const newTable: TableDataWithId = {
+        ...tableData,
+        tempId: `temp-${Date.now()}`,
+        order: tables.length + 1,
+      }
+      setTables((prev) => [...prev, newTable])
+      setIsTableModalOpen(false)
+      addToast('שולחן נוסף בהצלחה', 'success', 2000)
+      return
     }
-    setTables((prev) => [...prev, newTable])
+
+    // Bulk creation (count > 1)
+    // Smart auto-increment naming
+    const tableNumberMatch = tableData.tableNumber.match(/\d+/)
+    const baseNumber = tableNumberMatch ? parseInt(tableNumberMatch[0], 10) : 1
+    const prefix = tableNumberMatch
+      ? tableData.tableNumber.substring(0, tableNumberMatch.index)
+      : tableData.tableNumber
+    const suffix = tableNumberMatch
+      ? tableData.tableNumber.substring(tableNumberMatch.index! + tableNumberMatch[0].length)
+      : ''
+
+    // Get existing numbers to find the highest
+    const existingNumbers = tables
+      .map(t => {
+        const match = t.tableNumber.match(/\d+/)
+        return match ? parseInt(match[0], 10) : 0
+      })
+      .filter(n => n > 0)
+
+    const maxExistingNumber = existingNumbers.length > 0
+      ? Math.max(...existingNumbers)
+      : baseNumber - 1
+
+    // Create multiple tables
+    const newTables: TableDataWithId[] = []
+    for (let i = 0; i < count; i++) {
+      const newNumber = maxExistingNumber + i + 1
+      const newTableNumber = `${prefix}${newNumber}${suffix}`
+
+      newTables.push({
+        tableNumber: newTableNumber,
+        capacity: tableData.capacity,
+        minOrder: tableData.minOrder,
+        tempId: `temp-${Date.now()}-${i}`,
+        order: tables.length + i + 1,
+      })
+    }
+
+    setTables((prev) => [...prev, ...newTables])
     setIsTableModalOpen(false)
-    addToast('שולחן נוסף בהצלחה', 'success', 2000)
+
+    const totalCapacity = newTables.reduce((sum, t) => sum + t.capacity, 0)
+    addToast(`✨ נוצרו ${count} שולחנות בהצלחה! סה"כ ${totalCapacity} מקומות`, 'success', 3000)
   }
 
   const handleEditTable = (tableData: TableFormData) => {
+    // Editing a group of tables
+    if (editingGroup) {
+      const currentCount = editingGroup.length
+      const newCount = tableData.count || currentCount
+      const diff = newCount - currentCount
+
+      const groupTempIds = editingGroup.map(t => t.tempId)
+
+      // Update existing tables in the group
+      setTables((prev) => {
+        let updated = prev.map((t) =>
+          groupTempIds.includes(t.tempId)
+            ? { ...t, capacity: tableData.capacity, minOrder: tableData.minOrder }
+            : t
+        )
+
+        // If reducing count, remove tables from the end of the group
+        if (diff < 0) {
+          const tablesToRemove = Math.abs(diff)
+          const tablesToKeep = editingGroup.slice(0, currentCount - tablesToRemove)
+          const keepTempIds = tablesToKeep.map(t => t.tempId)
+
+          updated = updated.filter(t => !groupTempIds.includes(t.tempId) || keepTempIds.includes(t.tempId))
+        }
+
+        // If increasing count, add new tables
+        if (diff > 0) {
+          // Find the last table in the group to determine naming pattern
+          const lastTable = editingGroup[editingGroup.length - 1]
+          const tableNumberMatch = lastTable.tableNumber.match(/\d+/)
+          const baseNumber = tableNumberMatch ? parseInt(tableNumberMatch[0], 10) : 0
+          const prefix = tableNumberMatch
+            ? lastTable.tableNumber.substring(0, tableNumberMatch.index)
+            : lastTable.tableNumber
+          const suffix = tableNumberMatch
+            ? lastTable.tableNumber.substring(tableNumberMatch.index! + tableNumberMatch[0].length)
+            : ''
+
+          // Get all existing numbers to find the highest
+          const existingNumbers = updated
+            .map(t => {
+              const match = t.tableNumber.match(/\d+/)
+              return match ? parseInt(match[0], 10) : 0
+            })
+            .filter(n => n > 0)
+
+          const maxExistingNumber = existingNumbers.length > 0
+            ? Math.max(...existingNumbers)
+            : baseNumber
+
+          // Create new tables
+          const newTables: TableDataWithId[] = []
+          for (let i = 0; i < diff; i++) {
+            const newNumber = maxExistingNumber + i + 1
+            const newTableNumber = `${prefix}${newNumber}${suffix}`
+
+            newTables.push({
+              tableNumber: newTableNumber,
+              capacity: tableData.capacity,
+              minOrder: tableData.minOrder,
+              tempId: `temp-${Date.now()}-${i}`,
+              order: updated.length + i + 1,
+            })
+          }
+
+          updated = [...updated, ...newTables]
+        }
+
+        return updated
+      })
+
+      setEditingGroup(null)
+
+      // Show appropriate success message
+      if (diff > 0) {
+        addToast(
+          `✨ ${currentCount} שולחנות עודכנו + ${diff} שולחנות נוספו!`,
+          'success',
+          3000
+        )
+      } else if (diff < 0) {
+        addToast(
+          `🗑️ ${Math.abs(diff)} שולחנות נמחקו, ${newCount} שולחנות עודכנו`,
+          'info',
+          3000
+        )
+      } else {
+        addToast(`${currentCount} שולחנות עודכנו בהצלחה`, 'success', 2000)
+      }
+      return
+    }
+
+    // Editing a single table
     if (!editingTable) return
 
     setTables((prev) =>
@@ -180,6 +351,59 @@ export default function NewRestaurantEventPage() {
 
   const openEditModal = (table: TableDataWithId) => {
     setEditingTable(table)
+  }
+
+  // Group consecutive similar tables
+  const groupTables = () => {
+    const groups: Array<{
+      tables: TableDataWithId[]
+      isGroup: boolean
+      firstTable: TableDataWithId
+      count: number
+      totalCapacity: number
+    }> = []
+
+    let currentGroup: TableDataWithId[] = []
+
+    tables.forEach((table, index) => {
+      if (currentGroup.length === 0) {
+        currentGroup.push(table)
+        return
+      }
+
+      const lastTable = currentGroup[currentGroup.length - 1]
+      const canGroup =
+        table.capacity === lastTable.capacity &&
+        table.minOrder === lastTable.minOrder &&
+        currentGroup.length < 100 // Max group size
+
+      if (canGroup) {
+        currentGroup.push(table)
+      } else {
+        // Finish current group
+        groups.push({
+          tables: currentGroup,
+          isGroup: currentGroup.length > 1,
+          firstTable: currentGroup[0],
+          count: currentGroup.length,
+          totalCapacity: currentGroup.reduce((sum, t) => sum + t.capacity, 0)
+        })
+        currentGroup = [table]
+      }
+    })
+
+    // Add last group
+    if (currentGroup.length > 0) {
+      groups.push({
+        tables: currentGroup,
+        isGroup: currentGroup.length > 1,
+        firstTable: currentGroup[0],
+        count: currentGroup.length,
+        totalCapacity: currentGroup.reduce((sum, t) => sum + t.capacity, 0)
+      })
+    }
+
+    return groups
   }
 
   const handleSubmit = async () => {
@@ -257,22 +481,6 @@ export default function NewRestaurantEventPage() {
               <div className="flex items-center gap-2 mb-6">
                 <FileText className="w-6 h-6 text-purple-600" />
                 <h2 className="text-xl font-bold text-gray-900">פרטי האירוע</h2>
-              </div>
-
-              {/* Game Type (pre-filled) */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  סוג אירוע <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.gameType}
-                  onChange={(e) => handleChange('gameType', e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg
-                    focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                    text-gray-900 bg-white"
-                  placeholder="מסעדה, בית קפה, אירוח..."
-                />
               </div>
 
               {/* Title */}
@@ -398,34 +606,202 @@ export default function NewRestaurantEventPage() {
                 </div>
               )}
 
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
-                {tables.map((table, index) => (
-                  <TableCard
-                    key={table.tempId}
-                    table={{
-                      id: table.tempId,
-                      tableNumber: table.tableNumber,
-                      capacity: table.capacity,
-                      minOrder: table.minOrder,
-                      status: 'AVAILABLE',
-                    }}
-                    onEdit={() => openEditModal(table)}
-                    onDelete={() => handleDeleteTable(table.tempId)}
-                    onMoveUp={index > 0 ? () => handleMoveUp(index) : undefined}
-                    onMoveDown={index < tables.length - 1 ? () => handleMoveDown(index) : undefined}
-                  />
-                ))}
-              </div>
+              {/* Summary Statistics - Show when 6+ tables */}
+              {tables.length >= 6 && (() => {
+                // Check if all tables are identical
+                const allIdentical = tables.every(t =>
+                  t.capacity === tables[0].capacity &&
+                  t.minOrder === tables[0].minOrder
+                )
 
-              <button
-                type="button"
-                onClick={() => setIsTableModalOpen(true)}
-                className="w-full py-3 bg-purple-600 text-white font-medium rounded-lg
-                  hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
-              >
-                <span>+</span>
-                <span>הוסף שולחן</span>
-              </button>
+                // Calculate range for variety
+                const capacities = tables.map(t => t.capacity)
+                const minOrders = tables.map(t => t.minOrder)
+                const minCapacity = Math.min(...capacities)
+                const maxCapacity = Math.max(...capacities)
+                const minMinOrder = Math.min(...minOrders)
+                const maxMinOrder = Math.max(...minOrders)
+
+                return (
+                  <div className="mb-6 bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-4 border-2 border-purple-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
+                        <UtensilsCrossed className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-gray-900">{tables.length} שולחנות</div>
+                        <div className="text-sm text-gray-600">סה״כ {tables.reduce((sum, t) => sum + t.capacity, 0)} מקומות</div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="bg-white rounded-lg p-3 border border-purple-100">
+                        <div className="text-gray-600 mb-1">
+                          {allIdentical ? 'קיבולת כל שולחן' : 'טווח קיבולת'}
+                        </div>
+                        <div className="text-xl font-bold text-purple-600">
+                          {allIdentical ? tables[0].capacity : `${minCapacity}-${maxCapacity}`}
+                        </div>
+                      </div>
+                      <div className="bg-white rounded-lg p-3 border border-purple-100">
+                        <div className="text-gray-600 mb-1">
+                          {allIdentical ? 'מינימום כל שולחן' : 'טווח מינימום'}
+                        </div>
+                        <div className="text-xl font-bold text-purple-600">
+                          {allIdentical ? tables[0].minOrder : `${minMinOrder}-${maxMinOrder}`}
+                        </div>
+                      </div>
+                    </div>
+                    {allIdentical && (
+                      <div className="mt-3 text-center text-xs text-gray-600 bg-white rounded-lg py-2 border border-purple-100">
+                        ✨ כל השולחנות זהים
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
+
+              {/* Table Cards - Grouped view */}
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
+                {/* Add Table Card - Always visible */}
+                <button
+                  type="button"
+                  onClick={() => setIsTableModalOpen(true)}
+                  className="border-2 border-dashed border-purple-300 bg-purple-50 hover:bg-purple-100 hover:border-purple-400 rounded-lg p-6 transition-all flex flex-col items-center justify-center min-h-[250px] group"
+                  dir="rtl"
+                >
+                  <div className="w-16 h-16 bg-purple-600 group-hover:bg-purple-700 rounded-full flex items-center justify-center transition-colors mb-4">
+                    <span className="text-4xl text-white font-bold">+</span>
+                  </div>
+                  <div className="text-lg font-bold text-purple-900 group-hover:text-purple-950 transition-colors">
+                    הוסף שולחן
+                  </div>
+                  <div className="text-sm text-purple-700 mt-2 text-center">
+                    לחץ ליצירת שולחן חדש
+                  </div>
+                </button>
+
+                {groupTables().map((group, groupIndex) => {
+                  if (group.isGroup) {
+                    // Grouped card for multiple similar tables
+                    const firstTable = group.tables[0]
+                    const lastTable = group.tables[group.tables.length - 1]
+
+                    return (
+                      <div
+                        key={`group-${groupIndex}`}
+                        className="bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-300 rounded-lg p-6 shadow-sm hover:shadow-md transition-all"
+                        dir="rtl"
+                      >
+                        {/* Header with group count badge */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            <div className="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
+                              {group.count}
+                            </div>
+                            <div className="text-lg font-bold text-gray-900">
+                              {firstTable.tableNumber} - {lastTable.tableNumber}
+                            </div>
+                          </div>
+                          <div className="text-xs bg-green-500 text-white px-2 py-1 rounded-full font-medium">
+                            פנוי
+                          </div>
+                        </div>
+
+                        {/* Per-table capacity */}
+                        <div className="bg-white rounded-lg p-4 mb-3 border border-purple-200">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <div className="text-xs text-gray-600 mb-1">קיבולת שולחן</div>
+                              <div className="text-2xl font-bold text-purple-600">
+                                {firstTable.capacity}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-600 mb-1">מינימום</div>
+                              <div className="text-2xl font-bold text-blue-600">
+                                {firstTable.minOrder}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Total capacity for group */}
+                        <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-3 mb-3 border-2 border-green-200">
+                          <div className="text-xs text-green-800 font-medium mb-2 text-center">
+                            📊 סה״כ קבוצה ({group.count} שולחנות)
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-white rounded-lg p-2 text-center border border-green-100">
+                              <div className="text-xs text-gray-600 mb-1">מקסימום</div>
+                              <div className="text-xl font-bold text-green-600">
+                                {group.count * firstTable.capacity}
+                              </div>
+                            </div>
+                            <div className="bg-white rounded-lg p-2 text-center border border-green-100">
+                              <div className="text-xs text-gray-600 mb-1">מינימום</div>
+                              <div className="text-xl font-bold text-orange-600">
+                                {group.count * firstTable.minOrder}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Actions - Edit/Delete group */}
+                        <div className="mt-4 pt-4 border-t border-purple-200">
+                          <div className="text-xs text-gray-600 text-center mb-3">
+                            💡 {group.count} שולחנות זהים
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                // Delete all tables in the group
+                                if (confirm(`האם למחוק ${group.count} שולחנות זהים?`)) {
+                                  setTables(prev => prev.filter(t => !group.tables.some(gt => gt.tempId === t.tempId)))
+                                  addToast(`${group.count} שולחנות נמחקו`, 'info', 2000)
+                                }
+                              }}
+                              className="flex-1 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg text-xs font-medium transition-colors border border-red-200"
+                            >
+                              🗑️ מחק הכל
+                            </button>
+                            <button
+                              onClick={() => {
+                                // Edit entire group - set editingGroup to all tables in this group
+                                setEditingGroup(group.tables)
+                                setEditingTable(firstTable) // Use first table as template
+                              }}
+                              className="flex-1 px-3 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg text-xs font-medium transition-colors border border-purple-200"
+                            >
+                              ✏️ ערוך קבוצה
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  } else {
+                    // Single table card
+                    const table = group.firstTable
+                    const index = tables.findIndex(t => t.tempId === table.tempId)
+
+                    return (
+                      <TableCard
+                        key={table.tempId}
+                        table={{
+                          id: table.tempId,
+                          tableNumber: table.tableNumber,
+                          capacity: table.capacity,
+                          minOrder: table.minOrder,
+                          status: 'AVAILABLE',
+                        }}
+                        onEdit={() => openEditModal(table)}
+                        onDelete={() => handleDeleteTable(table.tempId)}
+                        onMoveUp={index > 0 ? () => handleMoveUp(index) : undefined}
+                        onMoveDown={index < tables.length - 1 ? () => handleMoveDown(index) : undefined}
+                      />
+                    )
+                  }
+                })}
+              </div>
 
               {tables.length === 0 && (
                 <div className="mt-4 flex items-center gap-2 text-red-600 text-sm">
@@ -436,15 +812,17 @@ export default function NewRestaurantEventPage() {
             </div>
 
             <TableFormModal
-              isOpen={isTableModalOpen || !!editingTable}
+              isOpen={isTableModalOpen || !!editingTable || !!editingGroup}
               onClose={() => {
                 setIsTableModalOpen(false)
                 setEditingTable(null)
+                setEditingGroup(null)
               }}
-              onSubmit={editingTable ? handleEditTable : handleAddTable}
+              onSubmit={editingTable || editingGroup ? handleEditTable : handleAddTable}
               initialData={editingTable || undefined}
-              mode={editingTable ? 'edit' : 'create'}
+              mode={editingTable || editingGroup ? 'edit' : 'create'}
               existingTableNumbers={tables.map((t) => t.tableNumber)}
+              groupEditCount={editingGroup?.length}
             />
           </motion.div>
         )
@@ -526,8 +904,10 @@ export default function NewRestaurantEventPage() {
                         type="number"
                         min="0"
                         max="72"
-                        value={deadlineHours}
-                        onChange={(e) => setDeadlineHours(parseInt(e.target.value) || 0)}
+                        value={deadlineHoursInput}
+                        onChange={(e) => handleDeadlineHoursChange(e.target.value)}
+                        onBlur={handleDeadlineHoursBlur}
+                        onFocus={handleNumberFocus}
                         className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg
                           focus:ring-2 focus:ring-purple-500 focus:border-purple-500
                           text-gray-900 bg-white"

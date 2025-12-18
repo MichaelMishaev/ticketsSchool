@@ -30,6 +30,7 @@ interface Event {
   startAt: string
   endAt?: string
   capacity: number
+  totalCapacity?: number
   spotsReserved: number
   status: string
   maxSpotsPerPerson: number
@@ -204,7 +205,8 @@ export default function EventManagementPage() {
     .reduce((sum, r) => sum + r.spotsCount, 0)
   const waitlistCount = event.registrations.filter(r => r.status === 'WAITLIST')
     .reduce((sum, r) => sum + r.spotsCount, 0)
-  const spotsLeft = event.capacity - confirmedCount
+  const totalCapacity = event.totalCapacity || event.capacity
+  const spotsLeft = totalCapacity - confirmedCount
 
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { text: string; className: string }> = {
@@ -311,7 +313,7 @@ export default function EventManagementPage() {
               )}
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
-                {confirmedCount} / {event.capacity} נרשמים
+                {confirmedCount} / {totalCapacity} נרשמים
                 <span className="spots-reserved" data-testid="spots-reserved">
                   ({event.spotsReserved} תפוסים)
                 </span>
