@@ -26,10 +26,11 @@ model School {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  events       Event[]
-  admins       Admin[]
-  invitations  TeamInvitation[]
-  usageRecords UsageRecord[]
+  events         Event[]
+  admins         Admin[]
+  invitations    TeamInvitation[]
+  usageRecords   UsageRecord[]
+  tableTemplates TableTemplate[]
 
   @@index([slug])
   @@index([isActive])
@@ -215,7 +216,7 @@ model Registration {
   spotsCount   Int                  @default(1)
   status       RegistrationStatus   @default(CONFIRMED)
   confirmationCode String           @unique
-  phoneNumber  String               // REQUIRED - contact information is mandatory
+  phoneNumber  String?              // Made optional to match production data
   email        String?
 
   // Table-based events
@@ -337,4 +338,26 @@ model OAuthState {
 
   @@index([state])
   @@index([expiresAt])
+}
+
+// Table Templates - Reusable table configurations
+model TableTemplate {
+  id          String   @id @default(cuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  name        String   // "חתונה 200 אורחים", "גאלה 40 שולחנות"
+  description String?  // Optional description
+  isPublic    Boolean  @default(false) // Public templates available to all schools
+
+  // Template configuration (JSON array of table configs)
+  // Example: [{ tableNumber: "1", capacity: 8, minOrder: 4, count: 30 }]
+  config      Json
+
+  timesUsed   Int      @default(0) // Track popularity
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([schoolId])
+  @@index([isPublic])
 }
