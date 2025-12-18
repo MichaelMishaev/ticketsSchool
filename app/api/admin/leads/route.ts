@@ -90,12 +90,14 @@ export async function GET(request: NextRequest) {
       const email = regData?.email || null
 
       // Normalize phone
-      let normalizedPhone: string
-      try {
-        normalizedPhone = normalizePhoneNumber(reg.phoneNumber)
-      } catch (error) {
-        // If phone normalization fails, use original
-        normalizedPhone = reg.phoneNumber
+      let normalizedPhone: string | null = null
+      if (reg.phoneNumber) {
+        try {
+          normalizedPhone = normalizePhoneNumber(reg.phoneNumber)
+        } catch (error) {
+          // If phone normalization fails, use original
+          normalizedPhone = reg.phoneNumber
+        }
       }
 
       // Apply search filter after normalization
@@ -103,7 +105,7 @@ export async function GET(request: NextRequest) {
         const searchLower = search.toLowerCase()
         const matchesSearch =
           name.toLowerCase().includes(searchLower) ||
-          normalizedPhone.includes(searchLower) ||
+          (normalizedPhone && normalizedPhone.includes(searchLower)) ||
           (email && email.toLowerCase().includes(searchLower))
 
         if (!matchesSearch) {
@@ -111,7 +113,10 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Get or create lead entry
+      // Get or create lead entry (skip if no phone number)
+      if (!normalizedPhone) {
+        continue
+      }
       const existing = leadsMap.get(normalizedPhone)
 
       if (existing) {
