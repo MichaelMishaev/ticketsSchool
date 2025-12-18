@@ -122,21 +122,15 @@ export default function RestaurantsLandingPage() {
               </div>
             </div>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-8">
-              <Link
-                href="/admin/events/new-restaurant"
-                className="px-8 sm:px-12 py-4 sm:py-5 text-lg sm:text-xl font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 hover:shadow-xl transition-all max-w-[80%] sm:max-w-none flex items-center gap-2 shadow-lg"
-              >
-                <span className="text-2xl">🍽️</span>
-                <span>פתחו מערכת הזמנות</span>
-                <ArrowLeft className="w-5 h-5" />
-              </Link>
+            {/* CTA Button */}
+            <div className="flex justify-center items-center pt-8">
               <Link
                 href="/admin/signup"
-                className="px-8 sm:px-12 py-4 sm:py-5 text-lg sm:text-xl font-bold text-purple-700 bg-white border-2 border-purple-300 rounded-xl hover:border-purple-400 hover:shadow-xl transition-all max-w-[80%] sm:max-w-none"
+                className="px-10 sm:px-14 py-5 sm:py-6 text-xl sm:text-2xl font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl hover:from-purple-700 hover:to-pink-700 hover:shadow-2xl hover:scale-105 transition-all flex items-center gap-3 shadow-xl min-h-[44px]"
               >
-                הרשמה חינמית
+                <span className="text-3xl">🍽️</span>
+                <span>התחילו עכשיו - חינם!</span>
+                <ArrowLeft className="w-6 h-6" />
               </Link>
             </div>
 
@@ -559,20 +553,14 @@ export default function RestaurantsLandingPage() {
             הצטרפו לעסקים שכבר מנהלים הזמנות מקומות בצורה מקצועית עם kartis.info
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-            <Link
-              href="/admin/events/new-restaurant"
-              className="px-10 py-5 text-xl font-bold text-purple-700 bg-white rounded-2xl hover:bg-gray-50 transition-all shadow-2xl hover:scale-110 flex items-center gap-3"
-            >
-              <span className="text-2xl">🍽️</span>
-              <span>פתחו מערכת הזמנות</span>
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
+          <div className="flex justify-center items-center">
             <Link
               href="/admin/signup"
-              className="px-10 py-5 text-xl font-bold text-white bg-white/10 backdrop-blur-sm border-2 border-white rounded-2xl hover:bg-white/20 transition-all"
+              className="px-12 py-6 text-2xl font-bold text-purple-700 bg-white rounded-2xl hover:bg-gray-50 transition-all shadow-2xl hover:scale-110 flex items-center gap-3 min-h-[44px]"
             >
-              הרשמה חינמית
+              <span className="text-3xl">🍽️</span>
+              <span>התחילו עכשיו - חינם!</span>
+              <ArrowLeft className="w-6 h-6" />
             </Link>
           </div>
 

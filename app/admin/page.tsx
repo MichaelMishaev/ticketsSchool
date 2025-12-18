@@ -245,7 +245,7 @@ export default function AdminDashboard() {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-semibold">
-                        {event._count?.registrations || 0}/{event.capacity}
+                        {event.totalSpotsTaken || 0}/{event.totalCapacity || event.capacity}
                       </p>
                       <p className="text-xs text-gray-500">נרשמים</p>
                     </div>

@@ -14,6 +14,46 @@ TicketCap is a multi-tenant event registration system built for Israeli schools,
 - Playwright for E2E testing
 - JWT authentication (jsonwebtoken + jose)
 
+## Advanced Table Management (NEW!)
+
+**TicketCap now supports managing 30-40+ tables efficiently with three powerful features:**
+
+### 🔄 1. Duplicate Tables
+- Create 1 table → Duplicate 29 times → 30 tables in 30 seconds
+- Smart auto-increment naming ("שולחן 5" → "שולחן 6", "שולחן 7"...)
+- Live preview before creation
+- API: `POST /api/events/[id]/tables/[tableId]/duplicate`
+
+### ✨ 2. Template System
+- Save common table configurations as reusable templates
+- Apply templates to new events with one click
+- Support for private (school-specific) and public templates
+- APIs:
+  - `GET /api/templates` - List all templates
+  - `POST /api/templates` - Create template
+  - `POST /api/events/[id]/tables/from-template` - Apply template
+  - `POST /api/events/[id]/tables/save-as-template` - Save current tables
+
+### 📝 3. Bulk Edit
+- Select multiple tables with checkboxes
+- Edit capacity, minimum order, or status for all at once
+- Bulk delete multiple tables (protected: can't delete reserved tables)
+- APIs:
+  - `PATCH /api/events/[id]/tables/bulk-edit` - Update multiple tables
+  - `DELETE /api/events/[id]/tables/bulk-delete` - Delete multiple tables
+
+**📖 Full Documentation**: `/docs/features/table-management.md`
+**🧪 E2E Tests**: `/tests/suites/07-table-management-p0.spec.ts`
+
+**Quick Workflow** (40 tables in 2 minutes):
+```
+1. Create first table: "1", 8 seats, min 4
+2. Click Copy icon (📋)
+3. Enter "39" → Duplicate
+4. Done! Tables 1-40 created
+5. (Optional) Save as template for reuse
+```
+
 ## Development Setup
 
 ### Prerequisites
