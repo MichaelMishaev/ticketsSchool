@@ -23,6 +23,18 @@ export async function GET(
         school: true,
         registrations: {
           orderBy: { createdAt: 'desc' }
+        },
+        tables: {
+          select: {
+            capacity: true,
+            status: true,
+            reservation: {
+              select: {
+                guestsCount: true,
+                spotsCount: true
+              }
+            }
+          }
         }
       }
     })
@@ -42,7 +54,31 @@ export async function GET(
       )
     }
 
-    return NextResponse.json(event)
+    // Calculate total capacity and spots taken for TABLE_BASED events
+    let totalCapacity = event.capacity
+    let totalSpotsTaken = 0
+
+    if (event.eventType === 'TABLE_BASED') {
+      totalCapacity = event.tables.reduce((sum, table) => sum + table.capacity, 0)
+      totalSpotsTaken = event.tables.reduce((sum, table) => {
+        if (table.reservation) {
+          return sum + (table.reservation.guestsCount || table.reservation.spotsCount || 0)
+        }
+        return sum
+      }, 0)
+    } else {
+      // For CAPACITY_BASED events, count confirmed registrations
+      totalSpotsTaken = event.registrations.filter(r => r.status === 'CONFIRMED')
+        .reduce((sum, reg) => sum + (reg.spotsCount || 0), 0)
+    }
+
+    // Add totalCapacity and totalSpotsTaken to response
+    const { tables, ...eventData } = event
+    return NextResponse.json({
+      ...eventData,
+      totalCapacity,
+      totalSpotsTaken
+    })
   } catch (error) {
     console.error('Error fetching event:', error)
     return NextResponse.json(
