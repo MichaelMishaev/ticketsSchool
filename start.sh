@@ -54,12 +54,12 @@ if [ -n "$DATABASE_URL" ]; then
             psql "$DATABASE_URL" -f scripts/ensure-oauth-state-table.sql 2>&1 || echo "⚠️  OAuthState table creation had warnings"
         fi
 
-        # Use npx to run Prisma (already installed in node_modules)
+        # Use local Prisma binary (already installed in node_modules)
         echo "📥 Using Prisma from node_modules..."
 
         # Try to run migrations (capture exit code properly)
         set +e  # Temporarily disable exit on error
-        npx prisma migrate deploy
+        node_modules/.bin/prisma migrate deploy
         MIGRATION_EXIT_CODE=$?
         set -e  # Re-enable exit on error
 
@@ -78,8 +78,8 @@ if [ -n "$DATABASE_URL" ]; then
 
                         # Since we manually applied the changes, mark ALL affected migrations as applied
                         echo "🔧 Step 2: Marking migrations as manually applied..."
-                        npx prisma migrate resolve --applied 20251107211615_add_multi_school_support || echo "Could not mark multi_school migration"
-                        npx prisma migrate resolve --applied 20251107_add_spots_reserved || echo "Could not mark spots_reserved migration"
+                        node_modules/.bin/prisma migrate resolve --applied 20251107211615_add_multi_school_support || echo "Could not mark multi_school migration"
+                        node_modules/.bin/prisma migrate resolve --applied 20251107_add_spots_reserved || echo "Could not mark spots_reserved migration"
                         echo "✅ Migrations marked as applied"
                     else
                         echo "⚠️  Data fix script failed"
@@ -98,7 +98,7 @@ if [ -n "$DATABASE_URL" ]; then
 
                 for migration in "${FAILED_MIGRATIONS[@]}"; do
                     echo "Attempting to resolve migration: $migration"
-                    npx prisma migrate resolve --rolled-back "$migration" 2>/dev/null || true
+                    node_modules/.bin/prisma migrate resolve --rolled-back "$migration" 2>/dev/null || true
                 done
             fi
 
@@ -110,7 +110,7 @@ if [ -n "$DATABASE_URL" ]; then
                 echo "🔄 Retry attempt $RETRY_COUNT of $MAX_RETRIES..."
 
                 set +e
-                npx prisma migrate deploy
+                node_modules/.bin/prisma migrate deploy
                 RETRY_EXIT_CODE=$?
                 set -e
 
