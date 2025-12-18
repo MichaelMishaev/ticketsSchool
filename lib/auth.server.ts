@@ -156,6 +156,12 @@ export async function requireSuperAdmin(): Promise<AuthSession> {
 
 /**
  * Check if admin has access to a school
+ *
+ * Runtime guards enforce multi-tenant data isolation:
+ * - Non-SuperAdmin MUST have schoolId assigned
+ * - Non-SuperAdmin can only access their own school
+ *
+ * Guards fail fast to prevent silent data isolation violations.
  */
 export async function requireSchoolAccess(schoolId: string): Promise<AuthSession> {
   const admin = await requireAdmin()
@@ -165,8 +171,30 @@ export async function requireSchoolAccess(schoolId: string): Promise<AuthSession
     return admin
   }
 
-  // School admins can only access their own school
+  // RUNTIME GUARD: Non-SuperAdmin MUST have schoolId
+  if (!admin.schoolId) {
+    const message = 'Data isolation violation: Admin missing schoolId (non-SuperAdmin must belong to a school)'
+    console.error('INVARIANT VIOLATION:', message, {
+      adminId: admin.adminId,
+      email: admin.email,
+      role: admin.role,
+      requestedSchoolId: schoolId,
+      timestamp: new Date().toISOString(),
+    })
+    throw new Error(message)
+  }
+
+  // RUNTIME GUARD: Non-SuperAdmin can only access their school
   if (admin.schoolId !== schoolId) {
+    const message = `Data isolation violation: Admin ${admin.adminId} (school: ${admin.schoolId}) attempting to access school: ${schoolId}`
+    console.error('INVARIANT VIOLATION:', message, {
+      adminId: admin.adminId,
+      email: admin.email,
+      role: admin.role,
+      adminSchoolId: admin.schoolId,
+      requestedSchoolId: schoolId,
+      timestamp: new Date().toISOString(),
+    })
     throw new Error('Forbidden: No access to this school')
   }
 

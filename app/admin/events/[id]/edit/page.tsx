@@ -51,11 +51,20 @@ export default async function EditEventPage({
     redirect(`/admin/events/${id}`)
   }
 
+  // Type-cast tables to match EditEventClient's expected type
+  const tables = event.tables.map(table => ({
+    ...table,
+    reservation: table.reservation ? {
+      ...table.reservation,
+      data: table.reservation.data as Record<string, unknown>
+    } : null
+  }))
+
   return (
     <EditEventClient
       eventId={event.id}
       eventTitle={event.title}
-      initialTables={event.tables}
+      initialTables={tables}
     />
   )
 }

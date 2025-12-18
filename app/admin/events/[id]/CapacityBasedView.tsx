@@ -9,9 +9,16 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 
+interface FieldSchema {
+  id: string
+  label: string
+  type: string
+  required?: boolean
+}
+
 interface Registration {
   id: string
-  data: any
+  data: Record<string, unknown>
   spotsCount: number
   status: 'CONFIRMED' | 'WAITLIST' | 'CANCELLED'
   confirmationCode: string
@@ -34,7 +41,7 @@ interface Event {
   spotsReserved: number
   status: string
   maxSpotsPerPerson: number
-  fieldsSchema: any[]
+  fieldsSchema: FieldSchema[]
   conditions?: string
   requireAcceptance: boolean
   registrations: Registration[]
@@ -61,6 +68,7 @@ export default function EventManagementPage() {
 
   useEffect(() => {
     fetchEvent()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId])
 
   const fetchEvent = async () => {
@@ -234,7 +242,7 @@ export default function EventManagementPage() {
 
     // Check if this is a custom field (starts with "field_")
     if (fieldKey.startsWith('field_')) {
-      const field = event.fieldsSchema.find((f: any) => f.id === fieldKey)
+      const field = event.fieldsSchema.find((f: FieldSchema) => f.id === fieldKey)
       return field?.label || fieldKey
     }
 
@@ -363,7 +371,7 @@ export default function EventManagementPage() {
               </div>
               <select
                 value={event.status}
-                onChange={(e) => handleStatusChange(e.target.value as any)}
+                onChange={(e) => handleStatusChange(e.target.value as 'OPEN' | 'PAUSED' | 'CLOSED')}
                 className="w-full px-3 py-1.5 border-2 border-gray-300 rounded-md text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
               >
                 <option value="OPEN">✅ פתוח להרשמה</option>
@@ -402,7 +410,7 @@ export default function EventManagementPage() {
             name="status"
             data-testid="status-filter"
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as any)}
+            onChange={(e) => setFilterStatus(e.target.value as 'all' | 'CONFIRMED' | 'WAITLIST' | 'CANCELLED')}
             className="px-4 py-2 border rounded-lg"
           >
             <option value="all">כל הסטטוסים</option>
@@ -459,8 +467,8 @@ export default function EventManagementPage() {
                     </td>
                     <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">
                       <div>
-                        <div className="font-medium">{registration.data.name}</div>
-                        <div className="text-gray-500 text-xs">{registration.phoneNumber || registration.data.phone}</div>
+                        <div className="font-medium">{String(registration.data.name || '')}</div>
+                        <div className="text-gray-500 text-xs">{registration.phoneNumber || String(registration.data.phone || '')}</div>
                       </div>
                     </td>
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">

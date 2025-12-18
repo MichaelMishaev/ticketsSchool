@@ -10,8 +10,11 @@
     "start": "next start",
     "start:prod": "npx prisma migrate deploy && next start",
     "test:db": "node scripts/test-db-and-migrate.js",
+    "type-check": "tsc --noEmit",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "playwright test",
     "test:unit": "jest",
     "test:unit:watch": "jest --watch",
@@ -19,13 +22,16 @@
     "test:debug": "playwright test --debug",
     "test:headed": "playwright test --headed",
     "test:mobile": "playwright test --project='Mobile Chrome'",
+    "test:p0": "playwright test tests/suites/*-p0.spec.ts",
+    "test:canary": "playwright test tests/golden-path/",
     "db:migrate": "npx prisma migrate deploy",
     "db:generate": "npx prisma generate",
     "db:setup": "node scripts/setup-production-db.js",
     "db:deploy": "chmod +x scripts/deploy-db.sh && scripts/deploy-db.sh",
     "db:status": "npx prisma migrate status",
     "school": "tsx scripts/school-manager.ts",
-    "school:seed": "tsx scripts/school-manager.ts seed"
+    "school:seed": "tsx scripts/school-manager.ts seed",
+    "prepare": "husky"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -69,9 +75,22 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.3",
     "form-data": "^4.0.4",
+    "husky": "^9.1.7",
     "jest": "^30.2.0",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.7.4",
     "tailwindcss": "^4",
     "ts-jest": "^29.4.6",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wait-on": "^8.0.1"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
   }
 }

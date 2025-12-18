@@ -1,0 +1,182 @@
+name: Golden Path Canary (Production Health Check)
+
+on:
+  # Run hourly to detect outages within 1 hour
+  schedule:
+    - cron: '0 * * * *'  # Every hour, on the hour
+
+  # Allow manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to test'
+        required: false
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+jobs:
+  canary-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10  # Fail if tests take longer than 10 minutes
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Golden Path Canary Tests
+        env:
+          # Production URL (use secret or manual input)
+          PLAYWRIGHT_BASE_URL: ${{ secrets.PRODUCTION_URL || 'https://your-production-url.railway.app' }}
+
+          # Canary admin credentials (stored as GitHub secrets)
+          CANARY_ADMIN_EMAIL: ${{ secrets.CANARY_ADMIN_EMAIL }}
+          CANARY_ADMIN_PASSWORD: ${{ secrets.CANARY_ADMIN_PASSWORD }}
+        run: |
+          # Run canary tests with retry logic
+          echo "🚀 Starting Golden Path Canary Tests against: $PLAYWRIGHT_BASE_URL"
+
+          # First attempt
+          npx playwright test tests/golden-path/ --project=chromium --reporter=list,html || EXIT_CODE=$?
+
+          # If failed, retry after 30s delay (handles transient network issues)
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "⚠️  First attempt failed. Retrying in 30 seconds..."
+            sleep 30
+            npx playwright test tests/golden-path/ --project=chromium --reporter=list,html || EXIT_CODE=$?
+          fi
+
+          # If still failed, one more retry after 30s
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "⚠️  Second attempt failed. Final retry in 30 seconds..."
+            sleep 30
+            npx playwright test tests/golden-path/ --project=chromium --reporter=list,html || EXIT_CODE=$?
+          fi
+
+          # If all retries failed, exit with failure
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "🚨 PRODUCTION DOWN - Golden Path Canary FAILED after 3 attempts"
+            exit 1
+          fi
+
+          echo "✅ Golden Path Canary: All tests passed"
+          exit 0
+
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: canary-failure-report-${{ github.run_number }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 30
+
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: canary-screenshots-${{ github.run_number }}
+          path: test-results/**/*.png
+          retention-days: 30
+
+      - name: Upload traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: canary-traces-${{ github.run_number }}
+          path: test-results/**/*.zip
+          retention-days: 30
+
+      - name: Alert on failure
+        if: failure()
+        run: |
+          echo "::error::🚨 PRODUCTION DOWN - Golden Path Canary FAILED"
+          echo "::error::Tests failed after 3 retry attempts"
+          echo "::error::Check uploaded artifacts for screenshots and traces"
+          echo "::error::Production URL: ${{ secrets.PRODUCTION_URL }}"
+          echo "::error::Run number: ${{ github.run_number }}"
+
+          # Create GitHub issue on failure (optional - requires GITHUB_TOKEN with issues:write)
+          # Uncomment the following lines to auto-create issues:
+          # curl -X POST \
+          #   -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          #   -H "Accept: application/vnd.github.v3+json" \
+          #   https://api.github.com/repos/${{ github.repository }}/issues \
+          #   -d '{
+          #     "title": "🚨 Production Down - Golden Path Canary Failed",
+          #     "body": "Golden Path Canary tests failed at ${{ github.run_number }}. Check workflow logs for details.",
+          #     "labels": ["production", "critical", "canary-failure"]
+          #   }'
+
+  # Optional: Send Slack notification on failure
+  # notify-slack:
+  #   runs-on: ubuntu-latest
+  #   needs: canary-tests
+  #   if: failure()
+  #   steps:
+  #     - name: Send Slack notification
+  #       uses: slackapi/slack-github-action@v1.24.0
+  #       with:
+  #         webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+  #         payload: |
+  #           {
+  #             "text": "🚨 PRODUCTION DOWN - Golden Path Canary FAILED",
+  #             "blocks": [
+  #               {
+  #                 "type": "header",
+  #                 "text": {
+  #                   "type": "plain_text",
+  #                   "text": "🚨 Production Health Check Failed"
+  #                 }
+  #               },
+  #               {
+  #                 "type": "section",
+  #                 "fields": [
+  #                   {
+  #                     "type": "mrkdwn",
+  #                     "text": "*Repository:*\n${{ github.repository }}"
+  #                   },
+  #                   {
+  #                     "type": "mrkdwn",
+  #                     "text": "*Run Number:*\n${{ github.run_number }}"
+  #                   },
+  #                   {
+  #                     "type": "mrkdwn",
+  #                     "text": "*Production URL:*\n${{ secrets.PRODUCTION_URL }}"
+  #                   },
+  #                   {
+  #                     "type": "mrkdwn",
+  #                     "text": "*Failed At:*\n<!date^${{ github.event.repository.updated_at }}^{date_short_pretty} at {time}|Unknown>"
+  #                   }
+  #                 ]
+  #               },
+  #               {
+  #                 "type": "actions",
+  #                 "elements": [
+  #                   {
+  #                     "type": "button",
+  #                     "text": {
+  #                       "type": "plain_text",
+  #                       "text": "View Workflow Run"
+  #                     },
+  #                     "url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+  #                   }
+  #                 ]
+  #               }
+  #             ]
+  #           }

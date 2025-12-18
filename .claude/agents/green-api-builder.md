@@ -136,6 +136,85 @@ await prisma.$transaction(async (tx) => {
 })
 ```
 
+### 6. **Table Management Patterns (NEW!)**
+```typescript
+// Duplicate table endpoint
+export async function POST(
+  request: Request,
+  { params }: { params: { id: string; tableId: string } }
+) {
+  const admin = await requireAdmin()
+  const { count = 1 } = await request.json()
+
+  // Verify access to event
+  const event = await prisma.event.findUnique({
+    where: { id: params.id },
+    include: { tables: true }
+  })
+
+  if (!event || (admin.role !== 'SUPER_ADMIN' && event.schoolId !== admin.schoolId)) {
+    return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+  }
+
+  // Find original table
+  const originalTable = await prisma.table.findUnique({
+    where: { id: params.tableId }
+  })
+
+  if (!originalTable) {
+    return NextResponse.json({ error: 'Table not found' }, { status: 404 })
+  }
+
+  // Create duplicates with smart name increment
+  const newTables = []
+  for (let i = 0; i < count; i++) {
+    const newName = generateNextTableName(originalTable.name, event.tables)
+    const table = await prisma.table.create({
+      data: {
+        eventId: event.id,
+        name: newName,
+        capacity: originalTable.capacity,
+        minimumOrder: originalTable.minimumOrder,
+        price: originalTable.price,
+        status: originalTable.status
+      }
+    })
+    newTables.push(table)
+  }
+
+  return NextResponse.json({ success: true, tables: newTables })
+}
+
+// Bulk edit tables endpoint
+export async function PATCH(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const admin = await requireAdmin()
+  const { tableIds, updates } = await request.json()
+
+  // Verify access
+  const event = await prisma.event.findUnique({
+    where: { id: params.id }
+  })
+
+  if (!event || (admin.role !== 'SUPER_ADMIN' && event.schoolId !== admin.schoolId)) {
+    return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+  }
+
+  // Bulk update
+  await prisma.table.updateMany({
+    where: {
+      id: { in: tableIds },
+      eventId: params.id
+    },
+    data: updates
+  })
+
+  return NextResponse.json({ success: true })
+}
+```
+
 ## Standard HTTP Status Codes
 - `200` - Success
 - `400` - Bad request (validation error)
@@ -155,6 +234,13 @@ await prisma.$transaction(async (tx) => {
 - Requires authentication
 - Enforces schoolId filtering
 - CRUD operations for events
+- **Table management (NEW!):**
+  - `/api/events/[id]/tables` - List/create tables
+  - `/api/events/[id]/tables/[tableId]/duplicate` - Duplicate tables
+  - `/api/events/[id]/tables/bulk-edit` - Bulk update tables
+  - `/api/events/[id]/tables/bulk-delete` - Bulk delete tables
+  - `/api/events/[id]/tables/from-template` - Apply template
+  - `/api/events/[id]/tables/save-as-template` - Save as template
 
 ### Public endpoints: `/app/api/p/[schoolSlug]/[eventSlug]/*`
 - NO authentication required

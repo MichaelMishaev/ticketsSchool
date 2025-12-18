@@ -18,7 +18,7 @@ interface Table {
     confirmationCode: string
     guestsCount: number | null
     phoneNumber: string | null
-    data: any
+    data: Record<string, unknown>
   } | null
 }
 
@@ -63,7 +63,7 @@ export default function EditEventClient({
       if (data.tables && Array.isArray(data.tables)) {
         // Multiple tables created (bulk creation)
         setTables((prev) => [...prev, ...data.tables])
-        const totalCapacity = data.tables.reduce((sum: number, t: any) => sum + t.capacity, 0)
+        const totalCapacity = data.tables.reduce((sum: number, t: Table) => sum + t.capacity, 0)
         setSuccessMessage(`✨ נוצרו ${data.count} שולחנות בהצלחה! סה"כ ${totalCapacity} מקומות`)
       } else if (data.table) {
         // Single table created
@@ -75,8 +75,8 @@ export default function EditEventClient({
       closeModal()
 
       setTimeout(() => setSuccessMessage(null), 3000)
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
       setIsLoading(false)
     }
@@ -108,8 +108,8 @@ export default function EditEventClient({
       )
       setSuccessMessage('שולחן עודכן בהצלחה')
       setTimeout(() => setSuccessMessage(null), 3000)
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
       setIsLoading(false)
       setEditingTable(null)
@@ -140,8 +140,8 @@ export default function EditEventClient({
       setTables((prev) => prev.filter((t) => t.id !== tableId))
       setSuccessMessage('שולחן נמחק בהצלחה')
       setTimeout(() => setSuccessMessage(null), 3000)
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
       setIsLoading(false)
     }
@@ -178,8 +178,8 @@ export default function EditEventClient({
       const message = newStatus === 'INACTIVE' ? 'שולחן סומן כרזרבה' : 'שולחן שוחרר'
       setSuccessMessage(message)
       setTimeout(() => setSuccessMessage(null), 3000)
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
       setIsLoading(false)
     }

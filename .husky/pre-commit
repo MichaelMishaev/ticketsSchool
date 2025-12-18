@@ -1,0 +1,34 @@
+echo "🔍 Running pre-commit checks..."
+echo ""
+
+# Type checking
+echo "📝 Type checking..."
+npm run type-check
+if [ $? -ne 0 ]; then
+  echo "❌ Type check failed. Fix TypeScript errors before committing."
+  exit 1
+fi
+echo "✅ Type check passed"
+echo ""
+
+# Linting
+echo "🧹 Running ESLint..."
+npm run lint
+if [ $? -ne 0 ]; then
+  echo "❌ ESLint failed. Fix linting errors before committing."
+  exit 1
+fi
+echo "✅ ESLint passed"
+echo ""
+
+# Lint-staged (format and fix staged files)
+echo "💅 Formatting staged files..."
+npx lint-staged
+if [ $? -ne 0 ]; then
+  echo "❌ Formatting failed. Check errors above."
+  exit 1
+fi
+echo "✅ Formatting passed"
+echo ""
+
+echo "✨ All pre-commit checks passed! Proceeding with commit..."
