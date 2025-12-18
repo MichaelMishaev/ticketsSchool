@@ -1,6 +1,6 @@
 'use client'
 
-import { Edit2, Trash2, ChevronUp, ChevronDown, Users, UserCheck, Ban } from 'lucide-react'
+import { Edit2, Trash2, ChevronUp, ChevronDown, Users, UserCheck, Ban, Copy } from 'lucide-react'
 
 interface TableCardProps {
   table: {
@@ -18,8 +18,11 @@ interface TableCardProps {
     } | null
   }
   hasWaitlistMatch?: boolean
+  isSelected?: boolean
+  onSelect?: (tableId: string, selected: boolean) => void
   onEdit?: () => void
   onDelete?: () => void
+  onDuplicate?: (tableId: string) => void
   onCancel?: (reservationId: string) => void
   onToggleHold?: (tableId: string) => void
   onMoveUp?: () => void
@@ -30,8 +33,11 @@ interface TableCardProps {
 export default function TableCard({
   table,
   hasWaitlistMatch = false,
+  isSelected = false,
+  onSelect,
   onEdit,
   onDelete,
+  onDuplicate,
   onCancel,
   onToggleHold,
   onMoveUp,
@@ -81,11 +87,25 @@ export default function TableCard({
     <div
       className={`
         ${status.bgColor} ${status.borderColor}
-        border-2 rounded-lg p-4 transition-all
+        border-2 rounded-lg p-4 transition-all relative
         ${table.status === 'INACTIVE' ? 'opacity-60' : ''}
+        ${isSelected ? 'ring-4 ring-blue-400 ring-opacity-50' : ''}
       `}
       dir="rtl"
     >
+      {/* Selection Checkbox */}
+      {onSelect && (
+        <div className="absolute top-2 left-2 z-10">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={(e) => onSelect(table.id, e.target.checked)}
+            className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex justify-between items-start mb-3">
         <div>
@@ -101,6 +121,16 @@ export default function TableCard({
         {/* Action Buttons */}
         {!readOnly && (
           <div className="flex gap-1" dir="ltr">
+            {onDuplicate && (
+              <button
+                onClick={() => onDuplicate(table.id)}
+                className="p-2 hover:bg-white rounded transition-colors"
+                aria-label="שכפל שולחן"
+                title="שכפל"
+              >
+                <Copy className="w-4 h-4 text-purple-600" />
+              </button>
+            )}
             {onEdit && (
               <button
                 onClick={onEdit}
