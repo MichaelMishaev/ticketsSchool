@@ -49,6 +49,90 @@ test.describe('Feature Name', () => {
 
 ## Critical Test Scenarios for TicketCap
 
+### 0. **Table Management (NEW!)**
+```typescript
+test.describe('Table Management', () => {
+  test('should duplicate table with auto-increment name', async ({ page }) => {
+    await loginAsAdmin(page, 'admin@test.com', 'password')
+    await page.goto('http://localhost:9000/admin/events/test-event-id')
+
+    // Create first table
+    await page.click('text=הוסף שולחן')
+    await page.fill('[name="name"]', 'שולחן 1')
+    await page.fill('[name="capacity"]', '8')
+    await page.click('button:has-text("שמור")')
+
+    // Duplicate 5 times
+    await page.click('.table-card >> .copy-icon')
+    await page.fill('[name="duplicateCount"]', '5')
+    await page.click('button:has-text("שכפל")')
+
+    // Verify 6 tables total (1 original + 5 duplicates)
+    await expect(page.locator('.table-card')).toHaveCount(6)
+    await expect(page.locator('text=שולחן 2')).toBeVisible()
+    await expect(page.locator('text=שולחן 6')).toBeVisible()
+  })
+
+  test('should save and apply table template', async ({ page }) => {
+    await loginAsAdmin(page, 'admin@test.com', 'password')
+    await page.goto('http://localhost:9000/admin/events/event1')
+
+    // Create tables
+    // ... create 3-4 tables
+
+    // Save as template
+    await page.click('button:has-text("שמור כתבנית")')
+    await page.fill('[name="templateName"]', 'תבנית 8 מקומות')
+    await page.click('button:has-text("שמור תבנית")')
+
+    // Create new event
+    await page.goto('http://localhost:9000/admin/events/new')
+    await page.fill('[name="title"]', 'אירוע חדש')
+    // ... fill other fields
+    await page.click('button:has-text("צור אירוע")')
+
+    // Apply template
+    await page.click('button:has-text("החל תבנית")')
+    await page.click('text=תבנית 8 מקומות')
+    await page.click('button:has-text("החל")')
+
+    // Verify tables created from template
+    await expect(page.locator('.table-card')).toHaveCount.greaterThan(0)
+  })
+
+  test('should bulk edit table capacity', async ({ page }) => {
+    await loginAsAdmin(page, 'admin@test.com', 'password')
+    await page.goto('http://localhost:9000/admin/events/event-id')
+
+    // Select multiple tables
+    await page.click('.table-card:nth-child(1) >> input[type="checkbox"]')
+    await page.click('.table-card:nth-child(2) >> input[type="checkbox"]')
+    await page.click('.table-card:nth-child(3) >> input[type="checkbox"]')
+
+    // Bulk edit
+    await page.click('button:has-text("ערוך מרובים")')
+    await page.fill('[name="capacity"]', '10')
+    await page.click('button:has-text("עדכן הכל")')
+
+    // Verify all updated
+    const capacities = await page.locator('.table-card >> .capacity').allTextContents()
+    expect(capacities.slice(0, 3)).toEqual(['10', '10', '10'])
+  })
+
+  test('should prevent bulk delete of reserved tables', async ({ page }) => {
+    await loginAsAdmin(page, 'admin@test.com', 'password')
+    await page.goto('http://localhost:9000/admin/events/event-id')
+
+    // Select table with registrations
+    await page.click('.table-card[data-has-registrations="true"] >> input[type="checkbox"]')
+    await page.click('button:has-text("מחק מרובים")')
+
+    // Should show error
+    await expect(page.locator('text=לא ניתן למחוק שולחנות עם הרשמות')).toBeVisible()
+  })
+})
+```
+
 ### 1. **Registration Flow (Public)**
 ```typescript
 test.describe('Public Registration', () => {
@@ -235,8 +319,11 @@ test.beforeEach(async ({ page }) => {
 # Run all tests
 npm run test
 
+# Run P0 critical tests only
+npx playwright test tests/suites/*-p0.spec.ts
+
 # Run specific test file
-npx playwright test tests/registration-flow.spec.ts
+npx playwright test tests/suites/07-table-management-p0.spec.ts
 
 # Run with UI
 npm run test:ui

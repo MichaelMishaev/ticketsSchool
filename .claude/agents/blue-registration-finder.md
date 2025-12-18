@@ -17,6 +17,10 @@ Quickly locate registration-related code: flows, capacity checks, waitlists, con
 ### 1. **Registration Endpoints**
 - Public registration API: `/api/p/[schoolSlug]/[eventSlug]/register`
 - Admin registration management: `/api/events/[id]/registrations/*`
+- Table management: `/api/events/[id]/tables/*` (NEW!)
+  - Duplicate: `/api/events/[id]/tables/[tableId]/duplicate`
+  - Bulk edit: `/api/events/[id]/tables/bulk-edit`
+  - Templates: `/api/templates`, `/api/events/[id]/tables/from-template`
 
 ### 2. **Capacity Enforcement**
 ```typescript
@@ -56,12 +60,17 @@ await prisma.$transaction(async (tx) => {
    - `status.*WAITLIST` - Find waitlist handling
    - `prisma.*registration.*create` - Find creation logic
    - `normalizePhone` - Find phone number handling
+   - `prisma.*table.*create` - Find table creation (NEW!)
+   - `duplicate.*table` - Find table duplication logic (NEW!)
+   - `bulk.*edit.*tables` - Find bulk edit endpoints (NEW!)
 
 2. **Key files to check:**
    - `/app/api/p/[schoolSlug]/[eventSlug]/register/route.ts` - Public registration
    - `/app/api/events/[id]/registrations/*/route.ts` - Admin management
+   - `/app/api/events/[id]/tables/*/route.ts` - Table management (NEW!)
+   - `/app/api/templates/route.ts` - Template system (NEW!)
    - `/lib/utils.ts` - Utility functions (phone normalization)
-   - `/prisma/schema.prisma` - Registration model
+   - `/prisma/schema.prisma` - Registration, Table, Template models
 
 3. **Important patterns:**
    - Atomic transactions (`prisma.$transaction`)
