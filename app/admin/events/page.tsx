@@ -431,10 +431,10 @@ export default function EventsPage() {
                   <Link
                     href={`/admin/events/${event.id}`}
                     className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 active:bg-blue-800 min-h-[48px] w-full mb-3 shadow-sm hover:shadow transition-all"
-                    title="ערוך וצפה בהרשמות"
+                    title="נהל אירוע"
                   >
                     <Edit className="w-5 h-5" />
-                    <span>ערוך וצפה בהרשמות</span>
+                    <span>נהל אירוע</span>
                   </Link>
 
                   {/* Secondary Actions */}
@@ -489,7 +489,18 @@ export default function EventsPage() {
                       </div>
                       <div className="flex items-start gap-2 bg-blue-50 p-2 rounded border border-blue-200">
                         <span className="text-blue-600 whitespace-nowrap font-medium">🔗 קישור שיתוף:</span>
-                        <span className="font-mono text-blue-800 break-all select-all">{typeof window !== 'undefined' ? `${window.location.origin}/p/${event.school.slug}/${event.slug}` : ''}</span>
+                        <span className="font-mono text-blue-800 break-all flex-1">{typeof window !== 'undefined' ? `${window.location.origin}/p/${event.school.slug}/${event.slug}` : ''}</span>
+                        <button
+                          onClick={() => copyShareLink(event)}
+                          className="flex-shrink-0 p-1.5 hover:bg-blue-100 rounded transition-colors"
+                          title={copiedEventId === event.id ? 'הועתק!' : 'העתק קישור'}
+                        >
+                          {copiedEventId === event.id ? (
+                            <Check className="w-4 h-4 text-green-600" />
+                          ) : (
+                            <Copy className="w-4 h-4 text-blue-600" />
+                          )}
+                        </button>
                       </div>
                     </div>
                   </div>
