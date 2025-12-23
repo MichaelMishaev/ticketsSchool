@@ -1,5 +1,5 @@
 # Comprehensive Test Automation Specification
-**Project:** TicketCap - Event Registration System
+**Project:** kartis.info - Event Registration System
 **Created:** 2025-11-11
 **Purpose:** Complete mapping of all UI interactions, flows, and test scenarios
 

@@ -1,6 +1,6 @@
 # Infrastructure Documentation
 
-This directory contains documentation for TicketCap's infrastructure, CI/CD pipelines, and development workflows.
+This directory contains documentation for kartis.info's infrastructure, CI/CD pipelines, and development workflows.
 
 ---
 

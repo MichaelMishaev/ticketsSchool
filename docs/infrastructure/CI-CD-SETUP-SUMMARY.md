@@ -2,7 +2,7 @@
 
 ## What Was Created
 
-This document summarizes the complete CI/CD implementation for TicketCap.
+This document summarizes the complete CI/CD implementation for kartis.info.
 
 ---
 

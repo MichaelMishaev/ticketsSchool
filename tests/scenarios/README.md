@@ -1,6 +1,6 @@
-# TicketCap Test Scenarios - Comprehensive Documentation
+# kartis.info Test Scenarios - Comprehensive Documentation
 
-This directory contains comprehensive test scenarios for the TicketCap event registration system. These scenarios cover all aspects of the application including functional requirements, security, performance, accessibility, and edge cases.
+This directory contains comprehensive test scenarios for the kartis.info event registration system. These scenarios cover all aspects of the application including functional requirements, security, performance, accessibility, and edge cases.
 
 ## 📋 Overview
 
@@ -243,7 +243,7 @@ Each scenario file categorizes tests by priority:
 
 ## 🏗️ Architecture Context
 
-These scenarios are designed for **TicketCap**, a multi-tenant event registration system with:
+These scenarios are designed for **kartis.info**, a multi-tenant event registration system with:
 
 - **Tech Stack**: Next.js 15.5.3, React 19, TypeScript, Prisma 6, PostgreSQL, TailwindCSS 4
 - **Key Features**:

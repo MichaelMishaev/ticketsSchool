@@ -183,25 +183,25 @@ Returns:
 All emails are Hebrew RTL with beautiful responsive design:
 
 ### 1. Verification Email
-- **Subject:** "אימות כתובת מייל - TicketCap"
+- **Subject:** "אימות כתובת מייל - kartis.info"
 - **Expiry:** 24 hours
 - **CTA:** "אמת את המייל שלך"
 - **Color:** Purple gradient
 
 ### 2. Password Reset Email
-- **Subject:** "איפוס סיסמה - TicketCap"
+- **Subject:** "איפוס סיסמה - kartis.info"
 - **Expiry:** 1 hour
 - **CTA:** "אפס סיסמה"
 - **Color:** Pink/red gradient
 
 ### 3. Welcome Email
-- **Subject:** "ברוך הבא ל-TicketCap! 🎉"
+- **Subject:** "ברוך הבא ל-kartis.info! 🎉"
 - **Sent:** After email verification
 - **Content:** Getting started guide
 - **Color:** Green gradient
 
 ### 4. Team Invitation Email (Coming Soon)
-- **Subject:** "הזמנה לצוות {schoolName} - TicketCap"
+- **Subject:** "הזמנה לצוות {schoolName} - kartis.info"
 - **Expiry:** 7 days
 - **CTA:** "קבל הזמנה"
 - **Color:** Blue gradient

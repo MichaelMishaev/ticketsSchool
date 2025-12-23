@@ -1,4 +1,4 @@
-# TicketCap - Landing Page Feature Copy (Only REAL, Implemented Features)
+# kartis.info - Landing Page Feature Copy (Only REAL, Implemented Features)
 
 ## HEADLINE & VALUE PROPOSITION
 
@@ -96,7 +96,7 @@ The only event management system you'll ever need for schools and organizations.
 ### Secondary CTAs
 - "Create Your First Event in Minutes"
 - "Manage Registrations Like Never Before"
-- "Join Schools Using TicketCap"
+- "Join Schools Using kartis.info"
 
 ## TESTIMONIAL/SOCIAL PROOF STRUCTURE
 (When you have real data)

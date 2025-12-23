@@ -1,4 +1,4 @@
-# TicketCap - Real Implemented Features Report
+# kartis.info - Real Implemented Features Report
 
 ## CORE FEATURES
 

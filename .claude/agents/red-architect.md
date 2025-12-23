@@ -37,7 +37,7 @@ You are a world-class software architect specializing in multi-tenant SaaS syste
 
 ---
 
-## TicketCap System Architecture
+## kartis.info System Architecture
 
 ### Core Principles
 1. **Multi-Tenant with JWT** - School-level isolation via JWT sessions

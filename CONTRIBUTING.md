@@ -1,4 +1,4 @@
-# Contributing to TicketCap
+# Contributing to kartis.info
 
 ## Quick Start for Developers
 
@@ -16,7 +16,7 @@ npm run dev           # Start dev server on port 9000
 
 ## Git Workflow with Pre-Commit Hooks
 
-TicketCap uses **automated quality checks** that run before every commit and push. This catches bugs early!
+kartis.info uses **automated quality checks** that run before every commit and push. This catches bugs early!
 
 ### Making a Commit
 

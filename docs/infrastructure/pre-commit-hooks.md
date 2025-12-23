@@ -2,7 +2,7 @@
 
 ## Overview
 
-TicketCap uses **Husky** and **lint-staged** to enforce code quality checks before commits and pushes reach the repository. This catches bugs at the earliest possible stage - before they enter the codebase.
+kartis.info uses **Husky** and **lint-staged** to enforce code quality checks before commits and pushes reach the repository. This catches bugs at the earliest possible stage - before they enter the codebase.
 
 ## What Gets Checked
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-TicketCap uses GitHub Actions for continuous integration and continuous deployment. This document describes the automated workflows, quality gates, and deployment processes.
+kartis.info uses GitHub Actions for continuous integration and continuous deployment. This document describes the automated workflows, quality gates, and deployment processes.
 
 ## Table of Contents
 
@@ -624,7 +624,7 @@ To implement this CI/CD setup in a new project:
 
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
 - [Playwright Best Practices](https://playwright.dev/docs/best-practices)
-- [TicketCap Testing Guide](/tests/README.md)
+- [kartis.info Testing Guide](/tests/README.md)
 - [Branch Protection Rules](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches)
 
 ---

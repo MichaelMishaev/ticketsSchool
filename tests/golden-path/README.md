@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Golden Path Canary system provides **automated hourly monitoring** of TicketCap production to detect outages within 1 hour. After a 5-day undetected outage, this system ensures immediate notification when critical user flows break.
+The Golden Path Canary system provides **automated hourly monitoring** of kartis.info production to detect outages within 1 hour. After a 5-day undetected outage, this system ensures immediate notification when critical user flows break.
 
 ## How It Works
 
@@ -189,7 +189,7 @@ Add to workflow:
     server_port: 465
     username: ${{ secrets.EMAIL_USERNAME }}
     password: ${{ secrets.EMAIL_PASSWORD }}
-    subject: "🚨 TicketCap Production Down"
+    subject: "🚨 kartis.info Production Down"
     to: ops@yourdomain.com
     from: alerts@yourdomain.com
     body: "Golden Path Canary failed. Check workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

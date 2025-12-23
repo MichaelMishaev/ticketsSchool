@@ -316,7 +316,7 @@ Example configuration in workflow:
     server_port: 465
     username: ${{ secrets.EMAIL_USERNAME }}
     password: ${{ secrets.EMAIL_PASSWORD }}
-    subject: "🚨 TicketCap Production Down"
+    subject: "🚨 kartis.info Production Down"
     to: ops@yourdomain.com
     from: alerts@yourdomain.com
 ```

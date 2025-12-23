@@ -1,3 +1,24 @@
+/**
+ * @LOCKED
+ * Reason: Business-critical registration API
+ * Scope:
+ *   - School + Admin creation (atomic transaction)
+ *   - Email uniqueness validation
+ *   - School slug uniqueness validation
+ *   - Password hashing (bcrypt, 10 rounds)
+ *   - Verification email sending
+ *   - Session creation with JWT
+ * See: /docs/infrastructure/GOLDEN_PATHS.md#AUTH_SIGNUP_V1
+ *
+ * Multi-Tenant Enforcement:
+ *   - Creates new school + links admin via schoolId
+ *   - Transaction ensures atomicity (both created or neither)
+ *
+ * Invariants Protected:
+ *   - INVARIANT_AUTH_001: Session integrity
+ *   - INVARIANT_MT_001: Multi-tenant isolation (new school creation)
+ *   - INVARIANT_AUTH_002: Password security (bcrypt hashing)
+ */
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import * as bcrypt from 'bcryptjs'

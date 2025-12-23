@@ -308,7 +308,7 @@ All tests MUST:
 3. Reference scenario documents for requirements
 4. Use provided infrastructure (builders, page objects, helpers)
 
-**Expected result**: Complete E2E test coverage for TicketCap with 780 comprehensive test scenarios covering all features, security, accessibility, and performance.
+**Expected result**: Complete E2E test coverage for kartis.info with 780 comprehensive test scenarios covering all features, security, accessibility, and performance.
 
 ---
 

@@ -102,7 +102,7 @@ A complete, production-ready automated health monitoring system that:
              ▼                       ▼
     ┌─────────────────────────────────────┐
     │    Production Environment           │
-    │    (Railway - TicketCap)            │
+    │    (Railway - kartis.info)            │
     │                                     │
     │  • /p/test-school/test-event       │
     │  • /admin/login                     │

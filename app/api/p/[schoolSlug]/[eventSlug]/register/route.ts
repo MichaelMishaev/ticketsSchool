@@ -1,3 +1,37 @@
+/**
+ * @LOCKED
+ * Reason: MOST CRITICAL - Public registration with atomic capacity enforcement
+ * Scope:
+ *   - Atomic transaction for capacity check + increment
+ *   - Phone normalization (Israeli format)
+ *   - Confirmation code generation
+ *   - WAITLIST vs CONFIRMED status logic
+ *   - Multi-tenant validation (schoolSlug + eventSlug)
+ *   - Table-based event support
+ * See: /docs/infrastructure/GOLDEN_PATHS.md#REGISTRATION_SUBMIT_V1
+ *
+ * ATOMIC CAPACITY PATTERN (NON-NEGOTIABLE):
+ *   await prisma.$transaction(async (tx) => {
+ *     const event = await tx.event.findUnique({ where: { id } })
+ *
+ *     if (event.spotsReserved + spotsCount > event.capacity) {
+ *       status = 'WAITLIST'
+ *     } else {
+ *       await tx.event.update({
+ *         where: { id },
+ *         data: { spotsReserved: { increment: spotsCount } }
+ *       })
+ *       status = 'CONFIRMED'
+ *     }
+ *
+ *     return tx.registration.create({ ... })
+ *   })
+ *
+ * Invariants Protected:
+ *   - INVARIANT_CAP_001: Atomic capacity enforcement (NO RACE CONDITIONS)
+ *   - INVARIANT_MT_001: Multi-tenant isolation (schoolSlug + eventSlug validation)
+ *   - INVARIANT_DATA_001: Phone normalization (10 digits, starts with 0)
+ */
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { generateConfirmationCode, normalizePhoneNumber } from '@/lib/utils'

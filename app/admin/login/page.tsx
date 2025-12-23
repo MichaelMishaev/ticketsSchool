@@ -1,3 +1,18 @@
+/**
+ * @LOCKED
+ * Reason: Business-critical authentication flow
+ * Scope:
+ *   - Login form UI and validation
+ *   - Error/success message handling
+ *   - OAuth integration (Google login button)
+ *   - Post-login redirect logic (dashboard vs onboarding)
+ *   - Hebrew UI text
+ * See: /docs/infrastructure/GOLDEN_PATHS.md#AUTH_LOGIN_V1
+ *
+ * Invariants Protected:
+ *   - INVARIANT_AUTH_001: Session integrity
+ *   - INVARIANT_AUTH_002: Password security
+ */
 'use client'
 
 import { useState, useEffect } from 'react'

@@ -1,0 +1,117 @@
+name: Lighthouse CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - development
+  push:
+    branches:
+      - main
+      - development
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Setup test database
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
+        run: |
+          # Start PostgreSQL service
+          sudo systemctl start postgresql.service
+
+          # Create test database and user
+          sudo -u postgres psql -c "CREATE USER test_user WITH PASSWORD 'test_password';"
+          sudo -u postgres psql -c "CREATE DATABASE test_db OWNER test_user;"
+
+          # Run migrations
+          npx prisma migrate deploy
+
+      - name: Build application
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
+          JWT_SECRET: test-jwt-secret-for-ci-only-min-32-characters-long
+          RESEND_API_KEY: re_test_key
+          EMAIL_FROM: test@example.com
+          NEXT_PUBLIC_BASE_URL: http://localhost:9000
+        run: npm run build
+
+      - name: Start server
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
+          JWT_SECRET: test-jwt-secret-for-ci-only-min-32-characters-long
+          RESEND_API_KEY: re_test_key
+          EMAIL_FROM: test@example.com
+          NEXT_PUBLIC_BASE_URL: http://localhost:9000
+          PORT: 9000
+        run: |
+          # Start production server in background
+          npm run start &
+
+          # Wait for server to be ready (max 60 seconds)
+          npx wait-on http://localhost:9000/api/health --timeout 60000 || (echo "Server failed to start" && exit 1)
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v10
+        with:
+          urls: |
+            http://localhost:9000
+          configPath: './.lighthouserc.js'
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+      - name: Upload Lighthouse results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-results
+          path: |
+            .lighthouseci/
+          retention-days: 7
+
+      - name: Comment PR with Lighthouse results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            let comment = '## 🔦 Lighthouse CI Results\n\n';
+            comment += 'Performance audit completed. ';
+            comment += 'Check the [workflow artifacts](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for detailed reports.\n\n';
+            comment += '**Key Metrics:**\n';
+            comment += '- ⚡ Performance\n';
+            comment += '- ♿ Accessibility\n';
+            comment += '- 🎯 Best Practices\n';
+            comment += '- 🔍 SEO\n\n';
+            comment += '_Note: Full reports are available in the artifacts above._';
+
+            try {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            } catch (error) {
+              console.log('Could not post comment:', error.message);
+            }

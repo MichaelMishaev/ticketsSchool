@@ -66,7 +66,7 @@ All sub agents have been updated to reflect the **current codebase** and aligned
 - Cost comparison (Blue vs Green vs Red)
 - Decision tree (which agent to use when)
 - Real-world workflow examples
-- TicketCap-specific features (table management)
+- kartis.info-specific features (table management)
 - Best practices and pro tips
 - Links to all relevant documentation
 

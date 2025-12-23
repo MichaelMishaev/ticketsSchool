@@ -36,7 +36,7 @@ async function testVerificationEmail() {
     if (result) {
       console.log('✅ Email sent successfully!')
       console.log('\nCheck your inbox for:', testEmail)
-      console.log('Subject: אימות כתובת מייל - TicketCap')
+      console.log('Subject: אימות כתובת מייל - kartis.info')
       console.log('\n⚠️  Note: This is a test email. The verification link will not work.')
     } else {
       console.log('❌ Email failed to send')

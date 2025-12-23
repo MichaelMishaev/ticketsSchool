@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('TicketCap E2E Event Flow', () => {
+test.describe('kartis.info E2E Event Flow', () => {
   let eventSlug: string;
   let confirmationCode: string;
 

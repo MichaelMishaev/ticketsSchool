@@ -1,4 +1,4 @@
-# TicketCap Test Suite
+# kartis.info Test Suite
 
 Comprehensive Playwright E2E test suite implementing all 780 scenarios from `/tests/scenarios/`.
 

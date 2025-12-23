@@ -1,3 +1,27 @@
+/**
+ * @LOCKED
+ * Reason: Business-critical event creation flow
+ * Scope:
+ *   - Multi-step wizard flow (4 steps: details, timing, capacity, advanced)
+ *   - Form validation patterns
+ *   - Autosave/draft recovery mechanism
+ *   - All data-testid selectors
+ *   - Hebrew UI text
+ * See: /docs/infrastructure/GOLDEN_PATHS.md#EVENT_CREATE_V1
+ *
+ * What CANNOT be changed:
+ *   - Step sequence and validation logic
+ *   - Required field validation (title, gameType, startAt, capacity)
+ *   - Form submission flow
+ *   - Draft autosave interval (10 seconds)
+ *   - Multi-tenant schoolId enforcement pattern
+ *
+ * What CAN be changed (internal refactoring only):
+ *   - Component structure (if tests pass)
+ *   - Styling improvements
+ *   - Performance optimizations
+ *   - Type safety enhancements
+ */
 'use client'
 
 import { useState, useEffect, useRef } from 'react'

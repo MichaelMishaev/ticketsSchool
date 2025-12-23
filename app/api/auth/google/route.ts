@@ -1,3 +1,16 @@
+/**
+ * @LOCKED
+ * Reason: Business-critical OAuth initialization
+ * Scope:
+ *   - Google OAuth consent URL generation
+ *   - State parameter for CSRF protection
+ *   - Redirect to Google consent screen
+ * See: /docs/infrastructure/GOLDEN_PATHS.md#AUTH_GOOGLE_OAUTH_V1
+ *
+ * Security:
+ *   - State parameter validated on callback
+ *   - HTTPS enforced in production
+ */
 import { NextRequest, NextResponse } from 'next/server'
 import { OAuth2Client } from 'google-auth-library'
 import { prisma } from '@/lib/prisma'

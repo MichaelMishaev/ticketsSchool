@@ -1,4 +1,4 @@
-# 🎨 TicketCap Agents - Visual System Map
+# 🎨 kartis.info Agents - Visual System Map
 
 ```
 ╔═══════════════════════════════════════════════════════════════════════════════╗

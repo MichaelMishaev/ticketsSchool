@@ -1,3 +1,23 @@
+/**
+ * @LOCKED
+ * Reason: HIGHEST PRIORITY - Edge runtime authentication & route protection
+ * Scope:
+ *   - JWT verification (Edge Runtime compatible with jose)
+ *   - Protected route enforcement
+ *   - Public route whitelisting
+ *   - Redirect logic for unauthenticated users
+ * See: /docs/infrastructure/GOLDEN_PATHS.md#MULTI_TENANT_ISOLATION_GLOBAL
+ *
+ * CRITICAL Patterns:
+ *   - Uses jose library (not jsonwebtoken) for Edge Runtime
+ *   - Protected paths: /admin/*, /api/events/*, /api/dashboard/*
+ *   - Public paths: /api/auth/*, /api/admin/signup, /api/admin/login, /p/*
+ *   - Redirects unauthenticated users to /admin/login
+ *
+ * Invariants Protected:
+ *   - INVARIANT_AUTH_001: Session integrity (JWT verification)
+ *   - INVARIANT_MT_001: Multi-tenant isolation (enforced by subsequent API logic)
+ */
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 

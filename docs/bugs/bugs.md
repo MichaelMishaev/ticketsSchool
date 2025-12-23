@@ -1,6 +1,6 @@
 # Bug Tracker
 
-This file documents all bugs found and fixed in the TicketCap system.
+This file documents all bugs found and fixed in the kartis.info system.
 
 ---
 

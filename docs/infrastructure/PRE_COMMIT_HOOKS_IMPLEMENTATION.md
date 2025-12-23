@@ -8,7 +8,7 @@
 
 ## Overview
 
-Implemented comprehensive pre-commit and pre-push hooks for TicketCap to catch bugs at commit time (earliest possible stage) before they enter the codebase.
+Implemented comprehensive pre-commit and pre-push hooks for kartis.info to catch bugs at commit time (earliest possible stage) before they enter the codebase.
 
 ### What Was Built
 

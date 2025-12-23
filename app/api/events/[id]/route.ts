@@ -1,3 +1,23 @@
+/**
+ * @LOCKED
+ * Reason: Business-critical event details API with multi-tenant isolation
+ * Scope:
+ *   - Event fetching with registrations
+ *   - Multi-tenant access control (CRITICAL)
+ *   - School ownership validation
+ * See: /docs/infrastructure/GOLDEN_PATHS.md#REGISTRATION_ADMIN_VIEW_V1
+ *
+ * Multi-Tenant Enforcement Pattern (NON-NEGOTIABLE):
+ *   const event = await prisma.event.findUnique({ where: { id }, include: { school: true } })
+ *
+ *   if (admin.role !== 'SUPER_ADMIN' && event.schoolId !== admin.schoolId) {
+ *     return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+ *   }
+ *
+ * Invariants Protected:
+ *   - INVARIANT_MT_001: Multi-tenant isolation (no cross-school access)
+ *   - INVARIANT_MT_002: No cross-school data leakage
+ */
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin, requireSchoolAccess } from '@/lib/auth.server'

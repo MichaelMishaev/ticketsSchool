@@ -1,3 +1,24 @@
+/**
+ * @LOCKED
+ * Reason: Business-critical OAuth callback handler
+ * Scope:
+ *   - OAuth code exchange for tokens
+ *   - Google user info validation
+ *   - Account creation/linking logic
+ *   - Password-protected account security (requires confirmation)
+ *   - Session creation with JWT
+ * See: /docs/infrastructure/GOLDEN_PATHS.md#AUTH_GOOGLE_OAUTH_V1
+ *
+ * Security Rules (NON-NEGOTIABLE):
+ *   - New user: Create account with emailVerified=true
+ *   - Existing user (no password): Auto-link Google account
+ *   - Existing user (with password): REJECT - requires password confirmation
+ *   - State parameter validated (CSRF protection)
+ *
+ * Invariants Protected:
+ *   - INVARIANT_AUTH_001: Session integrity
+ *   - INVARIANT_AUTH_003: No auto-linking to password accounts
+ */
 import { NextRequest, NextResponse } from 'next/server'
 import { OAuth2Client } from 'google-auth-library'
 import { prisma } from '@/lib/prisma'

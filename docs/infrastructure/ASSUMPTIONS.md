@@ -2,7 +2,7 @@
 
 **Last Updated:** 2025-12-18
 **Version:** 1.0
-**Maintainer:** TicketCap Development Team
+**Maintainer:** kartis.info Development Team
 
 ## Purpose
 
@@ -949,4 +949,4 @@ Update ASSUMPTIONS.md when:
 
 ---
 
-*This document is maintained by the TicketCap development team. When in doubt about an assumption, check here first, then verify in code, then update this document.*
+*This document is maintained by the kartis.info development team. When in doubt about an assumption, check here first, then verify in code, then update this document.*

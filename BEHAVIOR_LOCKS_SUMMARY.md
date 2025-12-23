@@ -2,7 +2,7 @@
 
 ## What Was Delivered
 
-Complete behavior lock test suite to prevent silent regressions in TicketCap's critical system behaviors.
+Complete behavior lock test suite to prevent silent regressions in kartis.info's critical system behaviors.
 
 ### Files Created
 
@@ -179,7 +179,7 @@ Test Failed?
    - Updated: tests/critical/behavior-locks.spec.ts
    ```
 
-## Integration with TicketCap
+## Integration with kartis.info
 
 ### Current Test Architecture
 ```
@@ -297,7 +297,7 @@ Only if behavior is no longer critical:
 
 ---
 
-**Built with:** Playwright, TypeScript, TicketCap test infrastructure
+**Built with:** Playwright, TypeScript, kartis.info test infrastructure
 **Test Count:** 16 behavior locks
 **Lines of Code:** 927 lines
 **Execution Time:** ~30 seconds

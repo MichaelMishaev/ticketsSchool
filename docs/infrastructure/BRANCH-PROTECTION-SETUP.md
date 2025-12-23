@@ -2,7 +2,7 @@
 
 ## For Repository Administrators
 
-This guide walks you through enabling branch protection rules for TicketCap to enforce quality gates.
+This guide walks you through enabling branch protection rules for kartis.info to enforce quality gates.
 
 ---
 

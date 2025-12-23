@@ -1,4 +1,4 @@
-# 🎨 TicketCap Agents - Quick Reference Card
+# 🎨 kartis.info Agents - Quick Reference Card
 
 ## 🚦 Color System
 

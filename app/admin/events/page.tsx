@@ -439,23 +439,6 @@ export default function EventsPage() {
 
                   {/* Secondary Actions */}
                   <div className="flex flex-wrap gap-2 mb-4">
-                    <button
-                      onClick={() => copyShareLink(event)}
-                      className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-white bg-green-600 rounded-lg hover:bg-green-700 active:bg-green-800 min-h-[44px] transition-colors shadow-sm"
-                      title="העתק קישור שיתוף"
-                    >
-                      {copiedEventId === event.id ? (
-                        <>
-                          <Check className="w-4 h-4" />
-                          <span>הועתק! ✓</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-4 h-4" />
-                          <span>העתק קישור</span>
-                        </>
-                      )}
-                    </button>
                     <Link
                       href={`/p/${event.school.slug}/${event.slug}`}
                       target="_blank"
@@ -480,25 +463,42 @@ export default function EventsPage() {
                     )}
                   </div>
 
-                  {/* Event Code - Technical details */}
+                  {/* Shareable URL - Click to Copy (2025 UX Best Practice) */}
                   <div className="pt-3 border-t border-gray-200">
-                    <div className="text-xs space-y-2">
-                      <div className="flex items-center gap-2">
+                    <div className="space-y-3">
+                      {/* Event Slug */}
+                      <div className="flex items-center gap-2 text-xs">
                         <span className="text-gray-400">קוד:</span>
                         <span className="font-mono font-medium text-gray-700">{event.slug}</span>
                       </div>
-                      <div className="flex items-start gap-2 bg-blue-50 p-2 rounded border border-blue-200">
-                        <span className="text-blue-600 whitespace-nowrap font-medium">🔗 קישור שיתוף:</span>
-                        <span className="font-mono text-blue-800 break-all flex-1">{typeof window !== 'undefined' ? `${window.location.origin}/p/${event.school.slug}/${event.slug}` : ''}</span>
+
+                      {/* Click-to-Copy URL Box */}
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-2">
+                          🔗 קישור שיתוף (לחץ להעתקה) כדי לשלוח לכולם
+                        </label>
                         <button
                           onClick={() => copyShareLink(event)}
-                          className="flex-shrink-0 p-1.5 hover:bg-blue-100 rounded transition-colors"
-                          title={copiedEventId === event.id ? 'הועתק!' : 'העתק קישור'}
+                          className="w-full group relative bg-gradient-to-br from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border-2 border-blue-300 hover:border-blue-400 rounded-lg p-4 transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.99]"
+                          title="לחץ להעתקת הקישור"
                         >
                           {copiedEventId === event.id ? (
-                            <Check className="w-4 h-4 text-green-600" />
+                            <div className="flex items-center justify-center gap-3">
+                              <Check className="w-6 h-6 text-green-600 animate-bounce" />
+                              <span className="text-lg font-bold text-green-700"> הקישור הועתק! אפשר לשלוח לכולם ✓</span>
+                            </div>
                           ) : (
-                            <Copy className="w-4 h-4 text-blue-600" />
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                              <div className="flex items-center gap-3 flex-1 min-w-0 w-full sm:w-auto">
+                                <Copy className="w-6 h-6 text-blue-600 flex-shrink-0 group-hover:scale-110 transition-transform" />
+                                <span className="font-mono text-sm sm:text-base font-semibold text-blue-900 break-all text-right sm:text-left" dir="ltr">
+                                  {typeof window !== 'undefined' ? `${window.location.origin}/p/${event.school.slug}/${event.slug}` : ''}
+                                </span>
+                              </div>
+                              <span className="text-xs font-medium text-blue-700 bg-blue-200 px-3 py-1.5 rounded-full whitespace-nowrap group-hover:bg-blue-300 transition-colors">
+                                לחץ להעתקת קישור הרשמה לאירוע
+                              </span>
+                            </div>
                           )}
                         </button>
                       </div>

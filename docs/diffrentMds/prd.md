@@ -1,4 +1,4 @@
-# TicketCap – Product App Document (PAD) – v1 Final
+# kartis.info – Product App Document (PAD) – v1 Final
 
 A lightweight, mobile‑first web app to manage limited‑quantity sign‑ups for games/events. Includes admin event creation + user self‑registration with automatic capacity lock and waitlist.
 

@@ -2,7 +2,7 @@
 
 ## What Was Installed
 
-TicketCap now has automated quality checks that run before every commit and push!
+kartis.info now has automated quality checks that run before every commit and push!
 
 ### Files Created/Modified
 

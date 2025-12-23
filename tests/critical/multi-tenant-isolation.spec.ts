@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test'
  * CRITICAL: Multi-Tenant Data Isolation Tests
  *
  * These tests verify that School A cannot access School B's data.
- * This is the MOST IMPORTANT security feature of TicketCap.
+ * This is the MOST IMPORTANT security feature of kartis.info.
  *
  * Test Strategy:
  * 1. Create two schools with test data

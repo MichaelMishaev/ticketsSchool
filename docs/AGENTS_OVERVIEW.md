@@ -1,4 +1,4 @@
-# 🌈 TicketCap Agents - Color-Coded Intelligence System
+# 🌈 kartis.info Agents - Color-Coded Intelligence System
 
 ## Quick Reference Card
 
@@ -153,7 +153,7 @@ Your daily workflow should look like:
 
 ---
 
-## 🛠️ TicketCap-Specific Features (December 2025)
+## 🛠️ kartis.info-Specific Features (December 2025)
 
 ### NEW! Table Management System
 All agents have been updated to support the new table management features:

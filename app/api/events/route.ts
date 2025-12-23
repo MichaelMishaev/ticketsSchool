@@ -1,3 +1,29 @@
+/**
+ * @LOCKED
+ * Reason: Business-critical event creation and listing API
+ * Scope:
+ *   - Multi-tenant isolation pattern (CRITICAL)
+ *   - Event creation with schoolId enforcement
+ *   - Slug generation and uniqueness validation
+ *   - Hebrew text transliteration logic
+ *   - Required field validation
+ * See: /docs/infrastructure/GOLDEN_PATHS.md#EVENT_CREATE_V1
+ *
+ * Multi-Tenant Enforcement Pattern (NON-NEGOTIABLE):
+ *   GET /api/events:
+ *     - Regular admins: MUST filter by admin.schoolId
+ *     - SUPER_ADMIN: Can filter by query param or see all
+ *     - If admin.schoolId is null for non-SUPER_ADMIN → return 403
+ *
+ *   POST /api/events:
+ *     - Regular admins: MUST use admin.schoolId (cannot specify other schools)
+ *     - SUPER_ADMIN: Can specify schoolId or use admin.schoolId
+ *     - If no valid schoolId → return 400
+ *
+ * Invariants Protected:
+ *   - INVARIANT_MT_001: Multi-tenant isolation
+ *   - INVARIANT_CAP_002: Valid capacity initialization
+ */
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { EventFormData } from '@/types'

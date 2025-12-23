@@ -1,3 +1,18 @@
+/**
+ * @LOCKED
+ * Reason: Business-critical registration flow
+ * Scope:
+ *   - Multi-step signup form (account → school → onboarding redirect)
+ *   - Form validation (email, password, school name, slug)
+ *   - Error handling and Hebrew messages
+ *   - Email verification flow
+ *   - OAuth integration (Google signup)
+ * See: /docs/infrastructure/GOLDEN_PATHS.md#AUTH_SIGNUP_V1
+ *
+ * Invariants Protected:
+ *   - INVARIANT_AUTH_001: Session integrity
+ *   - INVARIANT_MT_001: Multi-tenant isolation (creates new school)
+ */
 'use client'
 
 import { useState } from 'react'

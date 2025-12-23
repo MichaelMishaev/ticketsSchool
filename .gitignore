@@ -122,3 +122,8 @@ backups/
 *DATABASE_URL*
 *database_url*
 *db_credentials*
+
+# Canary test credentials (NEVER commit these)
+.env.canary
+*canary*credentials*
+CANARY_CREDENTIALS.md

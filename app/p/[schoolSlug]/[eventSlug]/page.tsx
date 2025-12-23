@@ -1,3 +1,19 @@
+/**
+ * @LOCKED
+ * Reason: Business-critical public registration UI
+ * Scope:
+ *   - Event display (details, date, location, capacity)
+ *   - Registration form (name, email, phone, spots, custom fields)
+ *   - Phone normalization (Israeli format)
+ *   - Confirmation code display
+ *   - Success/error handling
+ *   - Hebrew UI text
+ * See: /docs/infrastructure/GOLDEN_PATHS.md#REGISTRATION_SUBMIT_V1
+ *
+ * Invariants Protected:
+ *   - INVARIANT_MT_001: Multi-tenant isolation (schoolSlug + eventSlug)
+ *   - INVARIANT_DATA_001: Phone normalization
+ */
 'use client'
 
 import { useState, useEffect } from 'react'

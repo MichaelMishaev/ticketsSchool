@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('TicketCap Complete E2E Flow', () => {
+test.describe('kartis.info Complete E2E Flow', () => {
   test('complete event creation and registration flow', async ({ page }) => {
     let eventSlug: string;
 
