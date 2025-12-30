@@ -13,42 +13,30 @@ export async function PUT(
 
     // Verify event exists and admin has access
     const event = await prisma.event.findUnique({
-      where: { id }
+      where: { id },
     })
 
     if (!event) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
     // Multi-tenant security: MUST verify schoolId
     if (admin.role !== 'SUPER_ADMIN') {
       if (!admin.schoolId) {
-        return NextResponse.json(
-          { error: 'Admin must have a school assigned' },
-          { status: 403 }
-        )
+        return NextResponse.json({ error: 'Admin must have a school assigned' }, { status: 403 })
       }
       if (event.schoolId !== admin.schoolId) {
-        return NextResponse.json(
-          { error: 'Access denied' },
-          { status: 403 }
-        )
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
       }
     }
 
     // Verify table belongs to event
     const existingTable = await prisma.table.findUnique({
-      where: { id: tableId }
+      where: { id: tableId },
     })
 
     if (!existingTable || existingTable.eventId !== id) {
-      return NextResponse.json(
-        { error: 'Table not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Table not found' }, { status: 404 })
     }
 
     const body = await request.json()
@@ -56,27 +44,18 @@ export async function PUT(
 
     // Validation
     if (capacity !== undefined && capacity < 1) {
-      return NextResponse.json(
-        { error: 'Capacity must be at least 1' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Capacity must be at least 1' }, { status: 400 })
     }
 
     if (minOrder !== undefined && minOrder < 1) {
-      return NextResponse.json(
-        { error: 'minOrder must be at least 1' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'minOrder must be at least 1' }, { status: 400 })
     }
 
     const finalCapacity = capacity ?? existingTable.capacity
     const finalMinOrder = minOrder ?? existingTable.minOrder
 
     if (finalMinOrder > finalCapacity) {
-      return NextResponse.json(
-        { error: 'minOrder cannot exceed capacity' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'minOrder cannot exceed capacity' }, { status: 400 })
     }
 
     const table = await prisma.table.update({
@@ -85,23 +64,20 @@ export async function PUT(
         ...(tableNumber && { tableNumber }),
         ...(capacity && { capacity }),
         ...(minOrder !== undefined && { minOrder }),
-        ...(status && { status })
-      }
+        ...(status && { status }),
+      },
     })
 
     return NextResponse.json({ table })
   } catch (error) {
     console.error('Failed to update table:', error)
-    return NextResponse.json(
-      { error: 'Failed to update table' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to update table' }, { status: 500 })
   }
 }
 
 // DELETE /api/events/[id]/tables/[tableId] - Delete table
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string; tableId: string }> }
 ) {
   try {
@@ -110,62 +86,44 @@ export async function DELETE(
 
     // Verify event exists and admin has access
     const event = await prisma.event.findUnique({
-      where: { id }
+      where: { id },
     })
 
     if (!event) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
     // Multi-tenant security: MUST verify schoolId
     if (admin.role !== 'SUPER_ADMIN') {
       if (!admin.schoolId) {
-        return NextResponse.json(
-          { error: 'Admin must have a school assigned' },
-          { status: 403 }
-        )
+        return NextResponse.json({ error: 'Admin must have a school assigned' }, { status: 403 })
       }
       if (event.schoolId !== admin.schoolId) {
-        return NextResponse.json(
-          { error: 'Access denied' },
-          { status: 403 }
-        )
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
       }
     }
 
     // Verify table belongs to event
     const table = await prisma.table.findUnique({
-      where: { id: tableId }
+      where: { id: tableId },
     })
 
     if (!table || table.eventId !== id) {
-      return NextResponse.json(
-        { error: 'Table not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Table not found' }, { status: 404 })
     }
 
     // Check if table is reserved
     if (table.status === 'RESERVED') {
-      return NextResponse.json(
-        { error: 'Cannot delete reserved table' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Cannot delete reserved table' }, { status: 400 })
     }
 
     await prisma.table.delete({
-      where: { id: tableId }
+      where: { id: tableId },
     })
 
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Failed to delete table:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete table' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to delete table' }, { status: 500 })
   }
 }

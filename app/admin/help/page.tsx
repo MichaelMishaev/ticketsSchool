@@ -1,6 +1,17 @@
 'use client'
 
-import { Calendar, Users, MapPin, Clock, Star, Gift, CheckCircle, AlertCircle, Plus, Settings, Edit3, FileText, Shield, Hash, MessageCircle, List, Zap, Heart, Trophy } from 'lucide-react'
+import {
+  Users,
+  Star,
+  Gift,
+  CheckCircle,
+  Plus,
+  Settings,
+  FileText,
+  Zap,
+  Heart,
+  Trophy,
+} from 'lucide-react'
 import Link from 'next/link'
 
 export default function HelpPage() {
@@ -9,14 +20,13 @@ export default function HelpPage() {
       {/* Header */}
       <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-8 mb-8 border-2 border-green-300">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            ⚽ ברוכים הבאים ל־Kartis.info
-          </h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">⚽ ברוכים הבאים ל־Kartis.info</h1>
           <h2 className="text-2xl font-semibold text-green-600 mb-6">
             מערכת חכמה לניהול הרשמות לאירועים עם מקומות מוגבלים
           </h2>
           <p className="text-lg text-gray-700 mb-4">
-            המערכת נבנתה במיוחד למשחקי כדורגל, אבל מתאימה <strong>לכל סוג אירוע</strong>: טיולים, מסיבות, אימונים, סדנאות, טורנירים ועוד.
+            המערכת נבנתה במיוחד למשחקי כדורגל, אבל מתאימה <strong>לכל סוג אירוע</strong>: טיולים,
+            מסיבות, אימונים, סדנאות, טורנירים ועוד.
           </p>
           <div className="inline-flex items-center bg-green-100 text-green-800 px-6 py-3 rounded-full text-lg font-medium">
             <CheckCircle className="w-6 h-6 ml-2" />
@@ -81,24 +91,42 @@ export default function HelpPage() {
           <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
             <ol className="space-y-3 text-gray-700">
               <li className="flex items-start">
-                <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center ml-3 flex-shrink-0 text-sm font-bold">1</span>
+                <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center ml-3 flex-shrink-0 text-sm font-bold">
+                  1
+                </span>
                 <span className="mr-2">נרשמים למערכת (חינם לגמרי)</span>
               </li>
               <li className="flex items-start">
-                <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center ml-3 flex-shrink-0 text-sm font-bold">2</span>
-                <span className="mr-2">יוצרים אירוע חדש<br/>📝 שם, תאריך, שעה, מיקום, כמות מקומות וכו'</span>
+                <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center ml-3 flex-shrink-0 text-sm font-bold">
+                  2
+                </span>
+                <span className="mr-2">
+                  יוצרים אירוע חדש
+                  <br />
+                  📝 שם, תאריך, שעה, מיקום, כמות מקומות וכו'
+                </span>
               </li>
               <li className="flex items-start">
-                <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center ml-3 flex-shrink-0 text-sm font-bold">3</span>
+                <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center ml-3 flex-shrink-0 text-sm font-bold">
+                  3
+                </span>
                 <span className="mr-2">משתפים את הקישור בקבוצת וואטסאפ או עם המשתתפים</span>
               </li>
               <li className="flex items-start">
-                <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center ml-3 flex-shrink-0 text-sm font-bold">4</span>
-                <span className="mr-2">רואים בזמן אמת מי נרשם, כמה מקומות נשארו ומי ברשימת המתנה</span>
+                <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center ml-3 flex-shrink-0 text-sm font-bold">
+                  4
+                </span>
+                <span className="mr-2">
+                  רואים בזמן אמת מי נרשם, כמה מקומות נשארו ומי ברשימת המתנה
+                </span>
               </li>
               <li className="flex items-start">
-                <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center ml-3 flex-shrink-0 text-sm font-bold">5</span>
-                <span className="mr-2">אפשר לערוך, למחוק, לייצא לאקסל או לשלוח הודעות לכל המשתתפים</span>
+                <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center ml-3 flex-shrink-0 text-sm font-bold">
+                  5
+                </span>
+                <span className="mr-2">
+                  אפשר לערוך, למחוק, לייצא לאקסל או לשלוח הודעות לכל המשתתפים
+                </span>
               </li>
             </ol>
           </div>
@@ -107,30 +135,41 @@ export default function HelpPage() {
         {/* למשתתפים */}
         <div>
           <h3 className="text-xl font-bold text-blue-700 mb-4 flex items-center">
-            <Star className="w-5 h-5 ml-2" />
-            ⚽ למשתתפים
+            <Star className="w-5 h-5 ml-2" />⚽ למשתתפים
           </h3>
           <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
             <ol className="space-y-3 text-gray-700">
               <li className="flex items-start">
-                <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center ml-3 flex-shrink-0 text-sm font-bold">1</span>
+                <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center ml-3 flex-shrink-0 text-sm font-bold">
+                  1
+                </span>
                 <span className="mr-2">לוחצים על הקישור שקיבלו</span>
               </li>
               <li className="flex items-start">
-                <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center ml-3 flex-shrink-0 text-sm font-bold">2</span>
+                <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center ml-3 flex-shrink-0 text-sm font-bold">
+                  2
+                </span>
                 <span className="mr-2">רואים כמה מקומות נשארו</span>
               </li>
               <li className="flex items-start">
-                <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center ml-3 flex-shrink-0 text-sm font-bold">3</span>
+                <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center ml-3 flex-shrink-0 text-sm font-bold">
+                  3
+                </span>
                 <span className="mr-2">ממלאים פרטים קצרים ונרשמים</span>
               </li>
               <li className="flex items-start">
-                <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center ml-3 flex-shrink-0 text-sm font-bold">4</span>
+                <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center ml-3 flex-shrink-0 text-sm font-bold">
+                  4
+                </span>
                 <span className="mr-2">מקבלים אישור הרשמה עם קוד אישי</span>
               </li>
               <li className="flex items-start">
-                <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center ml-3 flex-shrink-0 text-sm font-bold">5</span>
-                <span className="mr-2">אם אין מקום – נכנסים אוטומטית לרשימת המתנה ומקבלים עדכון כשמתפנה מקום</span>
+                <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center ml-3 flex-shrink-0 text-sm font-bold">
+                  5
+                </span>
+                <span className="mr-2">
+                  אם אין מקום – נכנסים אוטומטית לרשימת המתנה ומקבלים עדכון כשמתפנה מקום
+                </span>
               </li>
             </ol>
           </div>
@@ -151,8 +190,7 @@ export default function HelpPage() {
           {/* ספורט */}
           <div className="bg-blue-50 p-4 rounded-lg border-2 border-blue-200">
             <h3 className="text-xl font-bold text-blue-700 mb-3 flex items-center">
-              <Trophy className="w-5 h-5 ml-2" />
-              ⚽ ספורט
+              <Trophy className="w-5 h-5 ml-2" />⚽ ספורט
             </h3>
             <ul className="space-y-2 text-gray-700">
               <li className="flex items-start">
@@ -267,13 +305,10 @@ export default function HelpPage() {
       {/* סיכום */}
       <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-8 mb-8 border-2 border-green-300">
         <h2 className="text-2xl font-bold text-green-600 mb-4 flex items-center justify-center">
-          <Star className="w-6 h-6 ml-2" />
-          ✨ סיכום
+          <Star className="w-6 h-6 ml-2" />✨ סיכום
         </h2>
         <div className="text-center mb-6">
-          <p className="text-xl text-gray-800 font-semibold mb-4">
-            Kartis.info עושה לכם סדר:
-          </p>
+          <p className="text-xl text-gray-800 font-semibold mb-4">Kartis.info עושה לכם סדר:</p>
           <div className="bg-white p-6 rounded-lg border-2 border-green-300 inline-block">
             <p className="text-lg text-gray-700">
               משתפים קישור ← אנשים נרשמים ← המערכת מגבילה אוטומטית ← ואתם רואים הכל בזמן אמת.
@@ -281,8 +316,10 @@ export default function HelpPage() {
           </div>
         </div>
         <p className="text-lg text-gray-700 text-center mb-6">
-          לא משנה אם זה משחק כדורגל, סדנה, או יום הולדת —<br/>
-          <strong className="text-green-700">תוך שתי דקות יש לכם אירוע מאורגן, מקצועי וללא כאב ראש!</strong>
+          לא משנה אם זה משחק כדורגל, סדנה, או יום הולדת —<br />
+          <strong className="text-green-700">
+            תוך שתי דקות יש לכם אירוע מאורגן, מקצועי וללא כאב ראש!
+          </strong>
         </p>
 
         {/* CTA */}

@@ -3,7 +3,6 @@
  */
 
 import { PrismaClient } from '@prisma/client'
-import * as jwt from 'jsonwebtoken'
 
 const prisma = new PrismaClient()
 
@@ -18,7 +17,7 @@ async function debugSession() {
   // Check database
   const admin = await prisma.admin.findUnique({
     where: { email },
-    include: { school: true }
+    include: { school: true },
   })
 
   if (!admin) {

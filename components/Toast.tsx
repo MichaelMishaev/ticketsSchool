@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle, XCircle, AlertCircle, X } from 'lucide-react'
 
@@ -37,19 +37,19 @@ const ToastContainer = ({ toasts, removeToast }: ToastContainerProps) => {
             {toast.type === 'success' && (
               <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
             )}
-            {toast.type === 'error' && (
-              <XCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-            )}
+            {toast.type === 'error' && <XCircle className="w-5 h-5 text-red-600 flex-shrink-0" />}
             {toast.type === 'info' && (
               <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0" />
             )}
 
-            <p className={`
+            <p
+              className={`
               flex-1 text-sm font-medium text-right
               ${toast.type === 'success' ? 'text-green-800' : ''}
               ${toast.type === 'error' ? 'text-red-800' : ''}
               ${toast.type === 'info' ? 'text-blue-800' : ''}
-            `}>
+            `}
+            >
               {toast.message}
             </p>
 

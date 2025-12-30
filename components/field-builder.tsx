@@ -11,7 +11,7 @@ import {
   CheckSquare,
   Lock,
   AlertCircle,
-  Sparkles
+  Sparkles,
 } from 'lucide-react'
 import { FieldSchema, FieldType } from '@/types'
 
@@ -22,8 +22,22 @@ interface FieldBuilderProps {
 
 // Default required fields for events (name and phone are mandatory for contact)
 export const defaultFields: FieldSchema[] = [
-  { id: 'name', name: 'name', label: 'שם מלא', type: 'text', required: true, placeholder: 'שם פרטי ומשפחה' },
-  { id: 'phone', name: 'phone', label: 'טלפון', type: 'text', required: true, placeholder: '05X-XXX-XXXX' },
+  {
+    id: 'name',
+    name: 'name',
+    label: 'שם מלא',
+    type: 'text',
+    required: true,
+    placeholder: 'שם פרטי ומשפחה',
+  },
+  {
+    id: 'phone',
+    name: 'phone',
+    label: 'טלפון',
+    type: 'text',
+    required: true,
+    placeholder: '05X-XXX-XXXX',
+  },
 ]
 
 // Field type icons and colors
@@ -61,11 +75,11 @@ export default function FieldBuilder({ fields, onChange }: FieldBuilderProps) {
   }
 
   const removeField = (id: string) => {
-    onChange(fields.filter(f => f.id !== id))
+    onChange(fields.filter((f) => f.id !== id))
   }
 
   const updateField = (id: string, updates: Partial<FieldSchema>) => {
-    onChange(fields.map(f => f.id === id ? { ...f, ...updates } : f))
+    onChange(fields.map((f) => (f.id === id ? { ...f, ...updates } : f)))
   }
 
   const isDefaultField = (id: string) => {
@@ -89,7 +103,7 @@ export default function FieldBuilder({ fields, onChange }: FieldBuilderProps) {
 
       {/* Fields List */}
       <div className="space-y-3">
-        {fields.map((field, index) => {
+        {fields.map((field) => {
           const config = fieldTypeConfig[field.type as keyof typeof fieldTypeConfig]
           const Icon = config?.icon || Type
           const isDefault = isDefaultField(field.id)
@@ -99,9 +113,10 @@ export default function FieldBuilder({ fields, onChange }: FieldBuilderProps) {
               key={field.id}
               className={`
                 group relative overflow-hidden rounded-xl sm:rounded-2xl border-2 transition-all duration-200
-                ${isDefault
-                  ? 'border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50'
-                  : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-md'
+                ${
+                  isDefault
+                    ? 'border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50'
+                    : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-md'
                 }
               `}
             >
@@ -112,18 +127,26 @@ export default function FieldBuilder({ fields, onChange }: FieldBuilderProps) {
                   <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
                     {/* Drag Handle - Hidden on mobile */}
                     <div className="hidden sm:block mt-1">
-                      <GripVertical className={`w-5 h-5 ${isDefault ? 'text-purple-300' : 'text-gray-300 group-hover:text-gray-400'}`} />
+                      <GripVertical
+                        className={`w-5 h-5 ${isDefault ? 'text-purple-300' : 'text-gray-300 group-hover:text-gray-400'}`}
+                      />
                     </div>
 
                     {/* Field Icon */}
-                    <div className={`p-2.5 sm:p-2 rounded-lg flex-shrink-0 ${config?.bg || 'bg-gray-50'}`}>
-                      <Icon className={`w-5 h-5 sm:w-5 sm:h-5 ${config?.color || 'text-gray-600'}`} />
+                    <div
+                      className={`p-2.5 sm:p-2 rounded-lg flex-shrink-0 ${config?.bg || 'bg-gray-50'}`}
+                    >
+                      <Icon
+                        className={`w-5 h-5 sm:w-5 sm:h-5 ${config?.color || 'text-gray-600'}`}
+                      />
                     </div>
 
                     {/* Field Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start gap-2 flex-wrap mb-2">
-                        <h4 className="font-bold text-base sm:text-base text-gray-900 leading-tight">{field.label}</h4>
+                        <h4 className="font-bold text-base sm:text-base text-gray-900 leading-tight">
+                          {field.label}
+                        </h4>
 
                         {field.required && (
                           <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold whitespace-nowrap">
@@ -145,10 +168,14 @@ export default function FieldBuilder({ fields, onChange }: FieldBuilderProps) {
                           {config?.label || field.type}
                         </span>
                         {field.placeholder && (
-                          <span className="text-gray-500 text-xs truncate max-w-[200px]">· {field.placeholder}</span>
+                          <span className="text-gray-500 text-xs truncate max-w-[200px]">
+                            · {field.placeholder}
+                          </span>
                         )}
                         {field.options && field.options.length > 0 && (
-                          <span className="text-gray-500 text-xs">· {field.options.length} אפשרויות</span>
+                          <span className="text-gray-500 text-xs">
+                            · {field.options.length} אפשרויות
+                          </span>
                         )}
                       </div>
 
@@ -156,7 +183,10 @@ export default function FieldBuilder({ fields, onChange }: FieldBuilderProps) {
                       {field.type === 'dropdown' && field.options && field.options.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           {field.options.slice(0, 3).map((option, i) => (
-                            <span key={i} className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-medium">
+                            <span
+                              key={i}
+                              className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-medium"
+                            >
                               {option}
                             </span>
                           ))}
@@ -181,7 +211,9 @@ export default function FieldBuilder({ fields, onChange }: FieldBuilderProps) {
                             onChange={(e) => updateField(field.id, { required: e.target.checked })}
                             className="w-5 h-5 sm:w-4 sm:h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                           />
-                          <span className="text-gray-700 font-semibold sm:font-normal group-hover/checkbox:text-gray-900">חובה</span>
+                          <span className="text-gray-700 font-semibold sm:font-normal group-hover/checkbox:text-gray-900">
+                            חובה
+                          </span>
                         </label>
                         <button
                           type="button"
@@ -246,9 +278,7 @@ export default function FieldBuilder({ fields, onChange }: FieldBuilderProps) {
               <label className="block text-sm sm:text-sm font-bold text-gray-900 mb-1">
                 סוג השדה
               </label>
-              <p className="text-xs text-gray-600 mb-2 font-medium">
-                בחר את סוג הקלט המתאים
-              </p>
+              <p className="text-xs text-gray-600 mb-2 font-medium">בחר את סוג הקלט המתאים</p>
               <div className="grid grid-cols-2 gap-2 sm:gap-2">
                 {Object.entries(fieldTypeConfig).map(([type, config]) => {
                   const Icon = config.icon
@@ -260,14 +290,19 @@ export default function FieldBuilder({ fields, onChange }: FieldBuilderProps) {
                       onClick={() => setNewField({ ...newField, type: type as FieldType })}
                       className={`
                         flex items-center justify-center gap-2 px-3 sm:px-4 py-3.5 sm:py-3 rounded-lg border-2 transition-all active:scale-95
-                        ${isSelected
-                          ? `${config.bg} border-blue-400 ring-2 ring-blue-200`
-                          : 'bg-white border-gray-200 hover:border-gray-300'
+                        ${
+                          isSelected
+                            ? `${config.bg} border-blue-400 ring-2 ring-blue-200`
+                            : 'bg-white border-gray-200 hover:border-gray-300'
                         }
                       `}
                     >
-                      <Icon className={`w-5 h-5 sm:w-5 sm:h-5 ${isSelected ? config.color : 'text-gray-400'}`} />
-                      <span className={`font-bold sm:font-semibold text-sm ${isSelected ? 'text-gray-900' : 'text-gray-600'}`}>
+                      <Icon
+                        className={`w-5 h-5 sm:w-5 sm:h-5 ${isSelected ? config.color : 'text-gray-400'}`}
+                      />
+                      <span
+                        className={`font-bold sm:font-semibold text-sm ${isSelected ? 'text-gray-900' : 'text-gray-600'}`}
+                      >
                         {config.label}
                       </span>
                     </button>
@@ -275,7 +310,6 @@ export default function FieldBuilder({ fields, onChange }: FieldBuilderProps) {
                 })}
               </div>
             </div>
-
 
             {/* Dropdown Options */}
             {newField.type === 'dropdown' && (
@@ -288,7 +322,15 @@ export default function FieldBuilder({ fields, onChange }: FieldBuilderProps) {
                 </p>
                 <input
                   type="text"
-                  onChange={(e) => setNewField({ ...newField, options: e.target.value.split(',').map(o => o.trim()).filter(o => o) })}
+                  onChange={(e) =>
+                    setNewField({
+                      ...newField,
+                      options: e.target.value
+                        .split(',')
+                        .map((o) => o.trim())
+                        .filter((o) => o),
+                    })
+                  }
                   className="w-full px-4 py-3.5 sm:py-3 text-base border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all text-gray-900 bg-white"
                   placeholder="בשר, דג, צמחוני, טבעוני"
                 />
@@ -298,7 +340,8 @@ export default function FieldBuilder({ fields, onChange }: FieldBuilderProps) {
                     <div className="flex-1">
                       <p className="text-sm font-bold text-green-900 mb-1">טיפ:</p>
                       <p className="text-xs text-green-800 font-medium">
-                        הפרד כל אפשרות בפסיק. לדוגמה: <span className="font-bold">אופציה 1, אופציה 2, אופציה 3</span>
+                        הפרד כל אפשרות בפסיק. לדוגמה:{' '}
+                        <span className="font-bold">אופציה 1, אופציה 2, אופציה 3</span>
                       </p>
                     </div>
                   </div>
@@ -316,7 +359,9 @@ export default function FieldBuilder({ fields, onChange }: FieldBuilderProps) {
               />
               <div className="flex-1">
                 <span className="font-bold text-base sm:text-sm text-gray-900">שדה חובה</span>
-                <p className="text-sm text-gray-600 mt-1 leading-relaxed">המשתתפים חייבים למלא שדה זה</p>
+                <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+                  המשתתפים חייבים למלא שדה זה
+                </p>
               </div>
             </label>
 
@@ -325,7 +370,11 @@ export default function FieldBuilder({ fields, onChange }: FieldBuilderProps) {
               <button
                 type="button"
                 onClick={addField}
-                disabled={!newField.label || (newField.type === 'dropdown' && (!newField.options || newField.options.length === 0))}
+                disabled={
+                  !newField.label ||
+                  (newField.type === 'dropdown' &&
+                    (!newField.options || newField.options.length === 0))
+                }
                 className="flex-1 flex items-center justify-center gap-2 px-6 py-4 sm:py-3.5 bg-blue-600 text-white font-bold text-base sm:text-base rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl active:scale-95"
               >
                 <Plus className="w-5 h-5" />
@@ -364,7 +413,8 @@ export default function FieldBuilder({ fields, onChange }: FieldBuilderProps) {
           <div className="text-sm text-blue-900 leading-relaxed">
             <p className="font-bold mb-1">💡 טיפ:</p>
             <p>
-              הוסף שדות נוספים כמו "הערות תזונתיות", "העדפות ישיבה" או "אירוע מיוחד" לאסוף מידע רלוונטי מהלקוחות
+              הוסף שדות נוספים כמו "הערות תזונתיות", "העדפות ישיבה" או "אירוע מיוחד" לאסוף מידע
+              רלוונטי מהלקוחות
             </p>
           </div>
         </div>

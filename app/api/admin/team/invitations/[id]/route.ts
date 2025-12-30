@@ -7,16 +7,13 @@ import { getCurrentAdmin } from '@/lib/auth.server'
  * Revoke/cancel a team invitation
  */
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const admin = await getCurrentAdmin()
     if (!admin) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Only OWNER and ADMIN can revoke invitations
@@ -31,14 +28,11 @@ export async function DELETE(
 
     // Find the invitation
     const invitation = await prisma.teamInvitation.findUnique({
-      where: { id }
+      where: { id },
     })
 
     if (!invitation) {
-      return NextResponse.json(
-        { error: 'Invitation not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Invitation not found' }, { status: 404 })
     }
 
     // Verify the invitation belongs to admin's school (unless SUPER_ADMIN)
@@ -53,19 +47,16 @@ export async function DELETE(
     await prisma.teamInvitation.update({
       where: { id },
       data: {
-        status: 'REVOKED'
-      }
+        status: 'REVOKED',
+      },
     })
 
     return NextResponse.json({
       success: true,
-      message: 'Invitation revoked successfully'
+      message: 'Invitation revoked successfully',
     })
   } catch (error) {
     console.error('Error revoking invitation:', error)
-    return NextResponse.json(
-      { error: 'Failed to revoke invitation' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to revoke invitation' }, { status: 500 })
   }
 }

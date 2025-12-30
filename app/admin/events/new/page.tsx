@@ -36,7 +36,6 @@ import DateTimePicker from '@/components/DateTimePicker'
 import Modal from '@/components/Modal'
 import { trackEventCreated } from '@/lib/analytics'
 import {
-  Calendar,
   MapPin,
   Users,
   UserCheck,
@@ -294,7 +293,7 @@ export default function NewEventPageTest() {
     if (!isNaN(numValue)) {
       const clampedValue = Math.max(1, numValue)
       setCapacityInput(String(clampedValue))
-      setFormData(prev => ({ ...prev, capacity: clampedValue }))
+      setFormData((prev) => ({ ...prev, capacity: clampedValue }))
       validateField('capacity', clampedValue)
     }
   }
@@ -310,7 +309,7 @@ export default function NewEventPageTest() {
     if (!isNaN(numValue)) {
       const clampedValue = Math.max(1, Math.min(10, numValue))
       setMaxSpotsInput(String(clampedValue))
-      setFormData(prev => ({ ...prev, maxSpotsPerPerson: clampedValue }))
+      setFormData((prev) => ({ ...prev, maxSpotsPerPerson: clampedValue }))
       validateField('maxSpotsPerPerson', clampedValue)
     }
   }
@@ -319,7 +318,7 @@ export default function NewEventPageTest() {
   const handleCapacityBlur = () => {
     if (capacityInput === '' || formData.capacity < 1) {
       setCapacityInput('1')
-      setFormData(prev => ({ ...prev, capacity: 1 }))
+      setFormData((prev) => ({ ...prev, capacity: 1 }))
       validateField('capacity', 1)
     }
   }
@@ -327,7 +326,7 @@ export default function NewEventPageTest() {
   const handleMaxSpotsBlur = () => {
     if (maxSpotsInput === '' || formData.maxSpotsPerPerson < 1) {
       setMaxSpotsInput('1')
-      setFormData(prev => ({ ...prev, maxSpotsPerPerson: 1 }))
+      setFormData((prev) => ({ ...prev, maxSpotsPerPerson: 1 }))
       validateField('maxSpotsPerPerson', 1)
     }
   }
@@ -501,11 +500,13 @@ export default function NewEventPageTest() {
 
     return (
       <div className="flex items-center gap-2 text-xs mt-1">
-        <span className={`
+        <span
+          className={`
           ${isOverLimit ? 'text-red-600 font-medium' : ''}
           ${isNearLimit && !isOverLimit ? 'text-amber-600' : ''}
           ${!isNearLimit ? 'text-gray-500' : ''}
-        `}>
+        `}
+        >
           {current} / {max}
         </span>
         {isOverLimit && (
@@ -514,26 +515,6 @@ export default function NewEventPageTest() {
             חריגה מהמגבלה
           </span>
         )}
-      </div>
-    )
-  }
-
-  // Input wrapper with icon
-  const InputWithIcon = ({
-    icon: Icon,
-    error,
-    children,
-  }: {
-    icon: any
-    error?: string
-    children: React.ReactNode
-  }) => {
-    return (
-      <div className="relative">
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10">
-          <Icon className="w-5 h-5" />
-        </div>
-        {children}
       </div>
     )
   }
@@ -618,10 +599,15 @@ export default function NewEventPageTest() {
                   `}
                   placeholder="כדורגל, כדורסל, טיול, הרצאה, מסיבה..."
                   aria-invalid={!!validationErrors.gameType}
-                  aria-describedby={validationErrors.gameType ? 'gameType-error gameType-help' : 'gameType-help'}
+                  aria-describedby={
+                    validationErrors.gameType ? 'gameType-error gameType-help' : 'gameType-help'
+                  }
                 />
                 {validationErrors.gameType ? (
-                  <span id="gameType-error" className="text-xs text-red-600 flex items-center gap-1 mt-1">
+                  <span
+                    id="gameType-error"
+                    className="text-xs text-red-600 flex items-center gap-1 mt-1"
+                  >
                     <AlertCircle className="w-3 h-3" />
                     {validationErrors.gameType}
                   </span>
@@ -657,7 +643,10 @@ export default function NewEventPageTest() {
                 />
                 <div className="flex items-center justify-between">
                   {validationErrors.title && (
-                    <span id="title-error" className="text-xs text-red-600 flex items-center gap-1 mt-1">
+                    <span
+                      id="title-error"
+                      className="text-xs text-red-600 flex items-center gap-1 mt-1"
+                    >
                       <AlertCircle className="w-3 h-3" />
                       {validationErrors.title}
                     </span>
@@ -669,7 +658,10 @@ export default function NewEventPageTest() {
 
               {/* Description */}
               <div className="mb-6">
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="description"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   תיאור
                 </label>
                 <textarea
@@ -690,13 +682,19 @@ export default function NewEventPageTest() {
                 />
                 <div className="flex items-center justify-between">
                   {validationErrors.description && (
-                    <span id="description-error" className="text-xs text-red-600 flex items-center gap-1 mt-1">
+                    <span
+                      id="description-error"
+                      className="text-xs text-red-600 flex items-center gap-1 mt-1"
+                    >
                       <AlertCircle className="w-3 h-3" />
                       {validationErrors.description}
                     </span>
                   )}
                   <div className="flex-1" />
-                  <CharCounter current={formData.description?.length ?? 0} max={CHAR_LIMITS.description} />
+                  <CharCounter
+                    current={formData.description?.length ?? 0}
+                    max={CHAR_LIMITS.description}
+                  />
                 </div>
               </div>
 
@@ -791,7 +789,10 @@ export default function NewEventPageTest() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Capacity */}
                 <div>
-                  <label htmlFor="capacity" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="capacity"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     מספר מקומות כולל <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
@@ -816,7 +817,10 @@ export default function NewEventPageTest() {
                     />
                   </div>
                   {validationErrors.capacity && (
-                    <span id="capacity-error" className="text-xs text-red-600 flex items-center gap-1 mt-1">
+                    <span
+                      id="capacity-error"
+                      className="text-xs text-red-600 flex items-center gap-1 mt-1"
+                    >
                       <AlertCircle className="w-3 h-3" />
                       {validationErrors.capacity}
                     </span>
@@ -825,7 +829,10 @@ export default function NewEventPageTest() {
 
                 {/* Max Spots Per Person */}
                 <div>
-                  <label htmlFor="maxSpots" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="maxSpots"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     מקסימום מקומות לנרשם <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
@@ -847,14 +854,19 @@ export default function NewEventPageTest() {
                         ${validationErrors.maxSpotsPerPerson ? 'border-red-500' : 'border-gray-300'}
                       `}
                       aria-invalid={!!validationErrors.maxSpotsPerPerson}
-                      aria-describedby={validationErrors.maxSpotsPerPerson ? 'maxSpots-error' : undefined}
+                      aria-describedby={
+                        validationErrors.maxSpotsPerPerson ? 'maxSpots-error' : undefined
+                      }
                     />
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
                     מספר המקומות המקסימלי שניתן להזמין בהרשמה אחת (בין 1 ל-10)
                   </p>
                   {validationErrors.maxSpotsPerPerson && (
-                    <span id="maxSpots-error" className="text-xs text-red-600 flex items-center gap-1 mt-1">
+                    <span
+                      id="maxSpots-error"
+                      className="text-xs text-red-600 flex items-center gap-1 mt-1"
+                    >
                       <AlertCircle className="w-3 h-3" />
                       {validationErrors.maxSpotsPerPerson}
                     </span>
@@ -895,7 +907,10 @@ export default function NewEventPageTest() {
               <h2 className="text-xl font-bold text-gray-900 mb-4">תנאים והגבלות</h2>
 
               <div className="mb-6">
-                <label htmlFor="conditions" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="conditions"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   תנאי השתתפות
                 </label>
                 <textarea
@@ -916,13 +931,19 @@ export default function NewEventPageTest() {
                 />
                 <div className="flex items-center justify-between">
                   {validationErrors.conditions && (
-                    <span id="conditions-error" className="text-xs text-red-600 flex items-center gap-1 mt-1">
+                    <span
+                      id="conditions-error"
+                      className="text-xs text-red-600 flex items-center gap-1 mt-1"
+                    >
                       <AlertCircle className="w-3 h-3" />
                       {validationErrors.conditions}
                     </span>
                   )}
                   <div className="flex-1" />
-                  <CharCounter current={formData.conditions?.length ?? 0} max={CHAR_LIMITS.conditions} />
+                  <CharCounter
+                    current={formData.conditions?.length ?? 0}
+                    max={CHAR_LIMITS.conditions}
+                  />
                 </div>
               </div>
 
@@ -933,7 +954,9 @@ export default function NewEventPageTest() {
                   onChange={(e) => handleChange('requireAcceptance', e.target.checked)}
                   className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 hover:border-gray-400 transition-colors cursor-pointer"
                 />
-                <span className="text-sm text-gray-700 font-medium">דרוש אישור תנאי השתתפות בעת ההרשמה</span>
+                <span className="text-sm text-gray-700 font-medium">
+                  דרוש אישור תנאי השתתפות בעת ההרשמה
+                </span>
               </label>
             </div>
 
@@ -942,7 +965,10 @@ export default function NewEventPageTest() {
               <h2 className="text-xl font-bold text-gray-900 mb-4">הודעה לנרשמים</h2>
 
               <div>
-                <label htmlFor="completionMessage" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="completionMessage"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   הודעה לאחר השלמת הרשמה
                 </label>
                 <textarea
@@ -959,17 +985,25 @@ export default function NewEventPageTest() {
                   placeholder="לדוגמה: מעולה! נרשמת בהצלחה..."
                   maxLength={CHAR_LIMITS.completionMessage}
                   aria-invalid={!!validationErrors.completionMessage}
-                  aria-describedby={validationErrors.completionMessage ? 'completion-error' : undefined}
+                  aria-describedby={
+                    validationErrors.completionMessage ? 'completion-error' : undefined
+                  }
                 />
                 <div className="flex items-center justify-between">
                   {validationErrors.completionMessage && (
-                    <span id="completion-error" className="text-xs text-red-600 flex items-center gap-1 mt-1">
+                    <span
+                      id="completion-error"
+                      className="text-xs text-red-600 flex items-center gap-1 mt-1"
+                    >
                       <AlertCircle className="w-3 h-3" />
                       {validationErrors.completionMessage}
                     </span>
                   )}
                   <div className="flex-1" />
-                  <CharCounter current={formData.completionMessage?.length ?? 0} max={CHAR_LIMITS.completionMessage} />
+                  <CharCounter
+                    current={formData.completionMessage?.length ?? 0}
+                    max={CHAR_LIMITS.completionMessage}
+                  />
                 </div>
                 <p className="text-sm text-gray-500 mt-2">
                   ההודעה תוצג למשתתפים לאחר שיסיימו את תהליך ההרשמה בהצלחה.
@@ -987,7 +1021,11 @@ export default function NewEventPageTest() {
   return (
     <>
       <ToastContainer />
-      <EventPreviewModal isOpen={showPreview} onClose={() => setShowPreview(false)} eventData={formData} />
+      <EventPreviewModal
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+        eventData={formData}
+      />
       <AnimatePresence>{showSuccess && <SuccessOverlay />}</AnimatePresence>
 
       {/* Draft Recovery Modal */}
@@ -1049,13 +1087,17 @@ export default function NewEventPageTest() {
                   {draftData.formData.gameType && (
                     <div className="flex items-start gap-2">
                       <span className="text-gray-500 min-w-[80px]">סוג אירוע:</span>
-                      <span className="text-gray-900 font-medium">{draftData.formData.gameType}</span>
+                      <span className="text-gray-900 font-medium">
+                        {draftData.formData.gameType}
+                      </span>
                     </div>
                   )}
                   {draftData.formData.title && (
                     <div className="flex items-start gap-2">
                       <span className="text-gray-500 min-w-[80px]">כותרת:</span>
-                      <span className="text-gray-900 font-medium truncate">{draftData.formData.title}</span>
+                      <span className="text-gray-900 font-medium truncate">
+                        {draftData.formData.title}
+                      </span>
                     </div>
                   )}
                   {draftData.formData.location && (
@@ -1089,8 +1131,8 @@ export default function NewEventPageTest() {
               <div className="flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <p>
-                  <strong>שימו לב:</strong> בחירה ב"התחל מחדש" תמחק את הטיוטה לצמיתות. אם אתם לא בטוחים, בחרו
-                  "טען טיוטה" - תוכלו תמיד למחוק אותה מאוחר יותר.
+                  <strong>שימו לב:</strong> בחירה ב"התחל מחדש" תמחק את הטיוטה לצמיתות. אם אתם לא
+                  בטוחים, בחרו "טען טיוטה" - תוכלו תמיד למחוק אותה מאוחר יותר.
                 </p>
               </div>
             </div>
@@ -1148,7 +1190,8 @@ export default function NewEventPageTest() {
             >
               <Database className="w-4 h-4" />
               <span>
-                נשמר אוטומטית ב-{lastSavedAt.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+                נשמר אוטומטית ב-
+                {lastSavedAt.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
               </span>
             </motion.div>
           )}
@@ -1237,7 +1280,9 @@ export default function NewEventPageTest() {
               ) : (
                 <button
                   type="submit"
-                  disabled={isLoading || Object.values(validationErrors).some((error) => error !== '')}
+                  disabled={
+                    isLoading || Object.values(validationErrors).some((error) => error !== '')
+                  }
                   className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl w-full sm:w-auto justify-center"
                 >
                   {isLoading ? (

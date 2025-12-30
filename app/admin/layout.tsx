@@ -1,11 +1,28 @@
 'use client'
 
 import Link from 'next/link'
-import { Calendar, Home, Plus, Menu, X, HelpCircle, LogOut, MessageSquare, Shield, Settings, Users, UserSearch } from 'lucide-react'
+import {
+  Calendar,
+  Home,
+  Menu,
+  X,
+  HelpCircle,
+  LogOut,
+  MessageSquare,
+  Shield,
+  Settings,
+  Users,
+  UserSearch,
+} from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { isAuthenticatedSync, clientLogout } from '@/lib/auth.client'
-import { trackHelpButtonClick, trackButtonClick, trackLogout, trackWhatsAppHelpClick } from '@/lib/analytics'
+import {
+  trackHelpButtonClick,
+  trackButtonClick,
+  trackLogout,
+  trackWhatsAppHelpClick,
+} from '@/lib/analytics'
 import CreateEventDropdown from '@/components/CreateEventDropdown'
 
 interface AdminInfo {
@@ -16,18 +33,19 @@ interface AdminInfo {
   schoolName?: string
 }
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
   const prevPathnameRef = useRef(pathname)
 
   // Check if current page is public BEFORE any state initialization
-  const publicPages = ['/admin/login', '/admin/signup', '/admin/forgot-password', '/admin/onboarding']
+  const publicPages = [
+    '/admin/login',
+    '/admin/signup',
+    '/admin/forgot-password',
+    '/admin/onboarding',
+  ]
   const isPublicPage = publicPages.includes(pathname)
 
   const [isChecking, setIsChecking] = useState(!isPublicPage)
@@ -70,11 +88,11 @@ export default function AdminLayout({
     const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
 
     fetch('/api/admin/me', { signal: controller.signal })
-      .then(res => {
+      .then((res) => {
         clearTimeout(timeoutId)
         return res.json()
       })
-      .then(data => {
+      .then((data) => {
         if (data.authenticated && data.admin) {
           setAdminInfo(data.admin)
         } else {
@@ -82,7 +100,7 @@ export default function AdminLayout({
           router.push('/admin/login')
         }
       })
-      .catch(err => {
+      .catch((err) => {
         clearTimeout(timeoutId)
         console.error('Failed to fetch admin info:', err)
 
@@ -140,11 +158,13 @@ export default function AdminLayout({
           <div className="flex justify-between items-center h-16 gap-2">
             <div className="flex flex-1 min-w-0">
               <div className="flex items-center gap-2 min-w-0 max-w-full">
-                <Link href="/admin" className="text-lg sm:text-xl font-bold text-gray-900 hover:text-gray-600 transition truncate">
+                <Link
+                  href="/admin"
+                  className="text-lg sm:text-xl font-bold text-gray-900 hover:text-gray-600 transition truncate"
+                >
                   {adminInfo?.role === 'SUPER_ADMIN'
                     ? 'לוח ניהול'
-                    : (adminInfo?.schoolName || 'kartis.info')
-                  }
+                    : adminInfo?.schoolName || 'kartis.info'}
                 </Link>
                 {adminInfo?.role === 'SUPER_ADMIN' && (
                   <span className="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 border border-purple-300 flex-shrink-0">
@@ -207,7 +227,9 @@ export default function AdminLayout({
                 <>
                   <CreateEventDropdown
                     variant="header"
-                    onEventTypeClick={(type) => trackButtonClick(`create_event_${type}`, 'header_desktop')}
+                    onEventTypeClick={(type) =>
+                      trackButtonClick(`create_event_${type}`, 'header_desktop')
+                    }
                   />
                   <Link
                     href="/admin/help"
@@ -233,7 +255,9 @@ export default function AdminLayout({
                   <CreateEventDropdown
                     variant="header"
                     className="min-h-[44px]"
-                    onEventTypeClick={(type) => trackButtonClick(`create_event_${type}`, 'header_mobile')}
+                    onEventTypeClick={(type) =>
+                      trackButtonClick(`create_event_${type}`, 'header_mobile')
+                    }
                   />
                   <Link
                     href="/admin/help"
@@ -249,11 +273,7 @@ export default function AdminLayout({
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="inline-flex items-center justify-center p-2.5 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 min-w-[44px] min-h-[44px] flex-shrink-0 transition-colors"
               >
-                {isMobileMenuOpen ? (
-                  <X className="h-6 w-6" />
-                ) : (
-                  <Menu className="h-6 w-6" />
-                )}
+                {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
             </div>
           </div>
@@ -379,35 +399,33 @@ export default function AdminLayout({
         )}
       </nav>
       <main className="py-4 sm:py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 sm:pb-0">
-          {children}
-        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 sm:pb-0">{children}</div>
       </main>
 
       {/* Floating WhatsApp Help Button - Hidden on event detail pages to avoid interfering with table interactions */}
       {!pathname.match(/\/admin\/events\/[^\/]+$/) && (
-      <a
-        href="https://wa.me/972555020829"
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={() => trackWhatsAppHelpClick(pathname)}
-        className="fixed bottom-4 left-4 sm:bottom-6 sm:right-6 sm:left-auto z-50 group"
-        aria-label="צור קשר דרך WhatsApp"
-        data-testid="whatsapp-help-button"
-      >
-        {/* Glow Effect */}
-        <div className="absolute -inset-1 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full blur opacity-0 group-hover:opacity-75 transition duration-300"></div>
+        <a
+          href="https://wa.me/972555020829"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackWhatsAppHelpClick(pathname)}
+          className="fixed bottom-4 left-4 sm:bottom-6 sm:right-6 sm:left-auto z-50 group"
+          aria-label="צור קשר דרך WhatsApp"
+          data-testid="whatsapp-help-button"
+        >
+          {/* Glow Effect */}
+          <div className="absolute -inset-1 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full blur opacity-0 group-hover:opacity-75 transition duration-300"></div>
 
-        {/* Main Button */}
-        <div className="relative flex items-center justify-center gap-2 sm:gap-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white p-3 sm:px-5 sm:py-4 rounded-full shadow-xl hover:shadow-green-500/50 transition-all duration-300 transform group-hover:scale-105 min-w-[56px] min-h-[56px] sm:min-w-0 sm:min-h-0">
-          <MessageSquare className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0" />
+          {/* Main Button */}
+          <div className="relative flex items-center justify-center gap-2 sm:gap-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white p-3 sm:px-5 sm:py-4 rounded-full shadow-xl hover:shadow-green-500/50 transition-all duration-300 transform group-hover:scale-105 min-w-[56px] min-h-[56px] sm:min-w-0 sm:min-h-0">
+            <MessageSquare className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0" />
 
-          {/* Text (hidden on mobile, visible on desktop) */}
-          <span className="hidden sm:block font-bold text-sm whitespace-nowrap">
-            זקוק לעזרה? דבר איתנו
-          </span>
-        </div>
-      </a>
+            {/* Text (hidden on mobile, visible on desktop) */}
+            <span className="hidden sm:block font-bold text-sm whitespace-nowrap">
+              זקוק לעזרה? דבר איתנו
+            </span>
+          </div>
+        </a>
       )}
     </div>
   )

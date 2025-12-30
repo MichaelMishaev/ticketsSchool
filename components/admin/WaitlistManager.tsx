@@ -1,7 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { ListOrdered, Users, Phone, Hash, Calendar, CheckCircle, XCircle, Ban, AlertTriangle } from 'lucide-react'
+import {
+  ListOrdered,
+  Users,
+  Phone,
+  Hash,
+  CheckCircle,
+  XCircle,
+  Ban,
+  AlertTriangle,
+} from 'lucide-react'
 
 interface WaitlistEntry {
   id: string
@@ -36,7 +45,6 @@ export default function WaitlistManager({ eventId, waitlist, onAssign }: Waitlis
   const [assigning, setAssigning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
-  const [cancelReason, setCancelReason] = useState('')
   const [confirmationModal, setConfirmationModal] = useState<{
     show: boolean
     tableId: string
@@ -61,8 +69,8 @@ export default function WaitlistManager({ eventId, waitlist, onAssign }: Waitlis
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status: 'CANCELLED',
-          cancellationReason: reason.trim() || undefined
-        })
+          cancellationReason: reason.trim() || undefined,
+        }),
       })
 
       if (response.ok) {
@@ -84,11 +92,15 @@ export default function WaitlistManager({ eventId, waitlist, onAssign }: Waitlis
     }
   }
 
-  const handleAssignToTable = async (tableId: string, forceOverride = false, forceNotRecommended = false) => {
+  const handleAssignToTable = async (
+    tableId: string,
+    forceOverride = false,
+    forceNotRecommended = false
+  ) => {
     if (!selectedEntry) return
 
     // Find the selected table to check its minimum order
-    const selectedTable = selectedEntry.matchingTables.find(t => t.id === tableId)
+    const selectedTable = selectedEntry.matchingTables.find((t) => t.id === tableId)
     if (!selectedTable) return
 
     const guestCount = selectedEntry.guestsCount || 0
@@ -108,7 +120,7 @@ export default function WaitlistManager({ eventId, waitlist, onAssign }: Waitlis
           show: true,
           tableId,
           tableName: selectedTable.tableNumber,
-          recommendedTableName: selectedEntry.bestTable!.tableNumber
+          recommendedTableName: selectedEntry.bestTable!.tableNumber,
         })
         return
       } else if (!hasRecommendation && selectedEntry.matchingTables.length > 0) {
@@ -117,7 +129,7 @@ export default function WaitlistManager({ eventId, waitlist, onAssign }: Waitlis
           show: true,
           tableId,
           tableName: selectedTable.tableNumber,
-          recommendedTableName: '' // Will show different message
+          recommendedTableName: '', // Will show different message
         })
         return
       }
@@ -131,7 +143,7 @@ export default function WaitlistManager({ eventId, waitlist, onAssign }: Waitlis
         tableId,
         tableName: selectedTable.tableNumber,
         guestCount,
-        minOrder: selectedTable.minOrder
+        minOrder: selectedTable.minOrder,
       })
       return
     }
@@ -150,17 +162,14 @@ export default function WaitlistManager({ eventId, waitlist, onAssign }: Waitlis
     setNotRecommendedModal(null)
 
     try {
-      const response = await fetch(
-        `/api/events/${eventId}/waitlist/${selectedEntry.id}/assign`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            tableId,
-            force: needsForce
-          })
-        }
-      )
+      const response = await fetch(`/api/events/${eventId}/waitlist/${selectedEntry.id}/assign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tableId,
+          force: needsForce,
+        }),
+      })
 
       const data = await response.json()
 
@@ -262,7 +271,9 @@ export default function WaitlistManager({ eventId, waitlist, onAssign }: Waitlis
                     {entry.phoneNumber && (
                       <div className="flex items-center gap-1.5 col-span-2">
                         <Phone className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                        <span dir="ltr" className="truncate">{entry.phoneNumber}</span>
+                        <span dir="ltr" className="truncate">
+                          {entry.phoneNumber}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -358,7 +369,9 @@ export default function WaitlistManager({ eventId, waitlist, onAssign }: Waitlis
             {/* Content */}
             <div className="p-4 space-y-2 max-h-[60vh] overflow-y-auto">
               {selectedEntry.matchingTables.length === 0 ? (
-                <p className="text-center text-gray-500 py-12 text-sm">אין שולחנות פנויים מתאימים</p>
+                <p className="text-center text-gray-500 py-12 text-sm">
+                  אין שולחנות פנויים מתאימים
+                </p>
               ) : (
                 selectedEntry.matchingTables.map((table) => {
                   const guestCount = selectedEntry.guestsCount || 0
@@ -437,9 +450,7 @@ export default function WaitlistManager({ eventId, waitlist, onAssign }: Waitlis
                   <AlertTriangle className="w-6 h-6 text-orange-600" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-bold text-gray-900 mb-1">
-                    שולחן לא מומלץ
-                  </h3>
+                  <h3 className="text-lg font-bold text-gray-900 mb-1">שולחן לא מומלץ</h3>
                   <p className="text-sm text-orange-800 font-medium">
                     בחרת שולחן שאינו מומלץ לאורחים אלו
                   </p>
@@ -458,15 +469,15 @@ export default function WaitlistManager({ eventId, waitlist, onAssign }: Waitlis
                       השולחן המומלץ לאורחים אלו הוא{' '}
                       <span className="font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded border border-purple-200">
                         #{notRecommendedModal.recommendedTableName}
-                      </span>
-                      {' '}(התאמה אופטימלית).
+                      </span>{' '}
+                      (התאמה אופטימלית).
                     </p>
                     <p className="text-sm text-gray-700 mt-2">
                       בחרת את שולחן{' '}
                       <span className="font-bold text-gray-900">
                         #{notRecommendedModal.tableName}
-                      </span>
-                      {' '}שאינו האופציה הטובה ביותר.
+                      </span>{' '}
+                      שאינו האופציה הטובה ביותר.
                     </p>
                   </>
                 ) : (
@@ -479,8 +490,8 @@ export default function WaitlistManager({ eventId, waitlist, onAssign }: Waitlis
                       שולחן{' '}
                       <span className="font-bold text-gray-900">
                         #{notRecommendedModal.tableName}
-                      </span>
-                      {' '}מתאים יותר לאורחים אחרים ברשימת ההמתנה שלפניהם בתור.
+                      </span>{' '}
+                      מתאים יותר לאורחים אחרים ברשימת ההמתנה שלפניהם בתור.
                     </p>
                     <p className="text-sm text-amber-800 mt-2 bg-amber-50 p-2 rounded">
                       💡 מומלץ להמתין עד שאורחים בעדיפות גבוהה יותר ישובצו תחילה.
@@ -535,12 +546,8 @@ export default function WaitlistManager({ eventId, waitlist, onAssign }: Waitlis
                   <AlertTriangle className="w-6 h-6 text-amber-600" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-bold text-gray-900 mb-1">
-                    שיבוץ מתחת למינימום
-                  </h3>
-                  <p className="text-sm text-amber-800 font-medium">
-                    יש לאשר את השיבוץ
-                  </p>
+                  <h3 className="text-lg font-bold text-gray-900 mb-1">שיבוץ מתחת למינימום</h3>
+                  <p className="text-sm text-amber-800 font-medium">יש לאשר את השיבוץ</p>
                 </div>
               </div>
             </div>
@@ -551,13 +558,9 @@ export default function WaitlistManager({ eventId, waitlist, onAssign }: Waitlis
               <div className="bg-amber-50/50 border border-amber-200 rounded-xl p-4">
                 <p className="text-sm text-gray-800 leading-relaxed">
                   כמות האורחים{' '}
-                  <span className="font-bold text-amber-900">
-                    ({confirmationModal.guestCount})
-                  </span>{' '}
+                  <span className="font-bold text-amber-900">({confirmationModal.guestCount})</span>{' '}
                   נמוכה ממינימום השולחן{' '}
-                  <span className="font-bold text-amber-900">
-                    ({confirmationModal.minOrder})
-                  </span>.
+                  <span className="font-bold text-amber-900">({confirmationModal.minOrder})</span>.
                 </p>
               </div>
 

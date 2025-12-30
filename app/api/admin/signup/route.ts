@@ -24,7 +24,6 @@ import { prisma } from '@/lib/prisma'
 import * as bcrypt from 'bcryptjs'
 import * as jwt from 'jsonwebtoken'
 import { sendVerificationEmail } from '@/lib/email'
-import { encodeSession, SESSION_COOKIE_NAME, type AuthSession } from '@/lib/auth.server'
 
 // Lazy getter for JWT_SECRET - only validates when actually used (not at import time)
 function getJWTSecret(): string {
@@ -51,27 +50,18 @@ export async function POST(request: NextRequest) {
     // Validation
     if (!email || !password || !name) {
       console.log('[Signup] Validation failed: missing required fields')
-      return NextResponse.json(
-        { error: 'חסרים שדות חובה' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'חסרים שדות חובה' }, { status: 400 })
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: 'כתובת מייל לא תקינה' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'כתובת מייל לא תקינה' }, { status: 400 })
     }
 
     // Validate password strength (min 8 chars)
     if (password.length < 8) {
-      return NextResponse.json(
-        { error: 'הסיסמה חייבת להיות לפחות 8 תווים' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'הסיסמה חייבת להיות לפחות 8 תווים' }, { status: 400 })
     }
 
     // Check if email already exists
@@ -82,10 +72,7 @@ export async function POST(request: NextRequest) {
 
     if (existingAdmin) {
       console.log('[Signup] Email already exists')
-      return NextResponse.json(
-        { error: 'כתובת המייל הזאת כבר קיימת במערכת' },
-        { status: 409 }
-      )
+      return NextResponse.json({ error: 'כתובת המייל הזאת כבר קיימת במערכת' }, { status: 409 })
     }
 
     // Hash password
@@ -94,11 +81,9 @@ export async function POST(request: NextRequest) {
 
     // Generate email verification token (24 hour expiry)
     console.log('[Signup] Generating verification token')
-    const verificationToken = jwt.sign(
-      { email: email.toLowerCase() },
-      getJWTSecret(),
-      { expiresIn: '24h' }
-    )
+    const verificationToken = jwt.sign({ email: email.toLowerCase() }, getJWTSecret(), {
+      expiresIn: '24h',
+    })
 
     // Create admin without school (onboarding will be completed after email verification)
     console.log('[Signup] Creating admin account')
@@ -118,11 +103,7 @@ export async function POST(request: NextRequest) {
 
     // Send verification email
     console.log('[Signup] Sending verification email')
-    const emailSent = await sendVerificationEmail(
-      email.toLowerCase(),
-      verificationToken,
-      name
-    )
+    const emailSent = await sendVerificationEmail(email.toLowerCase(), verificationToken, name)
 
     if (!emailSent) {
       console.warn('[Signup] Verification email failed to send, but account was created')
@@ -150,7 +131,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error: 'שגיאה ביצירת החשבון. נסה שוב.',
-        details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined
+        details:
+          process.env.NODE_ENV === 'development'
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : undefined,
       },
       { status: 500 }
     )

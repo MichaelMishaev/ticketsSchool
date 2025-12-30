@@ -1,6 +1,6 @@
 'use client'
 
-import { Calendar, Users, Clock, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react'
+import { Calendar, Users, Clock, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
@@ -18,7 +18,7 @@ export default function AdminDashboard() {
     activeEvents: 0,
     totalRegistrations: 0,
     waitlistCount: 0,
-    occupancyRate: 0
+    occupancyRate: 0,
   })
   const [recentEvents, setRecentEvents] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -41,7 +41,7 @@ export default function AdminDashboard() {
       // Fetch stats and events in parallel
       const [statsResponse, eventsResponse] = await Promise.all([
         fetch('/api/dashboard/stats'),
-        fetch('/api/events')
+        fetch('/api/events'),
       ])
 
       const statsData = await statsResponse.json()
@@ -77,14 +77,16 @@ export default function AdminDashboard() {
     return () => clearTimeout(timer)
   }, [])
 
-  const handleCardClick = async (type: 'activeEvents' | 'registrations' | 'waitlist' | 'occupancy') => {
+  const handleCardClick = async (
+    type: 'activeEvents' | 'registrations' | 'waitlist' | 'occupancy'
+  ) => {
     try {
       setIsLoading(true)
       const endpoint = {
         activeEvents: '/api/dashboard/active-events',
         registrations: '/api/dashboard/registrations',
         waitlist: '/api/dashboard/waitlist',
-        occupancy: '/api/dashboard/occupancy'
+        occupancy: '/api/dashboard/occupancy',
       }[type]
 
       const response = await fetch(endpoint)
@@ -94,14 +96,14 @@ export default function AdminDashboard() {
         activeEvents: 'אירועים פעילים - פרטים מלאים',
         registrations: 'נרשמים - פרטים מלאים',
         waitlist: 'רשימת המתנה - פרטים מלאים',
-        occupancy: 'אחוז תפוסה - פרטים מלאים'
+        occupancy: 'אחוז תפוסה - פרטים מלאים',
       }
 
       setModalData({
         isOpen: true,
         title: titles[type],
         data,
-        type
+        type,
       })
     } catch (error) {
       console.error('Error fetching drilldown data:', error)
@@ -113,7 +115,6 @@ export default function AdminDashboard() {
   const closeModal = () => {
     setModalData({ isOpen: false, title: '', data: null, type: 'activeEvents' })
   }
-
 
   return (
     <div>
@@ -129,7 +130,6 @@ export default function AdminDashboard() {
         )}
       </div>
 
-
       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 md:grid-cols-3 lg:grid-cols-4 mb-6 sm:mb-8">
         <button
           onClick={() => handleCardClick('activeEvents')}
@@ -144,7 +144,9 @@ export default function AdminDashboard() {
                 <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
                   אירועים פעילים
                 </dt>
-                <dd className="text-base sm:text-lg font-medium text-gray-900">{stats.activeEvents}</dd>
+                <dd className="text-base sm:text-lg font-medium text-gray-900">
+                  {stats.activeEvents}
+                </dd>
               </div>
             </div>
           </div>
@@ -163,7 +165,9 @@ export default function AdminDashboard() {
                 <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
                   סה"כ נרשמים
                 </dt>
-                <dd className="text-base sm:text-lg font-medium text-gray-900">{stats.totalRegistrations}</dd>
+                <dd className="text-base sm:text-lg font-medium text-gray-900">
+                  {stats.totalRegistrations}
+                </dd>
               </div>
             </div>
           </div>
@@ -182,7 +186,9 @@ export default function AdminDashboard() {
                 <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
                   ממתינים ברשימת המתנה
                 </dt>
-                <dd className="text-base sm:text-lg font-medium text-gray-900">{stats.waitlistCount}</dd>
+                <dd className="text-base sm:text-lg font-medium text-gray-900">
+                  {stats.waitlistCount}
+                </dd>
               </div>
             </div>
           </div>
@@ -201,7 +207,9 @@ export default function AdminDashboard() {
                 <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
                   אחוז תפוסה
                 </dt>
-                <dd className="text-base sm:text-lg font-medium text-gray-900">{stats.occupancyRate}%</dd>
+                <dd className="text-base sm:text-lg font-medium text-gray-900">
+                  {stats.occupancyRate}%
+                </dd>
               </div>
             </div>
           </div>
@@ -210,9 +218,7 @@ export default function AdminDashboard() {
 
       <div className="bg-white shadow sm:rounded-md">
         <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">
-            אירועים אחרונים
-          </h3>
+          <h3 className="text-lg leading-6 font-medium text-gray-900">אירועים אחרונים</h3>
         </div>
         <div className="px-4 py-5 sm:p-6">
           {isLoading ? (

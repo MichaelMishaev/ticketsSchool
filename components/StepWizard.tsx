@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { CheckCircle2, Circle } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 
 export interface Step {
   id: string
@@ -17,7 +17,12 @@ interface StepWizardProps {
   completedSteps?: Set<number>
 }
 
-export default function StepWizard({ steps, currentStep, onStepClick, completedSteps = new Set() }: StepWizardProps) {
+export default function StepWizard({
+  steps,
+  currentStep,
+  onStepClick,
+  completedSteps = new Set(),
+}: StepWizardProps) {
   return (
     <div className="w-full">
       {/* Desktop: Horizontal stepper */}
@@ -47,10 +52,12 @@ export default function StepWizard({ steps, currentStep, onStepClick, completedS
                     {isCompleted ? (
                       <CheckCircle2 className="w-6 h-6 text-white" />
                     ) : (
-                      <span className={`
+                      <span
+                        className={`
                         text-sm font-bold
                         ${isActive ? 'text-white' : 'text-gray-600'}
-                      `}>
+                      `}
+                      >
                         {index + 1}
                       </span>
                     )}
@@ -68,17 +75,17 @@ export default function StepWizard({ steps, currentStep, onStepClick, completedS
 
                   {/* Step label */}
                   <div className="mt-2 text-center">
-                    <div className={`
+                    <div
+                      className={`
                       text-sm font-medium
                       ${isActive ? 'text-blue-600' : ''}
                       ${isCompleted ? 'text-green-600' : ''}
                       ${!isActive && !isCompleted ? 'text-gray-500' : ''}
-                    `}>
+                    `}
+                    >
                       {step.title}
                     </div>
-                    <div className="text-xs text-gray-500 mt-0.5">
-                      {step.description}
-                    </div>
+                    <div className="text-xs text-gray-500 mt-0.5">{step.description}</div>
                   </div>
                 </div>
 
@@ -105,7 +112,9 @@ export default function StepWizard({ steps, currentStep, onStepClick, completedS
       <div className="md:hidden">
         <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">שלב {currentStep + 1} מתוך {steps.length}</span>
+            <span className="text-sm font-medium text-gray-700">
+              שלב {currentStep + 1} מתוך {steps.length}
+            </span>
             <span className="text-xs text-gray-500">
               {Math.round(((currentStep + 1) / steps.length) * 100)}%
             </span>

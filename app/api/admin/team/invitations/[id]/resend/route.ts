@@ -8,17 +8,11 @@ import crypto from 'crypto'
  * POST /api/admin/team/invitations/[id]/resend
  * Resend a pending invitation
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const admin = await getCurrentAdmin()
     if (!admin) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Only OWNER and ADMIN can resend invitations
@@ -36,15 +30,12 @@ export async function POST(
       where: { id },
       include: {
         school: { select: { name: true } },
-        invitedBy: { select: { name: true } }
-      }
+        invitedBy: { select: { name: true } },
+      },
     })
 
     if (!invitation) {
-      return NextResponse.json(
-        { error: 'Invitation not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Invitation not found' }, { status: 404 })
     }
 
     // Check if admin has access to this invitation's school
@@ -74,8 +65,8 @@ export async function POST(
       data: {
         token: newToken,
         expiresAt: newExpiresAt,
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     })
 
     // Resend invitation email
@@ -97,13 +88,10 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      message: 'Invitation resent successfully'
+      message: 'Invitation resent successfully',
     })
   } catch (error) {
     console.error('Error resending invitation:', error)
-    return NextResponse.json(
-      { error: 'Failed to resend invitation' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to resend invitation' }, { status: 500 })
   }
 }

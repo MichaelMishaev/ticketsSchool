@@ -94,6 +94,9 @@ logs
 *.sln
 *.sw?
 
+# Claude Code skills (local development only)
+.claude/
+
 # Database
 *.db
 *.sqlite

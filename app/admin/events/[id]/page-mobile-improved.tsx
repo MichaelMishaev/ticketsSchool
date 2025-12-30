@@ -3,11 +3,23 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
-  Calendar, MapPin, Users, Clock, Trash2, UserCheck,
-  Download, Search, ChevronDown, ChevronUp,
-  ExternalLink, Copy, Check, Edit, MoreVertical, X
+  Calendar,
+  MapPin,
+  Users,
+  Clock,
+  Trash2,
+  UserCheck,
+  Download,
+  Search,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Copy,
+  Check,
+  Edit,
+  MoreVertical,
+  X,
 } from 'lucide-react'
-import { format } from 'date-fns'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface Registration {
@@ -52,7 +64,9 @@ export default function EventManagementPageMobile() {
   const [event, setEvent] = useState<Event | null>(null)
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterStatus, setFilterStatus] = useState<'all' | 'CONFIRMED' | 'WAITLIST' | 'CANCELLED'>('all')
+  const [filterStatus, setFilterStatus] = useState<'all' | 'CONFIRMED' | 'WAITLIST' | 'CANCELLED'>(
+    'all'
+  )
   const [expandedCard, setExpandedCard] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [showActions, setShowActions] = useState(false)
@@ -80,7 +94,7 @@ export default function EventManagementPageMobile() {
       const response = await fetch(`/api/events/${eventId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({ status: newStatus }),
       })
       if (response.ok) {
         fetchEvent()
@@ -106,7 +120,7 @@ export default function EventManagementPageMobile() {
 
     try {
       const response = await fetch(`/api/events/${eventId}/registrations/${registrationId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
       })
       if (response.ok) {
         fetchEvent()
@@ -132,8 +146,9 @@ export default function EventManagementPageMobile() {
     )
   }
 
-  const filteredRegistrations = event.registrations.filter(reg => {
-    const matchesSearch = searchTerm === '' ||
+  const filteredRegistrations = event.registrations.filter((reg) => {
+    const matchesSearch =
+      searchTerm === '' ||
       JSON.stringify(reg.data).toLowerCase().includes(searchTerm.toLowerCase()) ||
       reg.phoneNumber?.includes(searchTerm) ||
       reg.confirmationCode.toLowerCase().includes(searchTerm.toLowerCase())
@@ -143,9 +158,11 @@ export default function EventManagementPageMobile() {
     return matchesSearch && matchesFilter
   })
 
-  const confirmedCount = event.registrations.filter(r => r.status === 'CONFIRMED')
+  const confirmedCount = event.registrations
+    .filter((r) => r.status === 'CONFIRMED')
     .reduce((sum, r) => sum + r.spotsCount, 0)
-  const waitlistCount = event.registrations.filter(r => r.status === 'WAITLIST')
+  const waitlistCount = event.registrations
+    .filter((r) => r.status === 'WAITLIST')
     .reduce((sum, r) => sum + r.spotsCount, 0)
   const spotsLeft = event.capacity - confirmedCount
 
@@ -156,7 +173,9 @@ export default function EventManagementPageMobile() {
       CLOSED: { text: 'סגור', className: 'bg-gray-500 text-white' },
     }
     const { text, className } = statusMap[status] || statusMap.CLOSED
-    return <span className={`px-3 py-1 rounded-full text-sm font-semibold ${className}`}>{text}</span>
+    return (
+      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${className}`}>{text}</span>
+    )
   }
 
   const getRegistrationStatusBadge = (status: string) => {
@@ -166,7 +185,11 @@ export default function EventManagementPageMobile() {
       CANCELLED: { text: 'בוטל', className: 'bg-red-100 text-red-800 border-red-300' },
     }
     const { text, className } = statusMap[status] || statusMap.CANCELLED
-    return <span className={`px-3 py-1 rounded-full text-sm font-medium border ${className}`}>{text}</span>
+    return (
+      <span className={`px-3 py-1 rounded-full text-sm font-medium border ${className}`}>
+        {text}
+      </span>
+    )
   }
 
   const formatDate = (dateString: string) => {
@@ -200,9 +223,7 @@ export default function EventManagementPageMobile() {
           {/* Organization Badge */}
           {event.school && (
             <div className="bg-purple-50 border border-purple-200 rounded-lg px-3 py-2">
-              <p className="text-sm font-medium text-purple-800">
-                🏢 ארגון: {event.school.name}
-              </p>
+              <p className="text-sm font-medium text-purple-800">🏢 ארגון: {event.school.name}</p>
             </div>
           )}
 
@@ -214,9 +235,7 @@ export default function EventManagementPageMobile() {
                 <Calendar className="w-4 h-4" />
                 <span className="text-xs font-medium">מתי?</span>
               </div>
-              <p className="text-sm font-semibold text-gray-900">
-                {formatDate(event.startAt)}
-              </p>
+              <p className="text-sm font-semibold text-gray-900">{formatDate(event.startAt)}</p>
             </div>
 
             {/* Capacity */}
@@ -228,9 +247,7 @@ export default function EventManagementPageMobile() {
               <p className="text-sm font-semibold text-gray-900">
                 {confirmedCount} / {event.capacity}
               </p>
-              <p className="text-xs text-green-600 mt-0.5">
-                {spotsLeft} פנויים
-              </p>
+              <p className="text-xs text-green-600 mt-0.5">{spotsLeft} פנויים</p>
             </div>
           </div>
 
@@ -319,9 +336,7 @@ export default function EventManagementPageMobile() {
                 </a>
 
                 <div className="pt-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    שנה סטטוס
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">שנה סטטוס</label>
                   <select
                     value={event.status}
                     onChange={(e) => {
@@ -403,7 +418,9 @@ export default function EventManagementPageMobile() {
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm font-bold text-gray-500">#{index + 1}</span>
                       <span className="text-sm text-gray-400">•</span>
-                      <span className="text-xs font-mono text-gray-500">{reg.confirmationCode}</span>
+                      <span className="text-xs font-mono text-gray-500">
+                        {reg.confirmationCode}
+                      </span>
                     </div>
                     <h3 className="font-semibold text-gray-900 truncate">
                       {reg.data.fullName || 'לא צוין'}

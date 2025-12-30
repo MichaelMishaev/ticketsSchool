@@ -7,7 +7,7 @@ import DuplicateTableModal from './DuplicateTableModal'
 import TableTemplateModal from './TableTemplateModal'
 import SaveTemplateModal from './SaveTemplateModal'
 import BulkEditModal from './BulkEditModal'
-import { X, Plus, Sparkles, Edit3, Trash2, CheckSquare, Users } from 'lucide-react'
+import { X, Plus, Sparkles, Edit3, Trash2, CheckSquare } from 'lucide-react'
 import Link from 'next/link'
 
 interface Table {
@@ -35,17 +35,17 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
   const router = useRouter()
   const [cancelModal, setCancelModal] = useState<{ show: boolean; registrationId: string | null }>({
     show: false,
-    registrationId: null
+    registrationId: null,
   })
   const [cancelReason, setCancelReason] = useState('')
   const [cancelling, setCancelling] = useState(false)
-  const [togglingHold, setTogglingHold] = useState(false)
+  const [_togglingHold, setTogglingHold] = useState(false)
   const [duplicateModal, setDuplicateModal] = useState<{
     show: boolean
     table: Table | null
   }>({
     show: false,
-    table: null
+    table: null,
   })
   const [templateModal, setTemplateModal] = useState(false)
   const [saveTemplateModal, setSaveTemplateModal] = useState(false)
@@ -90,7 +90,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ count })
+        body: JSON.stringify({ count }),
       })
 
       if (response.ok) {
@@ -122,7 +122,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ templateId })
+        body: JSON.stringify({ templateId }),
       })
 
       if (response.ok) {
@@ -146,7 +146,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ name, description })
+        body: JSON.stringify({ name, description }),
       })
 
       if (response.ok) {
@@ -164,7 +164,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
   }
 
   const handleTableSelection = (tableId: string, selected: boolean) => {
-    setSelectedTableIds(prev => {
+    setSelectedTableIds((prev) => {
       const newSet = new Set(prev)
       if (selected) {
         newSet.add(tableId)
@@ -176,9 +176,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
   }
 
   const handleSelectAll = () => {
-    const availableTableIds = tables
-      .filter(t => t.status !== 'RESERVED')
-      .map(t => t.id)
+    const availableTableIds = tables.filter((t) => t.status !== 'RESERVED').map((t) => t.id)
     setSelectedTableIds(new Set(availableTableIds))
   }
 
@@ -192,7 +190,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ tableIds: Array.from(selectedTableIds), updates })
+        body: JSON.stringify({ tableIds: Array.from(selectedTableIds), updates }),
       })
 
       if (response.ok) {
@@ -219,7 +217,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ tableIds: Array.from(selectedTableIds) })
+        body: JSON.stringify({ tableIds: Array.from(selectedTableIds) }),
       })
 
       if (response.ok) {
@@ -238,7 +236,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
   }
 
   const handleDeleteTable = async (tableId: string) => {
-    const table = tables.find(t => t.id === tableId)
+    const table = tables.find((t) => t.id === tableId)
     if (!table) return
 
     if (!confirm(`האם למחוק שולחן ${table.tableNumber}?`)) return
@@ -248,7 +246,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ tableIds: [tableId] })
+        body: JSON.stringify({ tableIds: [tableId] }),
       })
 
       if (response.ok) {
@@ -270,17 +268,20 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
     setCancelling(true)
 
     try {
-      const response = await fetch(`/api/events/${eventId}/registrations/${cancelModal.registrationId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin', // Explicitly include cookies
-        body: JSON.stringify({
-          status: 'WAITLIST', // Move to waitlist instead of cancelling
-          cancellationReason: cancelReason.trim() || undefined,
-          moveToWaitlist: true, // Flag to indicate this was removed from table
-          removedFromTable: true // Add metadata to registration
-        })
-      })
+      const response = await fetch(
+        `/api/events/${eventId}/registrations/${cancelModal.registrationId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin', // Explicitly include cookies
+          body: JSON.stringify({
+            status: 'WAITLIST', // Move to waitlist instead of cancelling
+            cancellationReason: cancelReason.trim() || undefined,
+            moveToWaitlist: true, // Flag to indicate this was removed from table
+            removedFromTable: true, // Add metadata to registration
+          }),
+        }
+      )
 
       if (response.ok) {
         setCancelModal({ show: false, registrationId: null })
@@ -310,13 +311,13 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
   // Group consecutive similar AVAILABLE tables
   const groupTables = () => {
     if (!showGroupedView) {
-      return tables.map(table => ({
+      return tables.map((table) => ({
         tables: [table],
         isGroup: false,
         firstTable: table,
         count: 1,
         totalCapacity: table.capacity,
-        totalMinOrder: table.minOrder
+        totalMinOrder: table.minOrder,
       }))
     }
 
@@ -357,7 +358,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
           firstTable: currentGroup[0],
           count: currentGroup.length,
           totalCapacity: currentGroup.reduce((sum, t) => sum + t.capacity, 0),
-          totalMinOrder: currentGroup.reduce((sum, t) => sum + t.minOrder, 0)
+          totalMinOrder: currentGroup.reduce((sum, t) => sum + t.minOrder, 0),
         })
         currentGroup = [table]
       }
@@ -371,7 +372,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
         firstTable: currentGroup[0],
         count: currentGroup.length,
         totalCapacity: currentGroup.reduce((sum, t) => sum + t.capacity, 0),
-        totalMinOrder: currentGroup.reduce((sum, t) => sum + t.minOrder, 0)
+        totalMinOrder: currentGroup.reduce((sum, t) => sum + t.minOrder, 0),
       })
     }
 
@@ -503,9 +504,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
                     </div>
                     <div>
                       <div className="text-xs text-gray-600 mb-1">מינימום</div>
-                      <div className="text-2xl font-bold text-blue-600">
-                        {firstTable.minOrder}
-                      </div>
+                      <div className="text-2xl font-bold text-blue-600">{firstTable.minOrder}</div>
                     </div>
                   </div>
                 </div>
@@ -518,15 +517,11 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-white rounded-lg p-2 text-center border border-green-100">
                       <div className="text-xs text-gray-600 mb-1">מקסימום</div>
-                      <div className="text-xl font-bold text-green-600">
-                        {group.totalCapacity}
-                      </div>
+                      <div className="text-xl font-bold text-green-600">{group.totalCapacity}</div>
                     </div>
                     <div className="bg-white rounded-lg p-2 text-center border border-green-100">
                       <div className="text-xs text-gray-600 mb-1">מינימום</div>
-                      <div className="text-xl font-bold text-orange-600">
-                        {group.totalMinOrder}
-                      </div>
+                      <div className="text-xl font-bold text-orange-600">{group.totalMinOrder}</div>
                     </div>
                   </div>
                 </div>
@@ -545,7 +540,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
                 onSelect={isBulkSelectionMode ? handleTableSelection : undefined}
                 onDelete={() => handleDeleteTable(table.id)}
                 onDuplicate={(tableId) => {
-                  const selectedTable = tables.find(t => t.id === tableId)
+                  const selectedTable = tables.find((t) => t.id === tableId)
                   if (selectedTable) {
                     setDuplicateModal({ show: true, table: selectedTable })
                   }
@@ -573,9 +568,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
             <div className="text-lg font-bold text-blue-900 group-hover:text-blue-950 transition-colors">
               הוסף שולחן
             </div>
-            <div className="text-sm text-blue-700 mt-1">
-              לחץ להוספת שולחן חדש
-            </div>
+            <div className="text-sm text-blue-700 mt-1">לחץ להוספת שולחן חדש</div>
           </div>
         </Link>
 
@@ -592,9 +585,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
             <div className="text-lg font-bold text-purple-900 group-hover:text-purple-950 transition-colors">
               תבניות מוכנות
             </div>
-            <div className="text-sm text-purple-700 mt-1">
-              יצירה מהירה מתבנית קיימת
-            </div>
+            <div className="text-sm text-purple-700 mt-1">יצירה מהירה מתבנית קיימת</div>
           </div>
         </button>
       </div>
@@ -613,7 +604,10 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
 
       {/* Cancel Modal */}
       {cancelModal.show && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" dir="rtl">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          dir="rtl"
+        >
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-gray-900">ביטול הזמנת שולחן</h2>
@@ -634,7 +628,10 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
             </p>
 
             <div className="mb-4">
-              <label htmlFor="cancelReason" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="cancelReason"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 סיבת ביטול (אופציונלי)
               </label>
               <textarea
@@ -646,9 +643,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white disabled:bg-gray-100"
                 placeholder="למשל: נרשם ביקש לבטל בטלפון"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                הסיבה תישמר לצורך רישום ומעקב
-              </p>
+              <p className="text-xs text-gray-500 mt-1">הסיבה תישמר לצורך רישום ומעקב</p>
             </div>
 
             <div className="flex gap-3">

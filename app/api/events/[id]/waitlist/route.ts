@@ -7,10 +7,7 @@ import { requireAdmin } from '@/lib/auth.server'
  * Get waitlist registrations with matching available tables
  * Admin only - requires schoolId verification
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const admin = await requireAdmin()
     const { id: eventId } = await params
@@ -22,31 +19,22 @@ export async function GET(
         id: true,
         schoolId: true,
         eventType: true,
-        title: true
-      }
+        title: true,
+      },
     })
 
     if (!event) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
     // Multi-tenant security check
     if (admin.role !== 'SUPER_ADMIN') {
       if (!admin.schoolId) {
-        return NextResponse.json(
-          { error: 'Admin must have a school assigned' },
-          { status: 403 }
-        )
+        return NextResponse.json({ error: 'Admin must have a school assigned' }, { status: 403 })
       }
 
       if (event.schoolId !== admin.schoolId) {
-        return NextResponse.json(
-          { error: 'Access denied' },
-          { status: 403 }
-        )
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
       }
     }
 
@@ -63,7 +51,7 @@ export async function GET(
       prisma.registration.findMany({
         where: {
           eventId,
-          status: 'WAITLIST'
+          status: 'WAITLIST',
         },
         orderBy: { waitlistPriority: 'asc' },
         select: {
@@ -73,13 +61,13 @@ export async function GET(
           phoneNumber: true,
           data: true,
           waitlistPriority: true,
-          createdAt: true
-        }
+          createdAt: true,
+        },
       }),
       prisma.table.findMany({
         where: {
           eventId,
-          status: 'AVAILABLE'
+          status: 'AVAILABLE',
         },
         orderBy: { tableOrder: 'asc' },
         select: {
@@ -87,39 +75,40 @@ export async function GET(
           tableNumber: true,
           capacity: true,
           minOrder: true,
-          tableOrder: true
-        }
-      })
+          tableOrder: true,
+        },
+      }),
     ])
 
     // Compute matching tables for each waitlist entry
-    const waitlistWithMatches = waitlistRegistrations.map(registration => {
+    const waitlistWithMatches = waitlistRegistrations.map((registration) => {
       const guestCount = registration.guestsCount || 0
 
       // Find all tables that could fit this party
-      const matchingTables = availableTables.filter(table =>
-        guestCount >= table.minOrder && guestCount <= table.capacity
+      const matchingTables = availableTables.filter(
+        (table) => guestCount >= table.minOrder && guestCount <= table.capacity
       )
 
       // Find the best (smallest fitting) table
-      const bestTable = matchingTables.length > 0
-        ? matchingTables.sort((a, b) => a.capacity - b.capacity)[0]
-        : null
+      const bestTable =
+        matchingTables.length > 0 ? matchingTables.sort((a, b) => a.capacity - b.capacity)[0] : null
 
       return {
         ...registration,
-        matchingTables: matchingTables.map(t => ({
+        matchingTables: matchingTables.map((t) => ({
           id: t.id,
           tableNumber: t.tableNumber,
           capacity: t.capacity,
-          minOrder: t.minOrder
+          minOrder: t.minOrder,
         })),
-        bestTable: bestTable ? {
-          id: bestTable.id,
-          tableNumber: bestTable.tableNumber,
-          capacity: bestTable.capacity
-        } : null,
-        hasMatch: matchingTables.length > 0
+        bestTable: bestTable
+          ? {
+              id: bestTable.id,
+              tableNumber: bestTable.tableNumber,
+              capacity: bestTable.capacity,
+            }
+          : null,
+        hasMatch: matchingTables.length > 0,
       }
     })
 
@@ -127,25 +116,19 @@ export async function GET(
       waitlist: waitlistWithMatches,
       stats: {
         totalWaitlist: waitlistRegistrations.length,
-        withMatches: waitlistWithMatches.filter(w => w.hasMatch).length,
-        withoutMatches: waitlistWithMatches.filter(w => !w.hasMatch).length,
-        availableTables: availableTables.length
-      }
+        withMatches: waitlistWithMatches.filter((w) => w.hasMatch).length,
+        withoutMatches: waitlistWithMatches.filter((w) => !w.hasMatch).length,
+        availableTables: availableTables.length,
+      },
     })
   } catch (error: any) {
     console.error('Waitlist fetch error:', error)
 
     // Handle auth errors
     if (error.message === 'Unauthorized') {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
-    return NextResponse.json(
-      { error: 'Failed to fetch waitlist' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch waitlist' }, { status: 500 })
   }
 }

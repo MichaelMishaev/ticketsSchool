@@ -1,6 +1,6 @@
 'use client'
 
-import { X, Calendar, Users, Clock, TrendingUp, MapPin } from 'lucide-react'
+import { X, Calendar, MapPin } from 'lucide-react'
 import { format } from 'date-fns'
 import { he } from 'date-fns/locale'
 
@@ -12,7 +12,13 @@ interface DrilldownModalProps {
   type: 'activeEvents' | 'registrations' | 'waitlist' | 'occupancy'
 }
 
-export default function DrilldownModal({ isOpen, onClose, title, data, type }: DrilldownModalProps) {
+export default function DrilldownModal({
+  isOpen,
+  onClose,
+  title,
+  data,
+  type,
+}: DrilldownModalProps) {
   if (!isOpen) return null
 
   const renderActiveEvents = () => (
@@ -61,7 +67,9 @@ export default function DrilldownModal({ isOpen, onClose, title, data, type }: D
                   <div className="text-xs text-gray-500">זמין</div>
                 </div>
                 <div>
-                  <div className="text-lg font-semibold text-purple-600">{event.occupancyRate}%</div>
+                  <div className="text-lg font-semibold text-purple-600">
+                    {event.occupancyRate}%
+                  </div>
                   <div className="text-xs text-gray-500">תפוסה</div>
                 </div>
               </div>
@@ -89,7 +97,10 @@ export default function DrilldownModal({ isOpen, onClose, title, data, type }: D
         <h4 className="font-medium text-gray-900 mb-3">הרשמות אחרונות</h4>
         <div className="space-y-2 max-h-64 overflow-y-auto">
           {data?.recentRegistrations?.map((reg: any) => (
-            <div key={reg.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 p-3 bg-gray-50 rounded-lg">
+            <div
+              key={reg.id}
+              className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 p-3 bg-gray-50 rounded-lg"
+            >
               <div>
                 <div className="font-medium text-sm">{reg.confirmationCode}</div>
                 <div className="text-xs text-gray-500">{reg.email}</div>
@@ -110,7 +121,10 @@ export default function DrilldownModal({ isOpen, onClose, title, data, type }: D
         <h4 className="font-medium text-gray-900 mb-3">פילוח לפי אירוע</h4>
         <div className="space-y-2 max-h-64 overflow-y-auto">
           {data?.byEvent?.map((eventData: any, index: number) => (
-            <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+            <div
+              key={index}
+              className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
+            >
               <div>
                 <div className="font-medium text-sm">{eventData.event.title}</div>
                 <div className="text-xs text-gray-500">
@@ -145,7 +159,10 @@ export default function DrilldownModal({ isOpen, onClose, title, data, type }: D
         <h4 className="font-medium text-gray-900 mb-3">רשימת המתנה (לפי סדר הגעה)</h4>
         <div className="space-y-2 max-h-64 overflow-y-auto">
           {data?.recentWaitlist?.map((reg: any) => (
-            <div key={reg.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 p-3 bg-orange-50 rounded-lg">
+            <div
+              key={reg.id}
+              className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 p-3 bg-orange-50 rounded-lg"
+            >
               <div>
                 <div className="flex items-center gap-2">
                   <span className="bg-orange-200 text-orange-800 text-xs px-2 py-1 rounded-full">
@@ -171,7 +188,10 @@ export default function DrilldownModal({ isOpen, onClose, title, data, type }: D
         <h4 className="font-medium text-gray-900 mb-3">פילוח לפי אירוע</h4>
         <div className="space-y-2 max-h-64 overflow-y-auto">
           {data?.byEvent?.map((eventData: any, index: number) => (
-            <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+            <div
+              key={index}
+              className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
+            >
               <div>
                 <div className="font-medium text-sm">{eventData.event.title}</div>
                 <div className="text-xs text-gray-500">
@@ -179,7 +199,9 @@ export default function DrilldownModal({ isOpen, onClose, title, data, type }: D
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-sm font-semibold">{eventData.registrations.length} ממתינים</div>
+                <div className="text-sm font-semibold">
+                  {eventData.registrations.length} ממתינים
+                </div>
                 <div className="text-xs text-gray-500">{eventData.totalSpots} מקומות</div>
               </div>
             </div>
@@ -193,7 +215,9 @@ export default function DrilldownModal({ isOpen, onClose, title, data, type }: D
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-purple-50 p-4 rounded-lg">
-          <div className="text-2xl font-bold text-purple-900">{data?.overallOccupancyRate || 0}%</div>
+          <div className="text-2xl font-bold text-purple-900">
+            {data?.overallOccupancyRate || 0}%
+          </div>
           <div className="text-purple-700">תפוסה כללית</div>
         </div>
         <div className="bg-blue-50 p-4 rounded-lg">
@@ -208,7 +232,9 @@ export default function DrilldownModal({ isOpen, onClose, title, data, type }: D
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-gray-50 p-4 rounded-lg text-center">
-          <div className="text-lg font-bold text-gray-900">{data?.statistics?.averageOccupancy || 0}%</div>
+          <div className="text-lg font-bold text-gray-900">
+            {data?.statistics?.averageOccupancy || 0}%
+          </div>
           <div className="text-gray-700 text-sm">ממוצע תפוסה</div>
         </div>
         <div className="bg-red-50 p-4 rounded-lg text-center">
@@ -216,7 +242,9 @@ export default function DrilldownModal({ isOpen, onClose, title, data, type }: D
           <div className="text-red-700 text-sm">אירועים מלאים</div>
         </div>
         <div className="bg-gray-50 p-4 rounded-lg text-center">
-          <div className="text-lg font-bold text-gray-900">{data?.statistics?.emptyEvents || 0}</div>
+          <div className="text-lg font-bold text-gray-900">
+            {data?.statistics?.emptyEvents || 0}
+          </div>
           <div className="text-gray-700 text-sm">אירועים ריקים</div>
         </div>
       </div>
@@ -227,7 +255,10 @@ export default function DrilldownModal({ isOpen, onClose, title, data, type }: D
             <h4 className="font-medium text-gray-900 mb-3">אירועים עם תפוסה גבוהה (80%+)</h4>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {data.highOccupancyEvents.map((event: any) => (
-                <div key={event.id} className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                <div
+                  key={event.id}
+                  className="flex justify-between items-center p-3 bg-red-50 rounded-lg"
+                >
                   <div>
                     <div className="font-medium text-sm">{event.title}</div>
                     <div className="text-xs text-gray-500">
@@ -236,7 +267,9 @@ export default function DrilldownModal({ isOpen, onClose, title, data, type }: D
                   </div>
                   <div className="text-right">
                     <div className="text-sm font-semibold text-red-600">{event.occupancyRate}%</div>
-                    <div className="text-xs text-gray-500">{event.confirmedCount}/{event.capacity}</div>
+                    <div className="text-xs text-gray-500">
+                      {event.confirmedCount}/{event.capacity}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -249,7 +282,10 @@ export default function DrilldownModal({ isOpen, onClose, title, data, type }: D
             <h4 className="font-medium text-gray-900 mb-3">אירועים עם תפוסה נמוכה (&lt;50%)</h4>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {data.lowOccupancyEvents.map((event: any) => (
-                <div key={event.id} className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
+                <div
+                  key={event.id}
+                  className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg"
+                >
                   <div>
                     <div className="font-medium text-sm">{event.title}</div>
                     <div className="text-xs text-gray-500">
@@ -257,8 +293,12 @@ export default function DrilldownModal({ isOpen, onClose, title, data, type }: D
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-semibold text-yellow-600">{event.occupancyRate}%</div>
-                    <div className="text-xs text-gray-500">{event.confirmedCount}/{event.capacity}</div>
+                    <div className="text-sm font-semibold text-yellow-600">
+                      {event.occupancyRate}%
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {event.confirmedCount}/{event.capacity}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -297,9 +337,7 @@ export default function DrilldownModal({ isOpen, onClose, title, data, type }: D
           </button>
         </div>
 
-        <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-          {renderContent()}
-        </div>
+        <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(90vh-120px)]">{renderContent()}</div>
       </div>
     </div>
   )

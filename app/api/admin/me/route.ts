@@ -7,15 +7,12 @@ import { prisma } from '@/lib/prisma'
  * Returns current admin session info
  * Used by client to check if authenticated
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const admin = await getCurrentAdmin()
 
     if (!admin) {
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
     // Fetch fresh data from database to get onboardingCompleted status
@@ -33,16 +30,13 @@ export async function GET(request: NextRequest) {
             id: true,
             name: true,
             slug: true,
-          }
-        }
-      }
+          },
+        },
+      },
     })
 
     if (!adminData) {
-      return NextResponse.json(
-        { error: 'Admin not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Admin not found' }, { status: 404 })
     }
 
     const response = NextResponse.json({
@@ -55,11 +49,13 @@ export async function GET(request: NextRequest) {
         schoolName: adminData.school?.name,
         onboardingCompleted: adminData.onboardingCompleted,
       },
-      school: adminData.school ? {
-        id: adminData.school.id,
-        name: adminData.school.name,
-        slug: adminData.school.slug,
-      } : null
+      school: adminData.school
+        ? {
+            id: adminData.school.id,
+            name: adminData.school.name,
+            slug: adminData.school.slug,
+          }
+        : null,
     })
 
     // Cache for 60 seconds to reduce database load
@@ -69,9 +65,6 @@ export async function GET(request: NextRequest) {
     return response
   } catch (error) {
     console.error('Get current admin error:', error)
-    return NextResponse.json(
-      { error: 'Server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }
