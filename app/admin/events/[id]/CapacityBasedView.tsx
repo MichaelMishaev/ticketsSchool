@@ -3,9 +3,22 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
-  Calendar, MapPin, Users, Clock, Trash2, UserCheck,
-  Download, Search, ChevronDown, ChevronUp,
-  ExternalLink, Copy, Check, Edit, X, Ban
+  Calendar,
+  MapPin,
+  Users,
+  Clock,
+  Trash2,
+  UserCheck,
+  Download,
+  Search,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Copy,
+  Check,
+  Edit,
+  X,
+  Ban,
 } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -60,11 +73,18 @@ export default function EventManagementPage() {
   const [event, setEvent] = useState<Event | null>(null)
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterStatus, setFilterStatus] = useState<'all' | 'CONFIRMED' | 'WAITLIST' | 'CANCELLED'>('all')
+  const [filterStatus, setFilterStatus] = useState<'all' | 'CONFIRMED' | 'WAITLIST' | 'CANCELLED'>(
+    'all'
+  )
   const [expandedRow, setExpandedRow] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
-  const [cancelModal, setCancelModal] = useState<{ show: boolean; registrationId: string | null }>({ show: false, registrationId: null })
+  const [cancelModal, setCancelModal] = useState<{ show: boolean; registrationId: string | null }>({
+    show: false,
+    registrationId: null,
+  })
   const [cancelReason, setCancelReason] = useState('')
+  const [deleteModal, setDeleteModal] = useState<{ show: boolean }>({ show: false })
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     fetchEvent()
@@ -90,7 +110,7 @@ export default function EventManagementPage() {
       const response = await fetch(`/api/events/${eventId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({ status: newStatus }),
       })
       if (response.ok) {
         fetchEvent()
@@ -105,7 +125,7 @@ export default function EventManagementPage() {
       const response = await fetch(`/api/events/${eventId}/registrations/${registrationId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'CONFIRMED' })
+        body: JSON.stringify({ status: 'CONFIRMED' }),
       })
       if (response.ok) {
         fetchEvent()
@@ -119,14 +139,17 @@ export default function EventManagementPage() {
     if (!cancelModal.registrationId) return
 
     try {
-      const response = await fetch(`/api/events/${eventId}/registrations/${cancelModal.registrationId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: 'CANCELLED',
-          cancellationReason: cancelReason.trim() || undefined
-        })
-      })
+      const response = await fetch(
+        `/api/events/${eventId}/registrations/${cancelModal.registrationId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status: 'CANCELLED',
+            cancellationReason: cancelReason.trim() || undefined,
+          }),
+        }
+      )
       if (response.ok) {
         fetchEvent()
         setCancelModal({ show: false, registrationId: null })
@@ -146,13 +169,36 @@ export default function EventManagementPage() {
 
     try {
       const response = await fetch(`/api/events/${eventId}/registrations/${registrationId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
       })
       if (response.ok) {
         fetchEvent()
       }
     } catch (error) {
       console.error('Error deleting registration:', error)
+    }
+  }
+
+  const handleDeleteEvent = async () => {
+    if (!event?.id) return
+
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/events/${event.id}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        router.push('/admin/events')
+      } else {
+        const error = await response.json()
+        alert(error.error || 'שגיאה במחיקת האירוע')
+      }
+    } catch (error) {
+      console.error('Error deleting event:', error)
+      alert('שגיאה במחיקת האירוע')
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -198,8 +244,9 @@ export default function EventManagementPage() {
     )
   }
 
-  const filteredRegistrations = event.registrations.filter(reg => {
-    const matchesSearch = searchTerm === '' ||
+  const filteredRegistrations = event.registrations.filter((reg) => {
+    const matchesSearch =
+      searchTerm === '' ||
       JSON.stringify(reg.data).toLowerCase().includes(searchTerm.toLowerCase()) ||
       reg.phoneNumber?.includes(searchTerm) ||
       reg.confirmationCode.toLowerCase().includes(searchTerm.toLowerCase())
@@ -209,9 +256,11 @@ export default function EventManagementPage() {
     return matchesSearch && matchesFilter
   })
 
-  const confirmedCount = event.registrations.filter(r => r.status === 'CONFIRMED')
+  const confirmedCount = event.registrations
+    .filter((r) => r.status === 'CONFIRMED')
     .reduce((sum, r) => sum + r.spotsCount, 0)
-  const waitlistCount = event.registrations.filter(r => r.status === 'WAITLIST')
+  const waitlistCount = event.registrations
+    .filter((r) => r.status === 'WAITLIST')
     .reduce((sum, r) => sum + r.spotsCount, 0)
   const totalCapacity = event.totalCapacity || event.capacity
   const spotsLeft = totalCapacity - confirmedCount
@@ -233,7 +282,9 @@ export default function EventManagementPage() {
       CANCELLED: { text: 'בוטל', className: 'bg-red-100 text-red-800' },
     }
     const { text, className } = statusMap[status] || statusMap.CANCELLED
-    return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${className}`}>{text}</span>
+    return (
+      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${className}`}>{text}</span>
+    )
   }
 
   // Helper function to get field label from fieldsSchema
@@ -253,7 +304,7 @@ export default function EventManagementPage() {
       email: 'אימייל',
       spotsCount: 'מספר מקומות',
       message: 'הודעה',
-      notes: 'הערות'
+      notes: 'הערות',
     }
 
     return commonFields[fieldKey] || fieldKey
@@ -267,7 +318,9 @@ export default function EventManagementPage() {
           <div className="flex-1 w-full">
             <div className="flex items-center gap-2 mb-1">
               <ExternalLink className="w-4 h-4 text-blue-600" />
-              <p className="text-sm font-semibold text-blue-900">🔗 קישור להרשמה (שתף עם משתתפים)</p>
+              <p className="text-sm font-semibold text-blue-900">
+                🔗 קישור להרשמה (שתף עם משתתפים)
+              </p>
             </div>
             <div className="bg-white rounded-md border border-blue-300 p-2.5 font-mono text-sm text-gray-700 break-all select-all">
               {`${window.location.origin}/p/${event?.school?.slug}/${event?.slug}`}
@@ -356,15 +409,22 @@ export default function EventManagementPage() {
                   <ExternalLink className="w-4 h-4" />
                   <span>תצוגה מקדימה</span>
                 </a>
+                <button
+                  onClick={() => setDeleteModal({ show: true })}
+                  className="flex-1 sm:flex-initial px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center justify-center gap-2 text-sm font-medium shadow-sm"
+                  title="מחק אירוע"
+                  data-testid="delete-event-button"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>מחק אירוע</span>
+                </button>
               </div>
             </div>
 
             {/* Status Section */}
             <div>
               <div className="mb-1.5">
-                <p className="text-xs font-medium text-gray-700 mb-0.5">
-                  שליטה בהרשמות
-                </p>
+                <p className="text-xs font-medium text-gray-700 mb-0.5">שליטה בהרשמות</p>
                 <p className="text-xs text-gray-500">
                   פתוח - מאפשר הרשמה חדשה | מושהה - זמנית | סגור - חסום
                 </p>
@@ -388,7 +448,8 @@ export default function EventManagementPage() {
         {searchTerm && searchTerm.length >= 5 && searchTerm.match(/^[A-Z0-9]+$/i) && (
           <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm text-blue-700">
-              🔍 מחפש לפי קוד אישור: <span className="font-mono font-bold">{searchTerm.toUpperCase()}</span>
+              🔍 מחפש לפי קוד אישור:{' '}
+              <span className="font-mono font-bold">{searchTerm.toUpperCase()}</span>
             </p>
           </div>
         )}
@@ -410,7 +471,9 @@ export default function EventManagementPage() {
             name="status"
             data-testid="status-filter"
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as 'all' | 'CONFIRMED' | 'WAITLIST' | 'CANCELLED')}
+            onChange={(e) =>
+              setFilterStatus(e.target.value as 'all' | 'CONFIRMED' | 'WAITLIST' | 'CANCELLED')
+            }
             className="px-4 py-2 border rounded-lg"
           >
             <option value="all">כל הסטטוסים</option>
@@ -461,14 +524,21 @@ export default function EventManagementPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredRegistrations.map((registration, index) => (
                 <React.Fragment key={registration.id}>
-                  <tr className="hover:bg-gray-50 cursor-pointer" onClick={() => setExpandedRow(expandedRow === registration.id ? null : registration.id)}>
+                  <tr
+                    className="hover:bg-gray-50 cursor-pointer"
+                    onClick={() =>
+                      setExpandedRow(expandedRow === registration.id ? null : registration.id)
+                    }
+                  >
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {index + 1}
                     </td>
                     <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">
                       <div>
                         <div className="font-medium">{String(registration.data.name || '')}</div>
-                        <div className="text-gray-500 text-xs">{registration.phoneNumber || String(registration.data.phone || '')}</div>
+                        <div className="text-gray-500 text-xs">
+                          {registration.phoneNumber || String(registration.data.phone || '')}
+                        </div>
                       </div>
                     </td>
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -478,7 +548,9 @@ export default function EventManagementPage() {
                       {getRegistrationStatusBadge(registration.status)}
                     </td>
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-mono">
-                      <span className={`${searchTerm && registration.confirmationCode.toLowerCase().includes(searchTerm.toLowerCase()) ? 'bg-yellow-200 px-1 py-0.5 rounded font-bold text-gray-900' : 'text-gray-900'}`}>
+                      <span
+                        className={`${searchTerm && registration.confirmationCode.toLowerCase().includes(searchTerm.toLowerCase()) ? 'bg-yellow-200 px-1 py-0.5 rounded font-bold text-gray-900' : 'text-gray-900'}`}
+                      >
                         {registration.confirmationCode}
                       </span>
                     </td>
@@ -487,18 +559,19 @@ export default function EventManagementPage() {
                     </td>
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex items-center gap-1">
-                        {registration.status === 'WAITLIST' && spotsLeft >= registration.spotsCount && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handlePromoteToConfirmed(registration.id)
-                            }}
-                            className="p-1 text-green-600 hover:text-green-800"
-                            title="אשר הרשמה"
-                          >
-                            <UserCheck className="w-4 h-4" />
-                          </button>
-                        )}
+                        {registration.status === 'WAITLIST' &&
+                          spotsLeft >= registration.spotsCount && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handlePromoteToConfirmed(registration.id)
+                              }}
+                              className="p-1 text-green-600 hover:text-green-800"
+                              title="אשר הרשמה"
+                            >
+                              <UserCheck className="w-4 h-4" />
+                            </button>
+                          )}
                         {registration.status !== 'CANCELLED' && (
                           <button
                             onClick={(e) => {
@@ -521,11 +594,12 @@ export default function EventManagementPage() {
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={(e) => e.stopPropagation()}
-                          className="p-1 text-gray-600"
-                        >
-                          {expandedRow === registration.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        <button onClick={(e) => e.stopPropagation()} className="p-1 text-gray-600">
+                          {expandedRow === registration.id ? (
+                            <ChevronUp className="w-4 h-4" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4" />
+                          )}
                         </button>
                       </div>
                     </td>
@@ -536,7 +610,9 @@ export default function EventManagementPage() {
                         <div className="space-y-2 text-sm">
                           {Object.entries(registration.data).map(([key, value]) => (
                             <div key={key} className="flex gap-2">
-                              <span className="font-medium text-gray-700">{getFieldLabel(key)}:</span>
+                              <span className="font-medium text-gray-700">
+                                {getFieldLabel(key)}:
+                              </span>
                               <span className="text-gray-900">{String(value)}</span>
                             </div>
                           ))}
@@ -551,15 +627,16 @@ export default function EventManagementPage() {
         </div>
 
         {filteredRegistrations.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            אין נרשמים
-          </div>
+          <div className="text-center py-8 text-gray-500">אין נרשמים</div>
         )}
       </div>
 
       {/* Cancel Modal */}
       {cancelModal.show && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" dir="rtl">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          dir="rtl"
+        >
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-gray-900">ביטול הרשמה</h2>
@@ -579,7 +656,10 @@ export default function EventManagementPage() {
             </p>
 
             <div className="mb-4">
-              <label htmlFor="cancelReason" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="cancelReason"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 סיבת ביטול (אופציונלי)
               </label>
               <textarea
@@ -590,9 +670,7 @@ export default function EventManagementPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
                 placeholder="למשל: נרשם ביקש לבטל בטלפון"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                הסיבה תישמר לצורך רישום ומעקב
-              </p>
+              <p className="text-xs text-gray-500 mt-1">הסיבה תישמר לצורך רישום ומעקב</p>
             </div>
 
             <div className="flex gap-3">
@@ -608,6 +686,67 @@ export default function EventManagementPage() {
                   setCancelReason('')
                 }}
                 className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Event Modal */}
+      {deleteModal.show && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          dir="rtl"
+        >
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-900">מחיקת אירוע</h2>
+              <button
+                onClick={() => setDeleteModal({ show: false })}
+                className="p-1 hover:bg-gray-100 rounded"
+                disabled={isDeleting}
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <h3 className="font-bold text-red-900 mb-2">{event?.title}</h3>
+              <div className="space-y-1 text-sm text-red-800">
+                <p>
+                  <span className="font-medium">הרשמות מאושרות:</span> {confirmedCount}
+                </p>
+                <p>
+                  <span className="font-medium">רשימת המתנה:</span> {waitlistCount}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-gray-700 mb-2 font-medium">
+              ⚠️ פעולה זו תבטל את כל ההרשמות ותסתיר את האירוע
+            </p>
+            <p className="text-gray-600 text-sm mb-4">
+              כל הנרשמים יקבלו סטטוס &quot;בוטל&quot; עם הסיבה: &quot;אירוע בוטל על ידי המארגן&quot;
+            </p>
+            <p className="text-gray-500 text-xs mb-4">
+              💾 הנתונים נשמרים במערכת ולא נמחקים לצמיתות
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleDeleteEvent}
+                disabled={isDeleting}
+                className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                data-testid="confirm-delete-event-button"
+              >
+                {isDeleting ? 'מוחק...' : 'מחק אירוע'}
+              </button>
+              <button
+                onClick={() => setDeleteModal({ show: false })}
+                disabled={isDeleting}
+                className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50"
               >
                 ביטול
               </button>

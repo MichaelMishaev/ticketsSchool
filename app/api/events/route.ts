@@ -168,6 +168,9 @@ export async function GET(request: NextRequest) {
       // If no schoolId param, SUPER_ADMIN sees all schools
     }
 
+    // CRITICAL: Filter out soft-deleted events
+    where.deletedAt = null
+
     const events = await prisma.event.findMany({
       where,
       orderBy: { createdAt: 'desc' },

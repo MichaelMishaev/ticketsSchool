@@ -53,7 +53,8 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       },
     })
 
-    if (!event) {
+    // CRITICAL: Check if event exists and is not soft-deleted
+    if (!event || event.deletedAt !== null) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
@@ -178,22 +179,21 @@ export async function DELETE(
 
     const { id } = await params
 
-    // Check if event exists and get registration count + school
+    // Check if event exists and is not already soft-deleted
     const event = await prisma.event.findUnique({
       where: { id },
       select: {
         schoolId: true,
-        _count: {
-          select: { registrations: true },
-        },
+        deletedAt: true,
+        title: true,
       },
     })
 
-    if (!event) {
+    if (!event || event.deletedAt !== null) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
-    // Check school access (all roles except SUPER_ADMIN must match schoolId)
+    // CRITICAL: Multi-tenant isolation check
     if (admin.role !== 'SUPER_ADMIN' && admin.schoolId !== event.schoolId) {
       return NextResponse.json(
         { error: "Forbidden: No access to this school's events" },
@@ -201,24 +201,84 @@ export async function DELETE(
       )
     }
 
-    // Only allow deletion of events with no registrations (temp events)
-    if (event._count.registrations > 0) {
-      return NextResponse.json(
-        {
-          error:
-            'Cannot delete event with existing registrations. Please remove all registrations first.',
-        },
-        { status: 400 }
-      )
-    }
+    // Use atomic transaction for cancellation + soft delete
+    const result = await prisma.$transaction(
+      async (tx) => {
+        // Step 1: Get all non-CANCELLED registrations
+        const registrations = await tx.registration.findMany({
+          where: {
+            eventId: id,
+            status: { not: 'CANCELLED' },
+          },
+          select: {
+            id: true,
+            status: true,
+            spotsCount: true,
+          },
+        })
 
-    await prisma.event.delete({
-      where: { id },
+        // Step 2: Calculate CONFIRMED spots to decrement
+        const confirmedSpots = registrations
+          .filter((r) => r.status === 'CONFIRMED')
+          .reduce((sum, r) => sum + r.spotsCount, 0)
+
+        const confirmedCount = registrations.filter((r) => r.status === 'CONFIRMED').length
+        const waitlistCount = registrations.filter((r) => r.status === 'WAITLIST').length
+
+        // Step 3: Cancel all non-CANCELLED registrations
+        if (registrations.length > 0) {
+          await tx.registration.updateMany({
+            where: {
+              eventId: id,
+              status: { not: 'CANCELLED' },
+            },
+            data: {
+              status: 'CANCELLED',
+              cancelledAt: new Date(),
+              cancellationReason: 'אירוע בוטל על ידי המארגן',
+              cancelledBy: 'ADMIN',
+            },
+          })
+        }
+
+        // Step 4: Decrement spotsReserved counter
+        if (confirmedSpots > 0) {
+          await tx.$executeRaw`
+            UPDATE "Event"
+            SET "spotsReserved" = GREATEST(0, "spotsReserved" - ${confirmedSpots})
+            WHERE id = ${id}
+          `
+        }
+
+        // Step 5: SOFT DELETE - Set deletedAt timestamp (NEVER actually delete!)
+        await tx.event.update({
+          where: { id },
+          data: {
+            deletedAt: new Date(),
+            status: 'CLOSED',
+          },
+        })
+
+        return {
+          softDeletedEvent: id,
+          eventTitle: event.title,
+          cancelledRegistrations: registrations.length,
+          confirmedCount,
+          waitlistCount,
+        }
+      },
+      {
+        isolationLevel: 'Serializable',
+        timeout: 10000,
+      }
+    )
+
+    return NextResponse.json({
+      success: true,
+      summary: result,
     })
-
-    return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting event:', error)
+    console.error('Error soft-deleting event:', error)
     return NextResponse.json({ error: 'Failed to delete event' }, { status: 500 })
   }
 }
