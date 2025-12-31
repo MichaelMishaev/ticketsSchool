@@ -2,12 +2,9 @@ import { prisma } from '@/lib/prisma'
 import { notFound, redirect } from 'next/navigation'
 import { getCurrentAdmin } from '@/lib/auth.server'
 import EditEventClient from './EditEventClient'
+import EditCapacityEventClient from './EditCapacityEventClient'
 
-export default async function EditEventPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
+export default async function EditEventPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
   // Get current admin for permission check
@@ -16,7 +13,7 @@ export default async function EditEventPage({
     redirect('/admin/login')
   }
 
-  // Fetch event with tables
+  // Fetch event with tables and capacity data
   const event = await prisma.event.findUnique({
     where: { id },
     include: {
@@ -46,25 +43,42 @@ export default async function EditEventPage({
     notFound()
   }
 
-  // Only allow editing TABLE_BASED events
-  if (event.eventType !== 'TABLE_BASED') {
-    redirect(`/admin/events/${id}`)
+  // Route to correct edit component based on event type
+  if (event.eventType === 'TABLE_BASED') {
+    // Type-cast tables to match EditEventClient's expected type
+    const tables = event.tables.map((table) => ({
+      ...table,
+      reservation: table.reservation
+        ? {
+            ...table.reservation,
+            data: table.reservation.data as Record<string, unknown>,
+          }
+        : null,
+    }))
+
+    return <EditEventClient eventId={event.id} eventTitle={event.title} initialTables={tables} />
   }
 
-  // Type-cast tables to match EditEventClient's expected type
-  const tables = event.tables.map(table => ({
-    ...table,
-    reservation: table.reservation ? {
-      ...table.reservation,
-      data: table.reservation.data as Record<string, unknown>
-    } : null
-  }))
-
+  // CAPACITY_BASED events
   return (
-    <EditEventClient
+    <EditCapacityEventClient
       eventId={event.id}
-      eventTitle={event.title}
-      initialTables={tables}
+      initialData={{
+        title: event.title,
+        description: event.description,
+        gameType: event.gameType,
+        location: event.location,
+        startAt: event.startAt.toISOString(),
+        endAt: event.endAt?.toISOString() || null,
+        capacity: event.capacity,
+        maxSpotsPerPerson: event.maxSpotsPerPerson,
+        status: event.status,
+        fieldsSchema: event.fieldsSchema as any[],
+        conditions: event.conditions,
+        requireAcceptance: event.requireAcceptance,
+        completionMessage: event.completionMessage,
+        spotsReserved: event.spotsReserved,
+      }}
     />
   )
 }

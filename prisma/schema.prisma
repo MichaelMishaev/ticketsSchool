@@ -191,6 +191,7 @@ model Event {
   allowCancellation           Boolean        @default(true)
   cancellationDeadlineHours   Int            @default(2)
   requireCancellationReason   Boolean        @default(false)
+  autoPromoteWaitlist         Boolean        @default(true)  // Auto-promote from waitlist on cancellation
 
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt

@@ -142,7 +142,60 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (data.endAt !== undefined) {
       updateData.endAt = data.endAt ? new Date(data.endAt) : null
     }
-    if (data.capacity !== undefined) updateData.capacity = parseInt(data.capacity)
+
+    // VALIDATION: Date logic (endAt must be after startAt)
+    if (data.startAt !== undefined && data.endAt !== undefined && data.endAt !== null) {
+      const startAt = new Date(data.startAt)
+      const endAt = new Date(data.endAt)
+
+      if (endAt <= startAt) {
+        return NextResponse.json(
+          { error: 'תאריך סיום חייב להיות אחרי תאריך התחלה (End date must be after start date)' },
+          { status: 400 }
+        )
+      }
+    }
+
+    // VALIDATION: Capacity constraints (INVARIANT_CAP_001 & INVARIANT_CAP_002)
+    if (data.capacity !== undefined) {
+      const newCapacity = parseInt(data.capacity)
+
+      // INVARIANT_CAP_002: Capacity must be > 0
+      if (newCapacity <= 0) {
+        return NextResponse.json(
+          { error: 'נפח חייב להיות גדול מ-0 (Capacity must be greater than 0)' },
+          { status: 400 }
+        )
+      }
+
+      // INVARIANT_CAP_001: Cannot reduce capacity below confirmed registrations
+      // Fetch current spotsReserved atomically
+      const currentEvent = await prisma.event.findUnique({
+        where: { id },
+        select: { spotsReserved: true, capacity: true },
+      })
+
+      if (!currentEvent) {
+        return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+      }
+
+      if (newCapacity < currentEvent.spotsReserved) {
+        return NextResponse.json(
+          {
+            error: `לא ניתן להקטין נפח ל-${newCapacity} כאשר כבר ${currentEvent.spotsReserved} מקומות תפוסים`,
+            details: {
+              requestedCapacity: newCapacity,
+              spotsReserved: currentEvent.spotsReserved,
+              minimumCapacity: currentEvent.spotsReserved,
+            },
+          },
+          { status: 400 }
+        )
+      }
+
+      updateData.capacity = newCapacity
+    }
+
     if (data.maxSpotsPerPerson !== undefined)
       updateData.maxSpotsPerPerson = parseInt(data.maxSpotsPerPerson)
     if (data.fieldsSchema !== undefined) updateData.fieldsSchema = data.fieldsSchema
@@ -150,6 +203,18 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (data.requireAcceptance !== undefined) updateData.requireAcceptance = data.requireAcceptance
     if (data.completionMessage !== undefined) updateData.completionMessage = data.completionMessage
     if (data.status !== undefined) updateData.status = data.status
+    if (data.autoPromoteWaitlist !== undefined)
+      updateData.autoPromoteWaitlist = data.autoPromoteWaitlist
+
+    // Get old event state before updating (for proactive auto-promotion triggers)
+    const oldEvent = await prisma.event.findUnique({
+      where: { id },
+      select: {
+        capacity: true,
+        spotsReserved: true,
+        autoPromoteWaitlist: true,
+      },
+    })
 
     const event = await prisma.event.update({
       where: { id },
@@ -158,6 +223,32 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         school: true,
       },
     })
+
+    // PROACTIVE AUTO-PROMOTION: Trigger after event update
+    // Import at top: import { promoteFromWaitlist } from '@/lib/waitlist-promotion'
+    const shouldPromote =
+      // Checkbox was just enabled
+      (data.autoPromoteWaitlist === true && oldEvent?.autoPromoteWaitlist === false) ||
+      // Capacity increased
+      (data.capacity !== undefined && oldEvent && parseInt(data.capacity) > oldEvent.capacity)
+
+    if (shouldPromote) {
+      // Small delay to ensure transaction commits
+      setTimeout(async () => {
+        try {
+          const availableSpots = event.capacity - event.spotsReserved
+          if (availableSpots > 0) {
+            const { promoteFromWaitlist } = await import('@/lib/waitlist-promotion')
+            await promoteFromWaitlist(event.id, availableSpots)
+            console.log(
+              `[PROACTIVE] Auto-promoted waitlist after event update (${availableSpots} spots)`
+            )
+          }
+        } catch (error) {
+          console.error('[PROACTIVE] Failed to auto-promote after event update:', error)
+        }
+      }, 200)
+    }
 
     return NextResponse.json(event)
   } catch (error) {

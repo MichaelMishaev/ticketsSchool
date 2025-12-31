@@ -30,6 +30,7 @@ export async function GET(_request: NextRequest) {
             id: true,
             name: true,
             slug: true,
+            logo: true,
           },
         },
       },
@@ -54,6 +55,7 @@ export async function GET(_request: NextRequest) {
             id: adminData.school.id,
             name: adminData.school.name,
             slug: adminData.school.slug,
+            logo: adminData.school.logo,
           }
         : null,
     })

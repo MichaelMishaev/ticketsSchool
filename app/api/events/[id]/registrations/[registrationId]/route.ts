@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin } from '@/lib/auth.server'
+import { promoteFromWaitlist } from '@/lib/waitlist-promotion'
 
 export async function PATCH(
   request: NextRequest,
@@ -46,7 +47,7 @@ export async function PATCH(
     }
 
     // Use transaction to ensure atomic operation and prevent race conditions
-    const registration = await prisma.$transaction(
+    const result = await prisma.$transaction(
       async (tx) => {
         // Get current registration with assigned table info
         const currentRegistration = await tx.registration.findUnique({
@@ -217,13 +218,31 @@ export async function PATCH(
           }
         }
 
-        return await tx.registration.update({
+        // If restoring from cancelled, clear cancellation timestamp only
+        // Keep cancellationReason and cancelledBy for audit trail
+        // This prevents auto-promotion from waitlist (only manual promotion allowed)
+        if (oldStatus === 'CANCELLED' && newStatus !== 'CANCELLED') {
+          updateData.cancelledAt = null // Clear timestamp (no longer cancelled)
+          // Preserve cancellationReason and cancelledBy for audit trail
+          // This marks the registration as "was previously cancelled"
+        }
+
+        const updatedRegistration = await tx.registration.update({
           where: {
             id: registrationId,
             eventId: id,
           },
           data: updateData,
         })
+
+        // Return metadata for waitlist promotion
+        return {
+          registration: updatedRegistration,
+          wasConfirmed: oldStatus === 'CONFIRMED',
+          isNowConfirmed: newStatus === 'CONFIRMED',
+          freedSpots: oldStatus === 'CONFIRMED' && newStatus !== 'CONFIRMED' ? oldSpotsCount : 0,
+          eventType: currentRegistration.event.eventType,
+        }
       },
       {
         isolationLevel: 'Serializable',
@@ -231,7 +250,14 @@ export async function PATCH(
       }
     )
 
-    return NextResponse.json(registration)
+    // AFTER transaction completes, attempt automatic waitlist promotion
+    if (result.freedSpots > 0 && result.eventType === 'CAPACITY_BASED') {
+      // Small delay to ensure cancellation transaction fully commits
+      await new Promise((resolve) => setTimeout(resolve, 150))
+      await promoteFromWaitlist(id, result.freedSpots)
+    }
+
+    return NextResponse.json(result.registration)
   } catch (error: any) {
     console.error('Error updating registration:', error)
 
@@ -280,12 +306,18 @@ export async function DELETE(
     }
 
     // Use transaction to atomically delete and update counter
-    await prisma.$transaction(
+    const result = await prisma.$transaction(
       async (tx) => {
-        // Get registration to check status and spots
+        // Get registration to check status, spots, and event type
         const registration = await tx.registration.findUnique({
           where: { id: registrationId, eventId: id },
-          select: { status: true, spotsCount: true },
+          select: {
+            status: true,
+            spotsCount: true,
+            event: {
+              select: { eventType: true },
+            },
+          },
         })
 
         if (!registration) {
@@ -313,12 +345,25 @@ export async function DELETE(
             // The spots are freed by virtue of the registration being deleted
           }
         }
+
+        return {
+          wasConfirmed: registration.status === 'CONFIRMED',
+          freedSpots: registration.status === 'CONFIRMED' ? registration.spotsCount : 0,
+          eventType: registration.event.eventType,
+        }
       },
       {
         isolationLevel: 'Serializable',
         timeout: 10000,
       }
     )
+
+    // AFTER transaction completes, attempt automatic waitlist promotion
+    if (result.freedSpots > 0 && result.eventType === 'CAPACITY_BASED') {
+      // Small delay to ensure deletion transaction fully commits
+      await new Promise((resolve) => setTimeout(resolve, 150))
+      await promoteFromWaitlist(id, result.freedSpots)
+    }
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
