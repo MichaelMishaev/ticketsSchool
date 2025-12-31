@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
   Calendar,
@@ -16,9 +16,10 @@ import {
   ExternalLink,
   Copy,
   Check,
-  Edit,
   X,
   Ban,
+  RotateCcw,
+  Edit,
 } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -57,6 +58,7 @@ interface Event {
   fieldsSchema: FieldSchema[]
   conditions?: string
   requireAcceptance: boolean
+  autoPromoteWaitlist?: boolean
   registrations: Registration[]
   school?: {
     id: string
@@ -85,6 +87,30 @@ export default function EventManagementPage() {
   const [cancelReason, setCancelReason] = useState('')
   const [deleteModal, setDeleteModal] = useState<{ show: boolean }>({ show: false })
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // Helper function to create WhatsApp link from Israeli phone number
+  const getWhatsAppLink = (phoneNumber: string | undefined): string | null => {
+    if (!phoneNumber) return null
+
+    // Remove all non-digit characters
+    let cleaned = phoneNumber.replace(/\D/g, '')
+
+    // Convert Israeli format to international
+    // If starts with 0, replace with 972
+    if (cleaned.startsWith('0')) {
+      cleaned = '972' + cleaned.substring(1)
+    }
+    // If already starts with 972, use as is
+    else if (cleaned.startsWith('972')) {
+      // Already in correct format
+    }
+    // If starts with +972, remove the +
+    else if (phoneNumber.startsWith('+972')) {
+      cleaned = phoneNumber.substring(1).replace(/\D/g, '')
+    }
+
+    return `https://wa.me/${cleaned}`
+  }
 
   useEffect(() => {
     fetchEvent()
@@ -120,6 +146,21 @@ export default function EventManagementPage() {
     }
   }
 
+  const handleAutoPromoteToggle = async (enabled: boolean) => {
+    try {
+      const response = await fetch(`/api/events/${eventId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ autoPromoteWaitlist: enabled }),
+      })
+      if (response.ok) {
+        fetchEvent()
+      }
+    } catch (error) {
+      console.error('Error updating auto-promote setting:', error)
+    }
+  }
+
   const handlePromoteToConfirmed = async (registrationId: string) => {
     try {
       const response = await fetch(`/api/events/${eventId}/registrations/${registrationId}`, {
@@ -132,6 +173,41 @@ export default function EventManagementPage() {
       }
     } catch (error) {
       console.error('Error promoting registration:', error)
+    }
+  }
+
+  const handleRestoreRegistration = async (registrationId: string) => {
+    try {
+      const response = await fetch(`/api/events/${eventId}/registrations/${registrationId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'CONFIRMED' }),
+      })
+      if (response.ok) {
+        fetchEvent()
+      } else {
+        const error = await response.json()
+        // If capacity is full, try to restore to waitlist
+        if (error.error?.includes('Cannot promote')) {
+          const waitlistResponse = await fetch(
+            `/api/events/${eventId}/registrations/${registrationId}`,
+            {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: 'WAITLIST' }),
+            }
+          )
+          if (waitlistResponse.ok) {
+            fetchEvent()
+            alert('ההרשמה שוחזרה לרשימת המתנה (האירוע מלא)')
+          }
+        } else {
+          alert(error.error || 'שגיאה בשחזור ההרשמה')
+        }
+      }
+    } catch (error) {
+      console.error('Error restoring registration:', error)
+      alert('שגיאה בשחזור ההרשמה')
     }
   }
 
@@ -396,6 +472,7 @@ export default function EventManagementPage() {
                   onClick={() => router.push(`/admin/events/${eventId}/edit`)}
                   className="flex-1 sm:flex-initial px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center justify-center gap-2 text-sm font-medium shadow-sm"
                   title="ערוך אירוע"
+                  data-testid="edit-event-button"
                 >
                   <Edit className="w-4 h-4" />
                   <span>ערוך אירוע</span>
@@ -438,6 +515,28 @@ export default function EventManagementPage() {
                 <option value="PAUSED">⏸️ מושהה</option>
                 <option value="CLOSED">🚫 סגור</option>
               </select>
+            </div>
+
+            {/* Auto-Promote Waitlist Section */}
+            <div className="mt-3 space-y-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={event.autoPromoteWaitlist ?? true}
+                  onChange={(e) => handleAutoPromoteToggle(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <div>
+                  <p className="text-xs font-medium text-gray-700">
+                    אשר אוטומטית מרשימת המתנה כשמישהו מבטל
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {(event.autoPromoteWaitlist ?? true)
+                      ? 'מופעל - הרשמות מרשימת המתנה יאושרו אוטומטית'
+                      : 'כבוי - דרושה אישור ידני מרשימת המתנה'}
+                  </p>
+                </div>
+              </label>
             </div>
           </div>
         </div>
@@ -492,8 +591,136 @@ export default function EventManagementPage() {
         </div>
       </div>
 
-      {/* Registrations Table */}
-      <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+      {/* Mobile Card View - Hidden on desktop */}
+      <div className="md:hidden space-y-3">
+        {filteredRegistrations.length === 0 ? (
+          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+            <p className="text-gray-500">אין נרשמים</p>
+          </div>
+        ) : (
+          filteredRegistrations.map((registration, index) => (
+            <div
+              key={registration.id}
+              className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+            >
+              {/* Card Header */}
+              <div
+                onClick={() =>
+                  setExpandedRow(expandedRow === registration.id ? null : registration.id)
+                }
+                className="p-4 active:bg-gray-50 cursor-pointer"
+              >
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-bold text-gray-500">#{index + 1}</span>
+                      <span className="text-sm text-gray-400">•</span>
+                      <span className="text-xs font-mono text-gray-500">
+                        {registration.confirmationCode}
+                      </span>
+                    </div>
+                    <h3 className="font-semibold text-gray-900 truncate">
+                      {String(registration.data.name || '')}
+                    </h3>
+                    {registration.phoneNumber && (
+                      <a
+                        href={getWhatsAppLink(registration.phoneNumber) || '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-sm text-blue-600 hover:text-blue-800 underline mt-0.5 direction-ltr text-right block"
+                      >
+                        📱 {registration.phoneNumber}
+                      </a>
+                    )}
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    {getRegistrationStatusBadge(registration.status)}
+                    <div className="flex items-center gap-1.5 text-gray-600">
+                      <UserCheck className="w-4 h-4" />
+                      <span className="text-sm font-medium">{registration.spotsCount}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>{format(new Date(registration.createdAt), 'dd/MM HH:mm')}</span>
+                  {expandedRow === registration.id ? (
+                    <ChevronUp className="w-4 h-4" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4" />
+                  )}
+                </div>
+              </div>
+
+              {/* Expanded Details */}
+              {expandedRow === registration.id && (
+                <div className="border-t border-gray-200">
+                  <div className="p-4 bg-gray-50 space-y-3">
+                    {Object.entries(registration.data).map(([key, value]: [string, any]) => (
+                      <div key={key} className="flex items-start gap-2">
+                        <span className="text-sm text-gray-600 min-w-[80px]">
+                          {getFieldLabel(key)}:
+                        </span>
+                        <span className="text-sm font-medium text-gray-900 flex-1">
+                          {String(value)}
+                        </span>
+                      </div>
+                    ))}
+
+                    {/* Action Buttons */}
+                    <div className="pt-3 space-y-2">
+                      {registration.status === 'WAITLIST' &&
+                        spotsLeft >= registration.spotsCount && (
+                          <button
+                            onClick={() => handlePromoteToConfirmed(registration.id)}
+                            className="w-full bg-green-50 text-green-700 rounded-lg py-3 font-medium flex items-center justify-center gap-2 active:bg-green-100"
+                          >
+                            <UserCheck className="w-5 h-5" />
+                            אשר הרשמה
+                          </button>
+                        )}
+
+                      {registration.status === 'CANCELLED' && (
+                        <button
+                          onClick={() => handleRestoreRegistration(registration.id)}
+                          className="w-full bg-blue-50 text-blue-700 rounded-lg py-3 font-medium flex items-center justify-center gap-2 active:bg-blue-100"
+                        >
+                          <RotateCcw className="w-5 h-5" />
+                          שחזר הרשמה
+                        </button>
+                      )}
+
+                      {registration.status !== 'CANCELLED' && (
+                        <button
+                          onClick={() =>
+                            setCancelModal({ show: true, registrationId: registration.id })
+                          }
+                          className="w-full bg-amber-50 text-amber-700 rounded-lg py-3 font-medium flex items-center justify-center gap-2 active:bg-amber-100"
+                        >
+                          <Ban className="w-5 h-5" />
+                          בטל הרשמה
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => handleDeleteRegistration(registration.id)}
+                        className="w-full bg-red-50 text-red-700 rounded-lg py-3 font-medium flex items-center justify-center gap-2 active:bg-red-100"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                        מחק לצמיתות
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Table View - Hidden on mobile */}
+      <div className="hidden md:block bg-white shadow-sm rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -536,8 +763,22 @@ export default function EventManagementPage() {
                     <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">
                       <div>
                         <div className="font-medium">{String(registration.data.name || '')}</div>
-                        <div className="text-gray-500 text-xs">
-                          {registration.phoneNumber || String(registration.data.phone || '')}
+                        <div className="text-xs">
+                          {registration.phoneNumber ? (
+                            <a
+                              href={getWhatsAppLink(registration.phoneNumber) || '#'}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-blue-600 hover:text-blue-800 underline"
+                            >
+                              {registration.phoneNumber}
+                            </a>
+                          ) : (
+                            <span className="text-gray-500">
+                              {String(registration.data.phone || '')}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -572,6 +813,18 @@ export default function EventManagementPage() {
                               <UserCheck className="w-4 h-4" />
                             </button>
                           )}
+                        {registration.status === 'CANCELLED' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleRestoreRegistration(registration.id)
+                            }}
+                            className="p-1 text-blue-600 hover:text-blue-800"
+                            title="שחזר הרשמה"
+                          >
+                            <RotateCcw className="w-4 h-4" />
+                          </button>
+                        )}
                         {registration.status !== 'CANCELLED' && (
                           <button
                             onClick={(e) => {
@@ -757,5 +1010,3 @@ export default function EventManagementPage() {
     </div>
   )
 }
-
-import React from 'react'

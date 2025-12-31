@@ -19,6 +19,7 @@ import {
   Edit,
   MoreVertical,
   X,
+  RotateCcw,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -70,6 +71,30 @@ export default function EventManagementPageMobile() {
   const [expandedCard, setExpandedCard] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [showActions, setShowActions] = useState(false)
+
+  // Helper function to create WhatsApp link from Israeli phone number
+  const getWhatsAppLink = (phoneNumber: string | undefined): string | null => {
+    if (!phoneNumber) return null
+
+    // Remove all non-digit characters
+    let cleaned = phoneNumber.replace(/\D/g, '')
+
+    // Convert Israeli format to international
+    // If starts with 0, replace with 972
+    if (cleaned.startsWith('0')) {
+      cleaned = '972' + cleaned.substring(1)
+    }
+    // If already starts with 972, use as is
+    else if (cleaned.startsWith('972')) {
+      // Already in correct format
+    }
+    // If starts with +972, remove the +
+    else if (phoneNumber.startsWith('+972')) {
+      cleaned = phoneNumber.substring(1).replace(/\D/g, '')
+    }
+
+    return `https://wa.me/${cleaned}`
+  }
 
   useEffect(() => {
     fetchEvent()
@@ -127,6 +152,41 @@ export default function EventManagementPageMobile() {
       }
     } catch (error) {
       console.error('Error deleting registration:', error)
+    }
+  }
+
+  const handleRestore = async (registrationId: string) => {
+    try {
+      const response = await fetch(`/api/events/${eventId}/registrations/${registrationId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'CONFIRMED' }),
+      })
+      if (response.ok) {
+        fetchEvent()
+      } else {
+        const error = await response.json()
+        // If capacity is full, try to restore to waitlist
+        if (error.error?.includes('Cannot promote')) {
+          const waitlistResponse = await fetch(
+            `/api/events/${eventId}/registrations/${registrationId}`,
+            {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: 'WAITLIST' }),
+            }
+          )
+          if (waitlistResponse.ok) {
+            fetchEvent()
+            alert('ההרשמה שוחזרה לרשימת המתנה (האירוע מלא)')
+          }
+        } else {
+          alert(error.error || 'שגיאה בשחזור ההרשמה')
+        }
+      }
+    } catch (error) {
+      console.error('Error restoring registration:', error)
+      alert('שגיאה בשחזור ההרשמה')
     }
   }
 
@@ -426,9 +486,15 @@ export default function EventManagementPageMobile() {
                       {reg.data.fullName || 'לא צוין'}
                     </h3>
                     {reg.phoneNumber && (
-                      <p className="text-sm text-gray-600 mt-0.5 direction-ltr text-right">
+                      <a
+                        href={getWhatsAppLink(reg.phoneNumber) || '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-sm text-blue-600 hover:text-blue-800 underline mt-0.5 direction-ltr text-right block"
+                      >
                         📱 {reg.phoneNumber}
-                      </p>
+                      </a>
                     )}
                   </div>
                   <div className="flex flex-col items-end gap-2">
@@ -468,6 +534,16 @@ export default function EventManagementPageMobile() {
                           </span>
                         </div>
                       ))}
+
+                      {reg.status === 'CANCELLED' && (
+                        <button
+                          onClick={() => handleRestore(reg.id)}
+                          className="w-full mt-3 bg-blue-50 text-blue-700 rounded-lg py-3 font-medium flex items-center justify-center gap-2 active:bg-blue-100"
+                        >
+                          <RotateCcw className="w-5 h-5" />
+                          שחזר הרשמה
+                        </button>
+                      )}
 
                       <button
                         onClick={() => handleDelete(reg.id)}
