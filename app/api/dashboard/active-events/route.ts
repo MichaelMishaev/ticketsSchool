@@ -7,15 +7,12 @@ export async function GET(request: NextRequest) {
     // Get current admin session
     const admin = await getCurrentAdmin()
     if (!admin) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Build where clause based on admin role
     const where: any = {
-      status: 'OPEN'
+      status: 'OPEN',
     }
 
     // Regular admins can only see their school's events
@@ -39,38 +36,40 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // CRITICAL: Filter out soft-deleted events
+    where.deletedAt = null
+
     const activeEvents = await prisma.event.findMany({
       where,
       include: {
         _count: {
           select: {
-            registrations: true
-          }
+            registrations: true,
+          },
         },
         registrations: {
           select: {
             status: true,
-            spotsCount: true
-          }
-        }
+            spotsCount: true,
+          },
+        },
       },
       orderBy: {
-        startAt: 'asc'
-      }
+        startAt: 'asc',
+      },
     })
 
-    const eventsWithDetails = activeEvents.map(event => {
+    const eventsWithDetails = activeEvents.map((event) => {
       const confirmedCount = event.registrations
-        .filter(reg => reg.status === 'CONFIRMED')
+        .filter((reg) => reg.status === 'CONFIRMED')
         .reduce((sum, reg) => sum + reg.spotsCount, 0)
 
       const waitlistCount = event.registrations
-        .filter(reg => reg.status === 'WAITLIST')
+        .filter((reg) => reg.status === 'WAITLIST')
         .reduce((sum, reg) => sum + reg.spotsCount, 0)
 
-      const occupancyRate = event.capacity > 0
-        ? Math.round((confirmedCount / event.capacity) * 100)
-        : 0
+      const occupancyRate =
+        event.capacity > 0 ? Math.round((confirmedCount / event.capacity) * 100) : 0
 
       return {
         id: event.id,
@@ -83,19 +82,16 @@ export async function GET(request: NextRequest) {
         waitlistCount,
         totalRegistrations: event._count.registrations,
         occupancyRate,
-        availableSpots: Math.max(0, event.capacity - confirmedCount)
+        availableSpots: Math.max(0, event.capacity - confirmedCount),
       }
     })
 
     return NextResponse.json({
       count: activeEvents.length,
-      events: eventsWithDetails
+      events: eventsWithDetails,
     })
   } catch (error) {
     console.error('Error fetching active events:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch active events' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch active events' }, { status: 500 })
   }
 }

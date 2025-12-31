@@ -7,15 +7,12 @@ export async function GET(request: NextRequest) {
     // Get current admin session
     const admin = await getCurrentAdmin()
     if (!admin) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Build where clause based on admin role
     const where: any = {
-      status: 'CONFIRMED'
+      status: 'CONFIRMED',
     }
 
     // Regular admins can only see their school's events
@@ -28,7 +25,8 @@ export async function GET(request: NextRequest) {
         )
       }
       where.event = {
-        schoolId: admin.schoolId
+        schoolId: admin.schoolId,
+        deletedAt: null, // CRITICAL: Filter out soft-deleted events
       }
     }
 
@@ -38,7 +36,13 @@ export async function GET(request: NextRequest) {
       const schoolId = url.searchParams.get('schoolId')
       if (schoolId) {
         where.event = {
-          schoolId: schoolId
+          schoolId: schoolId,
+          deletedAt: null, // CRITICAL: Filter out soft-deleted events
+        }
+      } else {
+        // SUPER_ADMIN sees all schools but not deleted events
+        where.event = {
+          deletedAt: null,
         }
       }
     }
@@ -51,13 +55,13 @@ export async function GET(request: NextRequest) {
             id: true,
             title: true,
             startAt: true,
-            location: true
-          }
-        }
+            location: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: 'desc'
-      }
+        createdAt: 'desc',
+      },
     })
 
     const registrationsByEvent = registrations.reduce((acc, reg) => {
@@ -66,7 +70,7 @@ export async function GET(request: NextRequest) {
         acc[eventId] = {
           event: reg.event,
           registrations: [],
-          totalSpots: 0
+          totalSpots: 0,
         }
       }
       acc[eventId].registrations.push(reg)
@@ -80,20 +84,17 @@ export async function GET(request: NextRequest) {
       totalRegistrations: registrations.length,
       totalSpots,
       byEvent: Object.values(registrationsByEvent),
-      recentRegistrations: registrations.slice(0, 10).map(reg => ({
+      recentRegistrations: registrations.slice(0, 10).map((reg) => ({
         id: reg.id,
         confirmationCode: reg.confirmationCode,
         email: reg.email,
         spotsCount: reg.spotsCount,
         createdAt: reg.createdAt,
-        event: reg.event
-      }))
+        event: reg.event,
+      })),
     })
   } catch (error) {
     console.error('Error fetching registrations:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch registrations' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch registrations' }, { status: 500 })
   }
 }
