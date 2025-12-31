@@ -52,7 +52,7 @@ export async function POST(
     // Find school (outside transaction for TABLE_BASED check)
     const school = await prisma.school.findUnique({
       where: { slug: schoolSlug },
-      select: { id: true }
+      select: { id: true },
     })
 
     if (!school) {
@@ -63,8 +63,8 @@ export async function POST(
     const event = await prisma.event.findFirst({
       where: {
         slug: eventSlug,
-        schoolId: school.id
-      }
+        schoolId: school.id,
+      },
     })
 
     if (!event) {
@@ -97,8 +97,8 @@ export async function POST(
       where: {
         eventId: event.id,
         phoneNumber: phoneNumber,
-        status: { not: 'CANCELLED' }
-      }
+        status: { not: 'CANCELLED' },
+      },
     })
 
     if (existingRegistration) {
@@ -115,7 +115,7 @@ export async function POST(
 
       const result = await reserveTableForGuests(event.id, guestsCount, {
         phoneNumber: phoneNumber || '',
-        data
+        data,
       })
 
       return NextResponse.json({
@@ -123,9 +123,7 @@ export async function POST(
         confirmationCode: result.registration.confirmationCode,
         status: result.status,
         registrationId: result.registration.id,
-        message: result.status === 'WAITLIST' ?
-          'נרשמת לרשימת ההמתנה' :
-          'השולחן הוזמן בהצלחה'
+        message: result.status === 'WAITLIST' ? 'נרשמת לרשימת ההמתנה' : 'השולחן הוזמן בהצלחה',
       })
     }
 
@@ -138,132 +136,154 @@ export async function POST(
     }
 
     // Start a transaction to ensure atomic operation and prevent race conditions
-    return await prisma.$transaction(async (tx) => {
-      // Calculate current confirmed registrations within transaction
-      const currentConfirmed = await tx.registration.aggregate({
-        where: {
-          eventId: event.id,
-          status: 'CONFIRMED'
-        },
-        _sum: {
-          spotsCount: true
+    const result = await prisma.$transaction(
+      async (tx) => {
+        // CRITICAL: Lock the event row and get current spotsReserved atomically
+        const [eventWithLock] = await tx.$queryRaw<
+          Array<{
+            id: string
+            capacity: number
+            spotsReserved: number
+          }>
+        >`
+        SELECT id, capacity, "spotsReserved"
+        FROM "Event"
+        WHERE id = ${event.id}
+        FOR UPDATE
+      `
+
+        if (!eventWithLock) {
+          throw new Error('Event not found')
         }
-      })
 
-      const totalSpotsTaken = currentConfirmed._sum.spotsCount || 0
-      const spotsLeft = event.capacity - totalSpotsTaken
+        const totalSpotsTaken = eventWithLock.spotsReserved || 0
+        const spotsLeft = eventWithLock.capacity - totalSpotsTaken
 
-      // Determine registration status
-      const registrationStatus: 'CONFIRMED' | 'WAITLIST' =
-        spotsLeft >= spotsCount ? 'CONFIRMED' : 'WAITLIST'
+        // Determine registration status
+        const registrationStatus: 'CONFIRMED' | 'WAITLIST' =
+          spotsLeft >= spotsCount ? 'CONFIRMED' : 'WAITLIST'
 
-      // Generate secure confirmation code
-      const confirmationCode = generateConfirmationCode()
+        // Generate secure confirmation code
+        const confirmationCode = generateConfirmationCode()
 
-      // Create registration within transaction
-      const registration = await tx.registration.create({
-        data: {
-          eventId: event.id,
-          data,
-          spotsCount,
-          status: registrationStatus,
-          confirmationCode,
-          phoneNumber: phoneNumber,
-          email: data.email || null
+        // Create registration within transaction
+        const registration = await tx.registration.create({
+          data: {
+            eventId: event.id,
+            data,
+            spotsCount,
+            status: registrationStatus,
+            confirmationCode,
+            phoneNumber: phoneNumber,
+            email: data.email || null,
+          },
+        })
+
+        // CRITICAL: Update spotsReserved atomically if status is CONFIRMED
+        if (registrationStatus === 'CONFIRMED') {
+          await tx.event.update({
+            where: { id: event.id },
+            data: {
+              spotsReserved: {
+                increment: spotsCount,
+              },
+            },
+          })
         }
-      })
 
-      // Return response within transaction
-      return NextResponse.json({
-        success: true,
-        confirmationCode: registration.confirmationCode,
-        status: registration.status,
-        registrationId: registration.id,
-        message: registrationStatus === 'WAITLIST' ?
-          'נרשמת לרשימת ההמתנה' :
-          'ההרשמה הושלמה בהצלחה'
-      })
-    }, {
-      isolationLevel: 'Serializable',
-      timeout: 10000
+        // Return registration data
+        return {
+          registration,
+          registrationStatus,
+          spotsLeft: spotsLeft - (registrationStatus === 'CONFIRMED' ? spotsCount : 0),
+        }
+      },
+      {
+        isolationLevel: 'Serializable',
+        timeout: 10000,
+      }
+    )
+
+    // PROACTIVE AUTO-PROMOTION: After registration creation
+    // If someone just joined waitlist, check if spots opened up and auto-promote
+    if (event.autoPromoteWaitlist !== false && result.spotsLeft >= 0) {
+      setTimeout(async () => {
+        try {
+          // Check current availability
+          const currentEvent = await prisma.event.findUnique({
+            where: { id: event.id },
+            select: { capacity: true, spotsReserved: true, autoPromoteWaitlist: true },
+          })
+
+          if (currentEvent && currentEvent.autoPromoteWaitlist !== false) {
+            const availableSpots = currentEvent.capacity - currentEvent.spotsReserved
+            if (availableSpots > 0) {
+              const { promoteFromWaitlist } = await import('@/lib/waitlist-promotion')
+              await promoteFromWaitlist(event.id, availableSpots)
+              console.log(
+                `[PROACTIVE] Auto-promoted waitlist after registration (${availableSpots} spots)`
+              )
+            }
+          }
+        } catch (error) {
+          console.error('[PROACTIVE] Failed to auto-promote after registration:', error)
+        }
+      }, 200)
+    }
+
+    // Return response to user
+    return NextResponse.json({
+      success: true,
+      confirmationCode: result.registration.confirmationCode,
+      status: result.registration.status,
+      registrationId: result.registration.id,
+      message:
+        result.registrationStatus === 'WAITLIST' ? 'נרשמת לרשימת ההמתנה' : 'ההרשמה הושלמה בהצלחה',
     })
   } catch (error: any) {
     console.error('Error creating registration:', error)
 
     // Handle specific error messages
     if (error.message.includes('School not found')) {
-      return NextResponse.json(
-        { error: 'School not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'School not found' }, { status: 404 })
     }
 
     if (error.message.includes('Event not found')) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
     if (error.message.includes('registration is closed') || error.message.includes('is paused')) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
     if (error.message.includes('Invalid spots count')) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
     if (error.message.includes('Phone number already registered')) {
-      return NextResponse.json(
-        { error: 'מספר הטלפון כבר רשום לאירוע זה' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'מספר הטלפון כבר רשום לאירוע זה' }, { status: 400 })
     }
 
     if (error.message.includes('Invalid phone number')) {
-      return NextResponse.json(
-        { error: 'מספר הטלפון אינו תקין' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'מספר הטלפון אינו תקין' }, { status: 400 })
     }
 
     if (error.message.includes('Invalid guest count')) {
-      return NextResponse.json(
-        { error: 'מספר האורחים אינו תקין' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'מספר האורחים אינו תקין' }, { status: 400 })
     }
 
     if (error.message.includes('Phone number is required')) {
-      return NextResponse.json(
-        { error: 'מספר טלפון הוא שדה חובה' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'מספר טלפון הוא שדה חובה' }, { status: 400 })
     }
 
     if (error.message.includes('Name is required')) {
-      return NextResponse.json(
-        { error: 'שם הוא שדה חובה' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'שם הוא שדה חובה' }, { status: 400 })
     }
 
     if (error.message.includes('Phone number is required for table reservation')) {
-      return NextResponse.json(
-        { error: 'מספר טלפון הוא שדה חובה להזמנת שולחן' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'מספר טלפון הוא שדה חובה להזמנת שולחן' }, { status: 400 })
     }
 
-    return NextResponse.json(
-      { error: 'Failed to register' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to register' }, { status: 500 })
   }
 }
