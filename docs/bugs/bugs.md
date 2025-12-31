@@ -1509,7 +1509,10 @@ All these files now work correctly together!
 - [x] Atomic `spotsReserved` increment added
 - [x] Serializable isolation level set
 - [x] Bug documented in `/docs/bugs/bugs.md`
-- [ ] Run SQL script to fix existing data
+- [x] **Run SQL script to fix existing data** ✅ **COMPLETED December 31, 2025**
+  - **23 events updated** with corrected `spotsReserved` counters
+  - **0 discrepancies remaining** - all events now have accurate counters
+  - Example: Event "מכבי נתניה נגד מ.ס אשדוד" corrected from 2 → 16 spots
 - [ ] Manual QA: Test registration flow
 - [ ] Manual QA: Test concurrent registrations (2+ users at once)
 - [ ] Manual QA: Verify no overbooking possible
