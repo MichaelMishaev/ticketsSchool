@@ -70,6 +70,7 @@ dist
 public
 !public/images/
 !public/images/landing/
+!public/restaurants/
 
 # Storybook build outputs
 .out
