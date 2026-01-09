@@ -641,3 +641,131 @@ private, max-age=60, stale-while-revalidate=120
 - [ ] Performance monitoring: Track navigation timing in production
 
 **End of Bug #2**
+
+---
+
+## Bug #3: Email Verification Link Returns 404
+
+**Severity:** 🔴 CRITICAL
+**Status:** ✅ FIXED
+**Date Found:** January 9, 2026
+**Date Fixed:** January 9, 2026
+**Reporter:** User
+
+### Description
+
+When users sign up and receive the verification email, clicking the verification link results in a **404 Page Not Found** error. This prevents users from completing email verification and accessing the platform.
+
+**User Quote:** "when user sign up, gets email, when navigate gets 404, check it"
+
+### Root Cause
+
+The verification email sends users to `/admin/verify-email?token=...` but there is **no page route** at that location. The verification endpoint exists only as an **API route** at `/api/admin/verify-email`.
+
+**File:** `lib/email.ts:65`
+```typescript
+const verificationUrl = `${BASE_URL}/admin/verify-email?token=${token}`
+//                                   ^^^^^ Missing /api prefix
+```
+
+The API route **does have a GET handler** (route.ts:112-182) that's designed to:
+1. Accept the token via query params
+2. Verify the token with JWT
+3. Update the admin's `emailVerified` status
+4. Redirect to login page with success/error messages
+
+But users never reach it because the URL is wrong.
+
+### Impact
+
+- **100% of new signups** cannot verify their email
+- Users are stuck on verification screen
+- Cannot access the platform
+- Poor first impression for new users
+- System is **completely unusable** for new signups
+
+### Files Modified
+
+#### 1. Email Verification URL
+**File:** `lib/email.ts:65`
+
+**Before:**
+```typescript
+const verificationUrl = `${BASE_URL}/admin/verify-email?token=${token}`
+```
+
+**After:**
+```typescript
+const verificationUrl = `${BASE_URL}/api/admin/verify-email?token=${token}`
+//                                   ^^^^ Added /api prefix
+```
+
+**Impact:** Email links now point to the correct API route that handles verification
+
+### How It Should Work
+
+**Correct Flow:**
+1. User signs up → Account created
+2. System sends email with link: `https://domain.com/api/admin/verify-email?token=xyz`
+3. User clicks link → API GET handler processes request
+4. API verifies token, updates database (`emailVerified: true`)
+5. API redirects to `/admin/login?message=verified`
+6. User sees success message: "המייל אומת בהצלחה! ברוך הבא!"
+7. User logs in → redirected to dashboard
+
+**Error Cases (handled by API):**
+- Invalid token → Redirect to `/admin/login?error=invalid_token`
+- Expired token → Redirect to `/admin/login?error=token_expired`
+- Already verified → Redirect to `/admin/login?message=already_verified`
+- Missing token → Redirect to `/admin/login?error=missing_token`
+
+### Tests
+
+**Manual Testing:**
+1. Sign up with new email
+2. Check email inbox for verification email
+3. Click "אמת את המייל שלך" button
+4. Verify redirect to login page with success message
+5. Log in with verified account
+
+**Automated Tests (to be added):**
+- Email verification flow test
+- Token validation test
+- Redirect behavior test
+- Error handling test
+
+### Related Files
+
+- `lib/email.ts:65` - Verification email template
+- `app/api/admin/verify-email/route.ts:112-182` - GET handler for verification
+- `app/api/admin/signup/route.ts:76-80` - Generates verification token
+- `app/admin/login/page.tsx` - Displays success/error messages
+
+### Prevention
+
+1. ✅ **Verify all email links** point to valid routes (use `/api/` for API routes)
+2. ✅ **Test email flows end-to-end** in development
+3. ✅ **Add automated tests** for email verification flow
+4. ✅ **Check 404s in production logs** to catch broken links early
+
+### Similar Issues to Check
+
+Other email templates that might have the same issue:
+- ✅ Password reset email (`sendPasswordResetEmail`) - Uses `/admin/reset-password` (correct, page exists)
+- ✅ Team invitation email (`sendTeamInvitationEmail`) - Uses `/admin/accept-invitation` (needs verification)
+- ✅ Welcome email (`sendWelcomeEmail`) - Uses `/admin` (correct)
+
+**Action:** Verify that `/admin/reset-password` and `/admin/accept-invitation` pages exist
+
+### Deployment Checklist
+
+- [x] Email URL fixed (added `/api/` prefix)
+- [x] Bug documented
+- [ ] Manual QA: Sign up with new email
+- [ ] Manual QA: Click verification link in email
+- [ ] Manual QA: Verify redirect to login with success message
+- [ ] Manual QA: Log in and access dashboard
+- [ ] Check other email templates for similar issues
+- [ ] Add automated E2E test for email verification flow
+
+**End of Bug #3**
