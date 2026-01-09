@@ -120,16 +120,23 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Signup error:', error)
-    console.error('Error details:', {
+    console.error('[Signup] ERROR - Full error object:', error)
+    console.error('[Signup] ERROR - Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
       type: typeof error,
+      name: error instanceof Error ? error.name : undefined,
+      cause: error instanceof Error ? error.cause : undefined,
     })
+
+    // Always include error details for debugging (even in production)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+
     return NextResponse.json(
       {
         error: 'שגיאה ביצירת החשבון. נסה שוב.',
-        details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined
+        details: errorMessage, // Always include for debugging
+        timestamp: new Date().toISOString()
       },
       { status: 500 }
     )
