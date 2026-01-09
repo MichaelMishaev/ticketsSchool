@@ -4,6 +4,9 @@ import * as jwt from 'jsonwebtoken'
 import { sendWelcomeEmail } from '@/lib/email'
 import { login } from '@/lib/auth.server'
 
+// Base URL for redirects - use environment variable to avoid Docker container hostname issues
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9000'
+
 // Lazy getter for JWT_SECRET - only validates when actually used (not at import time)
 function getJWTSecret(): string {
   const secret = process.env.JWT_SECRET
@@ -115,7 +118,7 @@ export async function GET(request: NextRequest) {
 
   if (!token) {
     return NextResponse.redirect(
-      new URL('/admin/login?error=missing_token', request.url)
+      new URL('/admin/login?error=missing_token', BASE_URL)
     )
   }
 
@@ -136,13 +139,13 @@ export async function GET(request: NextRequest) {
 
     if (!admin) {
       return NextResponse.redirect(
-        new URL('/admin/login?error=invalid_token', request.url)
+        new URL('/admin/login?error=invalid_token', BASE_URL)
       )
     }
 
     if (admin.emailVerified) {
       return NextResponse.redirect(
-        new URL('/admin/login?message=already_verified', request.url)
+        new URL('/admin/login?message=already_verified', BASE_URL)
       )
     }
 
@@ -167,16 +170,16 @@ export async function GET(request: NextRequest) {
 
     // Redirect to login with success message
     return NextResponse.redirect(
-      new URL('/admin/login?message=verified', request.url)
+      new URL('/admin/login?message=verified', BASE_URL)
     )
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
       return NextResponse.redirect(
-        new URL('/admin/login?error=token_expired', request.url)
+        new URL('/admin/login?error=token_expired', BASE_URL)
       )
     }
     return NextResponse.redirect(
-      new URL('/admin/login?error=verification_failed', request.url)
+      new URL('/admin/login?error=verification_failed', BASE_URL)
     )
   }
 }
