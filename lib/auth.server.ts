@@ -70,6 +70,11 @@ export async function login(email: string, password: string): Promise<AuthSessio
       return null
     }
 
+    // Check if email is verified (Bug #5 fix)
+    if (!admin.emailVerified) {
+      throw new Error('EMAIL_NOT_VERIFIED')
+    }
+
     const session: AuthSession = {
       adminId: admin.id,
       email: admin.email,

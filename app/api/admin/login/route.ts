@@ -13,7 +13,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const session = await login(email, password)
+    let session
+    try {
+      session = await login(email, password)
+    } catch (error) {
+      // Handle email not verified error
+      if (error instanceof Error && error.message === 'EMAIL_NOT_VERIFIED') {
+        return NextResponse.json(
+          {
+            error: 'המייל טרם אומת. אנא בדוק את תיבת הדואר שלך ולחץ על הקישור לאימות.',
+            errorCode: 'EMAIL_NOT_VERIFIED'
+          },
+          { status: 403 }
+        )
+      }
+      throw error // Re-throw other errors
+    }
 
     if (!session) {
       return NextResponse.json(

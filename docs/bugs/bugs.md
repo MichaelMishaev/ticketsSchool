@@ -950,3 +950,221 @@ This issue could potentially affect:
 None found. All other redirect-based routes already use `NEXT_PUBLIC_BASE_URL` correctly.
 
 **End of Bug #4**
+
+---
+
+## Bug #5: Users Can Login Without Email Verification
+
+**Severity:** 🔴 CRITICAL (Security)
+**Status:** ✅ FIXED
+**Date Found:** January 9, 2026
+**Date Fixed:** January 9, 2026
+**Reporter:** User
+
+### Description
+
+Users can **login immediately after signup** without verifying their email address. The login function does not check the `emailVerified` status, allowing unverified accounts to access the system.
+
+**User Report:**
+```
+"says the mail varified: but i didnt, check it, i think its automatik varification"
+```
+
+The user saw "המייל כבר מאומת. אפשר להתחבר." (Email is already verified. You can login.) message, but they never clicked the verification link.
+
+### Root Cause
+
+The `login()` function in `lib/auth.server.ts:52-97` **does not check `emailVerified` status** before allowing login.
+
+**File:** `lib/auth.server.ts:68-71`
+```typescript
+// BEFORE (BUG)
+const isValidPassword = await bcrypt.compare(password, admin.passwordHash)
+if (!isValidPassword) {
+  return null
+}
+// Missing: No check for admin.emailVerified ❌
+
+const session: AuthSession = {
+  adminId: admin.id,
+  email: admin.email,
+  // ...
+}
+```
+
+**What the login function checked:**
+1. ✅ Admin exists
+2. ✅ Password hash exists (for non-OAuth users)
+3. ✅ Password is valid
+4. ❌ **MISSING:** Email is verified
+
+### Impact
+
+- **100% of new signups** can access the system without email verification
+- Email verification is **completely bypassed**
+- Security risk: Anyone can create accounts with fake email addresses
+- Violates standard authentication best practices
+- Users can access sensitive school data without verified identity
+
+### Files Modified
+
+#### 1. Login Function - Add Email Verification Check
+**File:** `lib/auth.server.ts:73-76`
+
+**Before:**
+```typescript
+const isValidPassword = await bcrypt.compare(password, admin.passwordHash)
+if (!isValidPassword) {
+  return null
+}
+
+const session: AuthSession = {
+  adminId: admin.id,
+  // ...
+}
+```
+
+**After:**
+```typescript
+const isValidPassword = await bcrypt.compare(password, admin.passwordHash)
+if (!isValidPassword) {
+  return null
+}
+
+// Check if email is verified (Bug #5 fix)
+if (!admin.emailVerified) {
+  throw new Error('EMAIL_NOT_VERIFIED')
+}
+
+const session: AuthSession = {
+  adminId: admin.id,
+  // ...
+}
+```
+
+#### 2. Login API - Handle Unverified Error
+**File:** `app/api/admin/login/route.ts:16-31`
+
+**Before:**
+```typescript
+const session = await login(email, password)
+
+if (!session) {
+  return NextResponse.json(
+    { error: 'אימייל או סיסמה שגויים' },
+    { status: 401 }
+  )
+}
+```
+
+**After:**
+```typescript
+let session
+try {
+  session = await login(email, password)
+} catch (error) {
+  // Handle email not verified error
+  if (error instanceof Error && error.message === 'EMAIL_NOT_VERIFIED') {
+    return NextResponse.json(
+      {
+        error: 'המייל טרם אומת. אנא בדוק את תיבת הדואר שלך ולחץ על הקישור לאימות.',
+        errorCode: 'EMAIL_NOT_VERIFIED'
+      },
+      { status: 403 }
+    )
+  }
+  throw error // Re-throw other errors
+}
+
+if (!session) {
+  return NextResponse.json(
+    { error: 'אימייל או סיסמה שגויים' },
+    { status: 401 }
+  )
+}
+```
+
+### How It Works Now
+
+**Correct Flow:**
+1. User signs up → Account created with `emailVerified: false`
+2. System sends verification email
+3. User tries to login → **BLOCKED** with message: "המייל טרם אומת. אנא בדוק את תיבת הדואר שלך ולחץ על הקישור לאימות."
+4. User clicks verification link → `emailVerified` set to `true`
+5. User tries to login again → **SUCCESS** ✅
+
+**Error Response:**
+```json
+{
+  "error": "המייל טרם אומת. אנא בדוק את תיבת הדואר שלך ולחץ על הקישור לאימות.",
+  "errorCode": "EMAIL_NOT_VERIFIED"
+}
+```
+Status: 403 Forbidden
+
+### Security Implications
+
+**Before Fix:**
+- ❌ Anyone could create fake accounts
+- ❌ No email ownership verification
+- ❌ Could access school data without valid email
+- ❌ Violates standard authentication practices
+
+**After Fix:**
+- ✅ Email verification is mandatory
+- ✅ Users must prove email ownership
+- ✅ Standard authentication best practice followed
+- ✅ Reduced spam/fake accounts
+
+### Prevention
+
+1. ✅ **Always check `emailVerified`** before creating session
+2. ✅ **Throw specific error** for unverified accounts
+3. ✅ **Return user-friendly message** in Hebrew
+4. ✅ **Use 403 status** (Forbidden) not 401 (Unauthorized)
+
+### Tests
+
+**Manual Testing:**
+1. Sign up with new email
+2. **Do not** click verification link
+3. Try to login immediately
+4. **Verify:** Error message appears: "המייל טרם אומת..."
+5. Click verification link
+6. Try to login again
+7. **Verify:** Login succeeds
+
+**Automated Tests (to be added):**
+- Test login with unverified account fails
+- Test login with verified account succeeds
+- Test error message content
+- Test resend verification email feature
+
+### Related Issues
+
+This bug is related to Bug #4 (email verification redirect issue). Both bugs prevented proper email verification flow:
+- **Bug #4:** Verification link didn't work (wrong redirect URL)
+- **Bug #5:** Even if link worked, users could login without verifying
+
+### Future Enhancements
+
+**Recommended additions:**
+1. ✅ **Resend verification email** feature (add API endpoint)
+2. ⏳ **Verification reminder** email after 24 hours
+3. ⏳ **Auto-delete** unverified accounts after 7 days
+4. ⏳ **Rate limiting** on verification email sending
+5. ⏳ **Admin dashboard** to manually verify/unverify accounts
+
+### Deployment Checklist
+
+- [x] Email verification check added to login function
+- [x] Login API handles EMAIL_NOT_VERIFIED error
+- [x] User-friendly Hebrew error message
+- [x] Bug documented
+- [ ] Manual QA: Sign up → Try login without verifying → See error
+- [ ] Manual QA: Verify email → Login succeeds
+- [ ] Frontend: Add "Resend verification email" button
+- [ ] Add automated tests
+- [ ] Monitor: Track how many users hit this error
+
+**End of Bug #5**
