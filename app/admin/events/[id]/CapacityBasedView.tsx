@@ -1,14 +1,23 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
   Calendar, MapPin, Users, Clock, Trash2, UserCheck,
   Download, Search, ChevronDown, ChevronUp,
-  ExternalLink, Copy, Check, Edit, X, Ban
+  ExternalLink, Copy, Check, Edit, X, Ban, Link2,
+  Building2, Info, Loader2, AlertCircle
 } from 'lucide-react'
 import { format } from 'date-fns'
 import CheckInLinkSection from '@/components/admin/CheckInLinkSection'
+import { Button } from '@/components/ui/Button'
+import {
+  typography,
+  badgeVariants,
+  iconButton,
+  statusDots,
+  inputVariants
+} from '@/lib/design-tokens'
 
 interface FieldSchema {
   id: string
@@ -53,24 +62,59 @@ interface Event {
   }
 }
 
-export default function EventManagementPage() {
+export default function EventManagementPageImproved() {
   const params = useParams()
   const router = useRouter()
   const eventId = params.id as string
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   const [event, setEvent] = useState<Event | null>(null)
   const [loading, setLoading] = useState(true)
+  const [searchInput, setSearchInput] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<'all' | 'CONFIRMED' | 'WAITLIST' | 'CANCELLED'>('all')
   const [expandedRow, setExpandedRow] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [cancelModal, setCancelModal] = useState<{ show: boolean; registrationId: string | null }>({ show: false, registrationId: null })
   const [cancelReason, setCancelReason] = useState('')
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [showSuccessToast, setShowSuccessToast] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
 
   useEffect(() => {
     fetchEvent()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId])
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(searchInput)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchInput])
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        searchInputRef.current?.focus()
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+        e.preventDefault()
+        handleExportCSV()
+      }
+      if (e.key === 'Escape' && searchTerm) {
+        setSearchInput('')
+        setSearchTerm('')
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm])
 
   const fetchEvent = async () => {
     try {
@@ -86,7 +130,14 @@ export default function EventManagementPage() {
     }
   }
 
+  const showSuccess = (message: string) => {
+    setSuccessMessage(message)
+    setShowSuccessToast(true)
+    setTimeout(() => setShowSuccessToast(false), 3000)
+  }
+
   const handleStatusChange = async (newStatus: 'OPEN' | 'PAUSED' | 'CLOSED') => {
+    setIsUpdating(true)
     try {
       const response = await fetch(`/api/events/${eventId}`, {
         method: 'PATCH',
@@ -94,10 +145,13 @@ export default function EventManagementPage() {
         body: JSON.stringify({ status: newStatus })
       })
       if (response.ok) {
+        showSuccess('סטטוס האירוע עודכן בהצלחה')
         fetchEvent()
       }
     } catch (error) {
       console.error('Error updating status:', error)
+    } finally {
+      setIsUpdating(false)
     }
   }
 
@@ -109,6 +163,7 @@ export default function EventManagementPage() {
         body: JSON.stringify({ status: 'CONFIRMED' })
       })
       if (response.ok) {
+        showSuccess('ההרשמה אושרה בהצלחה')
         fetchEvent()
       }
     } catch (error) {
@@ -129,6 +184,7 @@ export default function EventManagementPage() {
         })
       })
       if (response.ok) {
+        showSuccess('ההרשמה בוטלה בהצלחה')
         fetchEvent()
         setCancelModal({ show: false, registrationId: null })
         setCancelReason('')
@@ -150,6 +206,7 @@ export default function EventManagementPage() {
         method: 'DELETE'
       })
       if (response.ok) {
+        showSuccess('ההרשמה נמחקה')
         fetchEvent()
       }
     } catch (error) {
@@ -170,6 +227,7 @@ export default function EventManagementPage() {
         a.click()
         window.URL.revokeObjectURL(url)
         document.body.removeChild(a)
+        showSuccess('הקובץ יוצא בהצלחה')
       }
     } catch (error) {
       console.error('Error exporting CSV:', error)
@@ -186,15 +244,19 @@ export default function EventManagementPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-gray-500">טוען פרטי אירוע...</div>
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+          <p className="text-base text-gray-600">טוען פרטי אירוע...</p>
+        </div>
       </div>
     )
   }
 
   if (!event) {
     return (
-      <div className="text-center">
-        <p className="text-gray-500">האירוע לא נמצא</p>
+      <div className="text-center py-12">
+        <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+        <h2 className={typography.h3}>האירוע לא נמצא</h2>
       </div>
     )
   }
@@ -217,37 +279,14 @@ export default function EventManagementPage() {
   const totalCapacity = event.totalCapacity || event.capacity
   const spotsLeft = totalCapacity - confirmedCount
 
-  const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { text: string; className: string }> = {
-      OPEN: { text: 'פתוח', className: 'bg-green-100 text-green-800' },
-      PAUSED: { text: 'מושהה', className: 'bg-yellow-100 text-yellow-800' },
-      CLOSED: { text: 'סגור', className: 'bg-gray-100 text-gray-800' },
-    }
-    const { text, className } = statusMap[status] || statusMap.CLOSED
-    return <span className={`px-2 py-1 rounded-full text-xs font-medium ${className}`}>{text}</span>
-  }
-
-  const getRegistrationStatusBadge = (status: string) => {
-    const statusMap: Record<string, { text: string; className: string }> = {
-      CONFIRMED: { text: 'אושר', className: 'bg-green-100 text-green-800' },
-      WAITLIST: { text: 'רשימת המתנה', className: 'bg-yellow-100 text-yellow-800' },
-      CANCELLED: { text: 'בוטל', className: 'bg-red-100 text-red-800' },
-    }
-    const { text, className } = statusMap[status] || statusMap.CANCELLED
-    return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${className}`}>{text}</span>
-  }
-
-  // Helper function to get field label from fieldsSchema
   const getFieldLabel = (fieldKey: string): string => {
     if (!event?.fieldsSchema) return fieldKey
 
-    // Check if this is a custom field (starts with "field_")
     if (fieldKey.startsWith('field_')) {
       const field = event.fieldsSchema.find((f: FieldSchema) => f.id === fieldKey)
       return field?.label || fieldKey
     }
 
-    // Return common field labels in Hebrew
     const commonFields: Record<string, string> = {
       name: 'שם',
       phone: 'טלפון',
@@ -262,34 +301,37 @@ export default function EventManagementPage() {
 
   return (
     <div className="space-y-6">
-      {/* Share Link Section - Prominent */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 shadow-sm rounded-lg p-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          <div className="flex-1 w-full">
-            <div className="flex items-center gap-2 mb-1">
-              <ExternalLink className="w-4 h-4 text-blue-600" />
-              <p className="text-sm font-semibold text-blue-900">🔗 קישור להרשמה (שתף עם משתתפים)</p>
-            </div>
-            <div className="bg-white rounded-md border border-blue-300 p-2.5 font-mono text-sm text-gray-700 break-all select-all">
-              {`${window.location.origin}/p/${event?.school?.slug}/${event?.slug}`}
-            </div>
+      {/* Success Toast */}
+      {showSuccessToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-[slideUp_300ms_ease-out]">
+          <div className="bg-green-600 text-white px-6 py-3 rounded-xl shadow-xl flex items-center gap-3">
+            <Check className="w-5 h-5" />
+            <span className="font-medium">{successMessage}</span>
           </div>
-          <button
+        </div>
+      )}
+
+      {/* PRIMARY CTA: Registration Link */}
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 shadow-lg rounded-xl p-6">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="p-2 bg-blue-600 rounded-lg">
+            <Link2 className="w-5 h-5 text-white" />
+          </div>
+          <h2 className="text-xl font-bold text-blue-900">קישור הרשמה לאירוע</h2>
+        </div>
+        <p className="text-sm text-blue-700 mb-4">שתף קישור זה עם המשתתפים כדי לאפשר להם להירשם</p>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1 bg-white rounded-lg border-2 border-blue-400 p-3 font-mono text-sm text-gray-900 font-medium break-all select-all">
+            {`${window.location.origin}/p/${event?.school?.slug}/${event?.slug}`}
+          </div>
+          <Button
+            variant="primary"
+            size="lg"
             onClick={copyLink}
-            className="w-full sm:w-auto px-4 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-sm font-semibold shadow-md whitespace-nowrap"
+            icon={copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
           >
-            {copied ? (
-              <>
-                <Check className="w-5 h-5" />
-                <span>הקישור הועתק!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-5 h-5" />
-                <span>העתק קישור</span>
-              </>
-            )}
-          </button>
+            {copied ? 'הקישור הועתק!' : 'העתק קישור'}
+          </Button>
         </div>
       </div>
 
@@ -297,98 +339,115 @@ export default function EventManagementPage() {
       <CheckInLinkSection eventId={eventId} />
 
       {/* Event Header */}
-      <div className="bg-white shadow-sm rounded-lg p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+      <div className="bg-white shadow-sm rounded-xl p-6 border border-gray-200">
+        <div className="flex flex-col lg:flex-row justify-between items-start gap-6">
           <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{event.title}</h1>
-              {getStatusBadge(event.status)}
-            </div>
+            <h1 className={`${typography.h2} mb-4`}>{event.title}</h1>
 
-            <div className="space-y-2 text-sm text-gray-600">
+            <div className="space-y-3 text-base text-gray-700">
               {event.school && (
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-sm font-semibold text-purple-700 bg-purple-100 px-3 py-1.5 rounded-lg border border-purple-200">
-                    🏢 ארגון: {event.school.name}
+                <div className="flex items-center gap-2 mb-4">
+                  <Building2 className="w-5 h-5 text-purple-600" />
+                  <span className="text-base font-semibold text-purple-700 bg-purple-100 px-3 py-1.5 rounded-lg border-2 border-purple-200">
+                    {event.school.name}
                   </span>
                 </div>
               )}
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                {format(new Date(event.startAt), 'dd/MM/yyyy HH:mm')}
+              <div className="flex items-center gap-3">
+                <Calendar className="w-5 h-5 text-gray-600" />
+                <span className="font-medium text-gray-900">{format(new Date(event.startAt), 'dd/MM/yyyy HH:mm')}</span>
               </div>
               {event.location && (
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  {event.location}
+                <div className="flex items-center gap-3">
+                  <MapPin className="w-5 h-5 text-gray-600" />
+                  <span className="font-medium text-gray-900">{event.location}</span>
                 </div>
               )}
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                {confirmedCount} / {totalCapacity} נרשמים
-                <span className="spots-reserved" data-testid="spots-reserved">
+              <div className="flex items-center gap-3">
+                <Users className="w-5 h-5 text-gray-600" />
+                <span className="font-medium text-gray-900">
+                  {confirmedCount} / {totalCapacity} נרשמים
+                </span>
+                <span className="text-sm text-gray-600" data-testid="spots-reserved">
                   ({event.spotsReserved} תפוסים)
                 </span>
               </div>
               {waitlistCount > 0 && (
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  {waitlistCount} מקומות ברשימת המתנה
+                <div className="flex items-center gap-3">
+                  <Clock className="w-5 h-5 text-amber-600" />
+                  <span className="font-medium text-amber-700">{waitlistCount} ברשימת המתנה</span>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 w-full sm:w-auto">
-            {/* Actions Section */}
-            <div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => router.push(`/admin/events/${eventId}/edit`)}
-                  className="flex-1 sm:flex-initial px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center justify-center gap-2 text-sm font-medium shadow-sm"
-                  title="ערוך אירוע"
-                >
-                  <Edit className="w-4 h-4" />
-                  <span>ערוך אירוע</span>
-                </button>
-                <a
-                  href={`/p/${event.school?.slug}/${event.slug}`}
-                  target="_blank"
-                  className="flex-1 sm:flex-initial px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm font-medium shadow-sm"
-                  title="צפה בעמוד ציבורי"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  <span>תצוגה מקדימה</span>
-                </a>
-              </div>
-              <button
-                onClick={() => router.push(`/admin/events/${eventId}/attendance`)}
-                className="w-full px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors flex items-center justify-center gap-2 text-sm font-medium shadow-sm"
-                title="ניהול נוכחות"
+          <div className="w-full lg:w-auto lg:min-w-[300px] space-y-4">
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                variant="success"
+                size="md"
+                icon={<Edit className="w-5 h-5" />}
+                onClick={() => router.push(`/admin/events/${eventId}/edit`)}
+                fullWidth
               >
-                <UserCheck className="w-4 h-4" />
-                <span>📊 ניהול נוכחות</span>
-              </button>
+                ערוך אירוע
+              </Button>
+              <Button
+                variant="secondary"
+                size="md"
+                icon={<ExternalLink className="w-5 h-5" />}
+                onClick={() => window.open(`/p/${event.school?.slug}/${event.slug}`, '_blank')}
+                fullWidth
+              >
+                תצוגה מקדימה
+              </Button>
             </div>
 
-            {/* Status Section */}
+            <Button
+              variant="primary"
+              size="md"
+              icon={<UserCheck className="w-5 h-5" />}
+              onClick={() => router.push(`/admin/events/${eventId}/attendance`)}
+              fullWidth
+            >
+              ניהול נוכחות
+            </Button>
+
+            {/* Status Control */}
             <div>
-              <div className="mb-1.5">
-                <p className="text-xs font-medium text-gray-700 mb-0.5">
-                  שליטה בהרשמות
-                </p>
-                <p className="text-xs text-gray-500">
-                  פתוח - מאפשר הרשמה חדשה | מושהה - זמנית | סגור - חסום
-                </p>
+              <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 mb-3">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <Info className="w-4 h-4 text-blue-600" />
+                  מצבי הרשמה
+                </h3>
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className={statusDots.open}></div>
+                    <span className="font-medium text-gray-900">פתוח:</span>
+                    <span className="text-gray-700">משתמשים יכולים להירשם</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className={statusDots.paused}></div>
+                    <span className="font-medium text-gray-900">מושהה:</span>
+                    <span className="text-gray-700">הרשמה חסומה זמנית</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className={statusDots.closed}></div>
+                    <span className="font-medium text-gray-900">סגור:</span>
+                    <span className="text-gray-700">הרשמה חסומה לצמיתות</span>
+                  </div>
+                </div>
               </div>
               <select
                 value={event.status}
                 onChange={(e) => handleStatusChange(e.target.value as 'OPEN' | 'PAUSED' | 'CLOSED')}
-                className="w-full px-3 py-1.5 border-2 border-gray-300 rounded-md text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                disabled={isUpdating}
+                className={inputVariants.default}
               >
                 <option value="OPEN">✅ פתוח להרשמה</option>
-                <option value="PAUSED">⏸️ מושהה</option>
-                <option value="CLOSED">🚫 סגור</option>
+                <option value="PAUSED">⏸️ מושהה זמנית</option>
+                <option value="CLOSED">🔒 סגור</option>
               </select>
             </div>
           </div>
@@ -396,25 +455,33 @@ export default function EventManagementPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white shadow-sm rounded-lg p-4">
+      <div className="bg-white shadow-sm rounded-xl p-4 border border-gray-200">
         {searchTerm && searchTerm.length >= 5 && searchTerm.match(/^[A-Z0-9]+$/i) && (
-          <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-700">
-              🔍 מחפש לפי קוד אישור: <span className="font-mono font-bold">{searchTerm.toUpperCase()}</span>
+          <div className="mb-4 p-3 bg-blue-50 border-2 border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-900 font-medium flex items-center gap-2">
+              <Search className="w-4 h-4" />
+              מחפש לפי קוד אישור: <span className="font-mono font-bold">{searchTerm.toUpperCase()}</span>
             </p>
           </div>
         )}
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col md:flex-row gap-3">
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute right-3 top-3 w-5 h-5 text-gray-400" />
               <input
+                ref={searchInputRef}
                 type="text"
-                placeholder="חיפוש לפי שם, טלפון או קוד אישור (כמו OF9ZEC)..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pr-10 pl-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="חיפוש לפי שם, טלפון או קוד אישור..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className={`${inputVariants.default} pr-10`}
               />
+            </div>
+            <div className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
+              <kbd className="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">Ctrl</kbd>
+              +
+              <kbd className="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">K</kbd>
+              לחיפוש מהיר
             </div>
           </div>
 
@@ -422,8 +489,8 @@ export default function EventManagementPage() {
             name="status"
             data-testid="status-filter"
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as 'all' | 'CONFIRMED' | 'WAITLIST' | 'CANCELLED')}
-            className="px-4 py-2 border rounded-lg"
+            onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
+            className={inputVariants.default}
           >
             <option value="all">כל הסטטוסים</option>
             <option value="CONFIRMED">אושר</option>
@@ -431,167 +498,117 @@ export default function EventManagementPage() {
             <option value="CANCELLED">בוטל</option>
           </select>
 
-          <button
+          <Button
+            variant="success"
+            size="md"
+            icon={<Download className="w-5 h-5" />}
             onClick={handleExportCSV}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
           >
-            <Download className="w-4 h-4" />
-            ייצא CSV
-          </button>
+            ייצוא לאקסל
+          </Button>
         </div>
       </div>
 
-      {/* Registrations Table */}
-      <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+      {/* Registrations - Mobile Cards */}
+      <div className="lg:hidden space-y-3">
+        {filteredRegistrations.length === 0 ? (
+          <EmptyState
+            searchTerm={searchTerm}
+            filterStatus={filterStatus}
+            onClearFilters={() => {
+              setSearchInput('')
+              setSearchTerm('')
+              setFilterStatus('all')
+            }}
+            onCopyLink={copyLink}
+          />
+        ) : (
+          filteredRegistrations.map((registration) => (
+            <MobileRegistrationCard
+              key={registration.id}
+              registration={registration}
+              searchTerm={searchTerm}
+              spotsLeft={spotsLeft}
+              onPromote={() => handlePromoteToConfirmed(registration.id)}
+              onCancel={() => setCancelModal({ show: true, registrationId: registration.id })}
+              onDelete={() => handleDeleteRegistration(registration.id)}
+            />
+          ))
+        )}
+      </div>
+
+      {/* Registrations - Desktop Table */}
+      <div className="hidden lg:block bg-white shadow-sm rounded-xl overflow-hidden border border-gray-200">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full">
+            <thead className="bg-gray-50 border-b-2 border-gray-200">
               <tr>
-                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  #
-                </th>
-                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  פרטים
-                </th>
-                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  מקומות
-                </th>
-                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  סטטוס
-                </th>
-                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  קוד אישור
-                </th>
-                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  נרשם ב
-                </th>
-                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  פעולות
-                </th>
+                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900">נרשם</th>
+                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900">פרטי קשר</th>
+                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900">סטטוס</th>
+                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900">פעולות</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredRegistrations.map((registration, index) => (
-                <React.Fragment key={registration.id}>
-                  <tr className="hover:bg-gray-50 cursor-pointer" onClick={() => setExpandedRow(expandedRow === registration.id ? null : registration.id)}>
-                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {index + 1}
-                    </td>
-                    <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">
-                      <div>
-                        <div className="font-medium">{String(registration.data.name || '')}</div>
-                        <div className="text-gray-500 text-xs">{registration.phoneNumber || String(registration.data.phone || '')}</div>
-                      </div>
-                    </td>
-                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {registration.spotsCount}
-                    </td>
-                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                      {getRegistrationStatusBadge(registration.status)}
-                    </td>
-                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-mono">
-                      <span className={`${searchTerm && registration.confirmationCode.toLowerCase().includes(searchTerm.toLowerCase()) ? 'bg-yellow-200 px-1 py-0.5 rounded font-bold text-gray-900' : 'text-gray-900'}`}>
-                        {registration.confirmationCode}
-                      </span>
-                    </td>
-                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {format(new Date(registration.createdAt), 'dd/MM HH:mm')}
-                    </td>
-                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
-                      <div className="flex items-center gap-1">
-                        {registration.status === 'WAITLIST' && spotsLeft >= registration.spotsCount && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handlePromoteToConfirmed(registration.id)
-                            }}
-                            className="p-1 text-green-600 hover:text-green-800"
-                            title="אשר הרשמה"
-                          >
-                            <UserCheck className="w-4 h-4" />
-                          </button>
-                        )}
-                        {registration.status !== 'CANCELLED' && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setCancelModal({ show: true, registrationId: registration.id })
-                            }}
-                            className="p-1 text-amber-600 hover:text-amber-800"
-                            title="בטל הרשמה"
-                          >
-                            <Ban className="w-4 h-4" />
-                          </button>
-                        )}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDeleteRegistration(registration.id)
-                          }}
-                          className="p-1 text-red-600 hover:text-red-800"
-                          title="מחק לצמיתות"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => e.stopPropagation()}
-                          className="p-1 text-gray-600"
-                        >
-                          {expandedRow === registration.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                  {expandedRow === registration.id && (
-                    <tr>
-                      <td colSpan={7} className="px-3 sm:px-6 py-4 bg-gray-50">
-                        <div className="space-y-2 text-sm">
-                          {Object.entries(registration.data).map(([key, value]) => (
-                            <div key={key} className="flex gap-2">
-                              <span className="font-medium text-gray-700">{getFieldLabel(key)}:</span>
-                              <span className="text-gray-900">{String(value)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
-              ))}
+            <tbody className="divide-y divide-gray-200">
+              {filteredRegistrations.length === 0 ? (
+                <tr>
+                  <td colSpan={4}>
+                    <EmptyState
+                      searchTerm={searchTerm}
+                      filterStatus={filterStatus}
+                      onClearFilters={() => {
+                        setSearchInput('')
+                        setSearchTerm('')
+                        setFilterStatus('all')
+                      }}
+                      onCopyLink={copyLink}
+                    />
+                  </td>
+                </tr>
+              ) : (
+                filteredRegistrations.map((registration) => (
+                  <DesktopRegistrationRow
+                    key={registration.id}
+                    registration={registration}
+                    spotsLeft={spotsLeft}
+                    expandedRow={expandedRow}
+                    onToggleExpand={() => setExpandedRow(expandedRow === registration.id ? null : registration.id)}
+                    onPromote={() => handlePromoteToConfirmed(registration.id)}
+                    onCancel={() => setCancelModal({ show: true, registrationId: registration.id })}
+                    onDelete={() => handleDeleteRegistration(registration.id)}
+                    getFieldLabel={getFieldLabel}
+                  />
+                ))
+              )}
             </tbody>
           </table>
         </div>
-
-        {filteredRegistrations.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            אין נרשמים
-          </div>
-        )}
       </div>
 
       {/* Cancel Modal */}
       {cancelModal.show && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" dir="rtl">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 animate-[fadeIn_200ms_ease-out]">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-900">ביטול הרשמה</h2>
+              <h2 className={typography.h3}>ביטול הרשמה</h2>
               <button
                 onClick={() => {
                   setCancelModal({ show: false, registrationId: null })
                   setCancelReason('')
                 }}
-                className="p-1 hover:bg-gray-100 rounded"
+                className={iconButton.ghost}
+                aria-label="סגור"
               >
-                <X className="w-5 h-5 text-gray-500" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <p className="text-gray-700 mb-4">
+            <p className="text-base text-gray-700 mb-4">
               האם לבטל הרשמה זו? ההרשמה תישמר במערכת אך תסומן כמבוטלת.
             </p>
 
-            <div className="mb-4">
-              <label htmlFor="cancelReason" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="mb-6">
+              <label htmlFor="cancelReason" className={`${typography.label} block mb-2`}>
                 סיבת ביטול (אופציונלי)
               </label>
               <textarea
@@ -599,35 +616,308 @@ export default function EventManagementPage() {
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                className={inputVariants.default}
                 placeholder="למשל: נרשם ביקש לבטל בטלפון"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 mt-2">
                 הסיבה תישמר לצורך רישום ומעקב
               </p>
             </div>
 
             <div className="flex gap-3">
-              <button
+              <Button
+                variant="warning"
+                size="lg"
                 onClick={handleCancelRegistration}
-                className="flex-1 bg-amber-600 text-white py-2 px-4 rounded-lg hover:bg-amber-700 transition-colors font-medium"
+                fullWidth
               >
                 בטל הרשמה
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="ghost"
+                size="lg"
                 onClick={() => {
                   setCancelModal({ show: false, registrationId: null })
                   setCancelReason('')
                 }}
-                className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
+                fullWidth
               >
                 ביטול
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       )}
     </div>
+  )
+}
+
+// Helper Components
+function EmptyState({
+  searchTerm,
+  filterStatus,
+  onClearFilters,
+  onCopyLink
+}: {
+  searchTerm: string
+  filterStatus: string
+  onClearFilters: () => void
+  onCopyLink: () => void
+}) {
+  const hasFilters = searchTerm || filterStatus !== 'all'
+
+  return (
+    <div className="text-center py-12">
+      {hasFilters ? (
+        <div className="space-y-4">
+          <div className="flex justify-center">
+            <div className="p-4 bg-gray-100 rounded-full">
+              <Search className="w-8 h-8 text-gray-400" />
+            </div>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              לא נמצאו תוצאות
+            </h3>
+            <p className="text-gray-600 mb-4">
+              נסה לשנות את מילות החיפוש או הסינון
+            </p>
+            <Button variant="secondary" onClick={onClearFilters}>
+              נקה סינונים
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="flex justify-center">
+            <div className="p-4 bg-blue-50 rounded-full">
+              <Users className="w-8 h-8 text-blue-600" />
+            </div>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              עדיין אין נרשמים לאירוע
+            </h3>
+            <p className="text-gray-600 mb-4">
+              שתף את קישור ההרשמה כדי להתחיל לקבל נרשמים
+            </p>
+            <Button
+              variant="primary"
+              size="lg"
+              icon={<Copy className="w-5 h-5" />}
+              onClick={onCopyLink}
+            >
+              העתק קישור הרשמה
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function MobileRegistrationCard({
+  registration,
+  searchTerm,
+  spotsLeft,
+  onPromote,
+  onCancel,
+  onDelete,
+}: {
+  registration: Registration
+  searchTerm: string
+  spotsLeft: number
+  onPromote: () => void
+  onCancel: () => void
+  onDelete: () => void
+}) {
+  const getRegistrationStatusBadge = (status: string) => {
+    const statusMap: Record<string, { variant: keyof typeof badgeVariants; text: string; dotClass: string }> = {
+      CONFIRMED: { variant: 'success', text: 'אושר', dotClass: statusDots.confirmed },
+      WAITLIST: { variant: 'warning', text: 'רשימת המתנה', dotClass: statusDots.waitlist },
+      CANCELLED: { variant: 'error', text: 'בוטל', dotClass: statusDots.cancelled },
+    }
+    const { variant, text, dotClass } = statusMap[status] || statusMap.CANCELLED
+    return (
+      <span className={badgeVariants[variant]}>
+        <div className={dotClass}></div>
+        {text}
+      </span>
+    )
+  }
+
+  return (
+    <div className="bg-white border-2 border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-700 font-bold text-sm rounded-full">
+            {registration.spotsCount}
+          </div>
+          <div>
+            <div className="font-semibold text-gray-900">{String(registration.data.name || '')}</div>
+            <div className="text-sm text-gray-500">{registration.phoneNumber || String(registration.data.phone || '')}</div>
+          </div>
+        </div>
+        {getRegistrationStatusBadge(registration.status)}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
+        <div>
+          <span className="text-gray-600">קוד:</span>
+          <span className={`font-mono font-medium mr-2 ${searchTerm && registration.confirmationCode.toLowerCase().includes(searchTerm.toLowerCase()) ? 'bg-yellow-200 px-1 py-0.5 rounded' : 'text-gray-900'}`}>
+            {registration.confirmationCode}
+          </span>
+        </div>
+        <div className="col-span-2">
+          <span className="text-gray-600">נרשם:</span>
+          <span className="text-gray-900 mr-2">{format(new Date(registration.createdAt), 'dd/MM/yyyy HH:mm')}</span>
+        </div>
+      </div>
+
+      <div className="flex gap-2 pt-3 border-t border-gray-200">
+        {registration.status === 'WAITLIST' && spotsLeft >= registration.spotsCount && (
+          <button
+            onClick={onPromote}
+            className="flex-1 px-4 py-2.5 bg-green-50 text-green-700 border-2 border-green-200 rounded-lg hover:bg-green-100 active:scale-[0.98] transition-all font-medium text-sm"
+          >
+            <UserCheck className="w-5 h-5 inline ml-2" />
+            אשר
+          </button>
+        )}
+        {registration.status !== 'CANCELLED' && (
+          <button
+            onClick={onCancel}
+            className="flex-1 px-4 py-2.5 bg-amber-50 text-amber-700 border-2 border-amber-200 rounded-lg hover:bg-amber-100 active:scale-[0.98] transition-all font-medium text-sm"
+          >
+            <Ban className="w-5 h-5 inline ml-2" />
+            ביטול
+          </button>
+        )}
+        <button
+          onClick={onDelete}
+          className="px-4 py-2.5 bg-red-50 text-red-700 border-2 border-red-200 rounded-lg hover:bg-red-100 active:scale-[0.98] transition-all min-w-[48px] flex items-center justify-center"
+          aria-label="מחק"
+        >
+          <Trash2 className="w-5 h-5" />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function DesktopRegistrationRow({
+  registration,
+  spotsLeft,
+  expandedRow,
+  onToggleExpand,
+  onPromote,
+  onCancel,
+  onDelete,
+  getFieldLabel,
+}: {
+  registration: Registration
+  spotsLeft: number
+  expandedRow: string | null
+  onToggleExpand: () => void
+  onPromote: () => void
+  onCancel: () => void
+  onDelete: () => void
+  getFieldLabel: (key: string) => string
+}) {
+  const getRegistrationStatusBadge = (status: string) => {
+    const statusMap: Record<string, { variant: keyof typeof badgeVariants; text: string; dotClass: string }> = {
+      CONFIRMED: { variant: 'success', text: 'אושר', dotClass: statusDots.confirmed },
+      WAITLIST: { variant: 'warning', text: 'רשימת המתנה', dotClass: statusDots.waitlist },
+      CANCELLED: { variant: 'error', text: 'בוטל', dotClass: statusDots.cancelled },
+    }
+    const { variant, text, dotClass } = statusMap[status] || statusMap.CANCELLED
+    return (
+      <span className={badgeVariants[variant]}>
+        <div className={dotClass}></div>
+        {text}
+      </span>
+    )
+  }
+
+  return (
+    <>
+      <tr className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={onToggleExpand}>
+        <td className="px-6 py-4">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-700 font-bold rounded-full">
+              {registration.spotsCount}
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900">{String(registration.data.name || '')}</div>
+              <div className="text-sm text-gray-600 font-mono">{registration.confirmationCode}</div>
+            </div>
+          </div>
+        </td>
+        <td className="px-6 py-4 text-sm">
+          <div className="space-y-1">
+            <div className="text-gray-900">{registration.phoneNumber || String(registration.data.phone || '')}</div>
+            {registration.email && <div className="text-gray-600">{registration.email}</div>}
+          </div>
+        </td>
+        <td className="px-6 py-4">
+          <div className="space-y-1">
+            {getRegistrationStatusBadge(registration.status)}
+            <div className="text-xs text-gray-600">
+              {format(new Date(registration.createdAt), 'dd/MM HH:mm')}
+            </div>
+          </div>
+        </td>
+        <td className="px-6 py-4">
+          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+            {registration.status === 'WAITLIST' && spotsLeft >= registration.spotsCount && (
+              <button
+                onClick={onPromote}
+                className={iconButton.success}
+                title="אשר הרשמה"
+                aria-label="אשר הרשמה"
+              >
+                <UserCheck className="w-5 h-5" />
+              </button>
+            )}
+            {registration.status !== 'CANCELLED' && (
+              <button
+                onClick={onCancel}
+                className={iconButton.warning}
+                title="בטל הרשמה"
+                aria-label="בטל הרשמה"
+              >
+                <Ban className="w-5 h-5" />
+              </button>
+            )}
+            <button
+              onClick={onDelete}
+              className={iconButton.danger}
+              title="מחק לצמיתות"
+              aria-label="מחק לצמיתות"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+            <button className={iconButton.ghost} aria-label={expandedRow === registration.id ? "סגור פרטים" : "הצג פרטים"}>
+              {expandedRow === registration.id ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+            </button>
+          </div>
+        </td>
+      </tr>
+      {expandedRow === registration.id && (
+        <tr>
+          <td colSpan={4} className="px-6 py-4 bg-gray-50">
+            <div className="space-y-2 text-sm">
+              {Object.entries(registration.data).map(([key, value]) => (
+                <div key={key} className="flex gap-3">
+                  <span className="font-medium text-gray-900 min-w-[120px]">{getFieldLabel(key)}:</span>
+                  <span className="text-gray-700">{String(value)}</span>
+                </div>
+              ))}
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
   )
 }
 
