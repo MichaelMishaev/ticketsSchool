@@ -748,33 +748,35 @@ function MobileRegistrationCard({
 
   return (
     <div className="bg-white border-2 border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-700 font-bold text-sm rounded-full">
-            {registration.spotsCount}
-          </div>
-          <div>
-            <div className="font-semibold text-gray-900">{String(registration.data.name || '')}</div>
-            <div className="text-sm text-gray-500">{registration.phoneNumber || String(registration.data.phone || '')}</div>
+      {/* Header: Status + Name + Number */}
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          {getRegistrationStatusBadge(registration.status)}
+          <div className="flex-1 min-w-0">
+            <div className="font-bold text-lg text-gray-900">{String(registration.data.name || '')}</div>
+            <div className="text-base text-gray-600">{registration.phoneNumber || String(registration.data.phone || '')}</div>
           </div>
         </div>
-        {getRegistrationStatusBadge(registration.status)}
+        <div className="flex items-center justify-center w-12 h-12 bg-blue-100 text-blue-700 font-bold text-lg rounded-full flex-shrink-0">
+          {registration.spotsCount}
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
-        <div>
-          <span className="text-gray-600">קוד:</span>
-          <span className={`font-mono font-medium mr-2 ${searchTerm && registration.confirmationCode.toLowerCase().includes(searchTerm.toLowerCase()) ? 'bg-yellow-200 px-1 py-0.5 rounded' : 'text-gray-900'}`}>
+      {/* Single line: Code + Registration Date */}
+      <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
+        <div className="text-base">
+          <span className="text-gray-600">קוד: </span>
+          <span className={`font-mono font-semibold ${searchTerm && registration.confirmationCode.toLowerCase().includes(searchTerm.toLowerCase()) ? 'bg-yellow-200 px-1 py-0.5 rounded' : 'text-gray-900'}`}>
             {registration.confirmationCode}
           </span>
         </div>
-        <div className="col-span-2">
-          <span className="text-gray-600">נרשם:</span>
-          <span className="text-gray-900 mr-2">{format(new Date(registration.createdAt), 'dd/MM/yyyy HH:mm')}</span>
+        <div className="text-base">
+          <span className="text-gray-600">נרשם: </span>
+          <span className="text-gray-900">{format(new Date(registration.createdAt), 'dd/MM/yyyy HH:mm')}</span>
         </div>
       </div>
 
-      <div className="flex gap-2 pt-3 border-t border-gray-200">
+      <div className="flex gap-2">
         {registration.status === 'WAITLIST' && spotsLeft >= registration.spotsCount && (
           <button
             onClick={onPromote}
