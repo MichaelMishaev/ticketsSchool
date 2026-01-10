@@ -200,6 +200,34 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* Quick Actions Section */}
+      <div className="mt-6 bg-white shadow rounded-lg">
+        <div className="px-6 py-5 border-b border-gray-200">
+          <h2 className="text-lg font-medium text-gray-900">פעולות מהירות</h2>
+        </div>
+        <div className="px-6 py-6">
+          <div className="space-y-3">
+            <button
+              onClick={() => router.push('/admin/settings/bans')}
+              className="w-full flex items-center justify-between px-4 py-4 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                  <span className="text-xl">🚫</span>
+                </div>
+                <div className="text-right">
+                  <div className="font-medium text-gray-900">ניהול חסימות</div>
+                  <div className="text-sm text-gray-500">רשימת משתמשים חסומים</div>
+                </div>
+              </div>
+              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Info Box */}
       <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h3 className="text-sm font-medium text-blue-900 mb-2">📝 שים לב</h3>

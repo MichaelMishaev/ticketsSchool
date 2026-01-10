@@ -8,6 +8,7 @@ import {
   ExternalLink, Copy, Check, Edit, X, Ban
 } from 'lucide-react'
 import { format } from 'date-fns'
+import CheckInLinkSection from '@/components/admin/CheckInLinkSection'
 
 interface FieldSchema {
   id: string
@@ -292,6 +293,9 @@ export default function EventManagementPage() {
         </div>
       </div>
 
+      {/* Check-In Link Section */}
+      <CheckInLinkSection eventId={eventId} />
+
       {/* Event Header */}
       <div className="bg-white shadow-sm rounded-lg p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
@@ -357,6 +361,14 @@ export default function EventManagementPage() {
                   <span>תצוגה מקדימה</span>
                 </a>
               </div>
+              <button
+                onClick={() => router.push(`/admin/events/${eventId}/attendance`)}
+                className="w-full px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors flex items-center justify-center gap-2 text-sm font-medium shadow-sm"
+                title="ניהול נוכחות"
+              >
+                <UserCheck className="w-4 h-4" />
+                <span>📊 ניהול נוכחות</span>
+              </button>
             </div>
 
             {/* Status Section */}

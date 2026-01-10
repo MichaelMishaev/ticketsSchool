@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { generateConfirmationCode, normalizePhoneNumber } from '@/lib/utils'
 import { reserveTableForGuests } from '@/lib/table-assignment'
+import { generateQRCodeData } from '@/lib/qr-code'
 
 /**
  * POST /api/p/[schoolSlug]/[eventSlug]/register
@@ -57,6 +58,40 @@ export async function POST(
 
     // Normalize phone number (now guaranteed to be present)
     const phoneNumber = normalizePhoneNumber(data.phone)
+
+    // Check if user is banned
+    const bans = await prisma.userBan.findMany({
+      where: {
+        phoneNumber,
+        schoolId: school.id,
+        active: true
+      }
+    })
+
+    // Find first active ban (date-based OR game-based with remaining games)
+    const activeBan = bans.find(ban => {
+      // Date-based ban (not expired)
+      if (ban.expiresAt && ban.expiresAt >= new Date()) {
+        return true
+      }
+      // Game-based ban (no expiration date AND still has games to block)
+      if (!ban.expiresAt && ban.eventsBlocked < ban.bannedGamesCount) {
+        return true
+      }
+      return false
+    })
+
+    if (activeBan) {
+      if (activeBan.expiresAt) {
+        // Date-based ban
+        const expirationDate = new Date(activeBan.expiresAt).toLocaleDateString('he-IL')
+        throw new Error(`מצטערים, חשבונך חסום עד ${expirationDate}. סיבה: ${activeBan.reason}`)
+      } else {
+        // Game-based ban
+        const remainingGames = activeBan.bannedGamesCount - activeBan.eventsBlocked
+        throw new Error(`מצטערים, חשבונך חסום ל-${remainingGames} משחקים נוספים. סיבה: ${activeBan.reason}`)
+      }
+    }
 
     // Check for duplicate registration by phone number
     const existingRegistration = await prisma.registration.findFirst({
@@ -126,7 +161,7 @@ export async function POST(
       // Generate secure confirmation code
       const confirmationCode = generateConfirmationCode()
 
-      // Create registration within transaction
+      // Create registration within transaction (without QR code first)
       const registration = await tx.registration.create({
         data: {
           eventId: event.id,
@@ -137,6 +172,15 @@ export async function POST(
           phoneNumber: phoneNumber,
           email: data.email || null
         }
+      })
+
+      // Generate QR code after we have the registration ID
+      const qrCodeData = generateQRCodeData(registration.id, event.id)
+
+      // Update registration with QR code
+      await tx.registration.update({
+        where: { id: registration.id },
+        data: { qrCode: qrCodeData }
       })
 
       // Return response within transaction
@@ -153,77 +197,87 @@ export async function POST(
       isolationLevel: 'Serializable',
       timeout: 10000
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating registration:', error)
 
     // Handle specific error messages
-    if (error.message.includes('School not found')) {
+    const errorMessage = error instanceof Error ? error.message : ''
+
+    if (errorMessage.includes('School not found')) {
       return NextResponse.json(
         { error: 'School not found' },
         { status: 404 }
       )
     }
 
-    if (error.message.includes('Event not found')) {
+    if (errorMessage.includes('Event not found')) {
       return NextResponse.json(
         { error: 'Event not found' },
         { status: 404 }
       )
     }
 
-    if (error.message.includes('registration is closed') || error.message.includes('is paused')) {
+    if (errorMessage.includes('registration is closed') || errorMessage.includes('is paused')) {
       return NextResponse.json(
-        { error: error.message },
+        { error: errorMessage },
         { status: 400 }
       )
     }
 
-    if (error.message.includes('Invalid spots count')) {
+    if (errorMessage.includes('Invalid spots count')) {
       return NextResponse.json(
-        { error: error.message },
+        { error: errorMessage },
         { status: 400 }
       )
     }
 
-    if (error.message.includes('Phone number already registered')) {
+    if (errorMessage.includes('Phone number already registered')) {
       return NextResponse.json(
         { error: 'מספר הטלפון כבר רשום לאירוע זה' },
         { status: 400 }
       )
     }
 
-    if (error.message.includes('Invalid phone number')) {
+    if (errorMessage.includes('Invalid phone number')) {
       return NextResponse.json(
         { error: 'מספר הטלפון אינו תקין' },
         { status: 400 }
       )
     }
 
-    if (error.message.includes('Invalid guest count')) {
+    if (errorMessage.includes('Invalid guest count')) {
       return NextResponse.json(
         { error: 'מספר האורחים אינו תקין' },
         { status: 400 }
       )
     }
 
-    if (error.message.includes('Phone number is required')) {
+    if (errorMessage.includes('Phone number is required')) {
       return NextResponse.json(
         { error: 'מספר טלפון הוא שדה חובה' },
         { status: 400 }
       )
     }
 
-    if (error.message.includes('Name is required')) {
+    if (errorMessage.includes('Name is required')) {
       return NextResponse.json(
         { error: 'שם הוא שדה חובה' },
         { status: 400 }
       )
     }
 
-    if (error.message.includes('Phone number is required for table reservation')) {
+    if (errorMessage.includes('Phone number is required for table reservation')) {
       return NextResponse.json(
         { error: 'מספר טלפון הוא שדה חובה להזמנת שולחן' },
         { status: 400 }
+      )
+    }
+
+    if (errorMessage.includes('חשבונך חסום')) {
+      // User is banned - return the full Hebrew message
+      return NextResponse.json(
+        { error: errorMessage },
+        { status: 403 }
       )
     }
 

@@ -31,6 +31,7 @@ model School {
   invitations    TeamInvitation[]
   usageRecords   UsageRecord[]
   tableTemplates TableTemplate[]
+  bans           UserBan[]
 
   @@index([slug])
   @@index([isActive])
@@ -119,6 +120,7 @@ model Admin {
 
   // Team invitations sent by this admin
   invitationsSent   TeamInvitation[] @relation("InvitedBy")
+  bansCreated       UserBan[]
 
   @@index([email])
   @@index([schoolId])
@@ -192,6 +194,9 @@ model Event {
   cancellationDeadlineHours   Int            @default(2)
   requireCancellationReason   Boolean        @default(false)
 
+  // Check-in management
+  checkInToken                String?        @unique  // Secret token for shareable check-in URL
+
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
   registrations     Registration[]
@@ -201,6 +206,7 @@ model Event {
   @@index([schoolId])
   @@index([schoolId, status])
   @@index([eventType])
+  @@index([checkInToken])
 }
 
 enum EventType {
@@ -230,6 +236,10 @@ model Registration {
   cancellationReason String?
   cancelledBy        CancellationSource   @default(CUSTOMER)
 
+  // Check-in
+  qrCode             String?              @unique  // QR code for this registration
+  checkIn            CheckIn?
+
   createdAt    DateTime             @default(now())
   updatedAt    DateTime             @updatedAt
 
@@ -240,6 +250,7 @@ model Registration {
   @@index([eventId, phoneNumber])
   @@index([cancellationToken])
   @@index([eventId, waitlistPriority])
+  @@index([qrCode])
 }
 
 enum EventStatus {
@@ -360,4 +371,66 @@ model TableTemplate {
 
   @@index([schoolId])
   @@index([isPublic])
+}
+
+// Check-In System - Track who actually attended events
+model CheckIn {
+  id              String        @id @default(cuid())
+  registrationId  String        @unique  // One check-in per registration
+  registration    Registration  @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+
+  checkedInAt     DateTime      @default(now())
+  checkedInBy     String?       // Name/identifier of person who checked them in (free text)
+
+  // Undo support (in case of mistake)
+  undoneAt        DateTime?
+  undoneBy        String?
+  undoneReason    String?
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([registrationId])
+  @@index([checkedInAt])
+}
+
+// User Ban System - Ban users from registering for events
+model UserBan {
+  id              String   @id @default(cuid())
+
+  // User identification (phone-based for Israeli market)
+  phoneNumber     String
+  email           String?
+  name            String?  // For display in ban list
+
+  // Ban details
+  schoolId        String   // School-specific bans
+  school          School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  reason          String   // Free text reason (e.g., "לא הגיע ל-3 משחקים רצופים")
+  bannedGamesCount Int     @default(3) // How many events they're banned from
+
+  // Ban period
+  bannedAt        DateTime @default(now())
+  expiresAt       DateTime?  // Optional expiration date (null = count-based)
+
+  // Track which events they've been banned from attending
+  eventsBlocked   Int      @default(0) // Counter for game-based bans
+
+  // Admin control
+  active          Boolean  @default(true)
+  liftedAt        DateTime?
+  liftedBy        String?  // Admin who lifted the ban
+  liftedReason    String?  // Why ban was lifted early
+
+  // Metadata
+  createdBy       String
+  admin           Admin    @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([phoneNumber, schoolId, active])
+  @@index([schoolId, active])
+  @@index([expiresAt])
 }

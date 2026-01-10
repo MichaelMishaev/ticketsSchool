@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test'
 import { prisma } from '@/lib/prisma'
-import { cleanupTestData, createSchool, createAdmin, createEvent, createRegistration, loginAsAdmin } from '../fixtures/test-data'
+import { cleanupTestData, createSchool, createAdmin, createEvent, createRegistration } from '../fixtures/test-data'
 import { generateCheckInToken } from '@/lib/check-in-token'
+import { generateEmail, generateSchoolName } from '../helpers/test-helpers'
+import { loginViaUI } from '../helpers/auth-helpers'
 
 test.describe('Attendance & Ban Management (P0)', () => {
   test.afterAll(async () => {
@@ -10,10 +12,10 @@ test.describe('Attendance & Ban Management (P0)', () => {
 
   test('should display attendance review page with no-shows', async ({ page }) => {
     // Setup
-    const school = await createSchool().withName('Test School').create()
+    const school = await createSchool().withName(generateSchoolName()).create()
     const admin = await createAdmin()
       .withSchool(school.id)
-      .withEmail('admin@test.com')
+      .withEmail(generateEmail('attendance-admin'))
       .withPassword('Password123!')
       .create()
 
@@ -44,7 +46,7 @@ test.describe('Attendance & Ban Management (P0)', () => {
     })
 
     // Login and visit attendance page
-    await loginAsAdmin(page, admin.email, 'Password123!')
+    await loginViaUI(page, admin.email, 'Password123!')
     await page.goto(`/admin/events/${event.id}/attendance`)
 
     // Should see stats
@@ -62,10 +64,10 @@ test.describe('Attendance & Ban Management (P0)', () => {
 
   test('should load attendance history on demand', async ({ page }) => {
     // Setup
-    const school = await createSchool().withName('Test School 2').create()
+    const school = await createSchool().withName(generateSchoolName()).create()
     const admin = await createAdmin()
       .withSchool(school.id)
-      .withEmail('admin2@test.com')
+      .withEmail(generateEmail('attendance-admin'))
       .withPassword('Password123!')
       .create()
 
@@ -113,7 +115,7 @@ test.describe('Attendance & Ban Management (P0)', () => {
       .create()
 
     // Login and visit attendance page
-    await loginAsAdmin(page, 'admin2@test.com', 'Password123!')
+    await loginViaUI(page, admin.email, 'Password123!')
     await page.goto(`/admin/events/${currentEvent.id}/attendance`)
 
     // Find the no-show user
@@ -130,10 +132,10 @@ test.describe('Attendance & Ban Management (P0)', () => {
 
   test('should create game-based ban for selected users', async ({ page }) => {
     // Setup
-    const school = await createSchool().withName('Test School 3').create()
+    const school = await createSchool().withName(generateSchoolName()).create()
     const admin = await createAdmin()
       .withSchool(school.id)
-      .withEmail('admin3@test.com')
+      .withEmail(generateEmail('attendance-admin'))
       .withPassword('Password123!')
       .create()
 
@@ -156,7 +158,7 @@ test.describe('Attendance & Ban Management (P0)', () => {
       .create()
 
     // Login and visit attendance page
-    await loginAsAdmin(page, 'admin3@test.com', 'Password123!')
+    await loginViaUI(page, admin.email, 'Password123!')
     await page.goto(`/admin/events/${event.id}/attendance`)
 
     // Select both users
@@ -196,10 +198,10 @@ test.describe('Attendance & Ban Management (P0)', () => {
 
   test('should create date-based ban', async ({ page }) => {
     // Setup
-    const school = await createSchool().withName('Test School 4').create()
+    const school = await createSchool().withName(generateSchoolName()).create()
     const admin = await createAdmin()
       .withSchool(school.id)
-      .withEmail('admin4@test.com')
+      .withEmail(generateEmail('attendance-admin'))
       .withPassword('Password123!')
       .create()
 
@@ -215,7 +217,7 @@ test.describe('Attendance & Ban Management (P0)', () => {
       .create()
 
     // Login and visit attendance page
-    await loginAsAdmin(page, 'admin4@test.com', 'Password123!')
+    await loginViaUI(page, admin.email, 'Password123!')
     await page.goto(`/admin/events/${event.id}/attendance`)
 
     // Select user and open ban modal
@@ -248,10 +250,10 @@ test.describe('Attendance & Ban Management (P0)', () => {
 
   test('should display ban management page with filters', async ({ page }) => {
     // Setup
-    const school = await createSchool().withName('Test School 5').create()
+    const school = await createSchool().withName(generateSchoolName()).create()
     const admin = await createAdmin()
       .withSchool(school.id)
-      .withEmail('admin5@test.com')
+      .withEmail(generateEmail('attendance-admin'))
       .withPassword('Password123!')
       .create()
 
@@ -289,7 +291,7 @@ test.describe('Attendance & Ban Management (P0)', () => {
     })
 
     // Login and visit ban management page
-    await loginAsAdmin(page, 'admin5@test.com', 'Password123!')
+    await loginViaUI(page, admin.email, 'Password123!')
     await page.goto('/admin/settings/bans')
 
     // Should see active ban
@@ -312,10 +314,10 @@ test.describe('Attendance & Ban Management (P0)', () => {
 
   test('should lift ban with reason', async ({ page }) => {
     // Setup
-    const school = await createSchool().withName('Test School 6').create()
+    const school = await createSchool().withName(generateSchoolName()).create()
     const admin = await createAdmin()
       .withSchool(school.id)
-      .withEmail('admin6@test.com')
+      .withEmail(generateEmail('attendance-admin'))
       .withPassword('Password123!')
       .create()
 
@@ -335,7 +337,7 @@ test.describe('Attendance & Ban Management (P0)', () => {
     })
 
     // Login and visit ban management page
-    await loginAsAdmin(page, 'admin6@test.com', 'Password123!')
+    await loginViaUI(page, admin.email, 'Password123!')
     await page.goto('/admin/settings/bans')
 
     // Find ban and click lift button
@@ -366,10 +368,10 @@ test.describe('Attendance & Ban Management (P0)', () => {
 
   test('should search bans by phone', async ({ page }) => {
     // Setup
-    const school = await createSchool().withName('Test School 7').create()
+    const school = await createSchool().withName(generateSchoolName()).create()
     const admin = await createAdmin()
       .withSchool(school.id)
-      .withEmail('admin7@test.com')
+      .withEmail(generateEmail('attendance-admin'))
       .withPassword('Password123!')
       .create()
 
@@ -399,7 +401,7 @@ test.describe('Attendance & Ban Management (P0)', () => {
     })
 
     // Login and visit ban management page
-    await loginAsAdmin(page, 'admin7@test.com', 'Password123!')
+    await loginViaUI(page, admin.email, 'Password123!')
     await page.goto('/admin/settings/bans')
 
     // Should see both bans initially
