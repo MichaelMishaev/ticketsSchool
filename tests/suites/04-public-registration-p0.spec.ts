@@ -428,6 +428,7 @@ test.describe('Public Registration P0 - Critical Tests', () => {
         .create()
 
       // Create actual registrations to occupy 13 spots (leaving 7 available)
+      const timestamp = Date.now()
       await prisma.registration.createMany({
         data: [
           {
@@ -436,7 +437,7 @@ test.describe('Public Registration P0 - Critical Tests', () => {
             data: { name: 'User 1', email: 'user1@test.com', phone: '0501111111' },
             spotsCount: 5,
             status: 'CONFIRMED',
-            confirmationCode: 'CODE1A',
+            confirmationCode: `CODE1-${timestamp}`,
           },
           {
             eventId: event.id,
@@ -444,7 +445,7 @@ test.describe('Public Registration P0 - Critical Tests', () => {
             data: { name: 'User 2', email: 'user2@test.com', phone: '0502222222' },
             spotsCount: 5,
             status: 'CONFIRMED',
-            confirmationCode: 'CODE2A',
+            confirmationCode: `CODE2-${timestamp}`,
           },
           {
             eventId: event.id,
@@ -452,9 +453,14 @@ test.describe('Public Registration P0 - Critical Tests', () => {
             data: { name: 'User 3', email: 'user3@test.com', phone: '0503333333' },
             spotsCount: 3,
             status: 'CONFIRMED',
-            confirmationCode: 'CODE3A',
+            confirmationCode: `CODE3-${timestamp}`,
           },
         ],
+      })
+      // Update spotsReserved counter
+      await prisma.event.update({
+        where: { id: event.id },
+        data: { spotsReserved: { increment: 13 } },
       })
       // Total: 5 + 5 + 3 = 13 spots taken, 7 spots available
 
@@ -494,11 +500,47 @@ test.describe('Public Registration P0 - Critical Tests', () => {
         .withTitle('Five Spots Event')
         .withSlug(`five-spots-${Date.now()}`)
         .withSchool(school.id)
-        .withCapacity(10)
-        .withSpotsReserved(5) // Only 5 spots available
+        .withCapacity(20)
         .withMaxSpotsPerPerson(10) // Ensure max is high enough
         .inFuture()
         .create()
+
+      // Create actual registrations to occupy 15 spots (leaving 5 available)
+      const timestamp = Date.now()
+      await prisma.registration.createMany({
+        data: [
+          {
+            eventId: event.id,
+            phoneNumber: '0501111111',
+            data: { name: 'User 1', email: 'user1@test.com', phone: '0501111111' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE1-${timestamp}`,
+          },
+          {
+            eventId: event.id,
+            phoneNumber: '0502222222',
+            data: { name: 'User 2', email: 'user2@test.com', phone: '0502222222' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE2-${timestamp}`,
+          },
+          {
+            eventId: event.id,
+            phoneNumber: '0503333333',
+            data: { name: 'User 3', email: 'user3@test.com', phone: '0503333333' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE3-${timestamp}`,
+          },
+        ],
+      })
+      // Update spotsReserved counter
+      await prisma.event.update({
+        where: { id: event.id },
+        data: { spotsReserved: { increment: 15 } },
+      })
+      // Total: 5 + 5 + 5 = 15 spots taken, 5 spots available
 
       const publicPage = new PublicEventPage(page)
       await publicPage.goto(school.slug, event.slug)
@@ -530,11 +572,55 @@ test.describe('Public Registration P0 - Critical Tests', () => {
         .withSlug(`full-waitlist-${Date.now()}`)
         .withSchool(school.id)
         .withCapacity(20)
-        .withSpotsReserved(20) // FULL - 0 spots available
         .withMaxSpotsPerPerson(20) // Ensure max is high enough
         .full()
         .inFuture()
         .create()
+
+      // Create actual registrations to occupy all 20 spots (FULL)
+      const timestamp = Date.now()
+      await prisma.registration.createMany({
+        data: [
+          {
+            eventId: event.id,
+            phoneNumber: '0501111111',
+            data: { name: 'User 1', email: 'user1@test.com', phone: '0501111111' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE1-${timestamp}`,
+          },
+          {
+            eventId: event.id,
+            phoneNumber: '0502222222',
+            data: { name: 'User 2', email: 'user2@test.com', phone: '0502222222' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE2-${timestamp}`,
+          },
+          {
+            eventId: event.id,
+            phoneNumber: '0503333333',
+            data: { name: 'User 3', email: 'user3@test.com', phone: '0503333333' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE3-${timestamp}`,
+          },
+          {
+            eventId: event.id,
+            phoneNumber: '0504444444',
+            data: { name: 'User 4', email: 'user4@test.com', phone: '0504444444' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE4-${timestamp}`,
+          },
+        ],
+      })
+      // Update spotsReserved counter
+      await prisma.event.update({
+        where: { id: event.id },
+        data: { spotsReserved: { increment: 20 } },
+      })
+      // Total: 5 + 5 + 5 + 5 = 20 spots taken, 0 spots available (FULL)
 
       const publicPage = new PublicEventPage(page)
       await publicPage.goto(school.slug, event.slug)
@@ -570,10 +656,38 @@ test.describe('Public Registration P0 - Critical Tests', () => {
         .withSlug(`limited-person-${Date.now()}`)
         .withSchool(school.id)
         .withCapacity(20)
-        .withSpotsReserved(10) // 10 spots available
         .withMaxSpotsPerPerson(3) // Max 3 per person
         .inFuture()
         .create()
+
+      // Create actual registrations to occupy 10 spots (leaving 10 available)
+      const timestamp = Date.now()
+      await prisma.registration.createMany({
+        data: [
+          {
+            eventId: event.id,
+            phoneNumber: '0501111111',
+            data: { name: 'User 1', email: 'user1@test.com', phone: '0501111111' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE1-${timestamp}`,
+          },
+          {
+            eventId: event.id,
+            phoneNumber: '0502222222',
+            data: { name: 'User 2', email: 'user2@test.com', phone: '0502222222' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE2-${timestamp}`,
+          },
+        ],
+      })
+      // Update spotsReserved counter
+      await prisma.event.update({
+        where: { id: event.id },
+        data: { spotsReserved: { increment: 10 } },
+      })
+      // Total: 5 + 5 = 10 spots taken, 10 spots available
 
       const publicPage = new PublicEventPage(page)
       await publicPage.goto(school.slug, event.slug)
@@ -613,10 +727,29 @@ test.describe('Public Registration P0 - Critical Tests', () => {
         .withSlug(`dynamic-spots-${Date.now()}`)
         .withSchool(school.id)
         .withCapacity(10)
-        .withSpotsReserved(5) // 5 spots available
         .withMaxSpotsPerPerson(10) // Ensure max is high enough
         .inFuture()
         .create()
+
+      // Create actual registration to occupy 5 spots (leaving 5 available)
+      const timestamp = Date.now()
+      await prisma.$transaction([
+        prisma.registration.create({
+          data: {
+            eventId: event.id,
+            phoneNumber: '0501111111',
+            data: { name: 'Initial User', email: 'initial@test.com', phone: '0501111111' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE1-${timestamp}`,
+          },
+        }),
+        prisma.event.update({
+          where: { id: event.id },
+          data: { spotsReserved: { increment: 5 } },
+        }),
+      ])
+      // Total: 5 spots taken, 5 spots available
 
       // User 1: Register for 3 spots
       const context1 = await browser.newContext()
@@ -665,18 +798,46 @@ test.describe('Public Registration P0 - Critical Tests', () => {
         .withSlug(`zero-spots-${Date.now()}`)
         .withSchool(school.id)
         .withCapacity(10)
-        .withSpotsReserved(10) // FULL
         .withMaxSpotsPerPerson(10) // Ensure max is high enough
         .full()
         .inFuture()
         .create()
+
+      // Create actual registrations to occupy all 10 spots (FULL)
+      const timestamp = Date.now()
+      await prisma.registration.createMany({
+        data: [
+          {
+            eventId: event.id,
+            phoneNumber: '0501111111',
+            data: { name: 'User 1', email: 'user1@test.com', phone: '0501111111' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE1-${timestamp}`,
+          },
+          {
+            eventId: event.id,
+            phoneNumber: '0502222222',
+            data: { name: 'User 2', email: 'user2@test.com', phone: '0502222222' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE2-${timestamp}`,
+          },
+        ],
+      })
+      // Update spotsReserved counter
+      await prisma.event.update({
+        where: { id: event.id },
+        data: { spotsReserved: { increment: 10 } },
+      })
+      // Total: 5 + 5 = 10 spots taken, 0 spots available (FULL)
 
       const publicPage = new PublicEventPage(page)
       await publicPage.goto(school.slug, event.slug)
 
       // Should show event is full (may go to waitlist instead)
       // Check if registration is for waitlist
-      const isWaitlistText = await page.locator('text=/רשימת המתנה|waitlist/i').isVisible()
+      const isWaitlistText = await page.locator('text=/רשימת המתנה|waitlist/i').first().isVisible()
 
       if (!isWaitlistText) {
         // If not waitlist, should show full message
@@ -706,10 +867,28 @@ test.describe('Public Registration P0 - Critical Tests', () => {
         .withSlug(`one-spot-${Date.now()}`)
         .withSchool(school.id)
         .withCapacity(10)
-        .withSpotsReserved(9) // Only 1 spot available
         .withMaxSpotsPerPerson(10) // Ensure max is high enough
         .inFuture()
         .create()
+
+      // Create actual registration to occupy 9 spots (leaving 1 available)
+      const timestamp = Date.now()
+      await prisma.registration.create({
+        data: {
+          eventId: event.id,
+          phoneNumber: '0501111111',
+          data: { name: 'User 1', email: 'user1@test.com', phone: '0501111111' },
+          spotsCount: 9,
+          status: 'CONFIRMED',
+          confirmationCode: `CODE1-${timestamp}`,
+        },
+      })
+      // Update spotsReserved counter
+      await prisma.event.update({
+        where: { id: event.id },
+        data: { spotsReserved: { increment: 9 } },
+      })
+      // Total: 9 spots taken, 1 spot available
 
       const publicPage = new PublicEventPage(page)
       await publicPage.goto(school.slug, event.slug)
