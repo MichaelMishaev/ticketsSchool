@@ -47,6 +47,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validate schoolId exists for non-SUPER_ADMIN (CRIT-4 fix)
+    if (admin.role !== 'SUPER_ADMIN') {
+      if (!admin.schoolId) {
+        console.error('[Team Invitations] INVARIANT VIOLATION: Non-SUPER_ADMIN has no schoolId', {
+          adminId: admin.adminId,
+          email: admin.email,
+          role: admin.role
+        })
+        return NextResponse.json(
+          { error: 'Admin must have a school assigned' },
+          { status: 403 }
+        )
+      }
+    }
+
     // Check if admin already exists with this email
     const existingAdmin = await prisma.admin.findUnique({
       where: { email: email.toLowerCase() }
