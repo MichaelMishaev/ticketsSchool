@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import * as jwt from 'jsonwebtoken'
 import { sendPasswordResetEmail } from '@/lib/email'
+import { rateLimit } from '@/lib/rate-limiter'
+
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  maxAttempts: 3, // Lower limit for password reset
+  blockDurationMs: 60 * 60 * 1000, // 1 hour lockout
+})
 
 // Lazy getter for JWT_SECRET - only validates when actually used (not at import time)
 function getJWTSecret(): string {
@@ -13,14 +20,13 @@ function getJWTSecret(): string {
 }
 
 export async function POST(request: NextRequest) {
+  const rateLimitResponse = await forgotPasswordLimiter(request)
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const { email } = await request.json()
 
     if (!email) {
-      return NextResponse.json(
-        { error: 'כתובת מייל חסרה' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'כתובת מייל חסרה' }, { status: 400 })
     }
 
     // Find admin by email
@@ -46,11 +52,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate reset token (1 hour expiry)
-    const resetToken = jwt.sign(
-      { email: email.toLowerCase(), adminId: admin.id },
-      getJWTSecret(),
-      { expiresIn: '1h' }
-    )
+    const resetToken = jwt.sign({ email: email.toLowerCase(), adminId: admin.id }, getJWTSecret(), {
+      expiresIn: '1h',
+    })
 
     // Set token expiry
     const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
@@ -65,11 +69,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Send password reset email
-    const emailSent = await sendPasswordResetEmail(
-      admin.email,
-      resetToken,
-      admin.name
-    )
+    const emailSent = await sendPasswordResetEmail(admin.email, resetToken, admin.name)
 
     if (!emailSent) {
       console.warn('Password reset email failed to send')
@@ -82,9 +82,6 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Forgot password error:', error)
-    return NextResponse.json(
-      { error: 'שגיאה בשליחת המייל. נסה שוב.' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'שגיאה בשליחת המייל. נסה שוב.' }, { status: 500 })
   }
 }

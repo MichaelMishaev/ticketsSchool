@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin, encodeSession, SESSION_COOKIE_NAME, AuthSession } from '@/lib/auth.server'
+import { randomUUID } from 'crypto'
 
 interface OnboardingRequest {
   schoolName: string
@@ -12,10 +13,7 @@ export async function POST(request: NextRequest) {
     // Check authentication
     const currentAdmin = await getCurrentAdmin()
     if (!currentAdmin) {
-      return NextResponse.json(
-        { error: 'לא מחובר' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'לא מחובר' }, { status: 401 })
     }
 
     console.log('[Onboarding] Starting onboarding for admin:', currentAdmin.adminId)
@@ -25,10 +23,7 @@ export async function POST(request: NextRequest) {
 
     // Validation
     if (!schoolName || !schoolSlug) {
-      return NextResponse.json(
-        { error: 'חסרים שדות חובה' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'חסרים שדות חובה' }, { status: 400 })
     }
 
     // Validate school slug (alphanumeric, hyphens only)
@@ -45,8 +40,8 @@ export async function POST(request: NextRequest) {
       where: {
         name: {
           equals: schoolName,
-          mode: 'insensitive'
-        }
+          mode: 'insensitive',
+        },
       },
     })
 
@@ -63,10 +58,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (existingSchool) {
-      return NextResponse.json(
-        { error: 'הקישור הזה כבר תפוס, בחר קישור אחר' },
-        { status: 409 }
-      )
+      return NextResponse.json({ error: 'הקישור הזה כבר תפוס, בחר קישור אחר' }, { status: 409 })
     }
 
     // Create school and update admin in a transaction
@@ -135,7 +127,7 @@ export async function POST(request: NextRequest) {
     return response
   } catch (error) {
     // Log full error details server-side only
-    const requestId = crypto.randomUUID()
+    const requestId = randomUUID()
     console.error('[Onboarding] ERROR - Request ID:', requestId)
     console.error('[Onboarding] Error:', error)
     console.error('[Onboarding] Error details:', {
@@ -148,7 +140,7 @@ export async function POST(request: NextRequest) {
       {
         error: 'שגיאה ביצירת הארגון. נסה שוב מאוחר יותר.',
         requestId, // For support tracking only
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     )

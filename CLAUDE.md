@@ -4,9 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-TicketCap is a multi-tenant event registration system built for Israeli schools, clubs, and organizations managing limited-capacity events (especially sports/soccer). The system features atomic capacity enforcement, waitlist management, real-time registration tracking, payment processing (YaadPay), and Hebrew RTL interface.
+kartis.info is a multi-tenant event registration system built for Israeli schools, clubs, and organizations managing limited-capacity events (especially sports/soccer). The system features atomic capacity enforcement, waitlist management, real-time registration tracking, payment processing (YaadPay), and Hebrew RTL interface.
 
 **Tech Stack:**
+
 - Next.js 15.5.3 (App Router) with TypeScript (strict mode)
 - React 19.1.0
 - Prisma 6.16.2 with PostgreSQL
@@ -51,22 +52,21 @@ npm run lint:fix               # Auto-fix ESLint issues
 **JWT-based multi-tenancy with school-level data isolation.** This is the most critical architectural concept:
 
 **Session Management** (`/lib/auth.server.ts`):
+
 - JWT tokens in HTTP-only cookies (`admin_session`)
 - Session contains: `adminId`, `email`, `role`, `schoolId`, `schoolName`
 - Uses `jsonwebtoken` (Server Components) and `jose` (Edge Runtime/Middleware)
 - Secret: `JWT_SECRET` environment variable (REQUIRED - no fallback)
 
 **Data Filtering Pattern (MANDATORY in ALL API routes):**
+
 ```typescript
 // CORRECT - Enforce schoolId for non-super admins
 if (admin.role !== 'SUPER_ADMIN') {
   if (!admin.schoolId) {
-    return NextResponse.json(
-      { error: 'Admin must have a school assigned' },
-      { status: 403 }
-    )
+    return NextResponse.json({ error: 'Admin must have a school assigned' }, { status: 403 })
   }
-  where.schoolId = admin.schoolId  // Filter by school
+  where.schoolId = admin.schoolId // Filter by school
 }
 
 // WRONG - Silent bypass if schoolId is undefined
@@ -76,11 +76,13 @@ if (admin.role !== 'SUPER_ADMIN' && admin.schoolId) {
 ```
 
 **Session Updates:**
+
 - ALWAYS update session cookie when `schoolId` changes (e.g., after onboarding)
 - Use `encodeSession()` and `SESSION_COOKIE_NAME` from `/lib/auth.server.ts`
 - Set session on NextResponse object before returning
 
 **Middleware Protection** (`/middleware.ts`):
+
 - Protects `/admin/*` and `/api/*` routes
 - Public paths: `/api/auth/*`, `/api/admin/signup`, `/api/admin/login`, `/p/*`
 - Uses `jose` library (Edge Runtime compatible)
@@ -117,6 +119,7 @@ await prisma.$transaction(async (tx) => {
 **YaadPay Integration** for upfront event payments:
 
 **Mock Mode (Local Development):**
+
 - Set `YAADPAY_MOCK_MODE="true"` in `.env` to bypass YaadPay gateway
 - Simulates successful payments without external API calls
 - Shows green screen with "🧪 MOCK MODE - Development Only" badge
@@ -125,12 +128,14 @@ await prisma.$transaction(async (tx) => {
 - **REQUIRED for localhost** (YaadPay validates domain and can't reach localhost)
 
 **Production Mode:**
+
 - Set `YAADPAY_MOCK_MODE="false"` or remove the variable
 - Requires YaadPay credentials: MASOF, API_SECRET, DOMAIN_ID
 - Domain must be whitelisted in YaadPay dashboard
 - Callback URLs must be publicly accessible
 
 **Payment Flow:**
+
 ```
 User submits registration
 ↓
@@ -157,6 +162,7 @@ Redirect to /payment/success?code=[confirmationCode]
 ```
 
 **Key Files:**
+
 - `/lib/yaadpay.ts` - YaadPay client library
 - `/app/api/payment/create/route.ts` - Payment creation (lines 299-394 for mock mode)
 - `/app/api/payment/callback/route.ts` - Payment callback handler
@@ -165,6 +171,7 @@ Redirect to /payment/success?code=[confirmationCode]
 ### Database Schema (Prisma)
 
 **Core Models:**
+
 - `School` - Multi-tenant organization (has unique slug)
 - `Admin` - User accounts (linked to School via schoolId)
 - `Event` - Events with capacity and custom fields
@@ -189,6 +196,7 @@ Redirect to /payment/success?code=[confirmationCode]
 ### Role-Based Access Control
 
 Roles (from most to least privileged):
+
 - `SUPER_ADMIN` - Platform owner, access to all schools
 - `OWNER` - School owner, billing & team management
 - `ADMIN` - School admin, all event operations
@@ -196,6 +204,7 @@ Roles (from most to least privileged):
 - `VIEWER` - School viewer, read-only access
 
 **Authorization helpers** (`/lib/auth.server.ts`):
+
 - `getCurrentAdmin()` - Get session (returns null if not authenticated)
 - `requireAdmin()` - Throws if not authenticated
 - `requireSuperAdmin()` - Throws if not SUPER_ADMIN
@@ -228,12 +237,14 @@ See `/docs/features/table-management.md` for full documentation.
 ### E2E Testing with Playwright
 
 **Test Status (Suite 08 - Event Tabs Navigation):**
+
 - ✅ 38/38 tests passing (100%)
 - Desktop Chrome: 14/14 passing
 - Mobile Chrome: 12/12 passing
 - Mobile Safari: 12/12 passing
 
 **Critical Pattern - Avoid Force Clicks:**
+
 ```typescript
 // WRONG - Bypasses React event handlers
 await page.click('[role="tab"]', { force: true })
@@ -243,6 +254,7 @@ await page.locator('[role="tab"]').evaluate((el: any) => el.click())
 ```
 
 **Running Tests:**
+
 ```bash
 npm test                       # All tests
 npm run test:mobile            # Mobile viewports only
@@ -251,6 +263,7 @@ npx playwright test -g "should switch tabs on mobile"  # Single test
 ```
 
 **Test Configuration** (`playwright.config.ts`):
+
 - Sequential execution (`workers: 1`, `fullyParallel: false`)
 - Projects: Desktop Chrome, Mobile Chrome (Pixel 5), Mobile Safari (iPhone 12)
 - Mobile Safari has automatic retries (2 attempts) for flaky login timeouts
@@ -258,6 +271,7 @@ npx playwright test -g "should switch tabs on mobile"  # Single test
 
 **Writing Tests:**
 Use page objects and fixtures for consistency:
+
 ```typescript
 import { test, expect } from '@playwright/test'
 import { LoginPage } from '../page-objects/LoginPage'
@@ -265,7 +279,7 @@ import { createSchool, createAdmin, cleanupTestData } from '../fixtures/test-dat
 
 test.describe('My Feature', () => {
   test.afterAll(async () => {
-    await cleanupTestData()  // ALWAYS cleanup
+    await cleanupTestData() // ALWAYS cleanup
   })
 
   test('should do something', async ({ page }) => {
@@ -282,6 +296,7 @@ test.describe('My Feature', () => {
 ```
 
 **Mobile Testing Notes:**
+
 - Keyboard navigation tests are skipped on mobile (not applicable to touch devices)
 - Use `:visible` selector for viewport-agnostic element targeting
 - Pulsing indicators require both desktop and mobile to have matching components
@@ -293,11 +308,13 @@ See `/tests/README.md` for comprehensive testing guide.
 ### Next.js 15 Specific
 
 **Async Components:**
+
 - Server Components can be async (use `async` keyword freely)
 - Use `await cookies()` and `await headers()` in Server Components
 - API routes: `export async function POST(request: Request)` (synchronous export)
 
 **Cookie Management:**
+
 - Server Components: `const cookieStore = await cookies(); cookieStore.get('name')`
 - API routes with redirects: Set cookies on NextResponse object
   ```typescript
@@ -307,12 +324,14 @@ See `/tests/README.md` for comprehensive testing guide.
   ```
 
 **Middleware:**
+
 - Uses `jose` library (Edge Runtime compatible, not `jsonwebtoken`)
 - Convert JWT secret: `new TextEncoder().encode(secret)`
 
 ### Phone Number Normalization
 
 Israeli phone format (10 digits starting with 0):
+
 ```typescript
 function normalizePhone(phone: string): string {
   let normalized = phone.replace(/[\s\-\(\)]/g, '')
@@ -348,20 +367,19 @@ function normalizePhone(phone: string): string {
 ### API Error Handling
 
 Standard pattern:
+
 ```typescript
 try {
   // ... operation
   return NextResponse.json({ success: true, data })
 } catch (error) {
   console.error('Operation failed:', error)
-  return NextResponse.json(
-    { error: 'User-friendly Hebrew message' },
-    { status: 500 }
-  )
+  return NextResponse.json({ error: 'User-friendly Hebrew message' }, { status: 500 })
 }
 ```
 
 **Status codes:**
+
 - 200 - Success
 - 400 - Bad request (validation error)
 - 401 - Unauthorized (not logged in)
@@ -372,12 +390,14 @@ try {
 ## Environment Variables
 
 **Required:**
+
 - `DATABASE_URL` - PostgreSQL connection string
 - `JWT_SECRET` - JWT signing secret (min 32 chars, generate: `openssl rand -base64 32`)
 - `RESEND_API_KEY` - Email service API key (https://resend.com/api-keys)
 - `EMAIL_FROM` - From address (must be verified domain in production)
 
 **Payment Gateway (YaadPay):**
+
 - `YAADPAY_MASOF` - Terminal number
 - `YAADPAY_API_SECRET` - API secret (DO NOT SHARE)
 - `YAADPAY_DOMAIN_ID` - Domain ID
@@ -386,11 +406,13 @@ try {
 - `YAADPAY_MOCK_MODE` - Set to "true" for local development (bypasses YaadPay)
 
 **Optional:**
+
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` - Google OAuth
 - `NEXT_PUBLIC_BASE_URL` - Public base URL (default: http://localhost:9000)
 - `NEXT_PUBLIC_GA_MEASUREMENT_ID` - Google Analytics
 
 **Production (Railway):**
+
 - `DATABASE_URL` auto-provided by Railway PostgreSQL service
 - Set `JWT_SECRET` manually before first deploy
 - Verify domain at resend.com/domains for email sending
@@ -399,6 +421,7 @@ try {
 ## Database Operations
 
 **Local Development:**
+
 ```bash
 docker-compose up -d           # Start PostgreSQL (port 6000)
 npx prisma generate            # Generate Prisma client
@@ -407,10 +430,12 @@ npx prisma studio              # Open GUI
 ```
 
 **Connection:**
+
 - Local: `postgres://ticketcap_user:ticketcap_password@localhost:6000/ticketcap`
 - Production: Uses `DATABASE_URL` from Railway
 
 **Migrations:**
+
 ```bash
 # Development
 npx prisma migrate dev --name descriptive_name
@@ -420,6 +445,7 @@ railway run npm run db:migrate
 ```
 
 **Schema Changes:**
+
 - Always commit schema changes in separate commit
 - Update test fixtures in `/tests/fixtures/test-data.ts` for new models
 - Restart dev server after migrations to pick up new types
@@ -427,11 +453,13 @@ railway run npm run db:migrate
 ## Production Deployment (Railway)
 
 **Current Setup:**
+
 - Project: TicketsSchool
 - Service: Tickets_Pre_Prod
 - Database: PostgreSQL (auto-provided)
 
 **Railway CLI:**
+
 ```bash
 railway status                 # Check deployment
 railway logs --follow          # Live logs
@@ -441,12 +469,14 @@ railway open                   # Open app in browser
 ```
 
 **Build Configuration:**
+
 - Output mode: `standalone` (80% smaller Docker images)
 - Build command: `npm run build`
 - Start command: `npm run start:prod`
 - Health check: `/api/health`
 
 **Pre-Deploy Checklist:**
+
 - [ ] All tests pass (`npm test`)
 - [ ] Set `JWT_SECRET` in Railway
 - [ ] Verify email domain at resend.com
@@ -456,6 +486,7 @@ railway open                   # Open app in browser
 ## Common Workflows
 
 ### Adding a New API Endpoint
+
 1. Write test first (TDD approach)
 2. Create route file in `/app/api/[path]/route.ts`
 3. Import auth helpers: `import { requireAdmin } from '@/lib/auth.server'`
@@ -464,6 +495,7 @@ railway open                   # Open app in browser
 6. Run tests: `npm test`
 
 ### Fixing a Bug
+
 1. Document in `/docs/bugs/bugs.md`
 2. Write failing test that reproduces bug
 3. Fix the bug
@@ -472,6 +504,7 @@ railway open                   # Open app in browser
 6. Run full suite: `npm test`
 
 ### Testing Payment Flow (Local)
+
 1. Set `YAADPAY_MOCK_MODE="true"` in `.env`
 2. Restart dev server: `npm run dev`
 3. Create event with payment required (admin dashboard)
@@ -486,6 +519,7 @@ railway open                   # Open app in browser
 A world-class security specialist is available as a sub-agent to audit and protect the application.
 
 **Quick Usage:**
+
 ```bash
 # Full security audit (run before production deploy)
 /security-master --audit-all
@@ -503,6 +537,7 @@ A world-class security specialist is available as a sub-agent to audit and prote
 ```
 
 **Critical Security Checks:**
+
 1. **Multi-Tenant Isolation** - schoolId filtering in ALL API routes
 2. **Payment Security** - YaadPay callback signature validation (HMAC-SHA256)
 3. **JWT Secret** - Must be 32+ bytes, NEVER use default
@@ -510,6 +545,7 @@ A world-class security specialist is available as a sub-agent to audit and prote
 5. **Mock Mode** - YAADPAY_MOCK_MODE must be "false" or removed in production
 
 **Documentation:**
+
 - `.claude/skills/security-master/SKILL.md` - Full security guide
 - `.claude/skills/security-master/README.md` - Usage guide
 - `.claude/skills/security-master/QUICK_REFERENCE.md` - Quick reference

@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSuperAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
+import { randomUUID } from 'crypto'
 import 'server-only'
 
 export async function GET(request: NextRequest) {
@@ -62,11 +63,21 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
+    // Log full error details server-side only
+    const requestId = randomUUID()
+    console.error('[Backup QA DB] ERROR - Request ID:', requestId)
     console.error('❌ Backup failed:', error)
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    })
+
+    // Return generic error to client (no internal details exposed)
     return NextResponse.json(
       {
         error: 'Backup failed',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        requestId, // For support tracking only
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     )

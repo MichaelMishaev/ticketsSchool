@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSuperAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
+import { randomUUID } from 'crypto'
 
 /**
  * GET /api/admin/super/admins
@@ -17,15 +18,15 @@ export async function GET() {
             id: true,
             name: true,
             slug: true,
-          }
-        }
+          },
+        },
       },
       orderBy: {
-        createdAt: 'desc'
-      }
+        createdAt: 'desc',
+      },
     })
 
-    const formattedAdmins = admins.map(admin => ({
+    const formattedAdmins = admins.map((admin) => ({
       id: admin.id,
       email: admin.email,
       name: admin.name,
@@ -43,16 +44,10 @@ export async function GET() {
     console.error('Get admins error:', error)
 
     if (error instanceof Error && error.message.includes('Super admin required')) {
-      return NextResponse.json(
-        { error: 'Forbidden: Super admin access required' },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: 'Forbidden: Super admin access required' }, { status: 403 })
     }
 
-    return NextResponse.json(
-      { error: 'Failed to fetch admins' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch admins' }, { status: 500 })
   }
 }
 
@@ -71,19 +66,13 @@ export async function DELETE(request: NextRequest) {
       body = await request.json()
     } catch (parseError) {
       console.error('Failed to parse request body:', parseError)
-      return NextResponse.json(
-        { error: 'Invalid request body. Expected JSON.' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Invalid request body. Expected JSON.' }, { status: 400 })
     }
 
     const { adminId, email } = body
 
     if (!adminId && !email) {
-      return NextResponse.json(
-        { error: 'Either adminId or email is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Either adminId or email is required' }, { status: 400 })
     }
 
     // Find the admin first to return info
@@ -99,37 +88,28 @@ export async function DELETE(request: NextRequest) {
               select: {
                 events: true,
                 admins: true,
-              }
-            }
-          }
-        }
-      }
+              },
+            },
+          },
+        },
+      },
     })
 
     if (!adminToDelete) {
-      return NextResponse.json(
-        { error: 'Admin not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Admin not found' }, { status: 404 })
     }
 
     // Prevent deleting yourself
     if (adminToDelete.id === currentAdmin.adminId) {
-      return NextResponse.json(
-        { error: 'Cannot delete your own admin account' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Cannot delete your own admin account' }, { status: 400 })
     }
 
     // Prevent deleting other SUPER_ADMIN users
     if (adminToDelete.role === 'SUPER_ADMIN') {
-      return NextResponse.json(
-        { error: 'Cannot delete SUPER_ADMIN users' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Cannot delete SUPER_ADMIN users' }, { status: 400 })
     }
 
-    let deletionResult = {
+    const deletionResult = {
       adminDeleted: {
         id: adminToDelete.id,
         email: adminToDelete.email,
@@ -141,7 +121,7 @@ export async function DELETE(request: NextRequest) {
         slug: string
         eventsDeleted: number
         adminsDeleted: number
-      } | null
+      } | null,
     }
 
     // CASCADE DELETE: If admin has a school, delete the entire school (and all events, registrations, etc.)
@@ -158,60 +138,71 @@ export async function DELETE(request: NextRequest) {
       // Delete the school (Prisma cascade deletes will handle events, registrations, admins, etc.)
       // Note: This will also cascade delete the admin, so we don't need to delete it separately
       await prisma.school.delete({
-        where: { id: adminToDelete.schoolId }
+        where: { id: adminToDelete.schoolId },
       })
 
       deletionResult.schoolDeleted = schoolInfo
     } else {
       // If no school, just delete the admin
       await prisma.admin.delete({
-        where: { id: adminToDelete.id }
+        where: { id: adminToDelete.id },
       })
     }
 
     return NextResponse.json({
       success: true,
-      ...deletionResult
+      ...deletionResult,
     })
   } catch (error) {
+    // Log full error details server-side only
+    const requestId = randomUUID()
+    console.error('[Super Admin DELETE] ERROR - Request ID:', requestId)
     console.error('Delete admin error:', error)
-    
-    // Log more details for debugging
     if (error instanceof Error) {
       console.error('Error message:', error.message)
       console.error('Error stack:', error.stack)
     }
 
     if (error instanceof Error && error.message.includes('Super admin required')) {
-      return NextResponse.json(
-        { error: 'Forbidden: Super admin access required' },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: 'Forbidden: Super admin access required' }, { status: 403 })
     }
 
-    // Handle Prisma errors
+    // Handle Prisma errors (return generic messages, log details server-side)
     if (error instanceof Error) {
       // Check for foreign key constraint errors
-      if (error.message.includes('Foreign key constraint') || error.message.includes('violates foreign key constraint')) {
+      if (
+        error.message.includes('Foreign key constraint') ||
+        error.message.includes('violates foreign key constraint')
+      ) {
         return NextResponse.json(
-          { error: 'Cannot delete admin: There are still references to this admin in the database' },
+          {
+            error: 'Cannot delete admin: There are still references to this admin in the database',
+            requestId,
+            timestamp: new Date().toISOString(),
+          },
           { status: 400 }
         )
       }
-      
+
       // Check for record not found errors
       if (error.message.includes('Record to delete does not exist')) {
         return NextResponse.json(
-          { error: 'Admin not found' },
+          {
+            error: 'Admin not found',
+            requestId,
+            timestamp: new Date().toISOString(),
+          },
           { status: 404 }
         )
       }
     }
 
+    // Return generic error to client (no internal details exposed)
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to delete admin',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        requestId, // For support tracking only
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     )

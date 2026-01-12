@@ -1,16 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { login } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
+import { rateLimit } from '@/lib/rate-limiter'
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  maxAttempts: 5,
+  blockDurationMs: 60 * 60 * 1000, // 1 hour lockout
+})
 
 export async function POST(request: NextRequest) {
+  // Apply rate limiting FIRST
+  const rateLimitResponse = await loginLimiter(request)
+  if (rateLimitResponse) return rateLimitResponse
   try {
     const { email, password } = await request.json()
 
     if (!email || !password) {
-      return NextResponse.json(
-        { error: 'נדרש אימייל וסיסמה' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'נדרש אימייל וסיסמה' }, { status: 400 })
     }
 
     let session
@@ -22,7 +29,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             error: 'המייל טרם אומת. אנא בדוק את תיבת הדואר שלך ולחץ על הקישור לאימות.',
-            errorCode: 'EMAIL_NOT_VERIFIED'
+            errorCode: 'EMAIL_NOT_VERIFIED',
           },
           { status: 403 }
         )
@@ -31,10 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'אימייל או סיסמה שגויים' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'אימייל או סיסמה שגויים' }, { status: 401 })
     }
 
     // Fetch admin data to get onboardingCompleted status
@@ -43,7 +47,7 @@ export async function POST(request: NextRequest) {
       select: {
         onboardingCompleted: true,
         schoolId: true,
-      }
+      },
     })
 
     return NextResponse.json(
@@ -57,15 +61,12 @@ export async function POST(request: NextRequest) {
           schoolId: session.schoolId,
           onboardingCompleted: adminData?.onboardingCompleted ?? false,
         },
-        message: 'התחברת בהצלחה'
+        message: 'התחברת בהצלחה',
       },
       { status: 200 }
     )
   } catch (error) {
     console.error('Login API error:', error)
-    return NextResponse.json(
-      { error: 'שגיאת שרת' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'שגיאת שרת' }, { status: 500 })
   }
 }

@@ -123,3 +123,12 @@ backups/
 *DATABASE_URL*
 *database_url*
 *db_credentials*
+
+# Backup and experimental files
+*-BACKUP-*.tsx
+*-backup.tsx
+*-redesigned.tsx
+*-improved.tsx
+*-original-backup.tsx
+new-test/
+new-restaurant/

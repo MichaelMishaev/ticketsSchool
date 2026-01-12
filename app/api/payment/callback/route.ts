@@ -5,6 +5,21 @@ import { sendRegistrationConfirmationEmail } from '@/lib/email'
 import { generateQRCodeImage } from '@/lib/qr-code'
 import { format } from 'date-fns'
 import { he } from 'date-fns/locale'
+import { Decimal } from '@prisma/client/runtime/library'
+
+// In-memory nonce tracking for callback replay protection
+const processedCallbacks = new Set<string>()
+
+// Cleanup old nonces every hour to prevent memory leak
+setInterval(
+  () => {
+    console.log(
+      `[Payment Callback] Clearing ${processedCallbacks.size} processed callbacks from memory`
+    )
+    processedCallbacks.clear()
+  },
+  60 * 60 * 1000
+)
 
 /**
  * Parse callback parameters from GET or POST request
@@ -61,7 +76,10 @@ async function handleCallback(request: NextRequest) {
     if (!validation.isValid) {
       console.error('[Payment Callback] Invalid callback:', validation.errorMessage)
       return NextResponse.redirect(
-        new URL(`/payment/failed?error=${encodeURIComponent(validation.errorMessage || 'Invalid callback')}`, request.url)
+        new URL(
+          `/payment/failed?error=${encodeURIComponent(validation.errorMessage || 'Invalid callback')}`,
+          request.url
+        )
       )
     }
 
@@ -109,6 +127,53 @@ async function handleCallback(request: NextRequest) {
       )
     }
 
+    // Generate callback fingerprint for replay detection
+    const callbackFingerprint = `${validation.orderId}:${validation.transactionId}:${validation.amount}:${params.CCode}`
+
+    // Check if already processed (replay attack detection)
+    if (processedCallbacks.has(callbackFingerprint)) {
+      console.warn('[Payment Callback] REPLAY ATTACK DETECTED - Callback already processed', {
+        orderId: validation.orderId,
+        transactionId: validation.transactionId,
+        amount: validation.amount,
+        timestamp: new Date().toISOString(),
+        method: request.method,
+      })
+
+      // Log security incident
+      try {
+        await prisma.breachIncident.create({
+          data: {
+            schoolId: payment.schoolId,
+            incidentType: 'unauthorized_access',
+            severity: 'medium',
+            description: `Payment callback replay attack detected for order ${validation.orderId}`,
+            affectedUsers: 1,
+            dataTypes: JSON.stringify(['payment']),
+            detectedAt: new Date(),
+          },
+        })
+      } catch (err) {
+        console.error('[Payment] Failed to log replay attack:', err)
+      }
+
+      // Return success (idempotent) but don't process again
+      const registration = await prisma.registration.findFirst({
+        where: { paymentIntentId: validation.orderId },
+      })
+
+      if (registration) {
+        return NextResponse.redirect(
+          new URL(`/payment/success?code=${registration.confirmationCode}`, request.url)
+        )
+      }
+
+      return NextResponse.redirect(new URL('/payment/error', request.url))
+    }
+
+    // Mark as processed BEFORE starting transaction
+    processedCallbacks.add(callbackFingerprint)
+
     // Process payment in atomic transaction
     const result = await prisma.$transaction(
       async (tx) => {
@@ -124,18 +189,41 @@ async function handleCallback(request: NextRequest) {
 
         if (validation.isSuccess) {
           // SECURITY: Verify amount matches expected (prevent tampering)
-          const expectedAmount = parseFloat(payment.amount.toString())
-          const paidAmount = validation.amount || 0
+          // Use exact decimal comparison (no tolerance for tampering)
+          const expectedAmount = new Decimal(payment.amount.toString())
+          const paidAmount = validation.amount
+            ? new Decimal(validation.amount.toString())
+            : new Decimal(0)
 
-          if (Math.abs(expectedAmount - paidAmount) > 0.01) {
-            console.error('[Payment Callback] Amount mismatch - potential tampering:', {
-              expected: expectedAmount,
-              received: paidAmount,
+          // EXACT match required - no tolerance for tampering
+          if (!expectedAmount.equals(paidAmount)) {
+            console.error('[Payment] AMOUNT MISMATCH DETECTED - Potential tampering!', {
+              paymentId: payment.id,
+              expected: expectedAmount.toString(),
+              received: paidAmount.toString(),
               orderId: validation.orderId,
-              paymentId: payment.id
+              transactionId: validation.transactionId,
+              difference: expectedAmount.minus(paidAmount).toString(),
+              timestamp: new Date().toISOString(),
             })
 
-            // Mark payment as failed due to amount mismatch
+            // Log to security incident system
+            try {
+              await prisma.breachIncident.create({
+                data: {
+                  schoolId: payment.schoolId,
+                  incidentType: 'payment_tampering',
+                  severity: 'high',
+                  description: `Payment amount mismatch detected: Expected ${expectedAmount}, Received ${paidAmount}`,
+                  affectedUsers: 1,
+                  dataTypes: JSON.stringify(['payment', 'transaction']),
+                  detectedAt: new Date(),
+                },
+              })
+            } catch (err) {
+              console.error('[Payment] Failed to log breach incident:', err)
+            }
+
             throw new Error('amount_mismatch')
           }
 
@@ -213,14 +301,10 @@ async function handleCallback(request: NextRequest) {
 
       // Generate QR code for registration
       try {
-        const qrCodeImage = await generateQRCodeImage(
-          payment.registration.id,
-          payment.event.id,
-          {
-            width: 300,
-            margin: 2,
-          }
-        )
+        const qrCodeImage = await generateQRCodeImage(payment.registration.id, payment.event.id, {
+          width: 300,
+          margin: 2,
+        })
 
         // Send confirmation email (don't fail redirect if email fails)
         if (payment.registration.email) {
@@ -247,7 +331,10 @@ async function handleCallback(request: NextRequest) {
               cancellationUrl,
             })
 
-            console.log('[Payment Callback] Confirmation email sent to:', payment.registration.email)
+            console.log(
+              '[Payment Callback] Confirmation email sent to:',
+              payment.registration.email
+            )
           } catch (emailError) {
             console.error('[Payment Callback] Failed to send confirmation email:', emailError)
           }
@@ -264,7 +351,10 @@ async function handleCallback(request: NextRequest) {
       // Handle failure case
       console.error('[Payment Callback] Payment failed:', result.errorMessage)
       return NextResponse.redirect(
-        new URL(`/payment/failed?error=${encodeURIComponent(result.errorMessage || 'תשלום נכשל')}`, request.url)
+        new URL(
+          `/payment/failed?error=${encodeURIComponent(result.errorMessage || 'תשלום נכשל')}`,
+          request.url
+        )
       )
     }
   } catch (error) {
@@ -280,8 +370,6 @@ async function handleCallback(request: NextRequest) {
       }
     }
 
-    return NextResponse.redirect(
-      new URL(`/payment/failed?code=${errorCode}`, request.url)
-    )
+    return NextResponse.redirect(new URL(`/payment/failed?code=${errorCode}`, request.url))
   }
 }

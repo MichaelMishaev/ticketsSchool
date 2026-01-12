@@ -362,10 +362,11 @@ enum FeedbackStatus {
 
 // OAuth State Storage - temporary state for OAuth flows
 model OAuthState {
-  id        String   @id @default(cuid())
-  state     String   @unique
-  createdAt DateTime @default(now())
-  expiresAt DateTime
+  id           String   @id @default(cuid())
+  state        String   @unique
+  codeVerifier String? // PKCE code verifier
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
 
   @@index([state])
   @@index([expiresAt])

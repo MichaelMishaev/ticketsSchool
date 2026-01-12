@@ -29,6 +29,9 @@
     "test:mobile": "playwright test --project='Mobile Chrome'",
     "test:p0": "playwright test tests/suites/*-p0.spec.ts",
     "test:canary": "playwright test tests/golden-path/",
+    "test:security": "playwright test tests/security/security-compliance.spec.ts",
+    "test:security:ui": "playwright test tests/security/security-compliance.spec.ts --ui",
+    "test:security:report": "playwright test tests/security/security-compliance.spec.ts --reporter=html",
     "db:migrate": "npx prisma migrate deploy",
     "db:generate": "npx prisma generate",
     "db:setup": "node scripts/setup-production-db.js",
@@ -36,6 +39,9 @@
     "db:status": "npx prisma migrate status",
     "school": "tsx scripts/school-manager.ts",
     "school:seed": "tsx scripts/school-manager.ts seed",
+    "cleanup:retention": "tsx scripts/data-retention-cleanup.ts",
+    "encrypt:existing": "tsx scripts/encrypt-existing-data.ts",
+    "encrypt:check": "tsx scripts/encrypt-existing-data.ts --dry-run",
     "prepare": "husky"
   },
   "dependencies": {
@@ -59,6 +65,7 @@
     "lucide-react": "^0.544.0",
     "next": "15.5.9",
     "nodemailer": "^7.0.10",
+    "pkce-challenge": "^5.0.1",
     "prisma": "^6.16.2",
     "qrcode": "^1.5.4",
     "react": "19.1.0",

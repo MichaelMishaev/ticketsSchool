@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { OAuth2Client } from 'google-auth-library'
 import { prisma } from '@/lib/prisma'
 import { AuthSession, SESSION_COOKIE_NAME, encodeSession } from '@/lib/auth.server'
+import { randomUUID } from 'crypto'
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
@@ -37,12 +38,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/admin/login?error=oauth_state_mismatch', BASE_URL))
     }
 
+    if (!storedOAuthState.codeVerifier) {
+      console.error('[Google OAuth Callback] Code verifier not found in state')
+      await prisma.oAuthState.delete({ where: { id: storedOAuthState.id } })
+      return NextResponse.redirect(new URL('/admin/login?error=oauth_invalid_state', BASE_URL))
+    }
+
     // Check if state has expired
     if (storedOAuthState.expiresAt < new Date()) {
       console.error('[Google OAuth Callback] State expired')
       await prisma.oAuthState.delete({ where: { id: storedOAuthState.id } })
       return NextResponse.redirect(new URL('/admin/login?error=oauth_state_expired', BASE_URL))
     }
+
+    // Store code_verifier before deleting state
+    const codeVerifier = storedOAuthState.codeVerifier
 
     // Delete the state now that we've verified it (one-time use)
     await prisma.oAuthState.delete({ where: { id: storedOAuthState.id } })
@@ -52,15 +62,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/admin/login?error=oauth_not_configured', BASE_URL))
     }
 
-    const oauth2Client = new OAuth2Client(
-      GOOGLE_CLIENT_ID,
-      GOOGLE_CLIENT_SECRET,
-      REDIRECT_URI
-    )
+    const oauth2Client = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, REDIRECT_URI)
 
-    // Exchange authorization code for tokens
-    console.log('[Google OAuth Callback] Exchanging code for tokens')
-    const { tokens } = await oauth2Client.getToken(code)
+    // Exchange authorization code for tokens WITH code_verifier (PKCE)
+    console.log('[Google OAuth Callback] Exchanging code for tokens with PKCE verification')
+    const { tokens } = await oauth2Client.getToken({
+      code,
+      codeVerifier, // PKCE verification
+    })
     oauth2Client.setCredentials(tokens)
 
     // Get user info from Google
@@ -105,7 +114,9 @@ export async function GET(request: NextRequest) {
 
       if (existingEmailUser && existingEmailUser.passwordHash) {
         // Security: Email exists with password - don't auto-link
-        console.error('[Google OAuth Callback] Email exists with password account - blocking auto-link')
+        console.error(
+          '[Google OAuth Callback] Email exists with password account - blocking auto-link'
+        )
         return NextResponse.redirect(
           new URL('/admin/login?error=email_exists_with_password', BASE_URL)
         )
@@ -156,9 +167,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Determine redirect URL based on onboarding status
-    const redirectUrl = (!admin.onboardingCompleted || !admin.schoolId)
-      ? new URL('/admin/onboarding', BASE_URL)
-      : new URL('/admin', BASE_URL)
+    const redirectUrl =
+      !admin.onboardingCompleted || !admin.schoolId
+        ? new URL('/admin/onboarding', BASE_URL)
+        : new URL('/admin', BASE_URL)
 
     console.log('[Google OAuth Callback] Redirecting to:', redirectUrl.pathname)
 
@@ -186,12 +198,21 @@ export async function GET(request: NextRequest) {
     return response
   } catch (error) {
     // Log full error details server-side only
-    const requestId = crypto.randomUUID()
+    const requestId = randomUUID()
     console.error('[Google OAuth Callback] ERROR - Request ID:', requestId)
     console.error('[Google OAuth Callback] Error:', error)
-    console.error('[Google OAuth Callback] Error type:', error instanceof Error ? error.constructor.name : typeof error)
-    console.error('[Google OAuth Callback] Error message:', error instanceof Error ? error.message : String(error))
-    console.error('[Google OAuth Callback] Error stack:', error instanceof Error ? error.stack : 'No stack trace')
+    console.error(
+      '[Google OAuth Callback] Error type:',
+      error instanceof Error ? error.constructor.name : typeof error
+    )
+    console.error(
+      '[Google OAuth Callback] Error message:',
+      error instanceof Error ? error.message : String(error)
+    )
+    console.error(
+      '[Google OAuth Callback] Error stack:',
+      error instanceof Error ? error.stack : 'No stack trace'
+    )
 
     // Return generic error to client (no internal details exposed)
     return NextResponse.redirect(new URL(`/admin/login?error=oauth_failed`, BASE_URL))

@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
   testDir: './tests',
@@ -10,6 +10,12 @@ export default defineConfig({
   timeout: 45000, // 45 seconds per test (admin layout can be slow to load)
   expect: {
     timeout: 10000, // 10 seconds for assertions
+    // Screenshot comparison configuration for visual regression testing
+    toHaveScreenshot: {
+      maxDiffPixels: 100, // Allow up to 100 pixels difference (handles minor rendering variations)
+      threshold: 0.2, // 20% threshold for acceptable difference (handles dynamic content like dates)
+      animations: 'disabled', // Disable CSS animations for consistent screenshots
+    },
   },
   use: {
     baseURL: 'http://localhost:9000',
@@ -45,4 +51,4 @@ export default defineConfig({
   //   url: 'http://localhost:2900',
   //   reuseExistingServer: !process.env.CI,
   // },
-});
+})

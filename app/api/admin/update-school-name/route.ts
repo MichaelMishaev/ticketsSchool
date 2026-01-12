@@ -1,34 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin } from '@/lib/auth.server'
+import { randomUUID } from 'crypto'
 
 export async function POST(request: NextRequest) {
   try {
     // Check authentication
     const admin = await getCurrentAdmin()
     if (!admin) {
-      return NextResponse.json(
-        { error: 'לא מחובר' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'לא מחובר' }, { status: 401 })
     }
 
     // Admin must have a school
     if (!admin.schoolId) {
-      return NextResponse.json(
-        { error: 'לא נמצא ארגון משויך למשתמש' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'לא נמצא ארגון משויך למשתמש' }, { status: 400 })
     }
 
     const body = await request.json()
     const { newName } = body
 
     if (!newName || !newName.trim()) {
-      return NextResponse.json(
-        { error: 'שם הארגון לא יכול להיות ריק' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'שם הארגון לא יכול להיות ריק' }, { status: 400 })
     }
 
     console.log(`[Update School Name] Admin ${admin.email} updating school name to "${newName}"`)
@@ -38,12 +30,12 @@ export async function POST(request: NextRequest) {
       where: {
         name: {
           equals: newName,
-          mode: 'insensitive'
+          mode: 'insensitive',
         },
         id: {
-          not: admin.schoolId
-        }
-      }
+          not: admin.schoolId,
+        },
+      },
     })
 
     if (existingSchool) {
@@ -56,7 +48,7 @@ export async function POST(request: NextRequest) {
     // Update the school name
     const updatedSchool = await prisma.school.update({
       where: { id: admin.schoolId },
-      data: { name: newName.trim() }
+      data: { name: newName.trim() },
     })
 
     console.log(`[Update School Name] ✅ Successfully updated school:`)
@@ -71,12 +63,12 @@ export async function POST(request: NextRequest) {
       school: {
         id: updatedSchool.id,
         name: updatedSchool.name,
-        slug: updatedSchool.slug
-      }
+        slug: updatedSchool.slug,
+      },
     })
   } catch (error) {
     // Log full error details server-side only
-    const requestId = crypto.randomUUID()
+    const requestId = randomUUID()
     console.error('[Update School Name] ERROR - Request ID:', requestId)
     console.error('[Update School Name] Error:', error)
     console.error('[Update School Name] Error details:', {
@@ -89,7 +81,7 @@ export async function POST(request: NextRequest) {
       {
         error: 'שגיאה בעדכון שם הארגון. נסה שוב מאוחר יותר.',
         requestId, // For support tracking only
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     )

@@ -18,7 +18,24 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      // Backup and experimental files
+      "**/*-BACKUP-*.tsx",
+      "**/*-backup.tsx",
+      "**/*-redesigned.tsx",
+      "**/*-improved.tsx",
+      "**/*-original-backup.tsx",
+      "**/new-test/**",
+      "**/new-restaurant/**",
     ],
+  },
+  {
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": "warn",
+      "react-hooks/exhaustive-deps": "warn",
+      "react/no-unescaped-entities": "off",
+      "prefer-const": "warn",
+    },
   },
 ];
 

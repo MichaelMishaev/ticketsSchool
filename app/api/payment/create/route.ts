@@ -3,6 +3,14 @@ import { prisma } from '@/lib/prisma'
 import { normalizePhoneNumber } from '@/lib/utils'
 import { createPaymentRequest, generatePaymentRedirectHTML } from '@/lib/yaadpay'
 import { Decimal } from '@prisma/client/runtime/library'
+import { rateLimit } from '@/lib/rate-limiter'
+import { encryptPhone, encryptEmail } from '@/lib/encryption'
+
+const paymentLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  maxAttempts: 10, // 10 payment attempts per hour
+  blockDurationMs: 60 * 60 * 1000,
+})
 
 // Build-time safety check
 if (process.env.NODE_ENV === 'production' && process.env.YAADPAY_MOCK_MODE === 'true') {
@@ -18,58 +26,46 @@ if (process.env.NODE_ENV === 'production' && process.env.YAADPAY_MOCK_MODE === '
  * and returns auto-submit HTML form that POSTs to YaadPay.
  */
 export async function POST(request: NextRequest) {
+  const rateLimitResponse = await paymentLimiter(request)
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const body = await request.json()
     const { registrationData, eventId, eventSlug, schoolSlug } = body
 
     // Validate required parameters
     if (!schoolSlug || !eventSlug) {
-      return NextResponse.json(
-        { error: 'חסרים פרמטרים נדרשים' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'חסרים פרמטרים נדרשים' }, { status: 400 })
     }
 
     if (!registrationData || typeof registrationData !== 'object') {
-      return NextResponse.json(
-        { error: 'נתוני הרשמה לא תקינים' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'נתוני הרשמה לא תקינים' }, { status: 400 })
     }
 
     // Validate required contact fields in registrationData
     if (!registrationData.name || !registrationData.phone) {
-      return NextResponse.json(
-        { error: 'חסרים שדות חובה: שם וטלפון' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'חסרים שדות חובה: שם וטלפון' }, { status: 400 })
     }
 
     if (!registrationData.email) {
-      return NextResponse.json(
-        { error: 'אימייל נדרש לאירועים עם תשלום' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'אימייל נדרש לאירועים עם תשלום' }, { status: 400 })
     }
 
     // Find school
     const school = await prisma.school.findUnique({
       where: { slug: schoolSlug },
-      select: { id: true, name: true }
+      select: { id: true, name: true },
     })
 
     if (!school) {
-      return NextResponse.json(
-        { error: 'בית הספר לא נמצא' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'בית הספר לא נמצא' }, { status: 404 })
     }
 
     // Find event and verify it belongs to the school (multi-tenant isolation)
     const event = await prisma.event.findFirst({
       where: {
         slug: eventSlug,
-        schoolId: school.id
+        schoolId: school.id,
       },
       select: {
         id: true,
@@ -84,46 +80,31 @@ export async function POST(request: NextRequest) {
         currency: true,
         eventType: true,
         capacity: true,
-        spotsReserved: true
-      }
+        spotsReserved: true,
+      },
     })
 
     if (!event) {
-      return NextResponse.json(
-        { error: 'האירוע לא נמצא' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'האירוע לא נמצא' }, { status: 404 })
     }
 
     // Verify event requires upfront payment
     if (!event.paymentRequired || event.paymentTiming !== 'UPFRONT') {
-      return NextResponse.json(
-        { error: 'האירוע לא דורש תשלום מראש' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'האירוע לא דורש תשלום מראש' }, { status: 400 })
     }
 
     // Check event status
     if (event.status === 'CLOSED') {
-      return NextResponse.json(
-        { error: 'ההרשמה לאירוע נסגרה' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'ההרשמה לאירוע נסגרה' }, { status: 400 })
     }
 
     if (event.status === 'PAUSED') {
-      return NextResponse.json(
-        { error: 'ההרשמה לאירוע מושהית' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'ההרשמה לאירוע מושהית' }, { status: 400 })
     }
 
     // Verify price is configured
     if (!event.priceAmount || event.priceAmount.lte(0)) {
-      return NextResponse.json(
-        { error: 'התמחור לא הוגדר לאירוע זה' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'התמחור לא הוגדר לאירוע זה' }, { status: 400 })
     }
 
     // Calculate amount based on pricing model
@@ -132,32 +113,20 @@ export async function POST(request: NextRequest) {
     if (event.pricingModel === 'FIXED_PRICE') {
       // Fixed price per registration
       amountDue = event.priceAmount
-
     } else if (event.pricingModel === 'PER_GUEST') {
       // Price per guest/spot (works for both TABLE_BASED and CAPACITY_BASED events)
       // TABLE_BASED events send 'guestsCount', CAPACITY_BASED events send 'spotsCount'
       const participantCount = Number(registrationData.guestsCount || registrationData.spotsCount)
 
       if (!participantCount || participantCount < 1) {
-        return NextResponse.json(
-          { error: 'מספר משתתפים לא תקין' },
-          { status: 400 }
-        )
+        return NextResponse.json({ error: 'מספר משתתפים לא תקין' }, { status: 400 })
       }
 
       amountDue = event.priceAmount.mul(participantCount)
-
     } else if (event.pricingModel === 'FREE') {
-      return NextResponse.json(
-        { error: 'האירוע חינמי, תשלום לא נדרש' },
-        { status: 400 }
-      )
-
+      return NextResponse.json({ error: 'האירוע חינמי, תשלום לא נדרש' }, { status: 400 })
     } else {
-      return NextResponse.json(
-        { error: 'מודל תמחור לא תקין' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'מודל תמחור לא תקין' }, { status: 400 })
     }
 
     // Normalize phone number (Israeli format)
@@ -165,10 +134,7 @@ export async function POST(request: NextRequest) {
     try {
       phoneNumber = normalizePhoneNumber(registrationData.phone)
     } catch (error) {
-      return NextResponse.json(
-        { error: 'פורמט מספר טלפון לא תקין' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'פורמט מספר טלפון לא תקין' }, { status: 400 })
     }
 
     // Check for duplicate registration (same phone number, not cancelled)
@@ -176,15 +142,12 @@ export async function POST(request: NextRequest) {
       where: {
         eventId: event.id,
         phoneNumber: phoneNumber,
-        status: { not: 'CANCELLED' }
-      }
+        status: { not: 'CANCELLED' },
+      },
     })
 
     if (existingRegistration) {
-      return NextResponse.json(
-        { error: 'מספר הטלפון כבר רשום לאירוע זה' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'מספר הטלפון כבר רשום לאירוע זה' }, { status: 400 })
     }
 
     // Check if user is banned
@@ -196,15 +159,15 @@ export async function POST(request: NextRequest) {
         OR: [
           // Date-based ban (not expired)
           {
-            expiresAt: { gte: new Date() }
+            expiresAt: { gte: new Date() },
           },
           // Game-based ban (no expiration date AND still has games to block)
           {
             expiresAt: null,
-            eventsBlocked: { lt: prisma.userBan.fields.bannedGamesCount }
-          }
-        ]
-      }
+            eventsBlocked: { lt: prisma.userBan.fields.bannedGamesCount },
+          },
+        ],
+      },
     })
 
     if (activeBan) {
@@ -217,88 +180,92 @@ export async function POST(request: NextRequest) {
       } else {
         const remainingGames = activeBan.bannedGamesCount - activeBan.eventsBlocked
         return NextResponse.json(
-          { error: `מצטערים, חשבונך חסום ל-${remainingGames} משחקים נוספים. סיבה: ${activeBan.reason}` },
+          {
+            error: `מצטערים, חשבונך חסום ל-${remainingGames} משחקים נוספים. סיבה: ${activeBan.reason}`,
+          },
           { status: 403 }
         )
       }
     }
 
     // Create registration + payment in atomic transaction
-    const result = await prisma.$transaction(async (tx) => {
-      // Generate unique payment intent ID using cuid
-      const { createId } = await import('@paralleldrive/cuid2')
-      const paymentIntentId = createId()
+    const result = await prisma.$transaction(
+      async (tx) => {
+        // Generate unique payment intent ID using cuid
+        const { createId } = await import('@paralleldrive/cuid2')
+        const paymentIntentId = createId()
 
-      // Check for idempotency: if this paymentIntentId already exists, return existing
-      const existingPayment = await tx.payment.findFirst({
-        where: {
-          yaadPayOrderId: paymentIntentId
-        },
-        include: {
-          registration: true
+        // Check for idempotency: if this paymentIntentId already exists, return existing
+        const existingPayment = await tx.payment.findFirst({
+          where: {
+            yaadPayOrderId: paymentIntentId,
+          },
+          include: {
+            registration: true,
+          },
+        })
+
+        if (existingPayment && existingPayment.registration) {
+          // Payment already created, return existing
+          console.log(`[Payment] Idempotency check: Payment ${paymentIntentId} already exists`)
+          return {
+            registration: existingPayment.registration,
+            payment: existingPayment,
+            isExisting: true,
+          }
         }
-      })
 
-      if (existingPayment && existingPayment.registration) {
-        // Payment already created, return existing
-        console.log(`[Payment] Idempotency check: Payment ${paymentIntentId} already exists`)
+        // Create pending registration FIRST (to satisfy foreign key constraint)
+        const registration = await tx.registration.create({
+          data: {
+            eventId: event.id,
+            data: registrationData,
+            spotsCount:
+              event.eventType === 'CAPACITY_BASED' ? Number(registrationData.spotsCount) || 1 : 0,
+            guestsCount:
+              event.eventType === 'TABLE_BASED' ? Number(registrationData.guestsCount) : null,
+            status: 'CONFIRMED', // Will be set to WAITLIST if capacity exceeded (handled in callback)
+            confirmationCode: Math.random().toString(36).substring(2, 8).toUpperCase(), // Temporary, will be replaced
+            phoneNumber: phoneNumber,
+            email: registrationData.email,
+            paymentStatus: 'PROCESSING',
+            paymentIntentId: paymentIntentId,
+            amountDue: amountDue,
+          },
+        })
+
+        // Now create payment with the real registration ID
+        const payment = await tx.payment.create({
+          data: {
+            schoolId: school.id,
+            eventId: event.id,
+            registrationId: registration.id, // Real registration ID
+            amount: amountDue,
+            currency: event.currency,
+            status: 'PROCESSING',
+            paymentMethod: 'yaadpay',
+            yaadPayOrderId: paymentIntentId,
+            payerEmail: encryptEmail(registrationData.email), // ENCRYPT
+            payerPhone: encryptPhone(phoneNumber), // ENCRYPT
+            payerName: registrationData.name, // Name stays plaintext (less sensitive)
+          },
+        })
+
         return {
-          registration: existingPayment.registration,
-          payment: existingPayment,
-          isExisting: true
+          registration,
+          payment,
+          isExisting: false,
         }
+      },
+      {
+        isolationLevel: 'Serializable',
+        timeout: 10000,
       }
-
-      // Create pending registration FIRST (to satisfy foreign key constraint)
-      const registration = await tx.registration.create({
-        data: {
-          eventId: event.id,
-          data: registrationData,
-          spotsCount: event.eventType === 'CAPACITY_BASED' ? (Number(registrationData.spotsCount) || 1) : 0,
-          guestsCount: event.eventType === 'TABLE_BASED' ? Number(registrationData.guestsCount) : null,
-          status: 'CONFIRMED', // Will be set to WAITLIST if capacity exceeded (handled in callback)
-          confirmationCode: Math.random().toString(36).substring(2, 8).toUpperCase(), // Temporary, will be replaced
-          phoneNumber: phoneNumber,
-          email: registrationData.email,
-          paymentStatus: 'PROCESSING',
-          paymentIntentId: paymentIntentId,
-          amountDue: amountDue
-        }
-      })
-
-      // Now create payment with the real registration ID
-      const payment = await tx.payment.create({
-        data: {
-          schoolId: school.id,
-          eventId: event.id,
-          registrationId: registration.id, // Real registration ID
-          amount: amountDue,
-          currency: event.currency,
-          status: 'PROCESSING',
-          paymentMethod: 'yaadpay',
-          yaadPayOrderId: paymentIntentId,
-          payerEmail: registrationData.email,
-          payerPhone: phoneNumber,
-          payerName: registrationData.name
-        }
-      })
-
-      return {
-        registration,
-        payment,
-        isExisting: false
-      }
-    }, {
-      isolationLevel: 'Serializable',
-      timeout: 10000
-    })
+    )
 
     // If existing payment, return error
     if (result.isExisting) {
-      return NextResponse.json(
-        { error: 'תשלום כבר יזם עבור בקשה זו' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'תשלום כבר יזם עבור בקשה זו' }, { status: 400 })
     }
 
     // MOCK MODE: Simulate successful payment for development (bypass YaadPay)
@@ -308,7 +275,7 @@ export async function POST(request: NextRequest) {
       // Simulate payment success - redirect to callback with success params
       const callbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9000'}/api/payment/callback`
       const mockParams = new URLSearchParams({
-        CCode: '0',  // Success code
+        CCode: '0', // Success code
         Order: result.payment.yaadPayOrderId!,
         Id: `MOCK-${Date.now()}`,
         ConfirmationCode: `MOCK-${Math.random().toString(36).substring(7).toUpperCase()}`,
@@ -318,8 +285,8 @@ export async function POST(request: NextRequest) {
           schoolId: school.id,
           registrationId: result.registration.id,
           eventSlug: event.slug,
-          schoolSlug: schoolSlug
-        })
+          schoolSlug: schoolSlug,
+        }),
       })
 
       const mockRedirectHTML = `
@@ -393,8 +360,8 @@ export async function POST(request: NextRequest) {
       return new NextResponse(mockRedirectHTML, {
         status: 200,
         headers: {
-          'Content-Type': 'text/html; charset=utf-8'
-        }
+          'Content-Type': 'text/html; charset=utf-8',
+        },
       })
     }
 
@@ -411,8 +378,8 @@ export async function POST(request: NextRequest) {
         schoolId: school.id,
         registrationId: result.registration.id,
         eventSlug: event.slug,
-        schoolSlug: schoolSlug
-      }
+        schoolSlug: schoolSlug,
+      },
     })
 
     console.log('[Payment] Created payment session:', {
@@ -420,7 +387,7 @@ export async function POST(request: NextRequest) {
       registrationId: result.registration.id,
       eventId: event.id,
       amount: amountDue.toString(),
-      currency: event.currency
+      currency: event.currency,
     })
 
     // Generate auto-submit HTML form
@@ -430,10 +397,9 @@ export async function POST(request: NextRequest) {
     return new NextResponse(redirectHTML, {
       status: 200,
       headers: {
-        'Content-Type': 'text/html; charset=utf-8'
-      }
+        'Content-Type': 'text/html; charset=utf-8',
+      },
     })
-
   } catch (error: unknown) {
     console.error('[Payment] Error creating payment session:', error)
 
@@ -449,9 +415,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Generic error
-    return NextResponse.json(
-      { error: 'נכשל ביצירת הפעלת תשלום' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'נכשל ביצירת הפעלת תשלום' }, { status: 500 })
   }
 }
