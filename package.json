@@ -42,6 +42,7 @@
     "cleanup:retention": "tsx scripts/data-retention-cleanup.ts",
     "encrypt:existing": "tsx scripts/encrypt-existing-data.ts",
     "encrypt:check": "tsx scripts/encrypt-existing-data.ts --dry-run",
+    "collect-metrics": "tsx scripts/collect-metrics.ts",
     "prepare": "husky"
   },
   "dependencies": {

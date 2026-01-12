@@ -1,0 +1,553 @@
+/**
+ * Custom Metrics for Business Logic
+ *
+ * Provides utilities for tracking business metrics using OpenTelemetry.
+ * Metrics are exported to Grafana Cloud, Prometheus, or other OTLP-compatible backends.
+ *
+ * Metric Types:
+ *   - Counter: Monotonically increasing value (registrations created, payments completed)
+ *   - Gauge: Point-in-time value (capacity utilization, active events)
+ *   - Histogram: Distribution of values (payment amounts, processing times)
+ */
+
+import { metrics } from '@opentelemetry/api'
+
+// Get meter for creating metrics
+const meter = metrics.getMeter('ticketcap')
+
+// ============================================================================
+// REGISTRATION METRICS
+// ============================================================================
+
+/**
+ * Counter: Total registrations created
+ * Labels: status (CONFIRMED, WAITLIST, CANCELLED), school_id, event_id
+ */
+const registrationCreatedCounter = meter.createCounter('registration.created', {
+  description: 'Total number of registrations created',
+  unit: 'registrations',
+})
+
+/**
+ * Counter: Total registrations by status
+ */
+const registrationConfirmedCounter = meter.createCounter('registration.confirmed', {
+  description: 'Total number of confirmed registrations',
+  unit: 'registrations',
+})
+
+const registrationWaitlistedCounter = meter.createCounter('registration.waitlisted', {
+  description: 'Total number of waitlisted registrations',
+  unit: 'registrations',
+})
+
+const registrationCancelledCounter = meter.createCounter('registration.cancelled', {
+  description: 'Total number of cancelled registrations',
+  unit: 'registrations',
+})
+
+/**
+ * Histogram: Registration processing time
+ * Tracks how long it takes to create a registration (capacity check + transaction)
+ */
+const registrationDurationHistogram = meter.createHistogram('registration.duration', {
+  description: 'Time to create a registration',
+  unit: 'milliseconds',
+})
+
+/**
+ * Gauge: Capacity utilization per event
+ * Tracks % of capacity used for each event
+ */
+const capacityUtilizationGauge = meter.createObservableGauge('registration.capacity_utilization', {
+  description: 'Percentage of event capacity used',
+  unit: 'percent',
+})
+
+// ============================================================================
+// PAYMENT METRICS
+// ============================================================================
+
+/**
+ * Counter: Total payments created
+ */
+const paymentCreatedCounter = meter.createCounter('payment.created', {
+  description: 'Total number of payment attempts',
+  unit: 'payments',
+})
+
+/**
+ * Counter: Total payments by status
+ */
+const paymentCompletedCounter = meter.createCounter('payment.completed', {
+  description: 'Total number of completed payments',
+  unit: 'payments',
+})
+
+const paymentFailedCounter = meter.createCounter('payment.failed', {
+  description: 'Total number of failed payments',
+  unit: 'payments',
+})
+
+const paymentRefundedCounter = meter.createCounter('payment.refunded', {
+  description: 'Total number of refunded payments',
+  unit: 'payments',
+})
+
+/**
+ * Histogram: Payment processing time
+ * Tracks how long it takes to process a payment (from create to callback)
+ */
+const paymentProcessingTimeHistogram = meter.createHistogram('payment.processing_time', {
+  description: 'Time to process a payment',
+  unit: 'milliseconds',
+})
+
+/**
+ * Histogram: Payment amounts
+ * Tracks distribution of payment amounts (for revenue analysis)
+ */
+const paymentAmountHistogram = meter.createHistogram('payment.amount', {
+  description: 'Payment amount in ILS',
+  unit: 'ils',
+})
+
+// ============================================================================
+// API METRICS
+// ============================================================================
+
+/**
+ * Counter: API requests
+ * Labels: endpoint, method, status_code
+ */
+const apiRequestCounter = meter.createCounter('api.request.count', {
+  description: 'Total number of API requests',
+  unit: 'requests',
+})
+
+/**
+ * Histogram: API request duration
+ * Labels: endpoint, method
+ */
+const apiRequestDurationHistogram = meter.createHistogram('api.request.duration', {
+  description: 'API request processing time',
+  unit: 'milliseconds',
+})
+
+/**
+ * Counter: API errors
+ * Labels: endpoint, method, error_type
+ */
+const apiErrorCounter = meter.createCounter('api.error.count', {
+  description: 'Total number of API errors',
+  unit: 'errors',
+})
+
+/**
+ * Gauge: API error rate
+ * Calculated as: (errors / total requests) * 100
+ */
+const apiErrorRateGauge = meter.createObservableGauge('api.error.rate', {
+  description: 'API error rate percentage',
+  unit: 'percent',
+})
+
+// ============================================================================
+// DATABASE METRICS
+// ============================================================================
+
+/**
+ * Histogram: Database query duration
+ * Labels: model, operation (findUnique, findMany, create, update, delete)
+ */
+const dbQueryDurationHistogram = meter.createHistogram('db.query.duration', {
+  description: 'Database query execution time',
+  unit: 'milliseconds',
+})
+
+/**
+ * Histogram: Database transaction duration
+ * Tracks how long atomic transactions take
+ */
+const dbTransactionDurationHistogram = meter.createHistogram('db.transaction.duration', {
+  description: 'Database transaction execution time',
+  unit: 'milliseconds',
+})
+
+/**
+ * Gauge: Database connection count
+ * Tracks active database connections
+ */
+const dbConnectionCountGauge = meter.createObservableGauge('db.connection.count', {
+  description: 'Number of active database connections',
+  unit: 'connections',
+})
+
+// ============================================================================
+// BUSINESS METRICS
+// ============================================================================
+
+/**
+ * Counter: Events at full capacity
+ */
+const eventCapacityReachedCounter = meter.createCounter('event.capacity_reached', {
+  description: 'Number of times an event reached full capacity',
+  unit: 'events',
+})
+
+/**
+ * Counter: Waitlist promotions
+ */
+const waitlistPromotionCounter = meter.createCounter('waitlist.promotion', {
+  description: 'Number of waitlist promotions to confirmed status',
+  unit: 'promotions',
+})
+
+/**
+ * Gauge: Active events per school
+ */
+const schoolActiveEventsGauge = meter.createObservableGauge('school.active_events', {
+  description: 'Number of active events per school',
+  unit: 'events',
+})
+
+// ============================================================================
+// TRACKING FUNCTIONS
+// ============================================================================
+
+/**
+ * Track a registration creation
+ *
+ * Example:
+ *   trackRegistration(eventId, status, duration, schoolId)
+ */
+export function trackRegistration(
+  eventId: string,
+  status: 'CONFIRMED' | 'WAITLIST' | 'CANCELLED',
+  duration: number,
+  schoolId?: string
+) {
+  const labels = { event_id: eventId, status, school_id: schoolId || 'unknown' }
+
+  registrationCreatedCounter.add(1, labels)
+
+  if (status === 'CONFIRMED') {
+    registrationConfirmedCounter.add(1, labels)
+  } else if (status === 'WAITLIST') {
+    registrationWaitlistedCounter.add(1, labels)
+  } else if (status === 'CANCELLED') {
+    registrationCancelledCounter.add(1, labels)
+  }
+
+  registrationDurationHistogram.record(duration, labels)
+}
+
+/**
+ * Track capacity utilization for an event
+ *
+ * Example:
+ *   trackCapacityUtilization(eventId, 95, 100)  // 95% full
+ */
+export function trackCapacityUtilization(
+  eventId: string,
+  spotsReserved: number,
+  capacity: number,
+  schoolId?: string
+) {
+  const utilization = (spotsReserved / capacity) * 100
+  const labels = { event_id: eventId, school_id: schoolId || 'unknown' }
+
+  // Observable gauge will be read by the metrics exporter
+  // For now, we track as a regular metric
+  if (utilization >= 100) {
+    eventCapacityReachedCounter.add(1, labels)
+  }
+}
+
+/**
+ * Track a payment operation
+ *
+ * Example:
+ *   trackPayment(100, 'COMPLETED', 2500, 'ils')
+ */
+export function trackPayment(
+  amount: number,
+  status: 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'REFUNDED',
+  duration: number,
+  currency: string = 'ils',
+  schoolId?: string
+) {
+  const labels = { status, currency, school_id: schoolId || 'unknown' }
+
+  paymentCreatedCounter.add(1, labels)
+
+  if (status === 'COMPLETED') {
+    paymentCompletedCounter.add(1, labels)
+    paymentAmountHistogram.record(amount, labels)
+  } else if (status === 'FAILED') {
+    paymentFailedCounter.add(1, labels)
+  } else if (status === 'REFUNDED') {
+    paymentRefundedCounter.add(1, labels)
+  }
+
+  paymentProcessingTimeHistogram.record(duration, labels)
+}
+
+/**
+ * Track an API call
+ *
+ * Example:
+ *   trackAPICall('/api/events', 'GET', 200, 150)
+ */
+export function trackAPICall(
+  endpoint: string,
+  method: string,
+  statusCode: number,
+  duration: number
+) {
+  const labels = { endpoint, method, status_code: statusCode.toString() }
+
+  apiRequestCounter.add(1, labels)
+  apiRequestDurationHistogram.record(duration, labels)
+
+  if (statusCode >= 400) {
+    const errorType = statusCode >= 500 ? 'server_error' : 'client_error'
+    apiErrorCounter.add(1, { ...labels, error_type: errorType })
+  }
+}
+
+/**
+ * Track a database query
+ *
+ * Example:
+ *   trackDatabaseQuery('event', 'findMany', 45)
+ */
+export function trackDatabaseQuery(model: string, operation: string, duration: number) {
+  const labels = { model, operation }
+  dbQueryDurationHistogram.record(duration, labels)
+}
+
+/**
+ * Track a database transaction
+ *
+ * Example:
+ *   trackDatabaseTransaction(125)
+ */
+export function trackDatabaseTransaction(duration: number) {
+  dbTransactionDurationHistogram.record(duration, { operation: 'transaction' })
+}
+
+/**
+ * Track a waitlist promotion
+ *
+ * Example:
+ *   trackWaitlistPromotion(eventId, schoolId)
+ */
+export function trackWaitlistPromotion(eventId: string, schoolId?: string) {
+  const labels = { event_id: eventId, school_id: schoolId || 'unknown' }
+  waitlistPromotionCounter.add(1, labels)
+}
+
+/**
+ * Track active events for a school
+ *
+ * Example:
+ *   trackSchoolActiveEvents(schoolId, 15)
+ */
+export function trackSchoolActiveEvents(schoolId: string, count: number) {
+  // Observable gauge - this would be called periodically by a background job
+  // For now, we can track it as a simple metric
+  // In production, use a scheduled task to update this gauge
+}
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Start a timer for tracking duration
+ *
+ * Example:
+ *   const stopTimer = startTimer()
+ *   // ... do work
+ *   const duration = stopTimer()
+ *   trackRegistration(eventId, status, duration)
+ */
+export function startTimer(): () => number {
+  const startTime = Date.now()
+  return () => Date.now() - startTime
+}
+
+/**
+ * Track duration of an async operation
+ *
+ * Example:
+ *   const result = await trackDuration(
+ *     async () => createRegistration(data),
+ *     (duration) => trackRegistration(eventId, status, duration)
+ *   )
+ */
+export async function trackDuration<T>(
+  operation: () => Promise<T>,
+  onComplete: (duration: number) => void
+): Promise<T> {
+  const stopTimer = startTimer()
+  try {
+    const result = await operation()
+    onComplete(stopTimer())
+    return result
+  } catch (error) {
+    onComplete(stopTimer())
+    throw error
+  }
+}
+
+/**
+ * Calculate error rate
+ *
+ * Example:
+ *   const errorRate = calculateErrorRate(5, 100)  // 5%
+ */
+export function calculateErrorRate(errors: number, total: number): number {
+  if (total === 0) return 0
+  return (errors / total) * 100
+}
+
+/**
+ * Calculate success rate
+ *
+ * Example:
+ *   const successRate = calculateSuccessRate(95, 100)  // 95%
+ */
+export function calculateSuccessRate(successful: number, total: number): number {
+  if (total === 0) return 0
+  return (successful / total) * 100
+}
+
+// ============================================================================
+// METRIC COLLECTION (Background Jobs)
+// ============================================================================
+
+/**
+ * Collect capacity utilization for all active events
+ * Should be called by a scheduled job (every 5 minutes)
+ *
+ * Example:
+ *   // In a cron job or background worker
+ *   await collectCapacityMetrics(prisma)
+ */
+export async function collectCapacityMetrics(prisma: any) {
+  try {
+    const events = await prisma.event.findMany({
+      where: {
+        startDate: {
+          gte: new Date(), // Only future events
+        },
+      },
+      select: {
+        id: true,
+        capacity: true,
+        spotsReserved: true,
+        schoolId: true,
+      },
+    })
+
+    events.forEach((event: any) => {
+      trackCapacityUtilization(event.id, event.spotsReserved, event.capacity, event.schoolId)
+    })
+
+    console.log(`Collected capacity metrics for ${events.length} events`)
+  } catch (error) {
+    console.error('Error collecting capacity metrics:', error)
+  }
+}
+
+/**
+ * Collect active events per school
+ * Should be called by a scheduled job (every 10 minutes)
+ *
+ * Example:
+ *   await collectSchoolMetrics(prisma)
+ */
+export async function collectSchoolMetrics(prisma: any) {
+  try {
+    const schools = await prisma.school.findMany({
+      select: {
+        id: true,
+        _count: {
+          select: {
+            events: {
+              where: {
+                startDate: {
+                  gte: new Date(), // Only future events
+                },
+              },
+            },
+          },
+        },
+      },
+    })
+
+    schools.forEach((school: any) => {
+      trackSchoolActiveEvents(school.id, school._count.events)
+    })
+
+    console.log(`Collected metrics for ${schools.length} schools`)
+  } catch (error) {
+    console.error('Error collecting school metrics:', error)
+  }
+}
+
+/**
+ * Collect database connection metrics
+ * Should be called by a scheduled job (every 1 minute)
+ *
+ * Example:
+ *   await collectDatabaseMetrics(prisma)
+ */
+export async function collectDatabaseMetrics(prisma: any) {
+  try {
+    // Prisma doesn't expose connection pool stats directly
+    // This would need to be implemented with direct PostgreSQL queries
+    // For now, we can track query counts
+    console.log('Database metrics collection not yet implemented')
+  } catch (error) {
+    console.error('Error collecting database metrics:', error)
+  }
+}
+
+// ============================================================================
+// EXPORTS
+// ============================================================================
+
+export const registrationMetrics = {
+  trackRegistration,
+  trackCapacityUtilization,
+  trackWaitlistPromotion,
+}
+
+export const paymentMetrics = {
+  trackPayment,
+}
+
+export const apiMetrics = {
+  trackAPICall,
+}
+
+export const databaseMetrics = {
+  trackDatabaseQuery,
+  trackDatabaseTransaction,
+}
+
+export const utils = {
+  startTimer,
+  trackDuration,
+  calculateErrorRate,
+  calculateSuccessRate,
+}
+
+export const collectors = {
+  collectCapacityMetrics,
+  collectSchoolMetrics,
+  collectDatabaseMetrics,
+}

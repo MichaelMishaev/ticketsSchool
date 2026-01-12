@@ -1,0 +1,64 @@
+/**
+ * Next.js Instrumentation Hook
+ *
+ * This file is automatically loaded by Next.js 15+ to initialize monitoring
+ * before the application starts.
+ *
+ * To enable:
+ *   1. Rename this file to `instrumentation.ts` (remove .example)
+ *   2. Set environment variables (see docs/monitoring/PRODUCTION_MONITORING_SETUP.md)
+ *   3. Restart dev server or redeploy
+ *
+ * Documentation:
+ *   - https://nextjs.org/docs/app/building-your-application/optimizing/instrumentation
+ *   - /docs/monitoring/PRODUCTION_MONITORING_SETUP.md
+ */
+
+export async function register() {
+  // Only run on Node.js runtime (not Edge Runtime)
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    // Initialize OpenTelemetry
+    const { initTelemetry } = await import('./lib/monitoring/telemetry')
+    initTelemetry()
+
+    console.log('Instrumentation initialized (OpenTelemetry)')
+  }
+}
+
+/**
+ * Error handling hook (Next.js 15+)
+ *
+ * Captures errors from all routes and sends to monitoring systems.
+ * This runs BEFORE Sentry's error boundary, so both systems will receive errors.
+ */
+export const onRequestError = async (
+  err: Error,
+  request: Request,
+  context: {
+    routerKind: 'Pages Router' | 'App Router'
+    routePath: string
+    routeType: 'render' | 'route' | 'action' | 'middleware'
+  }
+) => {
+  // Send to OpenTelemetry
+  const { recordError } = await import('./lib/monitoring/telemetry')
+  recordError(err, {
+    url: request.url,
+    method: request.method,
+    routerKind: context.routerKind,
+    routePath: context.routePath,
+    routeType: context.routeType,
+  })
+
+  // Send to Sentry (if not already captured)
+  const { captureError } = await import('./lib/monitoring/sentry')
+  captureError(err, {
+    url: request.url,
+    method: request.method,
+    routePath: context.routePath,
+  })
+
+  console.error('Request error:', err)
+  console.error('Route:', context.routePath)
+  console.error('URL:', request.url)
+}

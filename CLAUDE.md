@@ -330,23 +330,21 @@ See `/tests/README.md` for comprehensive testing guide.
 
 ### Phone Number Normalization
 
-Israeli phone format (10 digits starting with 0):
+Israeli phone format (10 digits starting with 0). Use the dedicated utility module:
 
 ```typescript
-function normalizePhone(phone: string): string {
-  let normalized = phone.replace(/[\s\-\(\)]/g, '')
+import { normalizePhone } from '@/lib/phone-utils'
 
-  if (normalized.startsWith('+972')) {
-    normalized = '0' + normalized.substring(4)
-  }
-
-  if (!/^0\d{9}$/.test(normalized)) {
-    throw new Error('Invalid Israeli phone number')
-  }
-
-  return normalized
-}
+// Accepts various formats: 050-123-4567, (050) 123 4567, +972501234567
+const normalized = normalizePhone(phone) // Returns: 0501234567
 ```
+
+The `normalizePhone()` function is located in `/lib/phone-utils.ts` and handles:
+
+- Removing non-numeric characters (spaces, dashes, parentheses)
+- Converting international format (+972) to local format (0)
+- Validating Israeli phone format (0XXXXXXXXX - 10 digits)
+- Throwing error on invalid formats
 
 ### Mobile-First Design
 

@@ -1,0 +1,382 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`API Contract Snapshot Tests > DELETE /api/events/[id] - Delete event 1`] = `
+{
+  "body": {
+    "error": "Unauthorized",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 401,
+}
+`;
+
+exports[`API Contract Snapshot Tests > GET /api/admin/me - Authenticated admin 1`] = `
+{
+  "body": {
+    "error": "Unauthorized",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 401,
+}
+`;
+
+exports[`API Contract Snapshot Tests > GET /api/admin/me - Unauthenticated 1`] = `
+{
+  "body": {
+    "error": "Unauthorized",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 401,
+}
+`;
+
+exports[`API Contract Snapshot Tests > GET /api/dashboard/active-events - Active events list 1`] = `
+{
+  "body": {
+    "error": "Unauthorized",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 401,
+}
+`;
+
+exports[`API Contract Snapshot Tests > GET /api/dashboard/stats - Dashboard statistics 1`] = `
+{
+  "body": {
+    "error": "Unauthorized",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 401,
+}
+`;
+
+exports[`API Contract Snapshot Tests > GET /api/dashboard/stats - Unauthenticated 1`] = `
+{
+  "body": {
+    "error": "Unauthorized",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 401,
+}
+`;
+
+exports[`API Contract Snapshot Tests > GET /api/events - List events (authenticated) 1`] = `
+{
+  "body": {
+    "error": "Unauthorized",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 401,
+}
+`;
+
+exports[`API Contract Snapshot Tests > GET /api/events - School A cannot see School B events 1`] = `
+{
+  "body": {
+    "error": "Unauthorized",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 401,
+}
+`;
+
+exports[`API Contract Snapshot Tests > GET /api/events - Unauthenticated 1`] = `
+{
+  "body": {
+    "error": "Unauthorized",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 401,
+}
+`;
+
+exports[`API Contract Snapshot Tests > GET /api/events/[id] - Event not found 1`] = `
+{
+  "body": {
+    "error": "Unauthorized",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 401,
+}
+`;
+
+exports[`API Contract Snapshot Tests > GET /api/events/[id] - Get event details 1`] = `
+{
+  "body": {
+    "error": "Unauthorized",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 401,
+}
+`;
+
+exports[`API Contract Snapshot Tests > GET /api/events/[id] - School A cannot access School B event 1`] = `
+{
+  "body": {
+    "error": "Unauthorized",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 401,
+}
+`;
+
+exports[`API Contract Snapshot Tests > GET /api/health - Health check endpoint 1`] = `
+{
+  "body": {
+    "deployment": "string",
+    "memory": "object",
+    "service": "ticketsSchool",
+    "status": "healthy",
+    "timestamp": "string",
+    "uptime": "number",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 200,
+}
+`;
+
+exports[`API Contract Snapshot Tests > GET /api/non-existent-endpoint - 404 Not Found 1`] = `
+{
+  "status": 404,
+  "statusText": "Not Found",
+}
+`;
+
+exports[`API Contract Snapshot Tests > GET /api/p/[schoolSlug]/[eventSlug] - Event not found 1`] = `
+{
+  "body": {
+    "error": "Event not found",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 404,
+}
+`;
+
+exports[`API Contract Snapshot Tests > GET /api/p/[schoolSlug]/[eventSlug] - Public event details 1`] = `
+{
+  "body": {
+    "_count": {
+      "registrations": 0,
+    },
+    "allowCancellation": true,
+    "capacity": 100,
+    "completionMessage": null,
+    "conditions": null,
+    "currency": "ILS",
+    "description": "Test event description",
+    "endAt": "object",
+    "eventType": "CAPACITY_BASED",
+    "fieldsSchema": [],
+    "gameType": null,
+    "id": "string",
+    "location": "Test Location",
+    "maxSpotsPerPerson": 1,
+    "maxTableCapacity": null,
+    "paymentRequired": false,
+    "paymentTiming": "OPTIONAL",
+    "priceAmount": null,
+    "pricingModel": "FIXED_PRICE",
+    "requireAcceptance": false,
+    "school": {
+      "id": "string",
+      "logo": null,
+      "name": "string",
+      "primaryColor": "#3b82f6",
+      "slug": "string",
+    },
+    "startAt": "string",
+    "status": "OPEN",
+    "title": "Test Event",
+    "totalSpotsTaken": 0,
+    "type": "event",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 200,
+}
+`;
+
+exports[`API Contract Snapshot Tests > GET /api/p/[schoolSlug]/[eventSlug] - School not found 1`] = `
+{
+  "body": {
+    "error": "School not found",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 404,
+}
+`;
+
+exports[`API Contract Snapshot Tests > PATCH /api/events/[id] - Update event 1`] = `
+{
+  "body": {
+    "error": "Unauthorized",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 401,
+}
+`;
+
+exports[`API Contract Snapshot Tests > POST /api/admin/login - Success response 1`] = `
+{
+  "body": {
+    "error": "יותר מדי ניסיונות. נסה שוב מאוחר יותר.",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 429,
+}
+`;
+
+exports[`API Contract Snapshot Tests > POST /api/admin/signup - Email already exists 1`] = `
+{
+  "body": {
+    "details": [
+      "הסיסמה נפוצה מדי. נא לבחור סיסמה חזקה יותר",
+    ],
+    "error": "הסיסמה אינה עומדת בדרישות האבטחה",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 400,
+}
+`;
+
+exports[`API Contract Snapshot Tests > POST /api/admin/signup - Invalid email format 1`] = `
+{
+  "body": {
+    "error": "כתובת מייל לא תקינה",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 400,
+}
+`;
+
+exports[`API Contract Snapshot Tests > POST /api/admin/signup - Success response 1`] = `
+{
+  "body": {
+    "details": [
+      "הסיסמה נפוצה מדי. נא לבחור סיסמה חזקה יותר",
+    ],
+    "error": "הסיסמה אינה עומדת בדרישות האבטחה",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 400,
+}
+`;
+
+exports[`API Contract Snapshot Tests > POST /api/admin/signup - Weak password 1`] = `
+{
+  "body": {
+    "error": "הסיסמה חייבת להיות לפחות 8 תווים",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 400,
+}
+`;
+
+exports[`API Contract Snapshot Tests > POST /api/events - Create event (success) 1`] = `
+{
+  "body": {
+    "error": "Unauthorized",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 401,
+}
+`;
+
+exports[`API Contract Snapshot Tests > POST /api/events - Invalid capacity 1`] = `
+{
+  "body": {
+    "error": "Unauthorized",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 401,
+}
+`;
+
+exports[`API Contract Snapshot Tests > POST /api/events - Malformed JSON 1`] = `
+{
+  "status": 401,
+}
+`;
+
+exports[`API Contract Snapshot Tests > POST /api/events - Missing required fields 1`] = `
+{
+  "body": {
+    "error": "Unauthorized",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 401,
+}
+`;
+
+exports[`API Contract Snapshot Tests > POST /api/payment/create - Invalid registration data 1`] = `
+{
+  "body": {
+    "error": "נתוני הרשמה לא תקינים",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 400,
+}
+`;
+
+exports[`API Contract Snapshot Tests > POST /api/payment/create - Missing required fields 1`] = `
+{
+  "body": {
+    "error": "חסרים פרמטרים נדרשים",
+  },
+  "headers": {
+    "contentType": "application/json",
+  },
+  "status": 400,
+}
+`;

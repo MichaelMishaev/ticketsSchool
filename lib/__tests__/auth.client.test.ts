@@ -21,7 +21,9 @@ describe('auth.client.ts - Client-Side Authentication Helpers', () => {
 
     // Reset document.cookie
     document.cookie.split(';').forEach((c) => {
-      document.cookie = c.replace(/^ +/, '').replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/')
+      document.cookie = c
+        .replace(/^ +/, '')
+        .replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/')
     })
 
     // Save original fetch and location
@@ -298,8 +300,8 @@ describe('auth.client.ts - Client-Side Authentication Helpers', () => {
   describe('SESSION_COOKIE_NAME export', () => {
     it('should export SESSION_COOKIE_NAME constant', async () => {
       // Import is already at the top, just verify it's exported
-      const module = await import('@/lib/auth.client')
-      expect(module.SESSION_COOKIE_NAME).toBe('admin_session')
+      const authModule = await import('@/lib/auth.client')
+      expect(authModule.SESSION_COOKIE_NAME).toBe('admin_session')
     })
   })
 })

@@ -1,0 +1,260 @@
+/**
+ * Metric Collection Cron Job
+ *
+ * This script collects business metrics periodically and sends them to
+ * OpenTelemetry exporters (Grafana Cloud, Prometheus, etc.)
+ *
+ * Usage:
+ *   ts-node scripts/collect-metrics.ts
+ *
+ * Scheduling (Railway):
+ *   Add a Railway Cron Job service:
+ *   - Schedule: */5 * * * * (every 5 minutes)
+ *   - Command: npm run collect-metrics
+ *
+ * Package.json:
+ *   "scripts": {
+ *     "collect-metrics": "ts-node scripts/collect-metrics.ts"
+ *   }
+ */
+
+import { PrismaClient } from '@prisma/client'
+import {
+  collectCapacityMetrics,
+  collectSchoolMetrics,
+  trackSchoolActiveEvents,
+} from '../lib/monitoring/metrics'
+
+const prisma = new PrismaClient()
+
+/**
+ * Main collection function
+ */
+async function collectMetrics() {
+  console.log(`[${new Date().toISOString()}] Starting metric collection...`)
+
+  try {
+    // Collect capacity metrics for all active events
+    await collectCapacityMetrics(prisma)
+
+    // Collect school metrics (active events per school)
+    await collectSchoolMetrics(prisma)
+
+    // Collect payment metrics (revenue, success rate)
+    await collectPaymentMetrics()
+
+    // Collect registration metrics (daily/hourly rates)
+    await collectRegistrationMetrics()
+
+    console.log(`[${new Date().toISOString()}] Metric collection completed successfully`)
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] Metric collection failed:`, error)
+    process.exit(1)
+  } finally {
+    await prisma.$disconnect()
+  }
+}
+
+/**
+ * Collect payment metrics
+ */
+async function collectPaymentMetrics() {
+  try {
+    // Get payment stats for the last hour
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+
+    const paymentStats = await prisma.payment.groupBy({
+      by: ['status'],
+      where: {
+        createdAt: {
+          gte: oneHourAgo,
+        },
+      },
+      _count: true,
+      _sum: {
+        amount: true,
+      },
+    })
+
+    console.log('Payment metrics (last hour):', paymentStats)
+
+    // Calculate success rate
+    const total = paymentStats.reduce((acc, stat) => acc + stat._count, 0)
+    const completed = paymentStats.find((s) => s.status === 'COMPLETED')?._count || 0
+    const successRate = total > 0 ? (completed / total) * 100 : 0
+
+    console.log(`Payment success rate: ${successRate.toFixed(2)}%`)
+
+    // TODO: Send to OpenTelemetry (implement gauge metric)
+  } catch (error) {
+    console.error('Error collecting payment metrics:', error)
+  }
+}
+
+/**
+ * Collect registration metrics
+ */
+async function collectRegistrationMetrics() {
+  try {
+    // Get registration stats for the last hour
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+
+    const registrationStats = await prisma.registration.groupBy({
+      by: ['status'],
+      where: {
+        createdAt: {
+          gte: oneHourAgo,
+        },
+      },
+      _count: true,
+    })
+
+    console.log('Registration metrics (last hour):', registrationStats)
+
+    // Get top events by registration count
+    const topEvents = await prisma.event.findMany({
+      select: {
+        id: true,
+        name: true,
+        capacity: true,
+        spotsReserved: true,
+        _count: {
+          select: {
+            registrations: true,
+          },
+        },
+      },
+      where: {
+        startDate: {
+          gte: new Date(), // Future events only
+        },
+      },
+      orderBy: {
+        spotsReserved: 'desc',
+      },
+      take: 10,
+    })
+
+    console.log('Top 10 events by registration count:')
+    topEvents.forEach((event) => {
+      const utilization = ((event.spotsReserved / event.capacity) * 100).toFixed(1)
+      console.log(
+        `  - ${event.name}: ${event.spotsReserved}/${event.capacity} (${utilization}%)`
+      )
+    })
+
+    // TODO: Send to OpenTelemetry (implement gauge metrics)
+  } catch (error) {
+    console.error('Error collecting registration metrics:', error)
+  }
+}
+
+/**
+ * Collect database health metrics
+ */
+async function collectDatabaseHealthMetrics() {
+  try {
+    // Test database connection
+    const startTime = Date.now()
+    await prisma.$queryRaw`SELECT 1`
+    const latency = Date.now() - startTime
+
+    console.log(`Database latency: ${latency}ms`)
+
+    // Get table sizes (PostgreSQL)
+    const tableSizes = await prisma.$queryRaw<
+      Array<{ table_name: string; size: string }>
+    >`
+      SELECT
+        table_name,
+        pg_size_pretty(pg_total_relation_size(quote_ident(table_name))) AS size
+      FROM information_schema.tables
+      WHERE table_schema = 'public'
+      ORDER BY pg_total_relation_size(quote_ident(table_name)) DESC
+      LIMIT 10
+    `
+
+    console.log('Database table sizes:')
+    tableSizes.forEach((table) => {
+      console.log(`  - ${table.table_name}: ${table.size}`)
+    })
+
+    // TODO: Send to OpenTelemetry (implement gauge metrics)
+  } catch (error) {
+    console.error('Error collecting database health metrics:', error)
+  }
+}
+
+/**
+ * Collect waitlist metrics
+ */
+async function collectWaitlistMetrics() {
+  try {
+    // Get waitlist stats
+    const waitlistCount = await prisma.registration.count({
+      where: {
+        status: 'WAITLIST',
+      },
+    })
+
+    // Get events with waitlists
+    const eventsWithWaitlist = await prisma.event.findMany({
+      where: {
+        registrations: {
+          some: {
+            status: 'WAITLIST',
+          },
+        },
+        startDate: {
+          gte: new Date(), // Future events only
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        capacity: true,
+        spotsReserved: true,
+        _count: {
+          select: {
+            registrations: {
+              where: {
+                status: 'WAITLIST',
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        spotsReserved: 'desc',
+      },
+    })
+
+    console.log(`Total waitlisted registrations: ${waitlistCount}`)
+    console.log(`Events with waitlists: ${eventsWithWaitlist.length}`)
+
+    eventsWithWaitlist.forEach((event) => {
+      console.log(
+        `  - ${event.name}: ${event._count.registrations} on waitlist (${event.spotsReserved}/${event.capacity} confirmed)`
+      )
+    })
+
+    // TODO: Send to OpenTelemetry (implement gauge metrics)
+  } catch (error) {
+    console.error('Error collecting waitlist metrics:', error)
+  }
+}
+
+// Run if called directly
+if (require.main === module) {
+  collectMetrics()
+    .then(() => {
+      console.log('Metric collection complete')
+      process.exit(0)
+    })
+    .catch((error) => {
+      console.error('Metric collection failed:', error)
+      process.exit(1)
+    })
+}
+
+export { collectMetrics }

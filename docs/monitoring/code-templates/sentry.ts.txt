@@ -1,0 +1,522 @@
+/**
+ * Sentry Configuration Utilities
+ *
+ * Provides helper functions for error tracking, performance monitoring,
+ * and custom contexts in Sentry.
+ *
+ * Note: Main Sentry initialization happens in:
+ *   - sentry.server.config.ts (server-side)
+ *   - sentry.client.config.ts (client-side)
+ *   - sentry.edge.config.ts (middleware)
+ *
+ * This file provides utilities for adding context and tracking errors.
+ */
+
+import * as Sentry from '@sentry/nextjs'
+
+/**
+ * Set user context for error tracking
+ *
+ * Example:
+ *   const admin = await getCurrentAdmin()
+ *   setUserContext(admin.id, admin.email, { role: admin.role })
+ */
+export function setUserContext(
+  userId: string,
+  email?: string,
+  additionalData?: Record<string, any>
+) {
+  Sentry.setUser({
+    id: userId,
+    email,
+    ...additionalData,
+  })
+}
+
+/**
+ * Set school context (multi-tenant isolation)
+ *
+ * Example:
+ *   setSchoolContext(admin.schoolId, admin.schoolName)
+ */
+export function setSchoolContext(schoolId: string | null, schoolName?: string) {
+  if (!schoolId) return
+
+  Sentry.setContext('school', {
+    id: schoolId,
+    name: schoolName,
+  })
+
+  // Also set as tag for filtering
+  Sentry.setTag('school_id', schoolId)
+}
+
+/**
+ * Set event context (for event-specific errors)
+ *
+ * Example:
+ *   setEventContext(eventId, eventName, { capacity: 100, spotsReserved: 95 })
+ */
+export function setEventContext(
+  eventId: string,
+  eventName?: string,
+  additionalData?: Record<string, any>
+) {
+  Sentry.setContext('event', {
+    id: eventId,
+    name: eventName,
+    ...additionalData,
+  })
+
+  // Also set as tag for filtering
+  Sentry.setTag('event_id', eventId)
+}
+
+/**
+ * Set registration context (for registration-specific errors)
+ *
+ * Example:
+ *   setRegistrationContext(registrationId, confirmationCode, { status: 'CONFIRMED' })
+ */
+export function setRegistrationContext(
+  registrationId: string,
+  confirmationCode?: string,
+  additionalData?: Record<string, any>
+) {
+  Sentry.setContext('registration', {
+    id: registrationId,
+    confirmationCode,
+    ...additionalData,
+  })
+
+  // Also set as tag for filtering
+  Sentry.setTag('registration_id', registrationId)
+}
+
+/**
+ * Set payment context (for payment-specific errors)
+ *
+ * Example:
+ *   setPaymentContext(paymentId, yaadPayOrderId, { amount: 100, status: 'PROCESSING' })
+ */
+export function setPaymentContext(
+  paymentId: string,
+  yaadPayOrderId?: string,
+  additionalData?: Record<string, any>
+) {
+  Sentry.setContext('payment', {
+    id: paymentId,
+    yaadPayOrderId,
+    ...additionalData,
+  })
+
+  // Also set as tag for filtering
+  Sentry.setTag('payment_id', paymentId)
+  if (yaadPayOrderId) {
+    Sentry.setTag('yaadpay_order_id', yaadPayOrderId)
+  }
+}
+
+/**
+ * Add a breadcrumb for debugging context
+ *
+ * Example:
+ *   addBreadcrumb('capacity_check', 'Checking event capacity', {
+ *     eventId: '123',
+ *     available: 10,
+ *     requested: 5
+ *   })
+ */
+export function addBreadcrumb(
+  category: string,
+  message: string,
+  data?: Record<string, any>,
+  level: 'debug' | 'info' | 'warning' | 'error' = 'info'
+) {
+  Sentry.addBreadcrumb({
+    category,
+    message,
+    level,
+    data,
+    timestamp: Date.now() / 1000,
+  })
+}
+
+/**
+ * Capture an error with context
+ *
+ * Example:
+ *   try {
+ *     await createRegistration(data)
+ *   } catch (error) {
+ *     captureError(error, {
+ *       operation: 'registration.create',
+ *       eventId: data.eventId,
+ *       spotsRequested: data.spotsCount
+ *     })
+ *     throw error
+ *   }
+ */
+export function captureError(
+  error: Error | string,
+  additionalData?: Record<string, any>,
+  tags?: Record<string, string>
+) {
+  // Add tags for filtering
+  if (tags) {
+    Object.entries(tags).forEach(([key, value]) => {
+      Sentry.setTag(key, value)
+    })
+  }
+
+  // Add extra context
+  if (additionalData) {
+    Sentry.setContext('additional', additionalData)
+  }
+
+  // Capture the error
+  if (typeof error === 'string') {
+    Sentry.captureMessage(error, 'error')
+  } else {
+    Sentry.captureException(error)
+  }
+}
+
+/**
+ * Track a registration operation
+ *
+ * Example:
+ *   await trackRegistration(eventId, spotsCount, async () => {
+ *     const result = await createRegistration(data)
+ *     return result
+ *   })
+ */
+export async function trackRegistration<T>(
+  eventId: string,
+  spotsCount: number,
+  callback: () => Promise<T>
+): Promise<T> {
+  const transaction = Sentry.startTransaction({
+    op: 'registration.create',
+    name: 'Create Registration',
+    tags: {
+      event_id: eventId,
+    },
+    data: {
+      spots_requested: spotsCount,
+    },
+  })
+
+  try {
+    addBreadcrumb('registration', 'Starting registration', {
+      eventId,
+      spotsCount,
+    })
+
+    const result = await callback()
+
+    transaction.setStatus('ok')
+    addBreadcrumb('registration', 'Registration successful', { eventId })
+
+    return result
+  } catch (error) {
+    transaction.setStatus('internal_error')
+    addBreadcrumb('registration', 'Registration failed', { eventId, error: (error as Error).message }, 'error')
+    captureError(error as Error, { eventId, spotsCount }, { operation: 'registration.create' })
+    throw error
+  } finally {
+    transaction.finish()
+  }
+}
+
+/**
+ * Track a payment operation
+ *
+ * Example:
+ *   await trackPayment(amount, currency, async () => {
+ *     const payment = await processPayment(data)
+ *     return payment
+ *   })
+ */
+export async function trackPayment<T>(
+  amount: number,
+  currency: string,
+  callback: () => Promise<T>
+): Promise<T> {
+  const transaction = Sentry.startTransaction({
+    op: 'payment.process',
+    name: 'Process Payment',
+    tags: {
+      payment_gateway: 'yaadpay',
+    },
+    data: {
+      amount,
+      currency,
+    },
+  })
+
+  try {
+    addBreadcrumb('payment', 'Starting payment processing', {
+      amount,
+      currency,
+    })
+
+    const result = await callback()
+
+    transaction.setStatus('ok')
+    addBreadcrumb('payment', 'Payment successful', { amount })
+
+    return result
+  } catch (error) {
+    transaction.setStatus('internal_error')
+    addBreadcrumb('payment', 'Payment failed', { amount, error: (error as Error).message }, 'error')
+    captureError(error as Error, { amount, currency }, { operation: 'payment.process' })
+    throw error
+  } finally {
+    transaction.finish()
+  }
+}
+
+/**
+ * Track a database operation (for complex queries)
+ *
+ * Example:
+ *   await trackDatabaseQuery('events', 'findMany', async () => {
+ *     return await prisma.event.findMany({ where: { ... } })
+ *   })
+ */
+export async function trackDatabaseQuery<T>(
+  model: string,
+  operation: string,
+  callback: () => Promise<T>
+): Promise<T> {
+  const transaction = Sentry.startTransaction({
+    op: `db.${model}.${operation}`,
+    name: `Database Query: ${model}.${operation}`,
+    tags: {
+      db_model: model,
+      db_operation: operation,
+    },
+  })
+
+  try {
+    const result = await callback()
+    transaction.setStatus('ok')
+    return result
+  } catch (error) {
+    transaction.setStatus('internal_error')
+    captureError(error as Error, { model, operation }, { operation: 'database_query' })
+    throw error
+  } finally {
+    transaction.finish()
+  }
+}
+
+/**
+ * Track an external API call (YaadPay, Resend, etc.)
+ *
+ * Example:
+ *   await trackExternalCall('yaadpay', 'POST', '/api/payment', async () => {
+ *     return await fetch('https://yaadpay.co.il/api/payment', { ... })
+ *   })
+ */
+export async function trackExternalCall<T>(
+  service: string,
+  method: string,
+  path: string,
+  callback: () => Promise<T>
+): Promise<T> {
+  const transaction = Sentry.startTransaction({
+    op: `external.${service}.${method}`,
+    name: `External Call: ${service} ${method} ${path}`,
+    tags: {
+      external_service: service,
+      http_method: method,
+    },
+    data: {
+      path,
+    },
+  })
+
+  try {
+    addBreadcrumb('external_call', `Calling ${service} API`, {
+      service,
+      method,
+      path,
+    })
+
+    const result = await callback()
+
+    transaction.setStatus('ok')
+    addBreadcrumb('external_call', `${service} call successful`, { service })
+
+    return result
+  } catch (error) {
+    transaction.setStatus('internal_error')
+    addBreadcrumb('external_call', `${service} call failed`, {
+      service,
+      error: (error as Error).message,
+    }, 'error')
+    captureError(error as Error, { service, method, path }, { operation: 'external_call' })
+    throw error
+  } finally {
+    transaction.finish()
+  }
+}
+
+/**
+ * Clear all context (call at end of request)
+ *
+ * Example:
+ *   // At end of API route
+ *   clearContext()
+ */
+export function clearContext() {
+  Sentry.setUser(null)
+  Sentry.setContext('school', null)
+  Sentry.setContext('event', null)
+  Sentry.setContext('registration', null)
+  Sentry.setContext('payment', null)
+  Sentry.setContext('additional', null)
+}
+
+/**
+ * Capture a message (info, warning, error)
+ *
+ * Example:
+ *   captureMessage('Event capacity reached', 'warning', { eventId: '123' })
+ */
+export function captureMessage(
+  message: string,
+  level: 'debug' | 'info' | 'warning' | 'error' = 'info',
+  additionalData?: Record<string, any>
+) {
+  if (additionalData) {
+    Sentry.setContext('additional', additionalData)
+  }
+
+  Sentry.captureMessage(message, level)
+}
+
+/**
+ * Track performance of a specific operation
+ *
+ * Example:
+ *   const stopTimer = startPerformanceTimer('registration.create')
+ *   // ... do work
+ *   stopTimer({ eventId: '123', status: 'success' })
+ */
+export function startPerformanceTimer(operation: string) {
+  const startTime = Date.now()
+
+  return (additionalData?: Record<string, any>) => {
+    const duration = Date.now() - startTime
+
+    // Add breadcrumb with duration
+    addBreadcrumb('performance', `${operation} completed`, {
+      operation,
+      duration_ms: duration,
+      ...additionalData,
+    })
+
+    // Also set as measurement
+    Sentry.getCurrentHub()
+      .getScope()
+      ?.setTag('operation_duration', duration.toString())
+  }
+}
+
+/**
+ * Filter sensitive data before sending to Sentry
+ *
+ * Use this in beforeSend hooks in sentry.*.config.ts files
+ *
+ * Example:
+ *   beforeSend(event) {
+ *     return filterSensitiveData(event)
+ *   }
+ */
+export function filterSensitiveData(event: Sentry.Event): Sentry.Event | null {
+  // Remove sensitive headers
+  if (event.request?.headers) {
+    delete event.request.headers['authorization']
+    delete event.request.headers['cookie']
+    delete event.request.headers['x-api-key']
+  }
+
+  // Remove sensitive data from breadcrumbs
+  if (event.breadcrumbs) {
+    event.breadcrumbs = event.breadcrumbs.map((breadcrumb) => {
+      if (breadcrumb.data) {
+        // Remove PII
+        delete breadcrumb.data.phone
+        delete breadcrumb.data.email
+        delete breadcrumb.data.password
+        delete breadcrumb.data.credit_card
+        delete breadcrumb.data.ssn
+
+        // Redact YaadPay secrets
+        if (breadcrumb.data.yaadpay_secret) {
+          breadcrumb.data.yaadpay_secret = '[REDACTED]'
+        }
+      }
+      return breadcrumb
+    })
+  }
+
+  // Remove sensitive data from extra context
+  if (event.extra) {
+    delete event.extra.password
+    delete event.extra.credit_card
+    delete event.extra.api_secret
+  }
+
+  // Remove sensitive data from user object
+  if (event.user) {
+    delete event.user.phone
+    delete event.user.credit_card
+  }
+
+  return event
+}
+
+/**
+ * Check if Sentry is enabled
+ *
+ * Example:
+ *   if (isSentryEnabled()) {
+ *     captureError(error)
+ *   }
+ */
+export function isSentryEnabled(): boolean {
+  return !!process.env.SENTRY_DSN || !!process.env.NEXT_PUBLIC_SENTRY_DSN
+}
+
+/**
+ * Initialize Sentry for API routes (server-side)
+ *
+ * Example:
+ *   export async function POST(request: Request) {
+ *     initSentryForRequest(request)
+ *     const admin = await getCurrentAdmin()
+ *     setUserContext(admin.id, admin.email)
+ *     // ... rest of route
+ *   }
+ */
+export function initSentryForRequest(request: Request) {
+  if (!isSentryEnabled()) return
+
+  // Extract request context
+  const url = new URL(request.url)
+
+  addBreadcrumb('http', `${request.method} ${url.pathname}`, {
+    method: request.method,
+    url: url.href,
+    pathname: url.pathname,
+  })
+
+  // Set transaction name
+  Sentry.getCurrentHub().configureScope((scope) => {
+    scope.setTransactionName(`${request.method} ${url.pathname}`)
+  })
+}

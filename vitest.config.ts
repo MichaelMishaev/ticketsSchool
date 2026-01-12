@@ -2,6 +2,7 @@ import { defineConfig } from 'vitest/config'
 import path from 'path'
 
 export default defineConfig({
+  css: false, // Skip CSS processing (Vitest doesn't need it for unit tests)
   test: {
     globals: true,
     environment: 'node', // Use node environment for lib/* tests (no DOM needed)

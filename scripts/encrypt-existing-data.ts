@@ -177,18 +177,14 @@ async function encryptExistingData(dryRun = false) {
       where: {
         OR: [
           {
-            AND: [
-              { phoneNumber: { not: null } },
-              // Phone contains digit 0 = plaintext
-              { phoneNumber: { contains: '0' } },
-            ],
+            // Phone contains digit 0 = plaintext (not encrypted)
+            phoneNumber: { contains: '0' },
           },
           {
             AND: [
-              { email: { not: null } },
               // Email contains @ = plaintext (but skip anonymous)
               { email: { contains: '@' } },
-              { email: { not: 'anonymous@banned.local' } },
+              { NOT: { email: 'anonymous@banned.local' } },
             ],
           },
         ],

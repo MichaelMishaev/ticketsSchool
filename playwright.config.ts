@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
   testDir: './tests',
+  testIgnore: '**/archived-e2e/**', // Exclude archived E2E tests from migration
   fullyParallel: false, // Changed from true - tests interfere with each other
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
