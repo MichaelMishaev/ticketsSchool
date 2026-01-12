@@ -239,14 +239,22 @@ export async function GET() {
       }))
     })
   } catch (error) {
+    // Log full error details server-side only
+    const requestId = crypto.randomUUID()
+    console.error('[Team Invitations GET] ERROR - Request ID:', requestId)
     console.error('Error fetching invitations:', error)
-    // Log more details about the error for debugging
     if (error instanceof Error) {
       console.error('Error message:', error.message)
       console.error('Error stack:', error.stack)
     }
+
+    // Return generic error to client (no internal details exposed)
     return NextResponse.json(
-      { error: 'Failed to fetch invitations', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Failed to fetch invitations',
+        requestId, // For support tracking only
+        timestamp: new Date().toISOString()
+      },
       { status: 500 }
     )
   }

@@ -1,0 +1,95 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e5]:
+        - link "Capacity Increase" [ref=e8] [cursor=pointer]:
+          - /url: /admin
+        - generic [ref=e9]:
+          - button "צור אירוע חדש" [ref=e11]:
+            - img [ref=e13]
+            - generic [ref=e14]: אירוע חדש
+            - img [ref=e15]
+          - link [ref=e17] [cursor=pointer]:
+            - /url: /admin/help
+            - img [ref=e18] [cursor=pointer]
+          - button [ref=e21]:
+            - img [ref=e22]
+    - main [ref=e23]:
+      - generic [ref=e25]:
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - generic [ref=e29]:
+              - img [ref=e30]
+              - paragraph [ref=e34]: 🔗 קישור להרשמה (שתף עם משתתפים)
+            - generic [ref=e35]: http://localhost:9000/p/capacity-increase-b4057774/capacity-test-event-496c8e17
+          - button "העתק קישור" [ref=e36]:
+            - img [ref=e37]
+            - generic [ref=e40]: העתק קישור
+        - generic [ref=e42]:
+          - generic [ref=e43]:
+            - generic [ref=e44]:
+              - heading "Capacity Test Event" [level=1] [ref=e45]
+              - generic [ref=e46]: פתוח
+            - generic [ref=e47]:
+              - generic [ref=e49]: "🏢 ארגון: Capacity Increase"
+              - generic [ref=e50]:
+                - img [ref=e51]
+                - text: 09/12/2025 18:00
+              - generic [ref=e53]:
+                - img [ref=e54]
+                - text: Test Location
+              - generic [ref=e57]:
+                - img [ref=e58]
+                - text: 0 / 30 נרשמים (30 מקומות פנויים)
+          - generic [ref=e63]:
+            - generic [ref=e65]:
+              - button "ערוך אירוע" [ref=e66]:
+                - img [ref=e67]
+                - generic [ref=e70]: ערוך אירוע
+              - link "תצוגה מקדימה" [ref=e71] [cursor=pointer]:
+                - /url: /p/capacity-increase-b4057774/capacity-test-event-496c8e17
+                - img [ref=e72] [cursor=pointer]
+                - generic [ref=e76] [cursor=pointer]: תצוגה מקדימה
+            - generic [ref=e77]:
+              - generic [ref=e78]:
+                - paragraph [ref=e79]: שליטה בהרשמות
+                - paragraph [ref=e80]: פתוח - מאפשר הרשמה חדשה | מושהה - זמנית | סגור - חסום
+              - combobox [ref=e81]:
+                - option "✅ פתוח להרשמה" [selected]
+                - option "⏸️ מושהה"
+                - option "🚫 סגור"
+        - generic [ref=e83]:
+          - generic [ref=e85]:
+            - img [ref=e86]
+            - textbox "חיפוש לפי שם, טלפון או קוד אישור (כמו OF9ZEC)..." [ref=e89]
+          - combobox [ref=e90]:
+            - option "כל הסטטוסים" [selected]
+            - option "אושר"
+            - option "רשימת המתנה"
+            - option "בוטל"
+          - button "ייצא CSV" [ref=e91]:
+            - img [ref=e92]
+            - text: ייצא CSV
+        - generic [ref=e95]:
+          - table [ref=e97]:
+            - rowgroup [ref=e98]:
+              - row "# פרטים מקומות סטטוס קוד אישור נרשם ב פעולות" [ref=e99]:
+                - cell "#" [ref=e100]
+                - cell "פרטים" [ref=e101]
+                - cell "מקומות" [ref=e102]
+                - cell "סטטוס" [ref=e103]
+                - cell "קוד אישור" [ref=e104]
+                - cell "נרשם ב" [ref=e105]
+                - cell "פעולות" [ref=e106]
+            - rowgroup
+          - generic [ref=e107]: אין נרשמים
+    - link "צור קשר דרך WhatsApp" [ref=e108] [cursor=pointer]:
+      - /url: https://wa.me/972555020829
+      - img [ref=e111] [cursor=pointer]
+  - button "Open Next.js Dev Tools" [ref=e118] [cursor=pointer]:
+    - img [ref=e119] [cursor=pointer]
+  - alert [ref=e122]
+```

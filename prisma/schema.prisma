@@ -1,0 +1,556 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model School {
+  id           String  @id @default(cuid())
+  name         String
+  slug         String  @unique
+  logo         String?
+  primaryColor String  @default("#3b82f6")
+  isActive     Boolean @default(true)
+
+  // Subscription & billing
+  plan                 SubscriptionPlan   @default(FREE)
+  stripeCustomerId     String?            @unique
+  stripeSubscriptionId String?            @unique
+  subscriptionStatus   SubscriptionStatus @default(ACTIVE)
+  trialEndsAt          DateTime?
+  subscriptionEndsAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  events          Event[]
+  admins          Admin[]
+  invitations     TeamInvitation[]
+  usageRecords    UsageRecord[]
+  tableTemplates  TableTemplate[]
+  bans            UserBan[]
+  payments        Payment[] // Event ticketing payments (YaadPay)
+  breachIncidents BreachIncident[] // Israeli PPL breach tracking
+
+  @@index([slug])
+  @@index([isActive])
+  @@index([stripeCustomerId])
+  @@index([plan])
+}
+
+enum SubscriptionPlan {
+  FREE
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIAL
+  PAST_DUE
+  CANCELED
+  PAUSED
+}
+
+model UsageRecord {
+  id       String @id @default(cuid())
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  // What resource was used
+  resourceType UsageResourceType
+  // How much was used
+  amount       Int               @default(1)
+
+  // Time period (for monthly limits)
+  year  Int
+  month Int
+
+  // Metadata
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  @@unique([schoolId, resourceType, year, month])
+  @@index([schoolId])
+  @@index([schoolId, year, month])
+  @@index([resourceType])
+}
+
+enum UsageResourceType {
+  EVENT_CREATED
+  REGISTRATION_PROCESSED
+  EMAIL_SENT
+  SMS_SENT
+  API_CALL
+  STORAGE_MB
+}
+
+model Admin {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String? // Nullable for OAuth-only users
+  name         String
+  role         AdminRole @default(SCHOOL_ADMIN)
+  schoolId     String?
+  school       School?   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  // Email verification
+  emailVerified     Boolean @default(false)
+  verificationToken String? @unique
+
+  // Password reset
+  resetToken       String?   @unique
+  resetTokenExpiry DateTime?
+
+  // OAuth
+  googleId String? @unique
+
+  // Onboarding
+  onboardingCompleted Boolean @default(false)
+
+  // Status
+  isActive    Boolean   @default(true)
+  lastLoginAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Team invitations sent by this admin
+  invitationsSent TeamInvitation[] @relation("InvitedBy")
+  bansCreated     UserBan[]
+
+  @@index([email])
+  @@index([schoolId])
+  @@index([role])
+  @@index([googleId])
+  @@index([verificationToken])
+  @@index([resetToken])
+}
+
+enum AdminRole {
+  SUPER_ADMIN // Platform owner - access to everything
+  OWNER // School owner - billing, team management
+  ADMIN // School admin - all event operations
+  MANAGER // School manager - view events, edit registrations
+  VIEWER // School viewer - read-only access
+  SCHOOL_ADMIN // Legacy role - keep for backward compatibility
+}
+
+model TeamInvitation {
+  id          String           @id @default(cuid())
+  email       String
+  schoolId    String
+  school      School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  role        AdminRole        @default(ADMIN)
+  invitedById String
+  invitedBy   Admin            @relation("InvitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
+  token       String           @unique
+  status      InvitationStatus @default(PENDING)
+  expiresAt   DateTime
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([email, schoolId])
+  @@index([token])
+  @@index([email])
+  @@index([schoolId])
+  @@index([status])
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+model Event {
+  id                String      @id @default(cuid())
+  slug              String      @unique
+  schoolId          String
+  school            School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  title             String
+  description       String?
+  gameType          String?
+  location          String?
+  startAt           DateTime
+  endAt             DateTime?
+  capacity          Int
+  spotsReserved     Int         @default(0) // Atomic counter for confirmed spots
+  status            EventStatus @default(OPEN)
+  maxSpotsPerPerson Int         @default(1)
+  fieldsSchema      Json        @default("[]")
+  conditions        String?
+  requireAcceptance Boolean     @default(false)
+  completionMessage String?
+
+  // Table-based events
+  eventType                 EventType @default(CAPACITY_BASED)
+  tables                    Table[]
+  allowCancellation         Boolean   @default(true)
+  cancellationDeadlineHours Int       @default(2)
+  requireCancellationReason Boolean   @default(false)
+
+  // Check-in management
+  checkInToken String? @unique // Secret token for shareable check-in URL
+
+  // Payment configuration (Tier 2: Event Ticketing - YaadPay)
+  paymentRequired Boolean       @default(false)
+  paymentTiming   PaymentTiming @default(OPTIONAL)
+  pricingModel    PricingModel  @default(FIXED_PRICE)
+  priceAmount     Decimal?      @db.Decimal(10, 2) // Amount in ILS
+  currency        String        @default("ILS")
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  registrations Registration[]
+  payments      Payment[] // Event ticketing payments
+
+  @@index([slug])
+  @@index([status])
+  @@index([schoolId])
+  @@index([schoolId, status])
+  @@index([eventType])
+  @@index([checkInToken])
+  @@index([paymentRequired])
+}
+
+enum EventType {
+  CAPACITY_BASED
+  TABLE_BASED
+}
+
+model Registration {
+  id               String             @id @default(cuid())
+  eventId          String
+  event            Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  data             Json
+  spotsCount       Int                @default(1)
+  status           RegistrationStatus @default(CONFIRMED)
+  confirmationCode String             @unique
+  phoneNumber      String? // Made optional to match production data
+  email            String?
+
+  // Table-based events
+  guestsCount      Int?
+  assignedTable    Table? @relation("TableReservation")
+  waitlistPriority Int?
+
+  // Cancellation
+  cancellationToken  String?            @unique
+  cancelledAt        DateTime?
+  cancellationReason String?
+  cancelledBy        CancellationSource @default(CUSTOMER)
+
+  // Check-in
+  qrCode  String?  @unique // QR code for this registration
+  checkIn CheckIn?
+
+  // Payment (Tier 2: Event Ticketing - YaadPay)
+  paymentStatus   PaymentStatus @default(PENDING)
+  payment         Payment? // Back-reference to Payment record
+  amountDue       Decimal?      @db.Decimal(10, 2) // Total amount for this registration
+  amountPaid      Decimal?      @db.Decimal(10, 2) // Amount actually paid
+  paymentIntentId String?       @unique // Unique ID for payment flow (idempotency)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([eventId])
+  @@index([status])
+  @@index([phoneNumber])
+  @@index([confirmationCode])
+  @@index([eventId, phoneNumber])
+  @@index([cancellationToken])
+  @@index([eventId, waitlistPriority])
+  @@index([qrCode])
+  @@index([paymentStatus])
+  @@index([paymentIntentId])
+}
+
+enum EventStatus {
+  OPEN
+  PAUSED
+  CLOSED
+}
+
+enum RegistrationStatus {
+  CONFIRMED
+  WAITLIST
+  CANCELLED
+}
+
+enum CancellationSource {
+  CUSTOMER
+  ADMIN
+  SYSTEM
+}
+
+model Table {
+  id      String @id @default(cuid())
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  tableNumber String // "1", "Patio-3", "Window"
+  tableOrder  Int // Display order (admin reorders with ↑↓)
+  capacity    Int // Max seats
+  minOrder    Int // Min guests required
+
+  status       TableStatus   @default(AVAILABLE)
+  reservedById String?       @unique
+  reservation  Registration? @relation("TableReservation", fields: [reservedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([eventId, status])
+}
+
+enum TableStatus {
+  AVAILABLE
+  RESERVED
+  INACTIVE
+}
+
+model Log {
+  id        String   @id @default(cuid())
+  level     LogLevel @default(INFO)
+  message   String
+  metadata  Json?
+  source    String?
+  userId    String?
+  eventId   String?
+  createdAt DateTime @default(now())
+
+  @@index([level])
+  @@index([source])
+  @@index([createdAt])
+  @@index([eventId])
+}
+
+enum LogLevel {
+  DEBUG
+  INFO
+  WARN
+  ERROR
+}
+
+model Feedback {
+  id         String         @id @default(cuid())
+  message    String
+  email      String?
+  status     FeedbackStatus @default(PENDING)
+  adminNotes String?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum FeedbackStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  DISMISSED
+}
+
+// OAuth State Storage - temporary state for OAuth flows
+model OAuthState {
+  id        String   @id @default(cuid())
+  state     String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([state])
+  @@index([expiresAt])
+}
+
+// Table Templates - Reusable table configurations
+model TableTemplate {
+  id       String @id @default(cuid())
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  name        String // "חתונה 200 אורחים", "גאלה 40 שולחנות"
+  description String? // Optional description
+  isPublic    Boolean @default(false) // Public templates available to all schools
+
+  // Template configuration (JSON array of table configs)
+  // Example: [{ tableNumber: "1", capacity: 8, minOrder: 4, count: 30 }]
+  config Json
+
+  timesUsed Int      @default(0) // Track popularity
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([schoolId])
+  @@index([isPublic])
+}
+
+// Check-In System - Track who actually attended events
+model CheckIn {
+  id             String       @id @default(cuid())
+  registrationId String       @unique // One check-in per registration
+  registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+
+  checkedInAt DateTime @default(now())
+  checkedInBy String? // Name/identifier of person who checked them in (free text)
+
+  // Undo support (in case of mistake)
+  undoneAt     DateTime?
+  undoneBy     String?
+  undoneReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([registrationId])
+  @@index([checkedInAt])
+}
+
+// User Ban System - Ban users from registering for events
+model UserBan {
+  id String @id @default(cuid())
+
+  // User identification (phone-based for Israeli market)
+  phoneNumber String
+  email       String?
+  name        String? // For display in ban list
+
+  // Ban details
+  schoolId String // School-specific bans
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  reason           String // Free text reason (e.g., "לא הגיע ל-3 משחקים רצופים")
+  bannedGamesCount Int    @default(3) // How many events they're banned from
+
+  // Ban period
+  bannedAt  DateTime  @default(now())
+  expiresAt DateTime? // Optional expiration date (null = count-based)
+
+  // Track which events they've been banned from attending
+  eventsBlocked Int @default(0) // Counter for game-based bans
+
+  // Admin control
+  active       Boolean   @default(true)
+  liftedAt     DateTime?
+  liftedBy     String? // Admin who lifted the ban
+  liftedReason String? // Why ban was lifted early
+
+  // Metadata
+  createdBy String
+  admin     Admin  @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([phoneNumber, schoolId, active])
+  @@index([schoolId, active])
+  @@index([expiresAt])
+}
+
+// Breach Incident Tracking - Israeli PPL Compliance (Amendment 13, August 2025)
+model BreachIncident {
+  id       String  @id @default(cuid())
+  schoolId String?
+  school   School? @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  incidentType String // "data_leak", "unauthorized_access", "payment_tampering"
+  severity     String // "low", "medium", "high", "critical"
+
+  description   String @db.Text
+  affectedUsers Int
+  dataTypes     String // JSON array
+
+  detectedAt DateTime
+  reportedAt DateTime?
+  resolvedAt DateTime?
+
+  notifiedPPA   Boolean @default(false) // Privacy Protection Authority
+  notifiedUsers Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([schoolId, severity])
+  @@index([detectedAt])
+}
+
+// Payment System - Event Ticketing Payments (Tier 2: YaadPay)
+model Payment {
+  id String @id @default(cuid())
+
+  // Link to registration
+  registrationId String       @unique
+  registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+
+  // Link to event
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  // Payment details
+  amount   Decimal       @db.Decimal(10, 2)
+  currency String        @default("ILS")
+  status   PaymentStatus @default(PENDING)
+
+  // YaadPay integration
+  yaadPayOrderId       String? @unique // YaadPay's Order parameter (our paymentIntentId)
+  yaadPayMasof         String? // Terminal number used
+  yaadPayConfirmCode   String? // YaadPay confirmation code (on success)
+  yaadPayCCode         Int? // YaadPay response code (0=success)
+  yaadPayTransactionId String? // YaadPay transaction ID
+
+  // Metadata
+  paymentMethod String? // "yaadpay", "manual", etc.
+  payerEmail    String?
+  payerPhone    String?
+  payerName     String?
+
+  // Refunds
+  refundedAt   DateTime?
+  refundAmount Decimal?  @db.Decimal(10, 2)
+  refundReason String?
+
+  // Audit trail
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime? // When payment completed
+
+  // School association (for multi-tenant queries)
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId])
+  @@index([eventId])
+  @@index([status])
+  @@index([yaadPayOrderId])
+  @@index([createdAt])
+}
+
+// Payment-related enums
+enum PaymentTiming {
+  OPTIONAL // Free event, payment not required
+  UPFRONT // Pay before registration (redirect to YaadPay first)
+  POST_REGISTRATION // Register first, receive invoice email with payment link
+}
+
+enum PricingModel {
+  FIXED_PRICE // Single price per registration (e.g., ₪50 per ticket)
+  PER_GUEST // Price per guest for table-based events (e.g., ₪100 × 8 guests)
+  FREE // Free event (no payment)
+}
+
+enum PaymentStatus {
+  PENDING // Awaiting payment
+  PROCESSING // Payment in progress (redirected to YaadPay)
+  COMPLETED // Payment successful
+  FAILED // Payment failed
+  REFUNDED // Payment refunded
+  CANCELLED // Payment cancelled
+}

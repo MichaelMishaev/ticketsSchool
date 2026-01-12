@@ -1,0 +1,610 @@
+import { test, expect } from '@playwright/test'
+import { createSchool, createAdmin, createEvent, cleanupTestData } from '../fixtures/test-data'
+import { LoginPage } from '../page-objects/LoginPage'
+import { generateEmail } from '../helpers/test-helpers'
+
+/**
+ * P0 (CRITICAL) Event Tab Navigation Tests
+ * Tests the tab-based interface for event management
+ */
+
+test.describe('Event Tabs Navigation P0 - Critical Tests', () => {
+  // Hide Next.js dev overlay that blocks clicks in tests
+  test.beforeEach(async ({ page }) => {
+    await page.addStyleTag({
+      content: `
+        nextjs-portal { display: none !important; }
+        [data-nextjs-dev-overlay] { display: none !important; }
+      `
+    }).catch(() => {}) // Ignore errors if page not loaded yet
+  })
+
+  test.afterAll(async () => {
+    await cleanupTestData()
+  })
+
+  test.describe('[08.1] Tab Switching', () => {
+    test('should switch between all tabs correctly', async ({ page }) => {
+      // Setup
+      const school = await createSchool().withName('Tab Nav School').create()
+      const admin = await createAdmin()
+        .withEmail(generateEmail('tab-nav'))
+        .withPassword('TestPassword123!')
+        .withSchool(school.id)
+        .create()
+      const event = await createEvent()
+        .withTitle('Tab Navigation Event')
+        .withSchool(school.id)
+        .inFuture()
+        .create()
+
+      // Login
+      const loginPage = new LoginPage(page)
+      await loginPage.goto()
+      await loginPage.login(admin.email, 'TestPassword123!')
+
+      // Navigate to event
+      await page.goto(`/admin/events/${event.id}`)
+
+      // Wait for page to load
+      await page.waitForSelector('[role="tablist"]:visible', { timeout: 10000 })
+
+      // Default tab should be 'overview'
+      const overviewTab = page.locator('[role="tab"][data-tab-id="overview"]:visible')
+      await expect(overviewTab).toHaveAttribute('aria-selected', 'true')
+
+      // Click Registrations tab
+      const registrationsTab = page.locator('[role="tab"][data-tab-id="registrations"]:visible')
+      // Use dispatchEvent to trigger React's onClick handler properly
+      await registrationsTab.evaluate((el: any) => el.click())
+      await page.waitForTimeout(2000)
+      await expect(registrationsTab).toHaveAttribute('aria-selected', 'true')
+      await expect(page.locator('[role="tabpanel"][id="registrations-panel"]')).toBeVisible()
+
+      // Click Check-In tab
+      const checkinTab = page.locator('[role="tab"][data-tab-id="checkin"]:visible')
+      await checkinTab.evaluate((el: any) => el.click())
+      await page.waitForTimeout(2000)
+      await expect(checkinTab).toHaveAttribute('aria-selected', 'true')
+      await expect(page.locator('[role="tabpanel"][id="checkin-panel"]')).toBeVisible()
+
+      // Click Reports tab
+      const reportsTab = page.locator('[role="tab"][data-tab-id="reports"]:visible')
+      await reportsTab.evaluate((el: any) => el.click())
+      await page.waitForTimeout(2000)
+      await expect(reportsTab).toHaveAttribute('aria-selected', 'true')
+      await expect(page.locator('[role="tabpanel"][id="reports-panel"]')).toBeVisible()
+
+      // Go back to Overview
+      await overviewTab.evaluate((el: any) => el.click())
+      await page.waitForTimeout(1000)
+      await expect(overviewTab).toHaveAttribute('aria-selected', 'true')
+      await expect(page.locator('[role="tabpanel"][id="overview-panel"]')).toBeVisible()
+    })
+
+    test('should show active tab indicator (pulsing dot)', async ({ page }) => {
+      // Setup
+      const school = await createSchool().withName('Active Tab School').create()
+      const admin = await createAdmin()
+        .withEmail(generateEmail('active-tab'))
+        .withPassword('TestPassword123!')
+        .withSchool(school.id)
+        .create()
+      const event = await createEvent()
+        .withTitle('Active Tab Event')
+        .withSchool(school.id)
+        .inFuture()
+        .create()
+
+      // Login
+      const loginPage = new LoginPage(page)
+      await loginPage.goto()
+      await loginPage.login(admin.email, 'TestPassword123!')
+
+      // Navigate to event
+      await page.goto(`/admin/events/${event.id}`)
+
+      // Active tab should have pulsing indicator (use :visible to avoid desktop+mobile duplicate)
+      const activeIndicator = page.locator('[role="tab"][aria-selected="true"]:visible .animate-ping')
+      await expect(activeIndicator).toBeVisible()
+
+      // Switch tab
+      const regTab = page.locator('[role="tab"][data-tab-id="registrations"]:visible')
+      await regTab.evaluate((el: any) => el.click())
+      await page.waitForTimeout(1000)
+
+      // New active tab should have indicator
+      const newActiveIndicator = page.locator('[role="tab"][data-tab-id="registrations"]:visible .animate-ping')
+      await expect(newActiveIndicator).toBeVisible()
+
+      // Previous tab should NOT have indicator
+      const previousTabIndicator = page.locator('[role="tab"][data-tab-id="overview"]:visible .animate-ping')
+      await expect(previousTabIndicator).not.toBeVisible()
+    })
+  })
+
+  test.describe('[08.2] URL Parameter Updates', () => {
+    test('should update URL with ?tab parameter when switching tabs', async ({ page }) => {
+      // Setup
+      const school = await createSchool().withName('URL Param School').create()
+      const admin = await createAdmin()
+        .withEmail(generateEmail('url-param'))
+        .withPassword('TestPassword123!')
+        .withSchool(school.id)
+        .create()
+      const event = await createEvent()
+        .withTitle('URL Param Event')
+        .withSchool(school.id)
+        .inFuture()
+        .create()
+
+      // Login
+      const loginPage = new LoginPage(page)
+      await loginPage.goto()
+      await loginPage.login(admin.email, 'TestPassword123!')
+
+      // Navigate to event (default - no tab param)
+      await page.goto(`/admin/events/${event.id}`)
+      await page.waitForLoadState('domcontentloaded')
+
+      // Click Registrations tab
+      await page.locator('[role="tab"][data-tab-id="registrations"]:visible').evaluate((el: any) => el.click())
+      await page.waitForTimeout(500) // Wait for URL update
+
+      // URL should have ?tab=registrations
+      expect(page.url()).toContain('tab=registrations')
+
+      // Click Check-In tab
+      await page.locator('[role="tab"][data-tab-id="checkin"]:visible').evaluate((el: any) => el.click())
+      await page.waitForTimeout(500)
+      expect(page.url()).toContain('tab=checkin')
+
+      // Click Reports tab
+      await page.locator('[role="tab"][data-tab-id="reports"]:visible').evaluate((el: any) => el.click())
+      await page.waitForTimeout(500)
+      expect(page.url()).toContain('tab=reports')
+
+      // Click Overview tab
+      await page.locator('[role="tab"][data-tab-id="overview"]:visible').evaluate((el: any) => el.click())
+      await page.waitForTimeout(500)
+      expect(page.url()).toContain('tab=overview')
+    })
+
+    test('should load correct tab from URL parameter on page load', async ({ page }) => {
+      // Setup
+      const school = await createSchool().withName('URL Load School').create()
+      const admin = await createAdmin()
+        .withEmail(generateEmail('url-load'))
+        .withPassword('TestPassword123!')
+        .withSchool(school.id)
+        .create()
+      const event = await createEvent()
+        .withTitle('URL Load Event')
+        .withSchool(school.id)
+        .inFuture()
+        .create()
+
+      // Login
+      const loginPage = new LoginPage(page)
+      await loginPage.goto()
+      await loginPage.login(admin.email, 'TestPassword123!')
+
+      // Navigate directly to event with ?tab=registrations
+      await page.goto(`/admin/events/${event.id}?tab=registrations`)
+      await page.waitForLoadState('domcontentloaded')
+
+      // Registrations tab should be active
+      const registrationsTab = page.locator('[role="tab"][data-tab-id="registrations"]:visible')
+      await expect(registrationsTab).toHaveAttribute('aria-selected', 'true')
+
+      // Navigate to check-in tab via URL
+      await page.goto(`/admin/events/${event.id}?tab=checkin`)
+      await page.waitForLoadState('domcontentloaded')
+
+      // Check-in tab should be active
+      const checkinTab = page.locator('[role="tab"][data-tab-id="checkin"]:visible')
+      await expect(checkinTab).toHaveAttribute('aria-selected', 'true')
+    })
+
+    test('should maintain active tab state on page reload', async ({ page }) => {
+      // Setup
+      const school = await createSchool().withName('Tab State School').create()
+      const admin = await createAdmin()
+        .withEmail(generateEmail('tab-state'))
+        .withPassword('TestPassword123!')
+        .withSchool(school.id)
+        .create()
+      const event = await createEvent()
+        .withTitle('Tab State Event')
+        .withSchool(school.id)
+        .inFuture()
+        .create()
+
+      // Login
+      const loginPage = new LoginPage(page)
+      await loginPage.goto()
+      await loginPage.login(admin.email, 'TestPassword123!')
+
+      // Navigate to event
+      await page.goto(`/admin/events/${event.id}`)
+      await page.waitForLoadState('domcontentloaded')
+
+      // Switch to Reports tab
+      await page.locator('[role="tab"][data-tab-id="reports"]:visible').evaluate((el: any) => el.click())
+      await page.waitForTimeout(500)
+      expect(page.url()).toContain('tab=reports')
+
+      // Reload page
+      await page.reload()
+      await page.waitForLoadState('domcontentloaded')
+
+      // Reports tab should still be active after reload
+      const reportsTab = page.locator('[role="tab"][data-tab-id="reports"]:visible')
+      await expect(reportsTab).toHaveAttribute('aria-selected', 'true')
+    })
+  })
+
+  test.describe('[08.3] Keyboard Navigation', () => {
+    test('should navigate tabs with arrow keys (RTL)', async ({ page }, testInfo) => {
+      // Skip on mobile - keyboard navigation not applicable to touch devices
+      test.skip(
+        testInfo.project.name.includes('Mobile'),
+        'Keyboard navigation not applicable on mobile devices'
+      )
+
+      // Setup
+      const school = await createSchool().withName('Keyboard Nav School').create()
+      const admin = await createAdmin()
+        .withEmail(generateEmail('keyboard-nav'))
+        .withPassword('TestPassword123!')
+        .withSchool(school.id)
+        .create()
+      const event = await createEvent()
+        .withTitle('Keyboard Nav Event')
+        .withSchool(school.id)
+        .inFuture()
+        .create()
+
+      // Login
+      const loginPage = new LoginPage(page)
+      await loginPage.goto()
+      await loginPage.login(admin.email, 'TestPassword123!')
+
+      // Navigate to event
+      await page.goto(`/admin/events/${event.id}`)
+      await page.waitForLoadState('domcontentloaded')
+
+      // Focus on overview tab
+      const overviewTab = page.locator('[role="tab"][data-tab-id="overview"]:visible')
+      await overviewTab.focus()
+
+      // Press ArrowLeft (RTL: should go to next tab - Registrations)
+      await page.keyboard.press('ArrowLeft')
+      await page.waitForTimeout(1000)
+      const registrationsTab = page.locator('[role="tab"][data-tab-id="registrations"]:visible')
+      await expect(registrationsTab).toHaveAttribute('aria-selected', 'true')
+
+      // Press ArrowLeft again (should go to Check-In)
+      await page.keyboard.press('ArrowLeft')
+      await page.waitForTimeout(1000)
+      const checkinTab = page.locator('[role="tab"][data-tab-id="checkin"]:visible')
+      await expect(checkinTab).toHaveAttribute('aria-selected', 'true')
+
+      // Press ArrowRight (RTL: should go back to Registrations)
+      await page.keyboard.press('ArrowRight')
+      await page.waitForTimeout(1000)
+      await expect(registrationsTab).toHaveAttribute('aria-selected', 'true')
+    })
+
+    test('should support Home and End keys for tab navigation', async ({ page }, testInfo) => {
+      // Skip on mobile - keyboard navigation not applicable to touch devices
+      test.skip(
+        testInfo.project.name.includes('Mobile'),
+        'Keyboard navigation not applicable on mobile devices'
+      )
+
+      // Setup
+      const school = await createSchool().withName('Home End School').create()
+      const admin = await createAdmin()
+        .withEmail(generateEmail('home-end'))
+        .withPassword('TestPassword123!')
+        .withSchool(school.id)
+        .create()
+      const event = await createEvent()
+        .withTitle('Home End Event')
+        .withSchool(school.id)
+        .inFuture()
+        .create()
+
+      // Login
+      const loginPage = new LoginPage(page)
+      await loginPage.goto()
+      await loginPage.login(admin.email, 'TestPassword123!')
+
+      // Navigate to event
+      await page.goto(`/admin/events/${event.id}?tab=checkin`)
+      await page.waitForLoadState('domcontentloaded')
+
+      // Focus on active tab (Check-In)
+      const checkinTab = page.locator('[role="tab"][data-tab-id="checkin"]:visible')
+      await checkinTab.focus()
+
+      // Press Home (should go to first tab - Overview)
+      await page.keyboard.press('Home')
+      await page.waitForTimeout(1000)
+      const overviewTab = page.locator('[role="tab"][data-tab-id="overview"]:visible')
+      await expect(overviewTab).toHaveAttribute('aria-selected', 'true')
+
+      // Press End (should go to last tab - Reports)
+      await page.keyboard.press('End')
+      await page.waitForTimeout(1000)
+      const reportsTab = page.locator('[role="tab"][data-tab-id="reports"]:visible')
+      await expect(reportsTab).toHaveAttribute('aria-selected', 'true')
+    })
+
+    test('should set correct tabindex values for accessibility', async ({ page }) => {
+      // Setup
+      const school = await createSchool().withName('Tabindex School').create()
+      const admin = await createAdmin()
+        .withEmail(generateEmail('tabindex'))
+        .withPassword('TestPassword123!')
+        .withSchool(school.id)
+        .create()
+      const event = await createEvent()
+        .withTitle('Tabindex Event')
+        .withSchool(school.id)
+        .inFuture()
+        .create()
+
+      // Login
+      const loginPage = new LoginPage(page)
+      await loginPage.goto()
+      await loginPage.login(admin.email, 'TestPassword123!')
+
+      // Navigate to event
+      await page.goto(`/admin/events/${event.id}`)
+      await page.waitForLoadState('domcontentloaded')
+
+      // Active tab should have tabindex="0"
+      const overviewTab = page.locator('[role="tab"][data-tab-id="overview"]:visible')
+      await expect(overviewTab).toHaveAttribute('tabindex', '0')
+
+      // Inactive tabs should have tabindex="-1"
+      const registrationsTab = page.locator('[role="tab"][data-tab-id="registrations"]:visible')
+      await expect(registrationsTab).toHaveAttribute('tabindex', '-1')
+
+      // After switching tabs, tabindex should update
+      await registrationsTab.evaluate((el: any) => el.click())
+      await page.waitForTimeout(1000)
+      await page.waitForTimeout(1000)
+      await expect(registrationsTab).toHaveAttribute('tabindex', '0')
+      await expect(overviewTab).toHaveAttribute('tabindex', '-1')
+    })
+  })
+
+  test.describe('[08.4] Tab Content Loading', () => {
+    test('should load Overview tab content correctly', async ({ page }) => {
+      // Setup
+      const school = await createSchool().withName('Overview Content School').create()
+      const admin = await createAdmin()
+        .withEmail(generateEmail('overview-content'))
+        .withPassword('TestPassword123!')
+        .withSchool(school.id)
+        .create()
+      const event = await createEvent()
+        .withTitle('Overview Content Event')
+        .withSchool(school.id)
+        .withLocation('Test Stadium')
+        .inFuture()
+        .create()
+
+      // Login
+      const loginPage = new LoginPage(page)
+      await loginPage.goto()
+      await loginPage.login(admin.email, 'TestPassword123!')
+
+      // Navigate to event
+      await page.goto(`/admin/events/${event.id}`)
+      await page.waitForLoadState('domcontentloaded')
+
+      // Overview tab should be active by default
+      await expect(page.locator('[role="tab"][data-tab-id="overview"]:visible')).toHaveAttribute('aria-selected', 'true')
+
+      // Event title should be visible
+      await expect(page.locator(`text=${event.title}`)).toBeVisible()
+
+      // Location should be visible
+      await expect(page.locator('text=Test Stadium')).toBeVisible()
+    })
+
+    test('should load Registrations tab content correctly', async ({ page }) => {
+      // Setup
+      const school = await createSchool().withName('Reg Content School').create()
+      const admin = await createAdmin()
+        .withEmail(generateEmail('reg-content'))
+        .withPassword('TestPassword123!')
+        .withSchool(school.id)
+        .create()
+      const event = await createEvent()
+        .withTitle('Reg Content Event')
+        .withSchool(school.id)
+        .inFuture()
+        .create()
+
+      // Login
+      const loginPage = new LoginPage(page)
+      await loginPage.goto()
+      await loginPage.login(admin.email, 'TestPassword123!')
+
+      // Navigate to event with registrations tab
+      await page.goto(`/admin/events/${event.id}?tab=registrations`)
+      await page.waitForLoadState('domcontentloaded')
+
+      // Wait for tab panel to be visible
+      await page.waitForSelector('[role="tabpanel"][id="registrations-panel"]', { timeout: 10000 })
+
+      // Wait for loading to finish
+      await page.waitForSelector('text=טוען', { state: 'hidden', timeout: 10000 }).catch(() => {})
+
+      // Registrations tab UI elements should be visible
+      // Search input (textbox with placeholder "חפש לפי שם...")
+      await expect(page.locator('input[placeholder*="חפש"]')).toBeVisible({ timeout: 10000 })
+
+      // Filter buttons or status tabs (look for the actual button text)
+      await expect(page.locator('button:has-text("הכל"), button:has-text("מאושרים")').first()).toBeVisible({ timeout: 10000 })
+    })
+
+    test('should load Check-In tab content correctly', async ({ page }) => {
+      // Setup
+      const school = await createSchool().withName('CheckIn Content School').create()
+      const admin = await createAdmin()
+        .withEmail(generateEmail('checkin-content'))
+        .withPassword('TestPassword123!')
+        .withSchool(school.id)
+        .create()
+      const event = await createEvent()
+        .withTitle('CheckIn Content Event')
+        .withSchool(school.id)
+        .inFuture()
+        .create()
+
+      // Login
+      const loginPage = new LoginPage(page)
+      await loginPage.goto()
+      await loginPage.login(admin.email, 'TestPassword123!')
+
+      // Navigate to event with check-in tab
+      await page.goto(`/admin/events/${event.id}?tab=checkin`)
+      await page.waitForLoadState('domcontentloaded')
+
+      // Wait for tab panel to be visible
+      await page.waitForSelector('[role="tabpanel"][id="checkin-panel"]', { timeout: 10000 })
+
+      // Wait for loading to finish
+      await page.waitForSelector('text=טוען', { state: 'hidden', timeout: 10000 }).catch(() => {})
+
+      // Check-in tab content should be visible
+      // Stats are always shown (confirmed/waitlist/cancelled counts)
+      await expect(page.locator('text=/מאושרים|המתנה|ביטולים/i').first()).toBeVisible({ timeout: 10000 })
+    })
+
+    test('should load Reports tab content correctly', async ({ page }) => {
+      // Setup
+      const school = await createSchool().withName('Reports Content School').create()
+      const admin = await createAdmin()
+        .withEmail(generateEmail('reports-content'))
+        .withPassword('TestPassword123!')
+        .withSchool(school.id)
+        .create()
+      const event = await createEvent()
+        .withTitle('Reports Content Event')
+        .withSchool(school.id)
+        .inFuture()
+        .create()
+
+      // Login
+      const loginPage = new LoginPage(page)
+      await loginPage.goto()
+      await loginPage.login(admin.email, 'TestPassword123!')
+
+      // Navigate to event with reports tab
+      await page.goto(`/admin/events/${event.id}?tab=reports`)
+      await page.waitForLoadState('domcontentloaded')
+
+      // Wait for tab panel to be visible
+      await page.waitForSelector('[role="tabpanel"][id="reports-panel"]', { timeout: 10000 })
+
+      // Wait for loading to finish
+      await page.waitForSelector('text=טוען', { state: 'hidden', timeout: 10000 }).catch(() => {})
+
+      // Reports UI elements should be visible
+      // Heading and export button are always present
+      await expect(page.locator('text=/דוחות וסטטיסטיקות|ייצוא/i').first()).toBeVisible({ timeout: 10000 })
+    })
+  })
+
+  test.describe('[08.5] Accessibility', () => {
+    test('should have proper ARIA attributes', async ({ page }) => {
+      // Setup
+      const school = await createSchool().withName('ARIA School').create()
+      const admin = await createAdmin()
+        .withEmail(generateEmail('aria'))
+        .withPassword('TestPassword123!')
+        .withSchool(school.id)
+        .create()
+      const event = await createEvent()
+        .withTitle('ARIA Event')
+        .withSchool(school.id)
+        .inFuture()
+        .create()
+
+      // Login
+      const loginPage = new LoginPage(page)
+      await loginPage.goto()
+      await loginPage.login(admin.email, 'TestPassword123!')
+
+      // Navigate to event
+      await page.goto(`/admin/events/${event.id}`)
+      await page.waitForLoadState('domcontentloaded')
+
+      // Tab list should have role="tablist"
+      // Note: There are 2 tablists (desktop + mobile), but only one is visible per viewport
+      const tablist = page.locator('[role="tablist"]:visible')
+      await expect(tablist).toBeVisible()
+
+      // Each tab should have role="tab"
+      // Note: 8 total tabs (4 desktop + 4 mobile), but we count only visible ones
+      const visibleTabs = page.locator('[role="tab"]:visible')
+      await expect(visibleTabs).toHaveCount(4) // Overview, Registrations, Check-In, Reports
+
+      // Active tab should have aria-selected="true"
+      // Note: 2 active tabs (desktop + mobile), but only 1 visible
+      const activeTab = page.locator('[role="tab"][aria-selected="true"]:visible')
+      await expect(activeTab).toHaveCount(1)
+
+      // Each tab should have aria-controls pointing to panel
+      const overviewTab = page.locator('[role="tab"][data-tab-id="overview"]:visible')
+      await expect(overviewTab).toHaveAttribute('aria-controls', 'overview-panel')
+
+      // Each panel should have role="tabpanel"
+      const activePanel = page.locator('[role="tabpanel"]:visible')
+      await expect(activePanel).toBeVisible()
+    })
+
+    test('should have descriptive aria-labels', async ({ page }) => {
+      // Setup
+      const school = await createSchool().withName('Aria Label School').create()
+      const admin = await createAdmin()
+        .withEmail(generateEmail('aria-label'))
+        .withPassword('TestPassword123!')
+        .withSchool(school.id)
+        .create()
+      const event = await createEvent()
+        .withTitle('Aria Label Event')
+        .withSchool(school.id)
+        .inFuture()
+        .create()
+
+      // Login
+      const loginPage = new LoginPage(page)
+      await loginPage.goto()
+      await loginPage.login(admin.email, 'TestPassword123!')
+
+      // Navigate to event
+      await page.goto(`/admin/events/${event.id}`)
+      await page.waitForLoadState('domcontentloaded')
+
+      // Tab list should have aria-label
+      // Note: There are 2 tablists (desktop + mobile), but only one is visible per viewport
+      const tablist = page.locator('[role="tablist"]:visible')
+      const ariaLabel = await tablist.getAttribute('aria-label')
+      expect(ariaLabel).toBeTruthy()
+      expect(ariaLabel?.length).toBeGreaterThan(0)
+
+      // Each tab should have aria-label
+      const overviewTab = page.locator('[role="tab"][data-tab-id="overview"]:visible')
+      const overviewLabel = await overviewTab.getAttribute('aria-label')
+      expect(overviewLabel).toBeTruthy()
+    })
+  })
+})
