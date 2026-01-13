@@ -1,7 +1,16 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { BarChart3, Download, TrendingUp, Users, Clock, CheckCircle2, XCircle, FileText } from 'lucide-react'
+import {
+  BarChart3,
+  Download,
+  TrendingUp,
+  Users,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  FileText,
+} from 'lucide-react'
 import { format, differenceInDays } from 'date-fns'
 
 interface ReportsTabProps {
@@ -53,35 +62,44 @@ export default function ReportsTab({ eventId }: ReportsTabProps) {
     if (!event) return null
 
     const registrations = event.registrations || []
-    const confirmed = registrations.filter(r => r.status === 'CONFIRMED')
-    const waitlist = registrations.filter(r => r.status === 'WAITLIST')
-    const cancelled = registrations.filter(r => r.status === 'CANCELLED')
+    const confirmed = registrations.filter((r) => r.status === 'CONFIRMED')
+    const waitlist = registrations.filter((r) => r.status === 'WAITLIST')
+    const cancelled = registrations.filter((r) => r.status === 'CANCELLED')
+
+    // Calculate actual spots from registrations
+    const spotsConfirmed = confirmed.reduce((sum, r) => sum + r.spotsCount, 0)
+    const spotsWaitlist = waitlist.reduce((sum, r) => sum + r.spotsCount, 0)
 
     // Conversion rate: confirmed / total registrations
-    const conversionRate = registrations.length > 0
-      ? Math.round((confirmed.length / registrations.length) * 100)
-      : 0
+    const conversionRate =
+      registrations.length > 0 ? Math.round((confirmed.length / registrations.length) * 100) : 0
 
     // Average registration time (days before event)
-    const avgDaysBeforeEvent = confirmed.length > 0
-      ? Math.round(
-          confirmed.reduce((sum, r) => {
-            const daysBeforeEvent = differenceInDays(new Date(event.startAt), new Date(r.createdAt))
-            return sum + daysBeforeEvent
-          }, 0) / confirmed.length
-        )
-      : 0
+    const avgDaysBeforeEvent =
+      confirmed.length > 0
+        ? Math.round(
+            confirmed.reduce((sum, r) => {
+              const daysBeforeEvent = differenceInDays(
+                new Date(event.startAt),
+                new Date(r.createdAt)
+              )
+              return sum + daysBeforeEvent
+            }, 0) / confirmed.length
+          )
+        : 0
 
     // Cancellation rate
-    const cancellationRate = registrations.length > 0
-      ? Math.round((cancelled.length / registrations.length) * 100)
-      : 0
+    const cancellationRate =
+      registrations.length > 0 ? Math.round((cancelled.length / registrations.length) * 100) : 0
 
-    // Capacity fill rate
-    const fillRate = Math.round((event.spotsReserved / event.capacity) * 100)
+    // Capacity fill rate (use actual confirmed spots, not database spotsReserved)
+    const fillRate = Math.round((spotsConfirmed / event.capacity) * 100)
 
     // Total spots registered (including waitlist)
     const totalSpotsRegistered = registrations.reduce((sum, r) => sum + r.spotsCount, 0)
+
+    // Available spots (use actual confirmed spots)
+    const availableSpots = Math.max(0, event.capacity - spotsConfirmed)
 
     return {
       totalRegistrations: registrations.length,
@@ -93,8 +111,9 @@ export default function ReportsTab({ eventId }: ReportsTabProps) {
       cancellationRate,
       fillRate,
       totalSpotsRegistered,
-      spotsConfirmed: confirmed.reduce((sum, r) => sum + r.spotsCount, 0),
-      spotsWaitlist: waitlist.reduce((sum, r) => sum + r.spotsCount, 0),
+      spotsConfirmed,
+      spotsWaitlist,
+      availableSpots,
     }
   }, [event])
 
@@ -135,7 +154,8 @@ export default function ReportsTab({ eventId }: ReportsTabProps) {
 
 תפוסה:
 - קיבולת: ${event.capacity} מקומות
-- מקומות תפוסים: ${event.spotsReserved} (${metrics.fillRate}%)
+- מקומות תפוסים: ${metrics.spotsConfirmed} (${metrics.fillRate}%)
+- מקומות פנויים: ${metrics.availableSpots}
 - סה"כ מקומות בהרשמות: ${metrics.totalSpotsRegistered}
 
 מדדי ביצועים:
@@ -159,7 +179,7 @@ export default function ReportsTab({ eventId }: ReportsTabProps) {
 
   if (loading || !event || !metrics) {
     return (
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6" dir="rtl">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-44 md:pb-6" dir="rtl">
         <div className="flex justify-center items-center h-64">
           <div className="text-gray-500">טוען נתונים...</div>
         </div>
@@ -168,10 +188,10 @@ export default function ReportsTab({ eventId }: ReportsTabProps) {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6" dir="rtl">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-44 md:pb-6" dir="rtl">
       {/* Success Toast */}
       {showSuccessToast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-[slideUp_300ms_ease-out]">
+        <div className="fixed bottom-40 md:bottom-6 left-1/2 -translate-x-1/2 z-50 animate-[slideUp_300ms_ease-out]">
           <div className="bg-green-600 text-white px-6 py-3 rounded-xl shadow-xl flex items-center gap-3">
             <CheckCircle2 className="w-5 h-5" />
             <span className="font-medium">הקובץ יוצא בהצלחה</span>
@@ -242,7 +262,7 @@ export default function ReportsTab({ eventId }: ReportsTabProps) {
           </div>
           <h3 className="text-sm font-semibold text-purple-900 mb-1">תפוסה</h3>
           <p className="text-xs text-purple-700">
-            {event.spotsReserved} מתוך {event.capacity} מקומות
+            {metrics.spotsConfirmed} מתוך {event.capacity} מקומות
           </p>
         </div>
       </div>
@@ -264,7 +284,9 @@ export default function ReportsTab({ eventId }: ReportsTabProps) {
             <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
               <div
                 className="h-full bg-green-500"
-                style={{ width: `${metrics.totalRegistrations > 0 ? (metrics.confirmedCount / metrics.totalRegistrations) * 100 : 0}%` }}
+                style={{
+                  width: `${metrics.totalRegistrations > 0 ? (metrics.confirmedCount / metrics.totalRegistrations) * 100 : 0}%`,
+                }}
               />
             </div>
             <p className="text-xs text-gray-600 mt-1">{metrics.spotsConfirmed} מקומות</p>
@@ -282,7 +304,9 @@ export default function ReportsTab({ eventId }: ReportsTabProps) {
             <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
               <div
                 className="h-full bg-amber-500"
-                style={{ width: `${metrics.totalRegistrations > 0 ? (metrics.waitlistCount / metrics.totalRegistrations) * 100 : 0}%` }}
+                style={{
+                  width: `${metrics.totalRegistrations > 0 ? (metrics.waitlistCount / metrics.totalRegistrations) * 100 : 0}%`,
+                }}
               />
             </div>
             <p className="text-xs text-gray-600 mt-1">{metrics.spotsWaitlist} מקומות</p>
@@ -300,7 +324,9 @@ export default function ReportsTab({ eventId }: ReportsTabProps) {
             <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
               <div
                 className="h-full bg-red-500"
-                style={{ width: `${metrics.totalRegistrations > 0 ? (metrics.cancelledCount / metrics.totalRegistrations) * 100 : 0}%` }}
+                style={{
+                  width: `${metrics.totalRegistrations > 0 ? (metrics.cancelledCount / metrics.totalRegistrations) * 100 : 0}%`,
+                }}
               />
             </div>
             <p className="text-xs text-gray-600 mt-1">שיעור ביטולים: {metrics.cancellationRate}%</p>
@@ -339,9 +365,7 @@ export default function ReportsTab({ eventId }: ReportsTabProps) {
 
           <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
             <p className="text-sm text-gray-600 mb-1">מקומות פנויים</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {Math.max(0, event.capacity - event.spotsReserved)}
-            </p>
+            <p className="text-2xl font-bold text-gray-900">{metrics.availableSpots}</p>
             <p className="text-xs text-gray-500 mt-1">זמינים להרשמה</p>
           </div>
         </div>

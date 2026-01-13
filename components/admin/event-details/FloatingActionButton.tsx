@@ -29,19 +29,19 @@ export default function FloatingActionButton({
   icon: Icon,
   label,
   onClick,
-  variant = 'primary'
+  variant = 'primary',
 }: FloatingActionButtonProps) {
   const variants = {
     primary: 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 focus:ring-blue-500/50',
     success: 'bg-green-600 hover:bg-green-700 active:bg-green-800 focus:ring-green-500/50',
-    warning: 'bg-amber-600 hover:bg-amber-700 active:bg-amber-800 focus:ring-amber-500/50'
+    warning: 'bg-amber-600 hover:bg-amber-700 active:bg-amber-800 focus:ring-amber-500/50',
   }
 
   return (
     <button
       onClick={onClick}
       className={`
-        fixed bottom-6 left-6 z-30
+        fixed bottom-20 left-6 z-30
         flex items-center gap-3
         px-6 py-4
         ${variants[variant]}

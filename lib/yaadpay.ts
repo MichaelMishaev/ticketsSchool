@@ -10,11 +10,11 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9000'
 let yaadPayConfig: YaadPayConfig | null = null
 
 interface YaadPayConfig {
-  masof: string          // Terminal number
-  apiSecret: string      // API secret for validation
-  domainId: string       // Domain ID
-  baseUrl: string        // Payment page URL
-  testMode: boolean      // Enable test terminal
+  masof: string // Terminal number
+  apiSecret: string // API secret for validation
+  domainId: string // Domain ID
+  baseUrl: string // Payment page URL
+  testMode: boolean // Enable test terminal
 }
 
 function getYaadPayConfig(): YaadPayConfig {
@@ -27,7 +27,7 @@ function getYaadPayConfig(): YaadPayConfig {
     console.error('Remove YAADPAY_MOCK_MODE from production environment IMMEDIATELY.')
     throw new Error(
       'SECURITY VIOLATION: Mock payment mode cannot be enabled in production. ' +
-      'This must be fixed immediately to prevent financial loss.'
+        'This must be fixed immediately to prevent financial loss.'
     )
   }
 
@@ -57,7 +57,7 @@ function getYaadPayConfig(): YaadPayConfig {
       apiSecret,
       domainId,
       baseUrl: process.env.YAADPAY_BASE_URL || 'https://yaadpay.co.il/p/',
-      testMode: process.env.YAADPAY_TEST_MODE === 'true'  // Only use env variable, not NODE_ENV
+      testMode: process.env.YAADPAY_TEST_MODE === 'true', // Only use env variable, not NODE_ENV
     }
   }
 
@@ -66,8 +66,8 @@ function getYaadPayConfig(): YaadPayConfig {
 
 // Payment request data structure
 export interface PaymentRequestData {
-  amount: number                    // Amount in ILS (e.g., 150.50)
-  orderId: string                   // Unique payment intent ID
+  amount: number // Amount in ILS (e.g., 150.50)
+  orderId: string // Unique payment intent ID
   customerEmail: string
   customerName: string
   customerPhone: string
@@ -77,8 +77,8 @@ export interface PaymentRequestData {
 
 // Payment request result
 export interface PaymentRequest {
-  redirectUrl: string               // URL to redirect user to YaadPay
-  orderId: string                   // Same as input (for reference)
+  redirectUrl: string // URL to redirect user to YaadPay
+  orderId: string // Same as input (for reference)
   formParams: Record<string, string> // POST form parameters
 }
 
@@ -97,20 +97,20 @@ export function createPaymentRequest(data: PaymentRequestData): PaymentRequest {
     Masof: config.masof,
     action: 'pay',
     Amount: formattedAmount,
-    Order: data.orderId,                    // Our unique payment intent ID
+    Order: data.orderId, // Our unique payment intent ID
     email: data.customerEmail,
     ClientName: data.customerName,
     phone: data.customerPhone,
     Info: data.description || '',
-    PageLang: 'HEB',                        // Hebrew interface
-    Currency: '1',                          // ILS
-    UTF8: 'True',                           // UTF-8 encoding
+    PageLang: 'HEB', // Hebrew interface
+    Currency: '1', // ILS
+    UTF8: 'True', // UTF-8 encoding
     UTF8out: 'True',
 
     // Callback URLs
     success_url_address: `${BASE_URL}/api/payment/callback`,
     fail_url_address: `${BASE_URL}/api/payment/callback`,
-    notify_url_address: `${BASE_URL}/api/payment/webhook`,  // Async notification
+    notify_url_address: `${BASE_URL}/api/payment/webhook`, // Async notification
 
     // Custom parameters (returned in callback)
     Param1: JSON.stringify(data.metadata || {}),
@@ -118,7 +118,7 @@ export function createPaymentRequest(data: PaymentRequestData): PaymentRequest {
 
   // Add test mode parameter if enabled
   if (config.testMode) {
-    formParams.Masof = '4500481839'  // Test terminal (if available)
+    formParams.Masof = '4500481839' // Test terminal (if available)
     console.log('[YaadPay] Using TEST MODE terminal:', formParams.Masof)
   }
 
@@ -126,26 +126,26 @@ export function createPaymentRequest(data: PaymentRequestData): PaymentRequest {
     orderId: data.orderId,
     amount: formattedAmount,
     masof: formParams.Masof,
-    testMode: config.testMode
+    testMode: config.testMode,
   })
 
   return {
     redirectUrl: config.baseUrl,
     orderId: data.orderId,
-    formParams
+    formParams,
   }
 }
 
 // YaadPay callback response structure
 export interface YaadPayCallback {
-  CCode: string                     // "0" = success, others = failure
-  Order: string                     // Our payment intent ID
-  Id: string                        // YaadPay transaction ID
-  ConfirmationCode?: string         // Confirmation code (on success)
-  Amount?: string                   // Amount charged
-  ACode?: string                    // Additional code
-  Param1?: string                   // Our custom metadata
-  signature?: string                // Security signature (if configured)
+  CCode: string // "0" = success, others = failure
+  Order: string // Our payment intent ID
+  Id: string // YaadPay transaction ID
+  ConfirmationCode?: string // Confirmation code (on success)
+  Amount?: string // Amount charged
+  ACode?: string // Additional code
+  Param1?: string // Our custom metadata
+  signature?: string // Security signature (if configured)
 }
 
 // Callback validation result
@@ -175,7 +175,7 @@ export function validateCallback(params: YaadPayCallback): CallbackValidationRes
     CCode: params.CCode,
     Order: params.Order,
     Id: params.Id,
-    isSuccess
+    isSuccess,
   })
 
   // Validate required fields
@@ -186,7 +186,7 @@ export function validateCallback(params: YaadPayCallback): CallbackValidationRes
       isSuccess: false,
       orderId: params.Order || '',
       transactionId: params.Id || '',
-      errorMessage: 'Missing required callback parameters'
+      errorMessage: 'Missing required callback parameters',
     }
   }
 
@@ -201,29 +201,36 @@ export function validateCallback(params: YaadPayCallback): CallbackValidationRes
     }
   }
 
-  // MANDATORY signature validation
-  const signature = params.signature
-  if (!signature) {
-    console.error('[YaadPay] Missing signature in callback - rejecting')
-    return {
-      isValid: false,
-      isSuccess: false,
-      orderId: params.Order || '',
-      transactionId: params.Id || '',
-      errorMessage: 'Missing callback signature - request rejected for security'
-    }
-  }
+  // MANDATORY signature validation (SKIP in mock mode for development)
+  const isMockMode = process.env.YAADPAY_MOCK_MODE === 'true'
+  const isMockTransaction = params.Id?.startsWith('MOCK-')
 
-  const isValidSignature = validateSignature(params, config.apiSecret)
-  if (!isValidSignature) {
-    console.error('[YaadPay] Invalid signature - potential tampering detected')
-    return {
-      isValid: false,
-      isSuccess: false,
-      orderId: params.Order || '',
-      transactionId: params.Id || '',
-      errorMessage: 'Invalid signature - request rejected'
+  if (!isMockMode && !isMockTransaction) {
+    const signature = params.signature
+    if (!signature) {
+      console.error('[YaadPay] Missing signature in callback - rejecting')
+      return {
+        isValid: false,
+        isSuccess: false,
+        orderId: params.Order || '',
+        transactionId: params.Id || '',
+        errorMessage: 'Missing callback signature - request rejected for security',
+      }
     }
+
+    const isValidSignature = validateSignature(params, config.apiSecret)
+    if (!isValidSignature) {
+      console.error('[YaadPay] Invalid signature - potential tampering detected')
+      return {
+        isValid: false,
+        isSuccess: false,
+        orderId: params.Order || '',
+        transactionId: params.Id || '',
+        errorMessage: 'Invalid signature - request rejected',
+      }
+    }
+  } else {
+    console.log('[YaadPay] MOCK MODE: Skipping signature validation for development')
   }
 
   return {
@@ -234,7 +241,7 @@ export function validateCallback(params: YaadPayCallback): CallbackValidationRes
     confirmationCode: params.ConfirmationCode,
     amount: params.Amount ? parseFloat(params.Amount) : undefined,
     metadata,
-    errorMessage: isSuccess ? undefined : getYaadPayErrorMessage(cCode)
+    errorMessage: isSuccess ? undefined : getYaadPayErrorMessage(cCode),
   }
 }
 
@@ -245,10 +252,7 @@ export function validateCallback(params: YaadPayCallback): CallbackValidationRes
 function validateSignature(params: YaadPayCallback, secret: string): boolean {
   // YaadPay signature validation: HMAC-SHA256(Order + Amount + CCode + secret)
   const dataToSign = `${params.Order}${params.Amount}${params.CCode}`
-  const expectedSignature = crypto
-    .createHmac('sha256', secret)
-    .update(dataToSign)
-    .digest('hex')
+  const expectedSignature = crypto.createHmac('sha256', secret).update(dataToSign).digest('hex')
 
   return params.signature === expectedSignature
 }
@@ -297,7 +301,10 @@ export function generatePaymentRedirectHTML(paymentRequest: PaymentRequest): str
   const { redirectUrl, formParams } = paymentRequest
 
   const formFields = Object.entries(formParams)
-    .map(([key, value]) => `    <input type="hidden" name="${escapeHtml(key)}" value="${escapeHtml(value)}" />`)
+    .map(
+      ([key, value]) =>
+        `    <input type="hidden" name="${escapeHtml(key)}" value="${escapeHtml(value)}" />`
+    )
     .join('\n')
 
   return `

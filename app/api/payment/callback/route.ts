@@ -239,14 +239,54 @@ async function handleCallback(request: NextRequest) {
             },
           })
 
-          // Update registration payment status
+          // CRITICAL: Check capacity BEFORE finalizing registration
+          // Fetch current event state within transaction for atomic capacity check
+          const currentEvent = await tx.event.findUnique({
+            where: { id: payment.eventId },
+            select: { capacity: true, spotsReserved: true, eventType: true },
+          })
+
+          if (!currentEvent) {
+            throw new Error('Event not found in transaction')
+          }
+
+          // Determine final registration status based on capacity (CAPACITY_BASED events only)
+          // If the registration was cancelled, start as WAITLIST and re-evaluate
+          let finalStatus: 'CONFIRMED' | 'WAITLIST' =
+            payment.registration.status === 'CANCELLED' ? 'WAITLIST' : payment.registration.status
+          let shouldIncrementSpots = false
+
+          if (currentEvent.eventType === 'CAPACITY_BASED') {
+            const spotsAvailable = currentEvent.capacity - currentEvent.spotsReserved
+
+            if (spotsAvailable >= payment.registration.spotsCount) {
+              // Capacity available - confirm and reserve spots
+              finalStatus = 'CONFIRMED'
+              shouldIncrementSpots = true
+            } else {
+              // No capacity - move to waitlist
+              finalStatus = 'WAITLIST'
+              shouldIncrementSpots = false
+            }
+          }
+
+          // Update registration payment status and final status
           const updatedRegistration = await tx.registration.update({
             where: { id: payment.registrationId },
             data: {
               paymentStatus: 'COMPLETED',
               amountPaid: validation.amount || payment.amount,
+              status: finalStatus, // May change to WAITLIST if capacity exceeded
             },
           })
+
+          // Atomically increment event.spotsReserved ONLY if confirmed
+          if (shouldIncrementSpots) {
+            await tx.event.update({
+              where: { id: payment.eventId },
+              data: { spotsReserved: { increment: updatedRegistration.spotsCount } },
+            })
+          }
 
           return {
             alreadyProcessed: false,

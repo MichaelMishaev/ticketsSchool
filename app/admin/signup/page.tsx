@@ -15,6 +15,7 @@ export default function AdminSignupPage() {
     name: '',
   })
   const [error, setError] = useState('')
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [isResending, setIsResending] = useState(false)
@@ -53,6 +54,7 @@ export default function AdminSignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setPasswordErrors([])
 
     // Validation
     if (!formData.name) {
@@ -65,8 +67,8 @@ export default function AdminSignupPage() {
       return
     }
 
-    if (formData.password.length < 8) {
-      setError('הסיסמה חייבת להיות לפחות 8 תווים')
+    if (formData.password.length < 12) {
+      setError('הסיסמה חייבת להיות לפחות 12 תווים')
       return
     }
 
@@ -106,6 +108,10 @@ export default function AdminSignupPage() {
         }
       } else {
         setError(data.error || 'שגיאה ביצירת החשבון')
+        // Extract password validation errors if available
+        if (data.details && Array.isArray(data.details)) {
+          setPasswordErrors(data.details)
+        }
       }
     } catch (err) {
       setError('שגיאה בהתחברות לשרת. אנא נסה שוב.')
@@ -123,7 +129,9 @@ export default function AdminSignupPage() {
           className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-md hover:shadow-lg transition-all hover:scale-105 group"
         >
           <Home className="h-5 w-5 text-green-600 group-hover:text-green-700" />
-          <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">חזרה לדף הבית</span>
+          <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
+            חזרה לדף הבית
+          </span>
         </Link>
 
         <div className="max-w-md w-full">
@@ -132,22 +140,14 @@ export default function AdminSignupPage() {
               <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-green-100 mb-4">
                 <Mail className="h-8 w-8 text-green-600" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                נרשמת בהצלחה! 🎉
-              </h2>
-              <p className="text-gray-600 mb-6">
-                שלחנו לך מייל לכתובת:
-              </p>
-              <p className="text-lg font-semibold text-blue-600 mb-6 break-all">
-                {formData.email}
-              </p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">נרשמת בהצלחה! 🎉</h2>
+              <p className="text-gray-600 mb-6">שלחנו לך מייל לכתובת:</p>
+              <p className="text-lg font-semibold text-blue-600 mb-6 break-all">{formData.email}</p>
               <div className="bg-blue-50 border-r-4 border-blue-400 p-4 mb-6 text-right">
                 <p className="text-sm text-blue-700">
                   <strong>שלב נוסף:</strong> כדי להפעיל את החשבון, לחץ על הקישור במייל שקיבלת.
                 </p>
-                <p className="text-xs text-blue-600 mt-2">
-                  הקישור תקף ל-24 שעות
-                </p>
+                <p className="text-xs text-blue-600 mt-2">הקישור תקף ל-24 שעות</p>
               </div>
 
               <div className="bg-purple-50 border-r-4 border-purple-400 p-4 mb-6 text-right">
@@ -173,14 +173,14 @@ export default function AdminSignupPage() {
                 </button>
 
                 {resendMessage && (
-                  <p className={`text-xs ${resendMessage.startsWith('✓') ? 'text-green-600' : 'text-red-600'}`}>
+                  <p
+                    className={`text-xs ${resendMessage.startsWith('✓') ? 'text-green-600' : 'text-red-600'}`}
+                  >
                     {resendMessage}
                   </p>
                 )}
 
-                <p className="text-xs text-gray-500">
-                  לא קיבלת מייל? בדוק את תיקיית הספאם
-                </p>
+                <p className="text-xs text-gray-500">לא קיבלת מייל? בדוק את תיקיית הספאם</p>
               </div>
             </div>
           </div>
@@ -197,7 +197,9 @@ export default function AdminSignupPage() {
         className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-md hover:shadow-lg transition-all hover:scale-105 group"
       >
         <Home className="h-5 w-5 text-blue-600 group-hover:text-blue-700" />
-        <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">חזרה לדף הבית</span>
+        <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
+          חזרה לדף הבית
+        </span>
       </Link>
 
       <div className="max-w-2xl w-full space-y-8">
@@ -205,9 +207,7 @@ export default function AdminSignupPage() {
           <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-blue-100">
             <UserPlus className="h-6 w-6 text-blue-600" />
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            הרשמה למערכת
-          </h2>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">הרשמה למערכת</h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             צור חשבון חדש ותתחיל לנהל אירועים
           </p>
@@ -218,7 +218,14 @@ export default function AdminSignupPage() {
             <div className="bg-red-50 border-r-4 border-red-400 p-4 mb-6">
               <div className="flex">
                 <div className="mr-3">
-                  <p className="text-sm text-red-700 text-right">{error}</p>
+                  <p className="text-sm text-red-700 text-right font-semibold">{error}</p>
+                  {passwordErrors.length > 0 && (
+                    <ul className="mt-3 mr-4 list-disc list-inside text-xs text-red-600 text-right space-y-1">
+                      {passwordErrors.map((err, idx) => (
+                        <li key={idx}>{err}</li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               </div>
             </div>
@@ -307,7 +314,10 @@ export default function AdminSignupPage() {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 text-right">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700 text-right"
+                >
                   סיסמה <span className="text-red-500">*</span>
                 </label>
                 <div className="mt-1 relative">
@@ -326,11 +336,13 @@ export default function AdminSignupPage() {
                     placeholder="••••••••"
                   />
                 </div>
-                <p className="mt-1 text-xs text-gray-500 text-right">לפחות 8 תווים</p>
               </div>
 
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 text-right">
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-sm font-medium text-gray-700 text-right"
+                >
                   אימות סיסמה <span className="text-red-500">*</span>
                 </label>
                 <div className="mt-1 relative">
@@ -352,6 +364,22 @@ export default function AdminSignupPage() {
               </div>
             </div>
 
+            {/* Password Requirements */}
+            <div className="bg-blue-50 border-r-4 border-blue-400 p-4 rounded-md">
+              <p className="text-xs font-semibold text-blue-900 text-right mb-2">דרישות סיסמה:</p>
+              <ul className="text-xs text-blue-800 text-right space-y-1 mr-4 list-disc list-inside">
+                <li>לפחות 12 תווים</li>
+                <li>לפחות אות קטנה אחת באנגלית (a-z)</li>
+                <li>לפחות אות גדולה אחת באנגלית (A-Z)</li>
+                <li>לפחות ספרה אחת (0-9)</li>
+                <li>לפחות תו מיוחד אחד (!@#$%^&*)</li>
+                <li>לא להשתמש בסיסמאות נפוצות</li>
+              </ul>
+              <p className="text-xs text-blue-700 text-right mt-2 font-medium">
+                דוגמה לסיסמה חזקה: MySchool2024!@
+              </p>
+            </div>
+
             <div>
               <button
                 type="submit"
@@ -360,9 +388,25 @@ export default function AdminSignupPage() {
               >
                 {isLoading ? (
                   <>
-                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin h-4 w-4"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     נרשם...
                   </>

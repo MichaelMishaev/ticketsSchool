@@ -2,12 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import {
-  LayoutGrid,
-  Users,
-  ClipboardCheck,
-  BarChart3,
-} from 'lucide-react'
+import { LayoutGrid, Users, ClipboardCheck, BarChart3 } from 'lucide-react'
 
 export type TabId = 'overview' | 'registrations' | 'checkin' | 'reports'
 
@@ -64,7 +59,7 @@ export default function EventTabNavigation({
   // Handle URL query param changes
   useEffect(() => {
     const urlTab = searchParams.get('tab') as TabId | null
-    if (urlTab && tabs.find(t => t.id === urlTab)) {
+    if (urlTab && tabs.find((t) => t.id === urlTab)) {
       onTabChange(urlTab)
     }
   }, [searchParams, onTabChange])
@@ -74,7 +69,7 @@ export default function EventTabNavigation({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!tabListRef.current?.contains(document.activeElement)) return
 
-      const currentIndex = tabs.findIndex(t => t.id === activeTab)
+      const currentIndex = tabs.findIndex((t) => t.id === activeTab)
       let nextIndex = currentIndex
 
       switch (e.key) {
@@ -118,7 +113,7 @@ export default function EventTabNavigation({
     // Minimum swipe distance (50px)
     if (Math.abs(diff) < 50) return
 
-    const currentIndex = tabs.findIndex(t => t.id === activeTab)
+    const currentIndex = tabs.findIndex((t) => t.id === activeTab)
 
     // Swipe left = next tab (RTL: swipe left = move right in content)
     if (diff > 0 && currentIndex < tabs.length - 1) {
@@ -168,37 +163,24 @@ export default function EventTabNavigation({
                 data-tab-id={tab.id}
                 onClick={() => handleTabChange(tab.id)}
                 className={`
-                  group inline-flex items-center gap-2 px-6 py-4 border-b-2 font-medium text-sm
-                  transition-all duration-200 ease-out whitespace-nowrap
-                  focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:z-10
-                  min-h-[48px]
+                  inline-flex items-center gap-2 px-6 py-4 font-medium text-sm
+                  transition-colors duration-200 whitespace-nowrap
+                  focus:outline-none focus:ring-2 focus:ring-gray-400/20 focus:z-10
+                  min-h-[48px] border-b-2
                   ${
                     isActive
-                      ? 'border-blue-600 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      ? 'border-gray-900 text-gray-900 bg-gray-50'
+                      : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                   }
                 `}
               >
-                <Icon
-                  className={`w-5 h-5 transition-transform duration-200 ${
-                    isActive ? 'scale-110' : 'group-hover:scale-105'
-                  }`}
-                />
+                <Icon className="w-5 h-5" />
                 <span>{tab.label}</span>
-
-                {/* Active indicator (pulsing dot) */}
-                {isActive && (
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-                  </span>
-                )}
               </button>
             )
           })}
         </div>
       </div>
-
 
       <style jsx>{`
         .hide-scrollbar::-webkit-scrollbar {

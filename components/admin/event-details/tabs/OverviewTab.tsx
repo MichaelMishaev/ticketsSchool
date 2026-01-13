@@ -160,7 +160,10 @@ export default function OverviewTab({ event, onEventUpdate, onTabChange }: Overv
       {/* Hero Header - Event Title + Sharing (MOST IMPORTANT) */}
       <EventHeroHeader event={event} />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6" dir="rtl">
+      <div
+        className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-44 md:pb-6 space-y-6"
+        dir="rtl"
+      >
         {/* Event Info Card - Compact with Decorative Pattern */}
         <div className="relative bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
           {/* Decorative SVG Pattern Background */}

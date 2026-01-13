@@ -242,10 +242,42 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
     }
   }
 
+  const handleUndoCheckIn = async (registrationId: string) => {
+    if (!checkInToken || isCheckingIn) return
+
+    setIsCheckingIn(true)
+    try {
+      const response = await fetch(`/api/check-in/${eventId}/${checkInToken}/${registrationId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          undoneBy: 'manual',
+          undoneReason: 'ביטול ידני ממסך הכניסה',
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        showSuccess('נוכחות בוטלה בהצלחה')
+        // Refresh data to update stats and recent activity
+        await fetchCheckInData()
+      } else {
+        showSuccess(data.error || 'שגיאה בביטול נוכחות')
+      }
+    } catch (error) {
+      console.error('Error undoing check-in:', error)
+      showSuccess('שגיאה בביטול נוכחות')
+    } finally {
+      setIsCheckingIn(false)
+    }
+  }
+
   // Filter registrations based on search term
   const filteredRegistrations = registrations
     .filter((r) => {
-      if (!searchTerm.trim()) return false
+      // If no search term, show all registrations
+      if (!searchTerm.trim()) return true
 
       const data = r.data as Record<string, unknown>
       const name = ((data.name as string) || (data.childName as string) || '').toLowerCase()
@@ -270,10 +302,10 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
     stats.confirmed > 0 ? Math.round((stats.checkedIn / stats.confirmed) * 100) : 0
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6" dir="rtl">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-44 md:pb-6" dir="rtl">
       {/* Success Toast */}
       {showSuccessToast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-[slideUp_300ms_ease-out]">
+        <div className="fixed bottom-40 md:bottom-6 left-1/2 -translate-x-1/2 z-50 animate-[slideUp_300ms_ease-out]">
           <div className="bg-green-600 text-white px-6 py-3 rounded-xl shadow-xl flex items-center gap-3">
             <Check className="w-5 h-5" />
             <span className="font-medium">{successMessage}</span>
@@ -423,7 +455,7 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
             </div>
 
             {filteredRegistrations.length > 0 ? (
-              <div className="space-y-2 max-h-96 overflow-y-auto">
+              <div className="space-y-2 max-h-96 overflow-y-auto overflow-x-hidden">
                 {filteredRegistrations.map((reg) => {
                   const data = reg.data as Record<string, unknown>
                   const name = (data.name as string) || (data.childName as string) || 'אורח'
@@ -438,34 +470,53 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
                           : 'border-gray-200 bg-white hover:border-green-300'
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900">{name}</p>
-                          <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">
-                            <span>{reg.phoneNumber}</span>
-                            <span className="text-gray-400">•</span>
-                            <span>קוד: {reg.confirmationCode}</span>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-gray-900 truncate">{name}</p>
+                          <div className="flex items-center gap-2 sm:gap-4 mt-1 text-sm text-gray-600 flex-wrap">
+                            <span className="truncate">{reg.phoneNumber}</span>
+                            <span className="text-gray-400 hidden sm:inline">•</span>
+                            <span className="truncate">קוד: {reg.confirmationCode}</span>
                             {reg.status === 'WAITLIST' && (
                               <>
-                                <span className="text-gray-400">•</span>
-                                <span className="text-amber-600 font-medium">המתנה</span>
+                                <span className="text-gray-400 hidden sm:inline">•</span>
+                                <span className="text-amber-600 font-medium whitespace-nowrap">
+                                  המתנה
+                                </span>
                               </>
                             )}
                           </div>
+                          {isCheckedIn && reg.checkIn?.checkedInAt && (
+                            <div className="mt-2 flex items-center gap-2 text-xs text-green-700">
+                              <Clock className="w-3.5 h-3.5" />
+                              <span>
+                                נכח ב-
+                                {new Date(reg.checkIn.checkedInAt).toLocaleString('he-IL', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric',
+                                })}
+                              </span>
+                            </div>
+                          )}
                         </div>
                         <button
-                          onClick={() => handleManualCheckIn(reg.id)}
-                          disabled={isCheckedIn || isCheckingIn || reg.status === 'WAITLIST'}
-                          className={`px-4 py-2 rounded-lg font-medium transition-all flex-shrink-0 ${
+                          onClick={() =>
+                            isCheckedIn ? handleUndoCheckIn(reg.id) : handleManualCheckIn(reg.id)
+                          }
+                          disabled={isCheckingIn || reg.status === 'WAITLIST'}
+                          className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition-all flex-shrink-0 whitespace-nowrap min-w-[100px] sm:min-w-[120px] text-sm sm:text-base focus:outline-none focus:ring-4 ${
                             isCheckedIn
-                              ? 'bg-green-100 text-green-700 cursor-not-allowed'
+                              ? 'bg-amber-100 text-amber-700 hover:bg-amber-200 active:scale-95 focus:ring-amber-200'
                               : reg.status === 'WAITLIST'
-                                ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                                : 'bg-green-600 text-white hover:bg-green-700 active:scale-95'
+                                ? 'bg-gray-100 text-gray-500 cursor-not-allowed focus:ring-gray-200'
+                                : 'bg-green-600 text-white hover:bg-green-700 active:scale-95 focus:ring-green-200'
                           }`}
                         >
                           {isCheckedIn
-                            ? 'נכח ✓'
+                            ? 'בטל נוכחות'
                             : reg.status === 'WAITLIST'
                               ? 'המתנה'
                               : 'סמן נוכחות'}
@@ -483,7 +534,7 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
             ) : (
               <div className="text-center py-8 text-gray-500">
                 <UserCheck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm">חפש משתתף כדי לסמן נוכחות ידנית</p>
+                <p className="text-sm">אין משתתפים רשומים לאירוע</p>
               </div>
             )}
           </div>

@@ -73,18 +73,14 @@ export default function EventHeroHeader({ event }: EventHeroHeaderProps) {
         <div className="flex items-center justify-between mb-4">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-1">
-              <h1 className="text-2xl font-bold text-gray-900">
-                {event.title}
-              </h1>
+              <h1 className="text-2xl font-bold text-gray-900">{event.title}</h1>
               <span
                 className={`px-3 py-1 rounded-full text-xs font-bold border whitespace-nowrap ${getStatusColor(event.status)}`}
               >
                 {getStatusLabel(event.status)}
               </span>
             </div>
-            <p className="text-sm text-gray-600">
-              שתף את קישור ההרשמה כדי להתחיל לקבל משתתפים
-            </p>
+            <p className="text-sm text-gray-600">שתף את קישור ההרשמה כדי להתחיל לקבל משתתפים</p>
           </div>
         </div>
 
@@ -134,12 +130,18 @@ export default function EventHeroHeader({ event }: EventHeroHeaderProps) {
                           width={16}
                           height={16}
                           className={`absolute inset-0 w-4 h-4 object-contain transition-all duration-200 ${
-                            copiedLink ? 'opacity-0 scale-0 rotate-180' : 'opacity-100 scale-100 rotate-0'
+                            copiedLink
+                              ? 'opacity-0 scale-0 rotate-180'
+                              : 'opacity-100 scale-100 rotate-0'
                           }`}
                         />
-                        <CheckCircle2 className={`absolute inset-0 w-4 h-4 text-green-600 transition-all duration-200 ${
-                          copiedLink ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-0 -rotate-180'
-                        }`} />
+                        <CheckCircle2
+                          className={`absolute inset-0 w-4 h-4 text-green-600 transition-all duration-200 ${
+                            copiedLink
+                              ? 'opacity-100 scale-100 rotate-0'
+                              : 'opacity-0 scale-0 -rotate-180'
+                          }`}
+                        />
                       </div>
                       <span className="text-sm font-semibold text-gray-700 group-hover/copy:text-blue-600 transition-colors">
                         {copiedLink ? 'הועתק!' : 'העתק'}
@@ -167,7 +169,7 @@ export default function EventHeroHeader({ event }: EventHeroHeaderProps) {
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700"></div>
 
                   <Share2 className="w-5 h-5 relative" />
-                  <span className="relative">שתף אירוע</span>
+                  <span className="relative">שלח קישור להרשמה</span>
                 </button>
 
                 {/* Secondary - Preview */}

@@ -132,3 +132,6 @@ backups/
 *-original-backup.tsx
 new-test/
 new-restaurant/
+
+# Markdown files
+*.md

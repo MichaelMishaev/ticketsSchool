@@ -2,12 +2,7 @@
 
 import { useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import {
-  LayoutGrid,
-  Users,
-  ClipboardCheck,
-  BarChart3,
-} from 'lucide-react'
+import { LayoutGrid, Users, ClipboardCheck, BarChart3 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export type TabId = 'overview' | 'registrations' | 'checkin' | 'reports'
@@ -50,22 +45,27 @@ interface MobileBottomTabBarProps {
   eventId: string
   activeTab: TabId
   onTabChange?: (tab: TabId) => void
+  checkInButton?: React.ReactNode
 }
 
 export default function MobileBottomTabBar({
   eventId,
   activeTab,
   onTabChange,
+  checkInButton,
 }: MobileBottomTabBarProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
   // Stable callback reference
-  const stableOnTabChange = useCallback((tab: TabId) => {
-    if (onTabChange) {
-      onTabChange(tab)
-    }
-  }, [onTabChange])
+  const stableOnTabChange = useCallback(
+    (tab: TabId) => {
+      if (onTabChange) {
+        onTabChange(tab)
+      }
+    },
+    [onTabChange]
+  )
 
   const handleTabChange = (tab: TabId) => {
     // Update state immediately
@@ -83,9 +83,20 @@ export default function MobileBottomTabBar({
     <nav
       role="tablist"
       aria-label="ניווט תחתון - ניהול אירוע"
-      className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-t border-gray-200 pb-safe shadow-lg"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-50"
     >
-      <div className="flex items-stretch justify-around" dir="rtl">
+      {/* Check-in Button - Transparent background */}
+      {checkInButton && (
+        <div className="px-3 py-2 flex justify-center bg-transparent" dir="rtl">
+          {checkInButton}
+        </div>
+      )}
+
+      {/* Tab Navigation */}
+      <div
+        className="flex items-stretch justify-around bg-white/95 backdrop-blur-lg border-t border-gray-200 pb-safe shadow-lg"
+        dir="rtl"
+      >
         {tabs.map((tab) => {
           const Icon = tab.icon
           const isActive = activeTab === tab.id
@@ -104,39 +115,21 @@ export default function MobileBottomTabBar({
               className={cn(
                 'flex-1 flex flex-col items-center justify-center py-2 px-1',
                 'min-h-[64px]', // Touch target (exceeds 44px minimum)
-                'transition-all duration-200',
-                'active:scale-95', // Touch feedback
-                'focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500',
-                isActive
-                  ? 'text-blue-600'
-                  : 'text-gray-500 active:text-gray-700'
+                'transition-colors duration-200',
+                'active:scale-[0.98]', // Touch feedback
+                'focus:outline-none focus:ring-2 focus:ring-inset focus:ring-gray-400/20',
+                isActive ? 'text-gray-900' : 'text-gray-500 active:text-gray-700'
               )}
             >
               {/* Icon */}
-              <Icon
-                className={cn(
-                  'w-6 h-6 mb-1 transition-transform duration-200',
-                  isActive && 'scale-110'
-                )}
-              />
+              <Icon className="w-6 h-6 mb-1" />
 
               {/* Label */}
               <span
-                className={cn(
-                  'text-xs font-medium transition-colors duration-200',
-                  isActive ? 'text-blue-600' : 'text-gray-500'
-                )}
+                className={cn('text-xs font-medium', isActive ? 'text-gray-900' : 'text-gray-500')}
               >
                 {tab.label}
               </span>
-
-              {/* Active indicator (pulsing dot) */}
-              {isActive && (
-                <span className="absolute bottom-1 inline-flex items-center justify-center">
-                  <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-blue-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-600"></span>
-                </span>
-              )}
             </button>
           )
         })}

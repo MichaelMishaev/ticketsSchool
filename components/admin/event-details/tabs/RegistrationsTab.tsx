@@ -1,11 +1,24 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { Search, Download, Users as UsersIcon, UserCheck, Ban, Trash2, X, Check, ChevronDown, ChevronUp, Wifi, WifiOff, Zap, FileDown, MessageCircle, RotateCcw } from 'lucide-react'
+import {
+  Search,
+  Download,
+  Users as UsersIcon,
+  UserCheck,
+  Ban,
+  Trash2,
+  X,
+  Check,
+  ChevronDown,
+  Wifi,
+  WifiOff,
+  Zap,
+  MessageCircle,
+  RotateCcw,
+} from 'lucide-react'
 import { format } from 'date-fns'
 import { useEventStream } from '@/hooks/useEventStream'
-import MobileBottomSheet from '../MobileBottomSheet'
-import FloatingActionButton from '../FloatingActionButton'
 
 // Helper function to convert Israeli phone to WhatsApp URL
 function formatWhatsAppUrl(phone: string): string | null {
@@ -47,14 +60,18 @@ export default function RegistrationsTab({
   onRegistrationUpdate,
 }: RegistrationsTabProps) {
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterStatus, setFilterStatus] = useState<'all' | 'CONFIRMED' | 'WAITLIST' | 'CANCELLED'>('all')
+  const [filterStatus, setFilterStatus] = useState<'all' | 'CONFIRMED' | 'WAITLIST' | 'CANCELLED'>(
+    'all'
+  )
   const [expandedRow, setExpandedRow] = useState<string | null>(null)
-  const [cancelModal, setCancelModal] = useState<{ show: boolean; registrationId: string | null }>({ show: false, registrationId: null })
+  const [cancelModal, setCancelModal] = useState<{ show: boolean; registrationId: string | null }>({
+    show: false,
+    registrationId: null,
+  })
   const [cancelReason, setCancelReason] = useState('')
   const [showSuccessToast, setShowSuccessToast] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
   const [newRegistrationIds, setNewRegistrationIds] = useState<Set<string>>(new Set())
-  const [mobileActionsSheet, setMobileActionsSheet] = useState<{ show: boolean; registration: Registration | null }>({ show: false, registration: null })
 
   // Format phone number for display (Israeli format: 050-123-4567)
   const formatPhoneDisplay = (phone: string): string => {
@@ -85,17 +102,17 @@ export default function RegistrationsTab({
   // Merge new registrations with existing ones
   const allRegistrations = useMemo(() => {
     // Convert new registrations to match interface (createdAt from string to Date)
-    const normalizedNew = newRegistrations.map(r => ({
+    const normalizedNew = newRegistrations.map((r) => ({
       ...r,
-      createdAt: typeof r.createdAt === 'string' ? new Date(r.createdAt) : r.createdAt
+      createdAt: typeof r.createdAt === 'string' ? new Date(r.createdAt) : r.createdAt,
     }))
 
     // Track IDs of new registrations for highlighting
-    const newIds = new Set(normalizedNew.map(r => r.id))
+    const newIds = new Set(normalizedNew.map((r) => r.id))
 
     // Merge: new registrations first, then existing (avoiding duplicates)
-    const existingIds = new Set(normalizedNew.map(r => r.id))
-    const uniqueExisting = registrations.filter(r => !existingIds.has(r.id))
+    const existingIds = new Set(normalizedNew.map((r) => r.id))
+    const uniqueExisting = registrations.filter((r) => !existingIds.has(r.id))
 
     return [...normalizedNew, ...uniqueExisting]
   }, [newRegistrations, registrations])
@@ -108,11 +125,11 @@ export default function RegistrationsTab({
       showSuccess(`${name} נרשם זה עתה! 🎉`)
 
       // Add to highlight set
-      setNewRegistrationIds(prev => new Set([...prev, latest.id]))
+      setNewRegistrationIds((prev) => new Set([...prev, latest.id]))
 
       // Remove highlight after 10 seconds
       setTimeout(() => {
-        setNewRegistrationIds(prev => {
+        setNewRegistrationIds((prev) => {
           const next = new Set(prev)
           next.delete(latest.id)
           return next
@@ -127,16 +144,20 @@ export default function RegistrationsTab({
 
     // Filter by status
     if (filterStatus !== 'all') {
-      filtered = filtered.filter(r => r.status === filterStatus)
+      filtered = filtered.filter((r) => r.status === filterStatus)
     }
 
     // Filter by search term
     if (searchTerm) {
       const term = searchTerm.toLowerCase()
-      filtered = filtered.filter(r => {
+      filtered = filtered.filter((r) => {
         const name = r.data.studentName || r.data.name || ''
         const phone = r.phoneNumber || ''
-        return name.toLowerCase().includes(term) || phone.includes(term) || r.confirmationCode.toLowerCase().includes(term.toLowerCase())
+        return (
+          name.toLowerCase().includes(term) ||
+          phone.includes(term) ||
+          r.confirmationCode.toLowerCase().includes(term.toLowerCase())
+        )
       })
     }
 
@@ -151,9 +172,9 @@ export default function RegistrationsTab({
 
   // Count by status (use merged list) - Sum spotsCount for total people
   const counts = useMemo(() => {
-    const confirmed = allRegistrations.filter(r => r.status === 'CONFIRMED')
-    const waitlist = allRegistrations.filter(r => r.status === 'WAITLIST')
-    const cancelled = allRegistrations.filter(r => r.status === 'CANCELLED')
+    const confirmed = allRegistrations.filter((r) => r.status === 'CONFIRMED')
+    const waitlist = allRegistrations.filter((r) => r.status === 'WAITLIST')
+    const cancelled = allRegistrations.filter((r) => r.status === 'CANCELLED')
 
     return {
       all: allRegistrations.reduce((sum, r) => sum + (r.spotsCount || 0), 0),
@@ -189,7 +210,7 @@ export default function RegistrationsTab({
       const response = await fetch(`/api/events/${eventId}/registrations/${registrationId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'CONFIRMED' })
+        body: JSON.stringify({ status: 'CONFIRMED' }),
       })
       if (response.ok) {
         showSuccess('ההרשמה אושרה בהצלחה')
@@ -211,7 +232,7 @@ export default function RegistrationsTab({
       const response = await fetch(`/api/events/${eventId}/registrations/${registrationId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'CONFIRMED' })
+        body: JSON.stringify({ status: 'CONFIRMED' }),
       })
 
       if (response.ok) {
@@ -229,11 +250,14 @@ export default function RegistrationsTab({
 
           if (addToWaitlist) {
             // Add to waitlist instead
-            const waitlistResponse = await fetch(`/api/events/${eventId}/registrations/${registrationId}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ status: 'WAITLIST' })
-            })
+            const waitlistResponse = await fetch(
+              `/api/events/${eventId}/registrations/${registrationId}`,
+              {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'WAITLIST' }),
+              }
+            )
 
             if (waitlistResponse.ok) {
               showSuccess('ההרשמה נוספה לרשימת המתנה ⏳')
@@ -257,14 +281,17 @@ export default function RegistrationsTab({
     if (!cancelModal.registrationId) return
 
     try {
-      const response = await fetch(`/api/events/${eventId}/registrations/${cancelModal.registrationId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: 'CANCELLED',
-          cancellationReason: cancelReason.trim() || undefined
-        })
-      })
+      const response = await fetch(
+        `/api/events/${eventId}/registrations/${cancelModal.registrationId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status: 'CANCELLED',
+            cancellationReason: cancelReason.trim() || undefined,
+          }),
+        }
+      )
       if (response.ok) {
         showSuccess('ההרשמה בוטלה בהצלחה')
         onRegistrationUpdate()
@@ -286,7 +313,7 @@ export default function RegistrationsTab({
 
     try {
       const response = await fetch(`/api/events/${eventId}/registrations/${registrationId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
       })
       if (response.ok) {
         showSuccess('ההרשמה נמחקה')
@@ -330,22 +357,22 @@ export default function RegistrationsTab({
     switch (status) {
       case 'CONFIRMED':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 text-xs font-bold rounded-full shadow-sm ring-1 ring-green-200/50">
+            <div className="w-2 h-2 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full animate-pulse shadow-sm"></div>
             מאושר
           </span>
         )
       case 'WAITLIST':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-800 text-sm font-medium rounded-full">
-            <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 text-xs font-bold rounded-full shadow-sm ring-1 ring-amber-200/50">
+            <div className="w-2 h-2 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full animate-pulse shadow-sm"></div>
             המתנה
           </span>
         )
       case 'CANCELLED':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-100 text-red-800 text-sm font-medium rounded-full">
-            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-red-100 to-rose-100 text-red-800 text-xs font-bold rounded-full shadow-sm ring-1 ring-red-200/50">
+            <div className="w-2 h-2 bg-gradient-to-br from-red-500 to-rose-500 rounded-full shadow-sm"></div>
             בוטל
           </span>
         )
@@ -355,10 +382,10 @@ export default function RegistrationsTab({
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6" dir="rtl">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-44 md:pb-6" dir="rtl">
       {/* Success Toast */}
       {showSuccessToast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-[slideUp_300ms_ease-out]">
+        <div className="fixed bottom-40 md:bottom-6 left-1/2 -translate-x-1/2 z-50 animate-[slideUp_300ms_ease-out]">
           <div className="bg-green-600 text-white px-6 py-3 rounded-xl shadow-xl flex items-center gap-3">
             <Check className="w-5 h-5" />
             <span className="font-medium">{successMessage}</span>
@@ -374,11 +401,13 @@ export default function RegistrationsTab({
             <h2 className="text-2xl font-bold text-gray-900">רשימת הרשמות</h2>
 
             {/* Real-time connection indicator - moved below title for better mobile layout */}
-            <div className={`inline-flex self-start items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-              isConnected
-                ? 'bg-green-100 text-green-700 border border-green-200'
-                : 'bg-gray-100 text-gray-600 border border-gray-200'
-            }`}>
+            <div
+              className={`inline-flex self-start items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                isConnected
+                  ? 'bg-green-100 text-green-700 border border-green-200'
+                  : 'bg-gray-100 text-gray-600 border border-gray-200'
+              }`}
+            >
               {isConnected ? (
                 <>
                   <Wifi className="w-4 h-4 animate-pulse" />
@@ -393,10 +422,10 @@ export default function RegistrationsTab({
             </div>
           </div>
 
-          {/* Export button - hidden on mobile, FAB shows instead */}
+          {/* Export button - visible on all screen sizes */}
           <button
             onClick={handleExportCSV}
-            className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors focus:outline-none focus:ring-4 focus:ring-green-500/20 shadow-sm"
+            className="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors focus:outline-none focus:ring-4 focus:ring-green-500/20 shadow-sm"
           >
             <Download className="w-4 h-4" />
             <span>ייצוא לאקסל</span>
@@ -456,7 +485,7 @@ export default function RegistrationsTab({
       </div>
 
       {/* Registrations list */}
-      <div className="space-y-3">
+      <div className="space-y-2">
         {filteredRegistrations.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
             <UsersIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -475,205 +504,326 @@ export default function RegistrationsTab({
               <div
                 key={registration.id}
                 data-testid="registration-row"
-                className={`bg-white rounded-xl shadow-sm border overflow-hidden transition-all ${
+                className={`group relative bg-white rounded-xl transition-all duration-300 ease-out overflow-hidden ${
                   isNew
-                    ? 'border-green-500 bg-green-50 animate-[slideIn_500ms_ease-out]'
-                    : 'border-gray-200'
+                    ? 'shadow-lg shadow-green-500/20 ring-2 ring-green-500 bg-gradient-to-br from-green-50 via-white to-white animate-[slideIn_500ms_ease-out]'
+                    : expandedRow === registration.id
+                      ? 'shadow-xl shadow-blue-500/10 ring-2 ring-blue-500'
+                      : 'shadow-sm hover:shadow-lg border border-gray-200/80 hover:border-blue-300'
                 }`}
               >
-                {/* Main row */}
+                {/* Accent bar - Left side gradient */}
                 <div
-                  className="p-4 hover:bg-gray-50 transition-colors md:cursor-default cursor-pointer active:bg-gray-100 md:active:bg-gray-50"
-                  onClick={() => {
-                    // On mobile, tap opens bottom sheet
-                    if (window.innerWidth < 768) {
-                      setMobileActionsSheet({ show: true, registration })
-                    }
-                  }}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold text-gray-900 text-lg">
-                          {registration.data.studentName || registration.data.name || 'לא צוין'}
-                        </h3>
-                        {getStatusBadge(registration.status)}
+                  className={`absolute right-0 top-0 bottom-0 w-1 transition-all duration-300 ${
+                    registration.status === 'CONFIRMED'
+                      ? 'bg-gradient-to-b from-green-500 to-emerald-500'
+                      : registration.status === 'WAITLIST'
+                        ? 'bg-gradient-to-b from-amber-500 to-orange-500'
+                        : 'bg-gradient-to-b from-red-500 to-rose-500'
+                  }`}
+                />
 
-                        {/* NEW badge for recently arrived registrations */}
-                        {isNew && (
-                          <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-green-600 text-white text-xs font-bold rounded-full animate-pulse">
-                            <Zap className="w-3 h-3" />
-                            חדש
-                          </span>
-                        )}
+                {/* Main row - Always visible */}
+                <div
+                  className="p-4 cursor-pointer select-none transition-all duration-200 hover:bg-gray-50/50 active:scale-[0.99]"
+                  onClick={() =>
+                    setExpandedRow(expandedRow === registration.id ? null : registration.id)
+                  }
+                >
+                  {/* Mobile Layout */}
+                  <div className="md:hidden">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <h3 className="font-bold text-gray-900 text-base truncate leading-tight">
+                            {registration.data.studentName || registration.data.name || 'לא צוין'}
+                          </h3>
+                          {isNew && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs font-bold rounded-full animate-pulse flex-shrink-0 shadow-sm">
+                              <Zap className="w-3 h-3" />
+                              חדש
+                            </span>
+                          )}
+                        </div>
+                        {getStatusBadge(registration.status)}
                       </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm text-gray-600">
-                      <div className="flex items-center gap-1.5">
+                      {/* Expand/Collapse Indicator */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setExpandedRow(expandedRow === registration.id ? null : registration.id)
+                        }}
+                        className="flex-shrink-0 p-2 hover:bg-blue-50 rounded-xl transition-all duration-200 group-hover:bg-blue-50/50"
+                        aria-label={expandedRow === registration.id ? 'סגור פרטים' : 'הצג פרטים'}
+                      >
+                        <ChevronDown
+                          className={`w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-all duration-300 ${
+                            expandedRow === registration.id ? 'rotate-180 text-blue-600' : ''
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Compact Info - Always visible */}
+                    <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+                      <div className="flex items-center gap-1.5 text-gray-600 bg-gray-50 px-2.5 py-1.5 rounded-lg">
                         {formatWhatsAppUrl(registration.phoneNumber) ? (
                           <a
                             href={formatWhatsAppUrl(registration.phoneNumber)!}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            className="flex items-center gap-1.5 text-green-600 hover:text-green-700 hover:underline font-medium"
+                            className="flex items-center gap-1.5 text-green-600 font-semibold hover:text-green-700 transition-colors"
                           >
-                            <MessageCircle className="w-4 h-4" />
-                            {formatPhoneDisplay(registration.phoneNumber)}
+                            <MessageCircle className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate">
+                              {formatPhoneDisplay(registration.phoneNumber)}
+                            </span>
                           </a>
                         ) : (
                           <>
-                            <span>📞</span>
-                            <span className="font-medium">{formatPhoneDisplay(registration.phoneNumber)}</span>
+                            <MessageCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                            <span className="font-semibold truncate">
+                              {formatPhoneDisplay(registration.phoneNumber)}
+                            </span>
                           </>
                         )}
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <span>👥</span>
+                      <div className="flex items-center gap-1.5 text-gray-700 bg-blue-50 px-2.5 py-1.5 rounded-lg justify-end font-semibold">
+                        <span className="text-base">👥</span>
                         <span>{registration.spotsCount} מקומות</span>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <span>🔑</span>
-                        <span className="font-mono">{registration.confirmationCode}</span>
-                      </div>
-                    </div>
-
-                    <div className="text-xs text-gray-500 mt-2">
-                      נרשם: {format(new Date(registration.createdAt), 'dd/MM/yyyy HH:mm')}
                     </div>
                   </div>
 
-                  {/* Action buttons - Desktop only */}
-                  <div className="hidden md:flex items-center gap-2 mr-4">
+                  {/* Desktop Layout */}
+                  <div className="hidden md:flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2.5 mb-2">
+                        <h3 className="font-bold text-gray-900 text-base leading-tight">
+                          {registration.data.studentName || registration.data.name || 'לא צוין'}
+                        </h3>
+                        {getStatusBadge(registration.status)}
+
+                        {isNew && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs font-bold rounded-full animate-pulse shadow-sm">
+                            <Zap className="w-3 h-3" />
+                            חדש
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-4 text-xs">
+                        <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1.5 rounded-lg">
+                          {formatWhatsAppUrl(registration.phoneNumber) ? (
+                            <a
+                              href={formatWhatsAppUrl(registration.phoneNumber)!}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="flex items-center gap-1.5 text-green-600 hover:text-green-700 font-semibold transition-colors"
+                            >
+                              <MessageCircle className="w-4 h-4" />
+                              <span>{formatPhoneDisplay(registration.phoneNumber)}</span>
+                            </a>
+                          ) : (
+                            <>
+                              <MessageCircle className="w-4 h-4 text-green-600" />
+                              <span className="font-semibold text-gray-700">
+                                {formatPhoneDisplay(registration.phoneNumber)}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 bg-blue-50 px-2.5 py-1.5 rounded-lg text-gray-700 font-semibold">
+                          <span className="text-base">👥</span>
+                          <span>{registration.spotsCount} מקומות</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 bg-purple-50 px-2.5 py-1.5 rounded-lg text-gray-700 font-semibold">
+                          <span className="text-base">🔑</span>
+                          <span className="font-mono text-xs">{registration.confirmationCode}</span>
+                        </div>
+                      </div>
+
+                      <div className="text-xs text-gray-400 mt-2 font-medium">
+                        {format(new Date(registration.createdAt), 'dd/MM/yyyy HH:mm')}
+                      </div>
+                    </div>
+
+                    {/* Expand button - Desktop only */}
                     <button
-                      onClick={() => setExpandedRow(expandedRow === registration.id ? null : registration.id)}
-                      className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                      aria-label={expandedRow === registration.id ? "סגור פרטים" : "הצג פרטים"}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setExpandedRow(expandedRow === registration.id ? null : registration.id)
+                      }}
+                      className="hidden md:flex items-center justify-center p-2 hover:bg-blue-50 rounded-xl transition-all duration-200 group-hover:bg-blue-50/50"
+                      aria-label={expandedRow === registration.id ? 'סגור פרטים' : 'הצג פרטים'}
                     >
-                      {expandedRow === registration.id ? (
-                        <ChevronUp className="w-5 h-5" />
-                      ) : (
-                        <ChevronDown className="w-5 h-5" />
-                      )}
-                    </button>
-
-                    {registration.status === 'WAITLIST' && (
-                      <button
-                        onClick={() => handlePromoteToConfirmed(registration.id)}
-                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                        title="אשר הרשמה"
-                        aria-label="אשר הרשמה"
-                      >
-                        <UserCheck className="w-5 h-5" />
-                      </button>
-                    )}
-
-                    {registration.status === 'CANCELLED' && (
-                      <button
-                        onClick={() => handleRestoreCancelled(registration.id)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="שחזר הרשמה מבוטלת"
-                        aria-label="שחזר הרשמה"
-                      >
-                        <RotateCcw className="w-5 h-5" />
-                      </button>
-                    )}
-
-                    {registration.status !== 'CANCELLED' && (
-                      <button
-                        onClick={() => setCancelModal({ show: true, registrationId: registration.id })}
-                        className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                        title="בטל הרשמה"
-                        aria-label="בטל הרשמה"
-                      >
-                        <Ban className="w-5 h-5" />
-                      </button>
-                    )}
-
-                    <button
-                      onClick={() => handleDeleteRegistration(registration.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="מחק לצמיתות"
-                      aria-label="מחק לצמיתות"
-                    >
-                      <Trash2 className="w-5 h-5" />
+                      <ChevronDown
+                        className={`w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-all duration-300 ${
+                          expandedRow === registration.id ? 'rotate-180 text-blue-600' : ''
+                        }`}
+                      />
                     </button>
                   </div>
                 </div>
-              </div>
 
-              {/* Expanded details */}
-              {expandedRow === registration.id && (
-                <div className="px-4 pb-4 bg-gray-50 border-t border-gray-200">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-                    {/* Registration Details with proper Hebrew labels */}
-                    <div className="space-y-3">
-                      <h4 className="font-semibold text-gray-900 mb-3">פרטי הרשמה</h4>
+                {/* Expanded Section - Inline with smooth animation */}
+                <div
+                  className={`overflow-hidden transition-all duration-300 ease-out ${
+                    expandedRow === registration.id
+                      ? 'max-h-[600px] opacity-100'
+                      : 'max-h-0 opacity-0'
+                  }`}
+                >
+                  {expandedRow === registration.id && (
+                    <div className="px-4 pb-4 bg-gradient-to-b from-blue-50/30 to-white border-t border-blue-200/50">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-5">
+                        {/* Registration Details with proper Hebrew labels */}
+                        <div className="space-y-3">
+                          <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <div className="w-1 h-5 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full"></div>
+                            פרטי הרשמה
+                          </h4>
 
-                      {registration.data.studentName && (
-                        <div className="flex flex-col gap-1">
-                          <span className="text-sm font-medium text-gray-500">שם התלמיד</span>
-                          <span className="text-base text-gray-900">{registration.data.studentName}</span>
+                          {registration.data.studentName && (
+                            <div className="flex flex-col gap-1">
+                              <span className="text-sm font-medium text-gray-500">שם התלמיד</span>
+                              <span className="text-base text-gray-900">
+                                {registration.data.studentName}
+                              </span>
+                            </div>
+                          )}
+
+                          {registration.data.parentName && (
+                            <div className="flex flex-col gap-1">
+                              <span className="text-sm font-medium text-gray-500">שם ההורה</span>
+                              <span className="text-base text-gray-900">
+                                {registration.data.parentName}
+                              </span>
+                            </div>
+                          )}
+
+                          {registration.data.grade && (
+                            <div className="flex flex-col gap-1">
+                              <span className="text-sm font-medium text-gray-500">כיתה</span>
+                              <span className="text-base text-gray-900">
+                                {registration.data.grade}
+                              </span>
+                            </div>
+                          )}
+
+                          {registration.data.email && (
+                            <div className="flex flex-col gap-1">
+                              <span className="text-sm font-medium text-gray-500">דוא״ל</span>
+                              <span className="text-base text-gray-900 font-mono text-sm">
+                                {registration.data.email}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                      )}
 
-                      {registration.data.parentName && (
-                        <div className="flex flex-col gap-1">
-                          <span className="text-sm font-medium text-gray-500">שם ההורה</span>
-                          <span className="text-base text-gray-900">{registration.data.parentName}</span>
-                        </div>
-                      )}
+                        <div className="space-y-3">
+                          <h4 className="font-semibold text-gray-900 mb-3">פרטים נוספים</h4>
 
-                      {registration.data.grade && (
-                        <div className="flex flex-col gap-1">
-                          <span className="text-sm font-medium text-gray-500">כיתה</span>
-                          <span className="text-base text-gray-900">{registration.data.grade}</span>
-                        </div>
-                      )}
+                          <div className="flex flex-col gap-1">
+                            <span className="text-sm font-medium text-gray-500">סטטוס</span>
+                            <span className="text-base text-gray-900">
+                              {registration.status === 'CONFIRMED'
+                                ? 'מאושר'
+                                : registration.status === 'WAITLIST'
+                                  ? 'רשימת המתנה'
+                                  : 'בוטל'}
+                            </span>
+                          </div>
 
-                      {registration.data.email && (
-                        <div className="flex flex-col gap-1">
-                          <span className="text-sm font-medium text-gray-500">דוא״ל</span>
-                          <span className="text-base text-gray-900 font-mono text-sm">{registration.data.email}</span>
+                          <div className="flex flex-col gap-1">
+                            <span className="text-sm font-medium text-gray-500">תאריך הרשמה</span>
+                            <span className="text-base text-gray-900">
+                              {format(new Date(registration.createdAt), 'dd/MM/yyyy בשעה HH:mm')}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-col gap-1">
+                            <span className="text-sm font-medium text-gray-500">קוד אישור</span>
+                            <span className="text-base text-gray-900 font-mono font-bold bg-gradient-to-r from-purple-100 to-pink-100 px-4 py-2 rounded-lg inline-block ring-1 ring-purple-200/50 shadow-sm">
+                              {registration.confirmationCode}
+                            </span>
+                          </div>
+
+                          {registration.data.notes && (
+                            <div className="flex flex-col gap-1">
+                              <span className="text-sm font-medium text-gray-500">הערות</span>
+                              <span className="text-base text-gray-900">
+                                {registration.data.notes}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
+
+                      {/* Action Buttons - Shown when expanded */}
+                      <div className="mt-5 pt-5 border-t border-blue-200/50">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          {/* Promote from Waitlist */}
+                          {registration.status === 'WAITLIST' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handlePromoteToConfirmed(registration.id)
+                              }}
+                              className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-bold hover:from-green-600 hover:to-emerald-600 active:scale-95 transition-all shadow-md hover:shadow-lg"
+                            >
+                              <UserCheck className="w-4 h-4" />
+                              <span>אשר הרשמה</span>
+                            </button>
+                          )}
+
+                          {/* Restore Cancelled */}
+                          {registration.status === 'CANCELLED' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleRestoreCancelled(registration.id)
+                              }}
+                              className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-bold hover:from-blue-600 hover:to-cyan-600 active:scale-95 transition-all shadow-md hover:shadow-lg"
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                              <span>שחזר הרשמה</span>
+                            </button>
+                          )}
+
+                          {/* Cancel Registration */}
+                          {registration.status !== 'CANCELLED' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setCancelModal({ show: true, registrationId: registration.id })
+                              }}
+                              className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold hover:from-amber-600 hover:to-orange-600 active:scale-95 transition-all shadow-md hover:shadow-lg"
+                            >
+                              <Ban className="w-4 h-4" />
+                              <span>בטל הרשמה</span>
+                            </button>
+                          )}
+
+                          {/* Delete Registration */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteRegistration(registration.id)
+                            }}
+                            className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl font-bold hover:from-red-600 hover:to-rose-600 active:scale-95 transition-all shadow-md hover:shadow-lg"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            <span>מחק</span>
+                          </button>
+                        </div>
+                      </div>
                     </div>
-
-                    <div className="space-y-3">
-                      <h4 className="font-semibold text-gray-900 mb-3">פרטים נוספים</h4>
-
-                      <div className="flex flex-col gap-1">
-                        <span className="text-sm font-medium text-gray-500">סטטוס</span>
-                        <span className="text-base text-gray-900">
-                          {registration.status === 'CONFIRMED' ? 'מאושר' :
-                           registration.status === 'WAITLIST' ? 'רשימת המתנה' : 'בוטל'}
-                        </span>
-                      </div>
-
-                      <div className="flex flex-col gap-1">
-                        <span className="text-sm font-medium text-gray-500">תאריך הרשמה</span>
-                        <span className="text-base text-gray-900">
-                          {format(new Date(registration.createdAt), 'dd/MM/yyyy בשעה HH:mm')}
-                        </span>
-                      </div>
-
-                      <div className="flex flex-col gap-1">
-                        <span className="text-sm font-medium text-gray-500">קוד אישור</span>
-                        <span className="text-base text-gray-900 font-mono bg-gray-100 px-3 py-1 rounded inline-block">
-                          {registration.confirmationCode}
-                        </span>
-                      </div>
-
-                      {registration.data.notes && (
-                        <div className="flex flex-col gap-1">
-                          <span className="text-sm font-medium text-gray-500">הערות</span>
-                          <span className="text-base text-gray-900">{registration.data.notes}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  )}
                 </div>
-              )}
               </div>
             )
           })
@@ -689,7 +839,10 @@ export default function RegistrationsTab({
 
       {/* Cancel Modal */}
       {cancelModal.show && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" dir="rtl">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          dir="rtl"
+        >
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 animate-[fadeIn_200ms_ease-out]">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-gray-900">ביטול הרשמה</h2>
@@ -710,7 +863,10 @@ export default function RegistrationsTab({
             </p>
 
             <div className="mb-6">
-              <label htmlFor="cancelReason" className="block text-sm font-medium text-gray-900 mb-2">
+              <label
+                htmlFor="cancelReason"
+                className="block text-sm font-medium text-gray-900 mb-2"
+              >
                 סיבת ביטול (אופציונלי)
               </label>
               <textarea
@@ -721,9 +877,7 @@ export default function RegistrationsTab({
                 className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all resize-none"
                 placeholder="למשל: נרשם ביקש לבטל בטלפון"
               />
-              <p className="text-xs text-gray-500 mt-2">
-                הסיבה תישמר לצורך רישום ומעקב
-              </p>
+              <p className="text-xs text-gray-500 mt-2">הסיבה תישמר לצורך רישום ומעקב</p>
             </div>
 
             <div className="flex gap-3">
@@ -746,141 +900,6 @@ export default function RegistrationsTab({
           </div>
         </div>
       )}
-
-      {/* Mobile Bottom Sheet for Actions */}
-      <MobileBottomSheet
-        isOpen={mobileActionsSheet.show}
-        onClose={() => setMobileActionsSheet({ show: false, registration: null })}
-        title={mobileActionsSheet.registration ? (mobileActionsSheet.registration.data.studentName || mobileActionsSheet.registration.data.name || 'פעולות') : 'פעולות'}
-      >
-        {mobileActionsSheet.registration && (
-          <div className="space-y-3">
-            {/* Registration Details */}
-            <div className="pb-4 border-b border-gray-200">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-gray-900">
-                  {mobileActionsSheet.registration.data.studentName || mobileActionsSheet.registration.data.name}
-                </h3>
-                {getStatusBadge(mobileActionsSheet.registration.status)}
-              </div>
-              <div className="space-y-2 text-sm text-gray-600">
-                <p className="font-medium">
-                  {formatWhatsAppUrl(mobileActionsSheet.registration.phoneNumber) ? (
-                    <a
-                      href={formatWhatsAppUrl(mobileActionsSheet.registration.phoneNumber)!}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-green-600 hover:text-green-700 hover:underline"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                      {formatPhoneDisplay(mobileActionsSheet.registration.phoneNumber)}
-                    </a>
-                  ) : (
-                    <>📞 {formatPhoneDisplay(mobileActionsSheet.registration.phoneNumber)}</>
-                  )}
-                </p>
-                <p>👥 {mobileActionsSheet.registration.spotsCount} מקומות</p>
-                <p className="font-mono">🔑 {mobileActionsSheet.registration.confirmationCode}</p>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="space-y-2">
-              {/* View Details */}
-              <button
-                onClick={() => {
-                  setExpandedRow(
-                    expandedRow === mobileActionsSheet.registration?.id
-                      ? null
-                      : mobileActionsSheet.registration?.id || null
-                  )
-                  setMobileActionsSheet({ show: false, registration: null })
-                }}
-                className="w-full flex items-center gap-3 px-4 py-4 text-right bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                {expandedRow === mobileActionsSheet.registration?.id ? (
-                  <ChevronUp className="w-5 h-5 text-gray-600" />
-                ) : (
-                  <ChevronDown className="w-5 h-5 text-gray-600" />
-                )}
-                <span className="font-medium text-gray-900">
-                  {expandedRow === mobileActionsSheet.registration?.id ? 'הסתר פרטים' : 'הצג פרטים מלאים'}
-                </span>
-              </button>
-
-              {/* Promote from Waitlist */}
-              {mobileActionsSheet.registration.status === 'WAITLIST' && (
-                <button
-                  onClick={() => {
-                    if (mobileActionsSheet.registration) {
-                      handlePromoteToConfirmed(mobileActionsSheet.registration.id)
-                      setMobileActionsSheet({ show: false, registration: null })
-                    }
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-4 text-right bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
-                >
-                  <UserCheck className="w-5 h-5 text-green-600" />
-                  <span className="font-medium text-green-700">אשר הרשמה</span>
-                </button>
-              )}
-
-              {/* Restore Cancelled Registration */}
-              {mobileActionsSheet.registration.status === 'CANCELLED' && (
-                <button
-                  onClick={() => {
-                    if (mobileActionsSheet.registration) {
-                      handleRestoreCancelled(mobileActionsSheet.registration.id)
-                      setMobileActionsSheet({ show: false, registration: null })
-                    }
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-4 text-right bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
-                >
-                  <RotateCcw className="w-5 h-5 text-blue-600" />
-                  <span className="font-medium text-blue-700">שחזר הרשמה</span>
-                </button>
-              )}
-
-              {/* Cancel Registration */}
-              {mobileActionsSheet.registration.status !== 'CANCELLED' && (
-                <button
-                  onClick={() => {
-                    if (mobileActionsSheet.registration) {
-                      setCancelModal({ show: true, registrationId: mobileActionsSheet.registration.id })
-                      setMobileActionsSheet({ show: false, registration: null })
-                    }
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-4 text-right bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors"
-                >
-                  <Ban className="w-5 h-5 text-amber-600" />
-                  <span className="font-medium text-amber-700">בטל הרשמה</span>
-                </button>
-              )}
-
-              {/* Delete Registration */}
-              <button
-                onClick={() => {
-                  if (mobileActionsSheet.registration) {
-                    handleDeleteRegistration(mobileActionsSheet.registration.id)
-                    setMobileActionsSheet({ show: false, registration: null })
-                  }
-                }}
-                className="w-full flex items-center gap-3 px-4 py-4 text-right bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
-              >
-                <Trash2 className="w-5 h-5 text-red-600" />
-                <span className="font-medium text-red-700">מחק לצמיתות</span>
-              </button>
-            </div>
-          </div>
-        )}
-      </MobileBottomSheet>
-
-      {/* FAB for Mobile */}
-      <FloatingActionButton
-        icon={FileDown}
-        label="ייצוא"
-        onClick={handleExportCSV}
-        variant="success"
-      />
 
       <style jsx>{`
         @keyframes slideUp {

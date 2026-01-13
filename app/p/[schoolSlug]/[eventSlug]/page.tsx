@@ -7,7 +7,11 @@ import { format } from 'date-fns'
 import { he } from 'date-fns/locale'
 import FeedbackInline from '@/components/FeedbackInline'
 import GuestCountSelector from '@/components/GuestCountSelector'
-import { trackRegistrationStarted, trackRegistrationCompleted, trackRegistrationFailed } from '@/lib/analytics'
+import {
+  trackRegistrationStarted,
+  trackRegistrationCompleted,
+  trackRegistrationFailed,
+} from '@/lib/analytics'
 import Modal from '@/components/ui/Modal'
 import { ToastContainer, toast } from '@/components/ui/Toast'
 
@@ -74,7 +78,7 @@ export default function EventPage() {
     isOpen: false,
     type: 'info',
     title: '',
-    message: ''
+    message: '',
   })
 
   useEffect(() => {
@@ -93,7 +97,7 @@ export default function EventPage() {
         headers: {
           'Content-Type': 'application/json',
           'Cache-Control': 'no-cache',
-        }
+        },
       })
 
       clearTimeout(timeoutId)
@@ -119,7 +123,7 @@ export default function EventPage() {
             label: 'טלפון',
             type: 'text',
             required: true,
-            placeholder: '05X-XXX-XXXX'
+            placeholder: '05X-XXX-XXXX',
           })
         }
 
@@ -130,20 +134,21 @@ export default function EventPage() {
             label: 'שם מלא',
             type: 'text',
             required: true,
-            placeholder: 'שם פרטי ומשפחה'
+            placeholder: 'שם פרטי ומשפחה',
           })
         }
 
         // CRITICAL: Email is REQUIRED for payment events (YaadPay API requirement)
         // Add email field if payment is required and email field is not present
         if (data.paymentRequired && !hasEmailField) {
-          data.fieldsSchema.splice(2, 0, { // Insert after name and phone
+          data.fieldsSchema.splice(2, 0, {
+            // Insert after name and phone
             id: 'email',
             name: 'email',
             label: 'אימייל',
             type: 'email',
             required: true,
-            placeholder: 'your@email.com'
+            placeholder: 'your@email.com',
           })
         }
 
@@ -229,7 +234,7 @@ export default function EventPage() {
   }
 
   const closeModal = () => {
-    setModalState(prev => ({ ...prev, isOpen: false }))
+    setModalState((prev) => ({ ...prev, isOpen: false }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -245,9 +250,10 @@ export default function EventPage() {
     setSubmitting(true)
     try {
       // Build request body based on event type
-      const requestBody = event?.eventType === 'TABLE_BASED'
-        ? { ...formData, guestsCount }  // Table-based: send guestsCount
-        : { ...formData, spotsCount }   // Capacity-based: send spotsCount
+      const requestBody =
+        event?.eventType === 'TABLE_BASED'
+          ? { ...formData, guestsCount } // Table-based: send guestsCount
+          : { ...formData, spotsCount } // Capacity-based: send spotsCount
 
       // Handle upfront payment flow
       if (event?.paymentRequired && event?.paymentTiming === 'UPFRONT') {
@@ -258,8 +264,8 @@ export default function EventPage() {
           body: JSON.stringify({
             schoolSlug,
             eventSlug,
-            registrationData: requestBody
-          })
+            registrationData: requestBody,
+          }),
         })
 
         if (!response.ok) {
@@ -283,7 +289,7 @@ export default function EventPage() {
       const response = await fetch(`/api/p/${schoolSlug}/${eventSlug}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify(requestBody),
       })
 
       // Check if response is JSON
@@ -372,9 +378,13 @@ export default function EventPage() {
 
   // For TABLE_BASED events, don't check capacity (backend handles table availability)
   // For CAPACITY_BASED events, check if spots are available
-  const spotsLeft = event.eventType === 'TABLE_BASED' ? Infinity : (event.capacity - event.totalSpotsTaken)
-  const isFull = event.eventType === 'TABLE_BASED' ? false : (spotsLeft <= 0)
-  const percentage = event.eventType === 'TABLE_BASED' ? 0 : Math.min(100, (event.totalSpotsTaken / event.capacity) * 100)
+  const spotsLeft =
+    event.eventType === 'TABLE_BASED' ? Infinity : event.capacity - event.totalSpotsTaken
+  const isFull = event.eventType === 'TABLE_BASED' ? false : spotsLeft <= 0
+  const percentage =
+    event.eventType === 'TABLE_BASED'
+      ? 0
+      : Math.min(100, (event.totalSpotsTaken / event.capacity) * 100)
 
   if (registered) {
     if (isWaitlist) {
@@ -386,12 +396,8 @@ export default function EventPage() {
                 <Clock className="w-10 h-10 text-yellow-600" />
               </div>
               <h1 className="text-2xl font-bold text-gray-900 mb-4">נרשמת לרשימת המתנה</h1>
-              <p className="text-lg text-gray-700 mb-3">
-                הבקשה שלך נקלטה בהצלחה.
-              </p>
-              <p className="text-lg text-gray-700 mb-6">
-                אם יתפנה מקום באירוע, ניצור איתך קשר.
-              </p>
+              <p className="text-lg text-gray-700 mb-3">הבקשה שלך נקלטה בהצלחה.</p>
+              <p className="text-lg text-gray-700 mb-6">אם יתפנה מקום באירוע, ניצור איתך קשר.</p>
 
               <div className="bg-yellow-50 rounded-lg p-5 border border-yellow-200">
                 <p className="text-base text-gray-800">
@@ -401,13 +407,16 @@ export default function EventPage() {
 
               <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-600">
-                  קוד אישור לרשימת המתנה: <span className="font-mono font-bold">{confirmationCode}</span>
+                  קוד אישור לרשימת המתנה:{' '}
+                  <span className="font-mono font-bold">{confirmationCode}</span>
                 </p>
               </div>
 
               {qrCodeImage && (
                 <div className="mt-6 bg-white border-2 border-gray-200 rounded-lg p-6">
-                  <p className="text-sm text-gray-500 mb-3 text-center">📱 QR לכניסה (אם יתפנה מקום)</p>
+                  <p className="text-sm text-gray-500 mb-3 text-center">
+                    📱 QR לכניסה (אם יתפנה מקום)
+                  </p>
                   <div className="flex justify-center">
                     <img
                       src={qrCodeImage}
@@ -469,9 +478,7 @@ export default function EventPage() {
                     className="w-48 h-48 border-4 border-gray-300 rounded-lg"
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-3 text-center">
-                  הצג קוד זה בכניסה לאירוע
-                </p>
+                <p className="text-xs text-gray-500 mt-3 text-center">הצג קוד זה בכניסה לאירוע</p>
                 <a
                   href={qrCodeImage}
                   download={`ticket-${confirmationCode}.png`}
@@ -488,7 +495,9 @@ export default function EventPage() {
                 <div>
                   <p className="font-medium text-gray-900">{event.title}</p>
                   <p className="text-sm text-gray-600">
-                    {format(new Date(event.startAt), 'EEEE, dd בMMMM yyyy בשעה HH:mm', { locale: he })}
+                    {format(new Date(event.startAt), 'EEEE, dd בMMMM yyyy בשעה HH:mm', {
+                      locale: he,
+                    })}
                   </p>
                 </div>
               </div>
@@ -510,9 +519,7 @@ export default function EventPage() {
             )}
 
             <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-800">
-                💡 מומלץ לצלם מסך זה לשמירה
-              </p>
+              <p className="text-sm text-blue-800">💡 מומלץ לצלם מסך זה לשמירה</p>
             </div>
 
             {cancellationToken && event.allowCancellation && (
@@ -543,7 +550,7 @@ export default function EventPage() {
     <div
       className="min-h-screen py-6 sm:py-12"
       style={{
-        background: `linear-gradient(to bottom right, ${gradientFrom}, ${gradientTo})`
+        background: `linear-gradient(to bottom right, ${gradientFrom}, ${gradientTo})`,
       }}
     >
       <div className="max-w-2xl mx-auto px-4">
@@ -578,7 +585,7 @@ export default function EventPage() {
           <div
             className="p-6 sm:p-8 text-white"
             style={{
-              background: `linear-gradient(to right, ${schoolColor}, ${schoolColor}dd)`
+              background: `linear-gradient(to right, ${schoolColor}, ${schoolColor}dd)`,
             }}
           >
             <h1 className="text-2xl sm:text-3xl font-bold mb-2">{event.title}</h1>
@@ -590,20 +597,23 @@ export default function EventPage() {
           </div>
 
           <div className="p-6 space-y-4">
-            {event.description && (
-              <p className="text-gray-700">{event.description}</p>
-            )}
+            {event.description && <p className="text-gray-700">{event.description}</p>}
 
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <Calendar className="w-5 h-5 text-gray-400" />
                 <div className="flex-1">
                   <span className="text-gray-700 block">
-                    {format(new Date(event.startAt), 'EEEE, dd בMMMM yyyy בשעה HH:mm', { locale: he })}
+                    {format(new Date(event.startAt), 'EEEE, dd בMMMM yyyy בשעה HH:mm', {
+                      locale: he,
+                    })}
                   </span>
                   {event.endAt && (
                     <span className="text-gray-600 text-sm block mt-1">
-                      עד: {format(new Date(event.endAt), 'EEEE, dd בMMMM yyyy בשעה HH:mm', { locale: he })}
+                      עד:{' '}
+                      {format(new Date(event.endAt), 'EEEE, dd בMMMM yyyy בשעה HH:mm', {
+                        locale: he,
+                      })}
                     </span>
                   )}
                 </div>
@@ -628,14 +638,19 @@ export default function EventPage() {
                         <span className="text-lg font-bold text-green-600">חינמי</span>
                       )}
                       {event.pricingModel === 'FIXED_PRICE' && event.priceAmount && (
-                        <span className="text-lg font-bold text-gray-900">₪{event.priceAmount}</span>
+                        <span className="text-lg font-bold text-gray-900">
+                          ₪{event.priceAmount}
+                        </span>
                       )}
                       {event.pricingModel === 'PER_GUEST' && event.priceAmount && (
                         <div>
-                          <div className="text-lg font-bold text-gray-900">₪{event.priceAmount} למשתתף</div>
+                          <div className="text-lg font-bold text-gray-900">
+                            ₪{event.priceAmount} למשתתף
+                          </div>
                           {(event.eventType === 'TABLE_BASED' ? guestsCount : spotsCount) > 1 && (
                             <div className="text-sm text-gray-600 mt-1">
-                              {event.eventType === 'TABLE_BASED' ? guestsCount : spotsCount} משתתפים × ₪{event.priceAmount} = ₪{totalPrice}
+                              {event.eventType === 'TABLE_BASED' ? guestsCount : spotsCount} משתתפים
+                              × ₪{event.priceAmount} = ₪{totalPrice}
                             </div>
                           )}
                         </div>
@@ -649,7 +664,9 @@ export default function EventPage() {
                   )}
                   {event.paymentTiming === 'POST_REGISTRATION' && (
                     <div className="flex items-center gap-2 mt-2 pt-2 border-t border-green-200">
-                      <span className="text-xs text-blue-700 font-medium">📧 קישור לתשלום יישלח לאימייל</span>
+                      <span className="text-xs text-blue-700 font-medium">
+                        📧 קישור לתשלום יישלח לאימייל
+                      </span>
                     </div>
                   )}
                 </div>
@@ -669,7 +686,9 @@ export default function EventPage() {
                 <>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-gray-700">מקומות פנויים</span>
-                    <span className={`text-sm font-bold ${isFull ? 'text-red-600' : spotsLeft < 10 ? 'text-yellow-600' : 'text-green-600'}`}>
+                    <span
+                      className={`text-sm font-bold ${isFull ? 'text-red-600' : spotsLeft < 10 ? 'text-yellow-600' : 'text-green-600'}`}
+                    >
                       {isFull ? 'אין מקומות פנויים' : `${spotsLeft} מתוך ${event.capacity}`}
                     </span>
                   </div>
@@ -695,7 +714,11 @@ export default function EventPage() {
         {/* Registration Form */}
         <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
           <h2 className="text-xl font-bold text-gray-900 mb-6">
-            {event.eventType === 'TABLE_BASED' ? 'הרשמה לאירוע' : (isFull ? 'הרשמה לרשימת המתנה' : 'טופס הרשמה')}
+            {event.eventType === 'TABLE_BASED'
+              ? 'הרשמה לאירוע'
+              : isFull
+                ? 'הרשמה לרשימת המתנה'
+                : 'טופס הרשמה'}
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -715,7 +738,9 @@ export default function EventPage() {
                   >
                     <option value="">בחר...</option>
                     {field.options?.map((option: string) => (
-                      <option key={option} value={option}>{option}</option>
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
                     ))}
                   </select>
                 ) : field.type === 'checkbox' ? (
@@ -757,81 +782,78 @@ export default function EventPage() {
             )}
 
             {/* Capacity-based events: Spots selector */}
-            {event.eventType === 'CAPACITY_BASED' && event.maxSpotsPerPerson > 1 && (() => {
-              // Calculate max selectable spots
-              const maxSelectable = isFull
-                ? Math.min(5, event.maxSpotsPerPerson) // Waitlist: reasonable limit (max 5)
-                : Math.min(event.maxSpotsPerPerson, spotsLeft) // Normal: available spots only
+            {event.eventType === 'CAPACITY_BASED' &&
+              (() => {
+                // Calculate max selectable spots
+                const maxSelectable = isFull
+                  ? Math.min(5, event.maxSpotsPerPerson) // Waitlist: reasonable limit (max 5)
+                  : Math.min(event.maxSpotsPerPerson, spotsLeft) // Normal: available spots only
 
-              return (
-                <div>
-                  <label className="block text-base font-semibold text-gray-800 mb-3">
-                    מספר מקומות <span className="text-red-500 mr-1">*</span>
-                  </label>
-                  <div className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200">
-                    <div className="flex items-center gap-3" dir="rtl">
-                      {/* Decrement Button (Right side in RTL) */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (spotsCount > 1) {
-                            setSpotsCount(spotsCount - 1);
-                          }
-                        }}
-                        disabled={spotsCount <= 1}
-                        className="w-14 h-14 flex items-center justify-center bg-white border-2 border-gray-300 rounded-xl hover:bg-blue-50 hover:border-blue-400 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300 transition-all text-gray-700 font-bold text-2xl shadow-sm active:scale-95"
-                        aria-label="הפחת מספר מקומות"
-                      >
-                        −
-                      </button>
+                return (
+                  <div>
+                    <label className="block text-base font-semibold text-gray-800 mb-3">
+                      מספר מקומות <span className="text-red-500 mr-1">*</span>
+                    </label>
+                    <div className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200">
+                      <div className="flex items-center gap-3" dir="rtl">
+                        {/* Decrement Button (Right side in RTL) */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (spotsCount > 1) {
+                              setSpotsCount(spotsCount - 1)
+                            }
+                          }}
+                          disabled={spotsCount <= 1}
+                          className="w-14 h-14 flex items-center justify-center bg-white border-2 border-gray-300 rounded-xl hover:bg-blue-50 hover:border-blue-400 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300 transition-all text-gray-700 font-bold text-2xl shadow-sm active:scale-95"
+                          aria-label="הפחת מספר מקומות"
+                        >
+                          −
+                        </button>
 
-                      {/* Dropdown Selector */}
-                      <select
-                        value={spotsCount}
-                        onChange={(e) => setSpotsCount(parseInt(e.target.value))}
-                        required
-                        style={{ backgroundColor: schoolColor }}
-                        className="flex-1 px-4 py-4 rounded-xl focus:ring-2 focus:ring-blue-500 text-white text-center font-bold text-xl shadow-md border-0 appearance-none cursor-pointer"
-                      >
-                        {Array.from(
-                          { length: maxSelectable },
-                          (_, i) => i + 1
-                        ).map((num) => (
-                          <option key={num} value={num} className="bg-white text-gray-900">
-                            {num}
-                          </option>
-                        ))}
-                      </select>
+                        {/* Dropdown Selector */}
+                        <select
+                          value={spotsCount}
+                          onChange={(e) => setSpotsCount(parseInt(e.target.value))}
+                          required
+                          style={{ backgroundColor: schoolColor }}
+                          className="flex-1 px-4 py-4 rounded-xl focus:ring-2 focus:ring-blue-500 text-white text-center font-bold text-xl shadow-md border-0 appearance-none cursor-pointer"
+                        >
+                          {Array.from({ length: maxSelectable }, (_, i) => i + 1).map((num) => (
+                            <option key={num} value={num} className="bg-white text-gray-900">
+                              {num}
+                            </option>
+                          ))}
+                        </select>
 
-                      {/* Increment Button (Left side in RTL) */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (spotsCount < maxSelectable) {
-                            setSpotsCount(spotsCount + 1);
-                          }
-                        }}
-                        disabled={spotsCount >= maxSelectable}
-                        className="w-14 h-14 flex items-center justify-center bg-white border-2 border-gray-300 rounded-xl hover:bg-blue-50 hover:border-blue-400 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300 transition-all text-gray-700 font-bold text-2xl shadow-sm active:scale-95"
-                        aria-label="הוסף מספר מקומות"
-                      >
-                        +
-                      </button>
-                    </div>
+                        {/* Increment Button (Left side in RTL) */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (spotsCount < maxSelectable) {
+                              setSpotsCount(spotsCount + 1)
+                            }
+                          }}
+                          disabled={spotsCount >= maxSelectable}
+                          className="w-14 h-14 flex items-center justify-center bg-white border-2 border-gray-300 rounded-xl hover:bg-blue-50 hover:border-blue-400 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300 transition-all text-gray-700 font-bold text-2xl shadow-sm active:scale-95"
+                          aria-label="הוסף מספר מקומות"
+                        >
+                          +
+                        </button>
+                      </div>
 
-                    {/* Info Text */}
-                    <div className="text-center mt-3">
-                      <p className="text-sm text-gray-600">
-                        {isFull
-                          ? `ניתן לבחור עד ${maxSelectable} מקומות לרשימת המתנה`
-                          : `זמינים ${spotsLeft} מקומות • מקסימום ${maxSelectable} לאדם`
-                        }
-                      </p>
+                      {/* Info Text */}
+                      <div className="text-center mt-3">
+                        <p className="text-sm text-gray-600">
+                          {isFull
+                            ? `ניתן לבחור עד ${maxSelectable} מקומות לרשימת המתנה`
+                            : `זמינים ${spotsLeft} מקומות • מקסימום ${maxSelectable} לאדם`}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )
-            })()}
+                )
+              })()}
 
             {event.conditions && (
               <div className="bg-gray-50 rounded-lg p-4">
@@ -878,22 +900,30 @@ export default function EventPage() {
 
             <button
               type="submit"
-              disabled={submitting || (event.status !== 'OPEN') || !isFormValid}
+              disabled={submitting || event.status !== 'OPEN' || !isFormValid}
               className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               {submitting ? (
                 <span className="flex items-center justify-center">
                   <Loader2 className="w-5 h-5 animate-spin ml-2" />
-                  {event.paymentRequired && event.paymentTiming === 'UPFRONT' ? 'מעביר לתשלום...' : 'שולח...'}
+                  {event.paymentRequired && event.paymentTiming === 'UPFRONT'
+                    ? 'מעביר לתשלום...'
+                    : 'שולח...'}
                 </span>
               ) : !isFormValid ? (
                 'נא למלא את כל השדות החובה'
               ) : event.paymentRequired && event.paymentTiming === 'UPFRONT' ? (
-                totalPrice > 0 ? `המשך לתשלום (₪${totalPrice})` : 'המשך לתשלום'
+                totalPrice > 0 ? (
+                  `המשך לתשלום (₪${totalPrice})`
+                ) : (
+                  'המשך לתשלום'
+                )
               ) : event.eventType === 'TABLE_BASED' ? (
                 'אשר הזמנה'
+              ) : isFull ? (
+                'הרשמה לרשימת המתנה'
               ) : (
-                isFull ? 'הרשמה לרשימת המתנה' : 'שלח הרשמה'
+                'שלח הרשמה'
               )}
             </button>
           </form>

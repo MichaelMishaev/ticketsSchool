@@ -5,7 +5,9 @@ import { useParams, useSearchParams } from 'next/navigation'
 import { Loader2, AlertCircle } from 'lucide-react'
 import EventTabNavigation, { TabId } from '@/components/admin/event-details/EventTabNavigation'
 import MobileBottomTabBar from '@/components/admin/event-details/MobileBottomTabBar'
-import FloatingCheckInMenu from '@/components/admin/event-details/FloatingCheckInMenu'
+import FloatingCheckInMenu, {
+  CheckInButton,
+} from '@/components/admin/event-details/FloatingCheckInMenu'
 import OverviewTab from '@/components/admin/event-details/tabs/OverviewTab'
 import RegistrationsTab from '@/components/admin/event-details/tabs/RegistrationsTab'
 import CheckInTab from '@/components/admin/event-details/tabs/CheckInTab'
@@ -58,6 +60,22 @@ export default function EventDetailsTabbed() {
   const [registrations, setRegistrations] = useState<Registration[]>([])
   const [loading, setLoading] = useState(true)
   const [checkInLink, setCheckInLink] = useState<string | null>(null)
+
+  // Check if check-in is available (same logic as CheckInTab)
+  // Check-in should only show when it's the event day AND event hasn't ended
+  const isCheckInAvailable = event
+    ? (() => {
+        const now = new Date()
+        const eventDateObj = new Date(event.startAt)
+        const isEventDay = now.toDateString() === eventDateObj.toDateString()
+        const isPastEvent = now > eventDateObj
+
+        // Show check-in when: it's event day AND event hasn't passed
+        // This matches CheckInTab logic: else if (isEventDay) shows interface
+        // The if (isPastEvent) check happens first, so we need !isPastEvent
+        return !isPastEvent && isEventDay
+      })()
+    : false
 
   // Initialize active tab from URL query param
   useEffect(() => {
@@ -134,18 +152,18 @@ export default function EventDetailsTabbed() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Desktop top navigation - hidden on mobile */}
-      <EventTabNavigation
-        eventId={eventId}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      />
+      <EventTabNavigation eventId={eventId} activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {/* Tab Content - Add padding for mobile bottom bar */}
+      {/* Tab Content - Add padding for bottom bars */}
       <div
         role="tabpanel"
         id={`${activeTab}-panel`}
         aria-labelledby={`${activeTab}-tab`}
-        className="pb-20 md:pb-0"
+        className={`${
+          activeTab === 'overview' && isCheckInAvailable && event.status === 'OPEN' && checkInLink
+            ? 'pb-32 md:pb-20' // Mobile: extra padding for check-in button + tabs, Desktop: padding for footer
+            : 'pb-20 md:pb-0' // Mobile: normal tab bar padding, Desktop: no padding
+        }`}
       >
         {activeTab === 'overview' && (
           <OverviewTab
@@ -161,16 +179,12 @@ export default function EventDetailsTabbed() {
             onRegistrationUpdate={fetchEvent}
           />
         )}
-        {activeTab === 'checkin' && (
-          <CheckInTab eventId={eventId} eventDate={event.startAt} />
-        )}
-        {activeTab === 'reports' && (
-          <ReportsTab eventId={eventId} />
-        )}
+        {activeTab === 'checkin' && <CheckInTab eventId={eventId} eventDate={event.startAt} />}
+        {activeTab === 'reports' && <ReportsTab eventId={eventId} />}
       </div>
 
-      {/* Floating Check-In Menu (FAB) - Only show on overview tab */}
-      {activeTab === 'overview' && (
+      {/* Floating Check-In Menu - Desktop only, only on overview tab, only on event day */}
+      {activeTab === 'overview' && isCheckInAvailable && event.status === 'OPEN' && (
         <FloatingCheckInMenu
           eventId={eventId}
           onScanQR={handleScanQR}
@@ -185,6 +199,14 @@ export default function EventDetailsTabbed() {
         eventId={eventId}
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        checkInButton={
+          activeTab === 'overview' &&
+          isCheckInAvailable &&
+          event.status === 'OPEN' &&
+          checkInLink ? (
+            <CheckInButton checkInLink={checkInLink} />
+          ) : undefined
+        }
       />
     </div>
   )

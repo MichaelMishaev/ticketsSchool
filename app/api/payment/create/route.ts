@@ -12,11 +12,6 @@ const paymentLimiter = rateLimit({
   blockDurationMs: 60 * 60 * 1000,
 })
 
-// Build-time safety check
-if (process.env.NODE_ENV === 'production' && process.env.YAADPAY_MOCK_MODE === 'true') {
-  throw new Error('MOCK_MODE cannot be used in production!')
-}
-
 /**
  * POST /api/payment/create
  * Create payment session for upfront payment events
@@ -28,6 +23,12 @@ if (process.env.NODE_ENV === 'production' && process.env.YAADPAY_MOCK_MODE === '
 export async function POST(request: NextRequest) {
   const rateLimitResponse = await paymentLimiter(request)
   if (rateLimitResponse) return rateLimitResponse
+
+  // Runtime safety check - prevent using mock mode in production
+  if (process.env.NODE_ENV === 'production' && process.env.YAADPAY_MOCK_MODE === 'true') {
+    console.error('⚠️  CRITICAL: Mock mode is enabled in production!')
+    return NextResponse.json({ error: 'תצורה לא תקינה של מערכת התשלומים' }, { status: 500 })
+  }
 
   try {
     const body = await request.json()
