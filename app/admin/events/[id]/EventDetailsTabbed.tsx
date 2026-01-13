@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from 'next/navigation'
 import { Loader2, AlertCircle } from 'lucide-react'
 import EventTabNavigation, { TabId } from '@/components/admin/event-details/EventTabNavigation'
 import MobileBottomTabBar from '@/components/admin/event-details/MobileBottomTabBar'
+import FloatingCheckInMenu from '@/components/admin/event-details/FloatingCheckInMenu'
 import OverviewTab from '@/components/admin/event-details/tabs/OverviewTab'
 import RegistrationsTab from '@/components/admin/event-details/tabs/RegistrationsTab'
 import CheckInTab from '@/components/admin/event-details/tabs/CheckInTab'
@@ -56,6 +57,7 @@ export default function EventDetailsTabbed() {
   const [event, setEvent] = useState<Event | null>(null)
   const [registrations, setRegistrations] = useState<Registration[]>([])
   const [loading, setLoading] = useState(true)
+  const [checkInLink, setCheckInLink] = useState<string | null>(null)
 
   // Initialize active tab from URL query param
   useEffect(() => {
@@ -78,6 +80,12 @@ export default function EventDetailsTabbed() {
         const data = await response.json()
         setEvent(data)
         setRegistrations(data.registrations || [])
+
+        // Fetch check-in link
+        if (data.checkInToken) {
+          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
+          setCheckInLink(`${baseUrl}/check-in/${eventId}/${data.checkInToken}`)
+        }
       }
     } catch (error) {
       console.error('Error fetching event:', error)
@@ -104,6 +112,23 @@ export default function EventDetailsTabbed() {
         <h2 className="text-2xl font-bold text-gray-900">האירוע לא נמצא</h2>
       </div>
     )
+  }
+
+  // Floating menu handlers
+  const handleScanQR = () => {
+    // Navigate to check-in tab and trigger QR scanner
+    setActiveTab('checkin')
+    // You can add additional logic here to auto-open QR scanner
+  }
+
+  const handleManualCheckIn = () => {
+    // Navigate to check-in tab and focus on manual input
+    setActiveTab('checkin')
+  }
+
+  const handleViewReport = () => {
+    // Navigate to reports tab
+    setActiveTab('reports')
   }
 
   return (
@@ -143,6 +168,17 @@ export default function EventDetailsTabbed() {
           <ReportsTab eventId={eventId} />
         )}
       </div>
+
+      {/* Floating Check-In Menu (FAB) - Only show on overview tab */}
+      {activeTab === 'overview' && (
+        <FloatingCheckInMenu
+          eventId={eventId}
+          onScanQR={handleScanQR}
+          onManualCheckIn={handleManualCheckIn}
+          onViewReport={handleViewReport}
+          checkInLink={checkInLink}
+        />
+      )}
 
       {/* Mobile bottom navigation - hidden on desktop */}
       <MobileBottomTabBar
