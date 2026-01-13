@@ -3,15 +3,10 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  Share2,
-  Copy,
-  ExternalLink,
   Edit,
-  Copy as CopyIcon,
   Trash2,
   Calendar,
   MapPin,
-  Users,
   CheckCircle2,
   Clock,
   AlertCircle,
@@ -20,6 +15,8 @@ import {
   CreditCard,
   User,
 } from 'lucide-react'
+import CheckInHeroCard from '@/components/admin/event-details/CheckInHeroCard'
+import EventHeroHeader from '@/components/admin/event-details/EventHeroHeader'
 
 interface Registration {
   id: string
@@ -67,52 +64,18 @@ interface OverviewTabProps {
 
 export default function OverviewTab({ event, onEventUpdate, onTabChange }: OverviewTabProps) {
   const router = useRouter()
-  const [copiedLink, setCopiedLink] = useState(false)
   const [showQuickActions, setShowQuickActions] = useState(false)
-
-  // Generate public registration URL
-  const publicUrl = `${process.env.NEXT_PUBLIC_BASE_URL || window.location.origin}/p/${event.school.slug}/${event.slug}`
 
   // Calculate stats from actual registrations
   const registrations = event.registrations || []
-  const confirmedRegistrations = registrations.filter(r => r.status === 'CONFIRMED')
-  const waitlistRegistrations = registrations.filter(r => r.status === 'WAITLIST')
+  const confirmedRegistrations = registrations.filter((r) => r.status === 'CONFIRMED')
+  const waitlistRegistrations = registrations.filter((r) => r.status === 'WAITLIST')
 
   const confirmedCount = confirmedRegistrations.reduce((sum, reg) => sum + (reg.spotsCount || 0), 0)
   const waitlistCount = waitlistRegistrations.reduce((sum, reg) => sum + (reg.spotsCount || 0), 0)
   const totalCapacity = event.totalCapacity || event.capacity
   const availableSpots = Math.max(0, totalCapacity - confirmedCount)
   const capacityPercent = Math.min(100, (confirmedCount / totalCapacity) * 100)
-
-  // Copy link to clipboard
-  const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(publicUrl)
-      setCopiedLink(true)
-      setTimeout(() => setCopiedLink(false), 2000)
-    } catch (error) {
-      console.error('Failed to copy:', error)
-    }
-  }
-
-  // Share via Web Share API (mobile)
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: event.title,
-          text: `הרשם לאירוע: ${event.title}`,
-          url: publicUrl,
-        })
-      } catch (error) {
-        // User cancelled or share failed
-        console.log('Share cancelled or failed')
-      }
-    } else {
-      // Fallback to copy
-      handleCopyLink()
-    }
-  }
 
   // Status badge styling
   const getStatusColor = (status: string) => {
@@ -190,277 +153,303 @@ export default function OverviewTab({ event, onEventUpdate, onTabChange }: Overv
   }
 
   // Get recent registrations (latest 5, excluding cancelled)
-  const recentRegistrations = registrations
-    .filter(r => r.status !== 'CANCELLED')
-    .slice(0, 5)
+  const recentRegistrations = registrations.filter((r) => r.status !== 'CANCELLED').slice(0, 5)
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6" dir="rtl">
-      {/* Event Details Card */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl font-bold text-gray-900">{event.title}</h1>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(event.status)}`}>
-                {getStatusLabel(event.status)}
-              </span>
+    <>
+      {/* Hero Header - Event Title + Sharing (MOST IMPORTANT) */}
+      <EventHeroHeader event={event} />
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6" dir="rtl">
+        {/* Event Info Card - Compact with Decorative Pattern */}
+        <div className="relative bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+          {/* Decorative SVG Pattern Background */}
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
+            <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern
+                  id="event-pattern"
+                  x="0"
+                  y="0"
+                  width="40"
+                  height="40"
+                  patternUnits="userSpaceOnUse"
+                >
+                  <circle cx="20" cy="20" r="1.5" fill="currentColor" className="text-blue-600" />
+                  <circle cx="0" cy="0" r="1" fill="currentColor" className="text-purple-600" />
+                  <circle cx="40" cy="40" r="1" fill="currentColor" className="text-purple-600" />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#event-pattern)" />
+            </svg>
+          </div>
+
+          {/* Gradient Accent - Top Right Corner */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-transparent rounded-bl-[100px] pointer-events-none"></div>
+
+          {/* Event Meta */}
+          <div className="relative p-5 pb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-blue-50 rounded-lg">
+                  <Calendar className="w-5 h-5 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs font-bold text-gray-500 mb-0.5">תאריך ושעה</p>
+                  <p className="text-sm font-semibold text-gray-900">{formatDate(event.startAt)}</p>
+                  {event.endAt && (
+                    <p className="text-xs text-gray-500 mt-0.5">עד: {formatDate(event.endAt)}</p>
+                  )}
+                </div>
+              </div>
+
+              {event.location && (
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-purple-50 rounded-lg">
+                    <MapPin className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs font-bold text-gray-500 mb-0.5">מיקום</p>
+                    <p className="text-sm font-semibold text-gray-900">{event.location}</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {event.gameType && (
-              <p className="text-sm text-gray-500 mb-3">
-                <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded">
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm font-semibold">
                   {event.gameType}
                 </span>
-              </p>
+              </div>
+            )}
+
+            {event.description && (
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
+                  {event.description}
+                </p>
+              </div>
             )}
           </div>
-        </div>
 
-        {/* Event meta info */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          <div className="flex items-start gap-3">
-            <Calendar className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-gray-700">תאריך ושעה</p>
-              <p className="text-sm text-gray-900">{formatDate(event.startAt)}</p>
-              {event.endAt && (
-                <p className="text-xs text-gray-500">עד: {formatDate(event.endAt)}</p>
-              )}
-            </div>
-          </div>
-
-          {event.location && (
-            <div className="flex items-start gap-3">
-              <MapPin className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-gray-700">מיקום</p>
-                <p className="text-sm text-gray-900">{event.location}</p>
+          {/* Payment Indicator - Prominent */}
+          {event.paymentRequired && (
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-t-2 border-green-200 p-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-white rounded-lg shadow-sm">
+                  <CreditCard className="w-5 h-5 text-green-600" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm font-bold text-green-900">אירוע בתשלום</p>
+                    {event.priceAmount && (
+                      <span className="text-xl font-black text-green-700">
+                        ₪{event.priceAmount}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2 text-xs font-medium text-green-700">
+                    {event.pricingModel === 'FIXED_PRICE' && (
+                      <span className="px-2 py-0.5 bg-white/60 rounded">מחיר קבוע</span>
+                    )}
+                    {event.pricingModel === 'PER_GUEST' && (
+                      <span className="px-2 py-0.5 bg-white/60 rounded">מחיר למשתתף</span>
+                    )}
+                    {event.paymentTiming === 'UPFRONT' && (
+                      <span className="px-2 py-0.5 bg-white/60 rounded">תשלום מראש</span>
+                    )}
+                    {event.paymentTiming === 'POST_REGISTRATION' && (
+                      <span className="px-2 py-0.5 bg-white/60 rounded">תשלום לאחר הרשמה</span>
+                    )}
+                    {event.paymentTiming === 'OPTIONAL' && (
+                      <span className="px-2 py-0.5 bg-white/60 rounded">אופציונלי</span>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           )}
         </div>
 
-        {event.description && (
-          <div className="mb-4 pb-4 border-b border-gray-100">
-            <p className="text-sm text-gray-600 whitespace-pre-wrap">{event.description}</p>
-          </div>
-        )}
-
-        {/* Payment Indicator */}
-        {event.paymentRequired && (
-          <div className="mb-4 pb-4 border-b border-gray-100">
-            <div className="flex items-start gap-3 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border-2 border-green-200">
-              <CreditCard className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="text-sm font-bold text-green-800">אירוע בתשלום</p>
-                  {event.priceAmount && (
-                    <span className="text-lg font-bold text-green-900">₪{event.priceAmount}</span>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-2 text-xs">
-                  {event.pricingModel === 'FIXED_PRICE' && (
-                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full font-medium">
-                      מחיר קבוע
-                    </span>
-                  )}
-                  {event.pricingModel === 'PER_GUEST' && (
-                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full font-medium">
-                      מחיר למשתתף
-                    </span>
-                  )}
-                  {event.paymentTiming === 'UPFRONT' && (
-                    <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full font-medium">
-                      💳 תשלום מראש
-                    </span>
-                  )}
-                  {event.paymentTiming === 'POST_REGISTRATION' && (
-                    <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full font-medium">
-                      📧 תשלום לאחר הרשמה
-                    </span>
-                  )}
-                  {event.paymentTiming === 'OPTIONAL' && (
-                    <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded-full font-medium">
-                      אופציונלי
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Quick stats - Clickable Cards */}
-        <div className="grid grid-cols-3 gap-4">
-          {/* Confirmed Registrations Card */}
+        {/* Quick stats - Clickable Cards - 2026 Premium Design with Proper RTL */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* CONFIRMED Card - Primary (Rightmost in RTL) */}
           <button
             onClick={() => {
               if (onTabChange) {
                 onTabChange('registrations')
-                // Add small delay to ensure tab switches before filter applies
                 setTimeout(() => {
                   const filterEvent = new CustomEvent('filterRegistrations', {
-                    detail: { status: 'CONFIRMED' }
+                    detail: { status: 'CONFIRMED' },
                   })
                   window.dispatchEvent(filterEvent)
                 }, 100)
               }
             }}
-            className="text-center p-3 bg-green-50 rounded-lg border-2 border-green-100
-                     cursor-pointer transition-all duration-300 ease-out
-                     hover:bg-green-100 hover:border-green-300 hover:shadow-lg hover:-translate-y-1
-                     active:scale-95 focus:outline-none focus:ring-4 focus:ring-green-500/30
-                     group"
+            className="relative overflow-hidden bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-5 text-center
+                     border-2 border-green-200 shadow-md shadow-green-500/10
+                     hover:shadow-lg hover:shadow-green-500/20 hover:scale-[1.01]
+                     active:scale-[0.99] transition-all duration-200
+                     focus:outline-none focus:ring-3 focus:ring-green-500/30
+                     cursor-pointer group"
             aria-label="הצג רשומים מאושרים"
           >
-            <p className="text-2xl font-bold text-green-600 group-hover:text-green-700 transition-colors">
+            {/* Gradient accent bar */}
+            <div className="absolute top-0 right-0 left-0 h-1.5 bg-gradient-to-l from-green-500 via-emerald-500 to-green-600"></div>
+
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <CheckCircle2 className="w-4 h-4 text-green-600" />
+              <p className="text-sm font-semibold text-green-800">משתתפים מאושרים</p>
+            </div>
+
+            <p className="text-3xl font-bold text-green-700 mb-3 group-hover:scale-105 transition-transform duration-300">
               {confirmedCount}
             </p>
-            <p className="text-xs text-green-700 font-medium group-hover:text-green-800 transition-colors">
-              מאושרים
-            </p>
+
+            <div className="flex items-center justify-center gap-1.5 px-2.5 py-1 bg-green-600/10 rounded-full">
+              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+              <span className="text-xs font-semibold text-green-700">פעיל</span>
+            </div>
           </button>
 
-          {/* Waitlist Card */}
+          {/* WAITLIST Card - Secondary (Center in RTL) */}
           <button
             onClick={() => {
               if (onTabChange) {
                 onTabChange('registrations')
                 setTimeout(() => {
                   const filterEvent = new CustomEvent('filterRegistrations', {
-                    detail: { status: 'WAITLIST' }
+                    detail: { status: 'WAITLIST' },
                   })
                   window.dispatchEvent(filterEvent)
                 }, 100)
               }
             }}
-            className="text-center p-3 bg-amber-50 rounded-lg border-2 border-amber-100
-                     cursor-pointer transition-all duration-300 ease-out
-                     hover:bg-amber-100 hover:border-amber-300 hover:shadow-lg hover:-translate-y-1
-                     active:scale-95 focus:outline-none focus:ring-4 focus:ring-amber-500/30
-                     group"
+            className="relative overflow-hidden bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-5 text-center
+                     border-2 border-amber-200 shadow-md shadow-amber-500/10
+                     hover:shadow-lg hover:shadow-amber-500/20 hover:scale-[1.01]
+                     active:scale-[0.99] transition-all duration-200
+                     focus:outline-none focus:ring-3 focus:ring-amber-500/30
+                     cursor-pointer group"
             aria-label="הצג רשימת המתנה"
           >
-            <p className="text-2xl font-bold text-amber-600 group-hover:text-amber-700 transition-colors">
+            {/* Gradient accent bar */}
+            <div className="absolute top-0 right-0 left-0 h-1.5 bg-gradient-to-l from-amber-500 via-orange-500 to-amber-600"></div>
+
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Clock className="w-4 h-4 text-amber-600" />
+              <p className="text-sm font-semibold text-amber-800">רשימת המתנה</p>
+            </div>
+
+            <p className="text-3xl font-bold text-amber-700 mb-3 group-hover:scale-105 transition-transform duration-300">
               {waitlistCount}
             </p>
-            <p className="text-xs text-amber-700 font-medium group-hover:text-amber-800 transition-colors">
-              רשימת המתנה
-            </p>
+
+            <div className="flex items-center justify-center gap-1.5 px-2.5 py-1 bg-amber-600/10 rounded-full">
+              <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></div>
+              <span className="text-xs font-semibold text-amber-700">ממתין</span>
+            </div>
           </button>
 
-          {/* Available Spots Card */}
+          {/* AVAILABLE Card - Tertiary (Leftmost in RTL) */}
           <button
             onClick={() => {
               if (onTabChange) {
                 onTabChange('registrations')
               }
             }}
-            className="text-center p-3 bg-blue-50 rounded-lg border-2 border-blue-100
-                     cursor-pointer transition-all duration-300 ease-out
-                     hover:bg-blue-100 hover:border-blue-300 hover:shadow-lg hover:-translate-y-1
-                     active:scale-95 focus:outline-none focus:ring-4 focus:ring-blue-500/30
-                     group"
+            className="relative overflow-hidden bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-5 text-center
+                     border-2 border-blue-200 shadow-md shadow-blue-500/10
+                     hover:shadow-lg hover:shadow-blue-500/20 hover:scale-[1.01]
+                     active:scale-[0.99] transition-all duration-200
+                     focus:outline-none focus:ring-3 focus:ring-blue-500/30
+                     cursor-pointer group"
             aria-label="עבור לרשימת משתתפים"
           >
-            <p className="text-2xl font-bold text-blue-600 group-hover:text-blue-700 transition-colors">
+            {/* Gradient accent bar */}
+            <div className="absolute top-0 right-0 left-0 h-1.5 bg-gradient-to-l from-blue-500 via-cyan-500 to-blue-600"></div>
+
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <AlertCircle className="w-4 h-4 text-blue-600" />
+              <p className="text-sm font-semibold text-blue-800">מקומות פנויים</p>
+            </div>
+
+            <p className="text-3xl font-bold text-blue-700 mb-3 group-hover:scale-105 transition-transform duration-300">
               {availableSpots}
             </p>
-            <p className="text-xs text-blue-700 font-medium group-hover:text-blue-800 transition-colors">
-              מקומות פנויים
-            </p>
+
+            <div className="flex items-center justify-center gap-1.5 px-2.5 py-1 bg-blue-600/10 rounded-full">
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+              <span className="text-xs font-semibold text-blue-700">זמין</span>
+            </div>
           </button>
         </div>
 
-        {/* Capacity bar */}
-        <div className="mt-4">
-          <div className="flex items-center justify-between text-sm mb-1">
-            <span className="font-medium text-gray-700">תפוסה</span>
-            <span className="text-gray-600">{confirmedCount} / {totalCapacity}</span>
+        {/* Capacity Progress - Modern Design */}
+        <div className="bg-white rounded-xl border border-gray-200 p-5 mt-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div
+                className={`p-1.5 rounded-lg ${
+                  capacityPercent >= 90
+                    ? 'bg-red-100'
+                    : capacityPercent >= 75
+                      ? 'bg-amber-100'
+                      : 'bg-green-100'
+                }`}
+              >
+                <AlertCircle
+                  className={`w-4 h-4 ${
+                    capacityPercent >= 90
+                      ? 'text-red-600'
+                      : capacityPercent >= 75
+                        ? 'text-amber-600'
+                        : 'text-green-600'
+                  }`}
+                />
+              </div>
+              <span className="text-sm font-bold text-gray-700">תפוסת אירוע</span>
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-black text-gray-900">{confirmedCount}</span>
+              <span className="text-sm text-gray-500">/ {totalCapacity}</span>
+            </div>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+          <div className="relative w-full bg-gray-100 rounded-full h-4 overflow-hidden shadow-inner">
             <div
-              className={`h-full transition-all duration-500 ${
+              className={`h-full rounded-full transition-all duration-500 shadow-sm ${
                 capacityPercent >= 90
-                  ? 'bg-red-500'
+                  ? 'bg-gradient-to-l from-red-500 to-rose-600'
                   : capacityPercent >= 75
-                  ? 'bg-amber-500'
-                  : 'bg-green-500'
+                    ? 'bg-gradient-to-l from-amber-500 to-orange-600'
+                    : 'bg-gradient-to-l from-green-500 to-emerald-600'
               }`}
               style={{ width: `${capacityPercent}%` }}
             />
           </div>
+          <p className="text-xs text-gray-500 mt-2 text-center">
+            {capacityPercent.toFixed(0)}% תפוסה
+          </p>
         </div>
       </div>
 
-      {/* PRIMARY CTA: Share Event */}
-      <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 mb-6 text-white">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-            <Share2 className="w-6 h-6" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold">שתף את האירוע</h2>
-            <p className="text-blue-100 text-sm">קישור ישיר להרשמה</p>
-          </div>
-        </div>
-
-        {/* URL display */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-4 border border-white/20">
-          <p className="text-sm text-blue-100 mb-2">קישור להרשמה:</p>
-          <div className="flex items-center gap-2 bg-white/20 rounded-lg px-3 py-2">
-            <code className="text-sm font-mono flex-1 truncate text-white">{publicUrl}</code>
-            <button
-              onClick={handleCopyLink}
-              className="p-2 hover:bg-white/20 rounded transition-colors flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-white/50"
-              aria-label="העתק קישור"
-            >
-              {copiedLink ? (
-                <CheckCircle2 className="w-5 h-5 text-green-200" />
-              ) : (
-                <Copy className="w-5 h-5" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Action buttons */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <button
-            onClick={handleCopyLink}
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors focus:outline-none focus:ring-4 focus:ring-white/50"
-          >
-            <CopyIcon className="w-5 h-5" />
-            <span>העתק קישור</span>
-          </button>
-
-          {typeof navigator !== 'undefined' && 'share' in navigator && (
-            <button
-              onClick={handleShare}
-              className="flex items-center justify-center gap-2 px-4 py-3 bg-white/20 backdrop-blur-sm text-white rounded-lg font-semibold hover:bg-white/30 transition-colors border border-white/30 focus:outline-none focus:ring-4 focus:ring-white/50"
-            >
-              <Share2 className="w-5 h-5" />
-              <span>שתף</span>
-            </button>
-          )}
-
-          <button
-            onClick={() => window.open(publicUrl, '_blank')}
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-white/20 backdrop-blur-sm text-white rounded-lg font-semibold hover:bg-white/30 transition-colors border border-white/30 focus:outline-none focus:ring-4 focus:ring-white/50"
-          >
-            <ExternalLink className="w-5 h-5" />
-            <span>תצוגה מקדימה</span>
-          </button>
-        </div>
-
-        {copiedLink && (
-          <div className="mt-3 flex items-center gap-2 bg-green-500/20 border border-green-400/30 rounded-lg px-4 py-2">
-            <CheckCircle2 className="w-5 h-5 text-green-200" />
-            <span className="text-sm font-medium">הקישור הועתק ללוח!</span>
-          </div>
-        )}
-      </div>
+      {/* Check-In Hero Card - Discoverable but secondary to sharing */}
+      <CheckInHeroCard
+        eventId={event.id}
+        eventStartAt={event.startAt}
+        eventEndAt={event.endAt}
+        onNavigateToCheckIn={() => {
+          if (onTabChange) {
+            onTabChange('checkin')
+          }
+        }}
+        onNavigateToReports={() => {
+          if (onTabChange) {
+            onTabChange('reports')
+          }
+        }}
+      />
 
       {/* Quick Actions (Collapsible) */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
@@ -545,7 +534,8 @@ export default function OverviewTab({ event, onEventUpdate, onTabChange }: Overv
                           {getParticipantName(registration)}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {registration.spotsCount} {registration.spotsCount === 1 ? 'משתתף' : 'משתתפים'}
+                          {registration.spotsCount}{' '}
+                          {registration.spotsCount === 1 ? 'משתתף' : 'משתתפים'}
                           {' • '}
                           <span
                             className={
@@ -579,6 +569,6 @@ export default function OverviewTab({ event, onEventUpdate, onTabChange }: Overv
           )}
         </div>
       </div>
-    </div>
+    </>
   )
 }

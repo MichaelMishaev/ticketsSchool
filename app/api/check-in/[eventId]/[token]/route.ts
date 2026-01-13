@@ -32,7 +32,7 @@ export async function GET(
         schoolId: true,
         registrations: {
           where: {
-            status: { in: ['CONFIRMED', 'WAITLIST'] } // Only show non-cancelled
+            status: { in: ['CONFIRMED', 'WAITLIST'] }, // Only show non-cancelled
           },
           select: {
             id: true,
@@ -48,16 +48,16 @@ export async function GET(
                 id: true,
                 checkedInAt: true,
                 checkedInBy: true,
-                undoneAt: true
-              }
+                undoneAt: true,
+              },
             },
-            createdAt: true
+            createdAt: true,
           },
           orderBy: {
-            createdAt: 'asc'
-          }
-        }
-      }
+            createdAt: 'asc',
+          },
+        },
+      },
     })
 
     if (!event) {
@@ -76,36 +76,34 @@ export async function GET(
         active: true,
         OR: [
           { expiresAt: { gte: new Date() } }, // Date-based not expired
-          { expiresAt: null } // Game-based
-        ]
+          { expiresAt: null }, // Game-based
+        ],
       },
       select: {
         phoneNumber: true,
         reason: true,
         bannedGamesCount: true,
         eventsBlocked: true,
-        expiresAt: true
-      }
+        expiresAt: true,
+      },
     })
 
     // Create a map for quick lookup
     const banMap = new Map(
-      activeBans.map(ban => [
+      activeBans.map((ban) => [
         ban.phoneNumber,
         {
           reason: ban.reason,
-          remainingGames: ban.expiresAt
-            ? null
-            : ban.bannedGamesCount - ban.eventsBlocked,
-          expiresAt: ban.expiresAt
-        }
+          remainingGames: ban.expiresAt ? null : ban.bannedGamesCount - ban.eventsBlocked,
+          expiresAt: ban.expiresAt,
+        },
       ])
     )
 
     // Enhance registrations with ban info
-    const enhancedRegistrations = event.registrations.map(reg => ({
+    const enhancedRegistrations = event.registrations.map((reg) => ({
       ...reg,
-      banned: reg.phoneNumber ? banMap.get(reg.phoneNumber) : null
+      banned: reg.phoneNumber ? banMap.get(reg.phoneNumber) : null,
     }))
 
     return NextResponse.json({
@@ -114,16 +112,13 @@ export async function GET(
         title: event.title,
         location: event.location,
         startAt: event.startAt,
-        endAt: event.endAt
+        endAt: event.endAt,
       },
-      registrations: enhancedRegistrations
+      registrations: enhancedRegistrations,
     })
   } catch (error) {
     console.error('Error fetching check-in data:', error)
-    return NextResponse.json(
-      { error: 'Failed to load check-in data' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to load check-in data' }, { status: 500 })
   }
 }
 
@@ -149,7 +144,7 @@ export async function POST(
     // Verify event exists and token matches
     const event = await prisma.event.findUnique({
       where: { id: eventId },
-      select: { id: true, checkInToken: true, startAt: true }
+      select: { id: true, checkInToken: true, startAt: true },
     })
 
     if (!event) {
@@ -176,10 +171,29 @@ export async function POST(
         {
           error: isBeforeEvent
             ? 'ניתן לרשום נוכחות רק ביום האירוע'
-            : 'האירוע הסתיים, לא ניתן לרשום נוכחות'
+            : 'האירוע הסתיים, לא ניתן לרשום נוכחות',
         },
         { status: 403 }
       )
+    }
+
+    // Calculate lateness (30-minute grace period)
+    const GRACE_PERIOD_MINUTES = 30
+    const checkedInAt = now // Use the current time
+    const eventStartAt = new Date(event.startAt)
+
+    let isLate = false
+    let minutesLate: number | null = null
+
+    // Only calculate lateness if checking in after event start
+    if (isSameDay && checkedInAt > eventStartAt) {
+      const diffMs = checkedInAt.getTime() - eventStartAt.getTime()
+      const diffMinutes = Math.floor(diffMs / 60000)
+
+      if (diffMinutes > GRACE_PERIOD_MINUTES) {
+        isLate = true
+        minutesLate = diffMinutes
+      }
     }
 
     // Find registration by ID or QR code
@@ -190,28 +204,19 @@ export async function POST(
       const qrValidation = validateQRCodeData(qrCode)
 
       if (!qrValidation.valid) {
-        return NextResponse.json(
-          { error: 'Invalid QR code' },
-          { status: 400 }
-        )
+        return NextResponse.json({ error: 'Invalid QR code' }, { status: 400 })
       }
 
       // Verify event ID matches
       if (qrValidation.eventId !== eventId) {
-        return NextResponse.json(
-          { error: 'QR code is for a different event' },
-          { status: 400 }
-        )
+        return NextResponse.json({ error: 'QR code is for a different event' }, { status: 400 })
       }
 
       regId = qrValidation.registrationId
     }
 
     if (!regId) {
-      return NextResponse.json(
-        { error: 'Registration ID or QR code required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Registration ID or QR code required' }, { status: 400 })
     }
 
     // Check if registration exists and belongs to this event
@@ -221,29 +226,20 @@ export async function POST(
         id: true,
         eventId: true,
         status: true,
-        checkIn: true
-      }
+        checkIn: true,
+      },
     })
 
     if (!registration) {
-      return NextResponse.json(
-        { error: 'Registration not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Registration not found' }, { status: 404 })
     }
 
     if (registration.eventId !== eventId) {
-      return NextResponse.json(
-        { error: 'Registration is for a different event' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Registration is for a different event' }, { status: 400 })
     }
 
     if (registration.status === 'CANCELLED') {
-      return NextResponse.json(
-        { error: 'Registration is cancelled' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Registration is cancelled' }, { status: 400 })
     }
 
     // Prevent checking in waitlist registrations
@@ -273,16 +269,18 @@ export async function POST(
           checkedInBy: checkedInBy || null,
           undoneAt: null,
           undoneBy: null,
-          undoneReason: null
-        }
+          undoneReason: null,
+        },
       })
     } else {
       // Create new check-in record
       checkIn = await prisma.checkIn.create({
         data: {
           registrationId: regId,
-          checkedInBy: checkedInBy || null
-        }
+          checkedInBy: checkedInBy || null,
+          isLate,
+          minutesLate,
+        },
       })
     }
 
@@ -291,8 +289,10 @@ export async function POST(
       checkIn: {
         id: checkIn.id,
         checkedInAt: checkIn.checkedInAt,
-        checkedInBy: checkIn.checkedInBy
-      }
+        checkedInBy: checkIn.checkedInBy,
+        isLate: checkIn.isLate,
+        minutesLate: checkIn.minutesLate,
+      },
     })
   } catch (error: unknown) {
     console.error('Error checking in:', error)
@@ -305,9 +305,6 @@ export async function POST(
       )
     }
 
-    return NextResponse.json(
-      { error: 'Failed to check in' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to check in' }, { status: 500 })
   }
 }

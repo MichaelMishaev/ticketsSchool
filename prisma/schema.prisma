@@ -403,6 +403,10 @@ model CheckIn {
   checkedInAt DateTime @default(now())
   checkedInBy String? // Name/identifier of person who checked them in (free text)
 
+  // Late arrival tracking
+  isLate      Boolean @default(false) // True if checked in 30+ min after event start
+  minutesLate Int? // How many minutes late (null if not late)
+
   // Undo support (in case of mistake)
   undoneAt     DateTime?
   undoneBy     String?
@@ -413,6 +417,7 @@ model CheckIn {
 
   @@index([registrationId])
   @@index([checkedInAt])
+  @@index([isLate])
 }
 
 // User Ban System - Ban users from registering for events

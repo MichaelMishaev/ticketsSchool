@@ -13,6 +13,8 @@ interface CheckInRecord {
   checkedInAt: string
   checkedInBy: string | null
   undoneAt: string | null
+  isLate?: boolean
+  minutesLate?: number | null
 }
 
 interface Registration {
@@ -32,6 +34,8 @@ interface RecentActivity {
   registrationId: string
   name: string
   time: string
+  isLate?: boolean
+  minutesLate?: number | null
 }
 
 export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
@@ -50,7 +54,7 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
     checkedIn: 0,
     notCheckedIn: 0, // People confirmed but not yet arrived
     waitlist: 0,
-    cancelled: 0
+    cancelled: 0,
   })
   const [searchTerm, setSearchTerm] = useState('')
   const [showSuccessToast, setShowSuccessToast] = useState(false)
@@ -80,7 +84,7 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
             checkedIn: statsData.checkedIn,
             notCheckedIn: statsData.notCheckedIn,
             waitlist: statsData.breakdown.waitlist,
-            cancelled: 0
+            cancelled: 0,
           })
         }
 
@@ -99,11 +103,14 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
               return {
                 registrationId: r.id,
                 name,
-                time: r.checkIn!.checkedInAt
+                time: r.checkIn!.checkedInAt,
+                isLate: r.checkIn!.isLate,
+                minutesLate: r.checkIn!.minutesLate,
               }
             })
-            .sort((a: RecentActivity, b: RecentActivity) =>
-              new Date(b.time).getTime() - new Date(a.time).getTime()
+            .sort(
+              (a: RecentActivity, b: RecentActivity) =>
+                new Date(b.time).getTime() - new Date(a.time).getTime()
             )
             .slice(0, 10)
 
@@ -136,7 +143,7 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
             checkedIn: statsData.checkedIn,
             notCheckedIn: statsData.notCheckedIn,
             waitlist: statsData.breakdown.waitlist,
-            cancelled: 0 // Stats API doesn't track cancelled
+            cancelled: 0, // Stats API doesn't track cancelled
           })
         }
 
@@ -155,11 +162,14 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
               return {
                 registrationId: r.id,
                 name,
-                time: r.checkIn!.checkedInAt
+                time: r.checkIn!.checkedInAt,
+                isLate: r.checkIn!.isLate,
+                minutesLate: r.checkIn!.minutesLate,
               }
             })
-            .sort((a: RecentActivity, b: RecentActivity) =>
-              new Date(b.time).getTime() - new Date(a.time).getTime()
+            .sort(
+              (a: RecentActivity, b: RecentActivity) =>
+                new Date(b.time).getTime() - new Date(a.time).getTime()
             )
             .slice(0, 10) // Show last 10 check-ins
 
@@ -191,7 +201,7 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
           checkedIn: statsData.checkedIn,
           notCheckedIn: statsData.notCheckedIn,
           waitlist: statsData.breakdown.waitlist,
-          cancelled: 0
+          cancelled: 0,
         })
         showSuccess('הסטטיסטיקות עודכנו')
       }
@@ -210,8 +220,8 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           registrationId,
-          checkedInBy: 'manual'
-        })
+          checkedInBy: 'manual',
+        }),
       })
 
       const data = await response.json()
@@ -233,17 +243,19 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
   }
 
   // Filter registrations based on search term
-  const filteredRegistrations = registrations.filter(r => {
-    if (!searchTerm.trim()) return false
+  const filteredRegistrations = registrations
+    .filter((r) => {
+      if (!searchTerm.trim()) return false
 
-    const data = r.data as Record<string, unknown>
-    const name = ((data.name as string) || (data.childName as string) || '').toLowerCase()
-    const phone = r.phoneNumber.toLowerCase()
-    const code = r.confirmationCode.toLowerCase()
-    const search = searchTerm.toLowerCase()
+      const data = r.data as Record<string, unknown>
+      const name = ((data.name as string) || (data.childName as string) || '').toLowerCase()
+      const phone = r.phoneNumber.toLowerCase()
+      const code = r.confirmationCode.toLowerCase()
+      const search = searchTerm.toLowerCase()
 
-    return name.includes(search) || phone.includes(search) || code.includes(search)
-  }).slice(0, 20) // Limit to 20 results
+      return name.includes(search) || phone.includes(search) || code.includes(search)
+    })
+    .slice(0, 20) // Limit to 20 results
 
   const handleCopyLink = () => {
     if (checkInLink) {
@@ -254,7 +266,8 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
     }
   }
 
-  const checkedInPercent = stats.confirmed > 0 ? Math.round((stats.checkedIn / stats.confirmed) * 100) : 0
+  const checkedInPercent =
+    stats.confirmed > 0 ? Math.round((stats.checkedIn / stats.confirmed) * 100) : 0
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6" dir="rtl">
@@ -311,7 +324,9 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-4 border border-white/20">
                 <p className="text-sm text-green-100 mb-2">קישור סריקה:</p>
                 <div className="flex items-center gap-2 bg-white/20 rounded-lg px-3 py-2">
-                  <code className="text-sm font-mono flex-1 truncate text-white">{checkInLink}</code>
+                  <code className="text-sm font-mono flex-1 truncate text-white">
+                    {checkInLink}
+                  </code>
                   <button
                     onClick={handleCopyLink}
                     className="p-2 hover:bg-white/20 rounded transition-colors flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-white/50"
@@ -409,7 +424,7 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
 
             {filteredRegistrations.length > 0 ? (
               <div className="space-y-2 max-h-96 overflow-y-auto">
-                {filteredRegistrations.map(reg => {
+                {filteredRegistrations.map((reg) => {
                   const data = reg.data as Record<string, unknown>
                   const name = (data.name as string) || (data.childName as string) || 'אורח'
                   const isCheckedIn = reg.checkIn && !reg.checkIn.undoneAt
@@ -445,11 +460,15 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
                             isCheckedIn
                               ? 'bg-green-100 text-green-700 cursor-not-allowed'
                               : reg.status === 'WAITLIST'
-                              ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                              : 'bg-green-600 text-white hover:bg-green-700 active:scale-95'
+                                ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                                : 'bg-green-600 text-white hover:bg-green-700 active:scale-95'
                           }`}
                         >
-                          {isCheckedIn ? 'נכח ✓' : reg.status === 'WAITLIST' ? 'המתנה' : 'סמן נוכחות'}
+                          {isCheckedIn
+                            ? 'נכח ✓'
+                            : reg.status === 'WAITLIST'
+                              ? 'המתנה'
+                              : 'סמן נוכחות'}
                         </button>
                       </div>
                     </div>
@@ -491,11 +510,18 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
                       <p className="text-sm text-gray-600">
                         {new Date(activity.time).toLocaleTimeString('he-IL', {
                           hour: '2-digit',
-                          minute: '2-digit'
+                          minute: '2-digit',
                         })}
                       </p>
                     </div>
-                    <div className="text-green-600 font-medium text-sm">נכח ✓</div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-600 font-medium text-sm">נכח ✓</span>
+                      {activity.isLate && activity.minutesLate && (
+                        <span className="text-amber-600 font-semibold text-xs">
+                          • איחר {activity.minutesLate} דק׳
+                        </span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -528,7 +554,7 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
                   weekday: 'long',
                   year: 'numeric',
                   month: 'long',
-                  day: 'numeric'
+                  day: 'numeric',
                 })}
               </span>
             </div>
