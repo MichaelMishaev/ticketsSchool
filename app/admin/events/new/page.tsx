@@ -11,7 +11,14 @@ import EventPreviewModal from '@/components/EventPreviewModal'
 import DateTimePicker from '@/components/DateTimePicker'
 import Modal from '@/components/Modal'
 import { trackEventCreated } from '@/lib/analytics'
-import { typography, buttonVariants, buttonSizes, inputVariants, cardVariants, badgeVariants } from '@/lib/design-tokens'
+import {
+  typography,
+  buttonVariants,
+  buttonSizes,
+  inputVariants,
+  cardVariants,
+  badgeVariants,
+} from '@/lib/design-tokens'
 import {
   Calendar,
   MapPin,
@@ -31,7 +38,6 @@ import {
   Database,
   Zap,
   CreditCard,
-  DollarSign,
   ChevronDown,
   ChevronUp,
   Info,
@@ -299,7 +305,7 @@ export default function NewEventPage() {
     if (!isNaN(numValue)) {
       const clampedValue = Math.max(1, numValue)
       setCapacityInput(String(clampedValue))
-      setFormData(prev => ({ ...prev, capacity: clampedValue }))
+      setFormData((prev) => ({ ...prev, capacity: clampedValue }))
       validateField('capacity', clampedValue)
     }
   }
@@ -315,7 +321,7 @@ export default function NewEventPage() {
     if (!isNaN(numValue)) {
       const clampedValue = Math.max(1, Math.min(10, numValue))
       setMaxSpotsInput(String(clampedValue))
-      setFormData(prev => ({ ...prev, maxSpotsPerPerson: clampedValue }))
+      setFormData((prev) => ({ ...prev, maxSpotsPerPerson: clampedValue }))
       validateField('maxSpotsPerPerson', clampedValue)
     }
   }
@@ -324,7 +330,7 @@ export default function NewEventPage() {
   const handleCapacityBlur = () => {
     if (capacityInput === '' || formData.capacity < 1) {
       setCapacityInput('1')
-      setFormData(prev => ({ ...prev, capacity: 1 }))
+      setFormData((prev) => ({ ...prev, capacity: 1 }))
       validateField('capacity', 1)
     }
   }
@@ -332,7 +338,7 @@ export default function NewEventPage() {
   const handleMaxSpotsBlur = () => {
     if (maxSpotsInput === '' || formData.maxSpotsPerPerson < 1) {
       setMaxSpotsInput('1')
-      setFormData(prev => ({ ...prev, maxSpotsPerPerson: 1 }))
+      setFormData((prev) => ({ ...prev, maxSpotsPerPerson: 1 }))
       validateField('maxSpotsPerPerson', 1)
     }
   }
@@ -510,7 +516,7 @@ export default function NewEventPage() {
 
   // Toggle expandable section
   const toggleSection = (section: keyof typeof expandedSections) => {
-    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }))
+    setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }))
   }
 
   // Character counter component
@@ -521,11 +527,13 @@ export default function NewEventPage() {
 
     return (
       <div className="flex items-center gap-2 text-xs mt-1">
-        <span className={`
+        <span
+          className={`
           ${isOverLimit ? 'text-red-600 font-medium' : ''}
           ${isNearLimit && !isOverLimit ? 'text-amber-600' : ''}
           ${!isNearLimit ? 'text-gray-500' : ''}
-        `}>
+        `}
+        >
           {current} / {max}
         </span>
         {isOverLimit && (
@@ -611,20 +619,24 @@ export default function NewEventPage() {
                   <FileText className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className={typography.h4 + " mb-2"}>שלב 1: פרטי האירוע</h2>
-                  <p className={typography.bodySmall + " text-gray-600"}>
-                    מלא את המידע הבסיסי על האירוע שלך. שדות המסומנים ב-<span className="text-red-600 font-bold">*</span> הם חובה.
+                  <h2 className={typography.h4 + ' mb-2'}>שלב 1: פרטי האירוע</h2>
+                  <p className={typography.bodySmall + ' text-gray-600'}>
+                    מלא את המידע הבסיסי על האירוע שלך. שדות המסומנים ב-
+                    <span className="text-red-600 font-bold">*</span> הם חובה.
                   </p>
                 </div>
               </div>
             </div>
 
             {/* Basic Details Card */}
-            <div className={cardVariants.default + " p-6"}>
+            <div className={cardVariants.default + ' p-6'}>
               <div className="space-y-6">
                 {/* Game Type - First and Most Important */}
                 <div>
-                  <label htmlFor="gameType" className={typography.label + " mb-2 flex items-center gap-2"}>
+                  <label
+                    htmlFor="gameType"
+                    className={typography.label + ' mb-2 flex items-center gap-2'}
+                  >
                     <Tag className="w-4 h-4 text-blue-600" />
                     <span>סוג האירוע</span>
                     <span className="text-red-500">*</span>
@@ -636,18 +648,25 @@ export default function NewEventPage() {
                     required
                     value={formData.gameType}
                     onChange={(e) => handleChange('gameType', e.target.value)}
-                    className={validationErrors.gameType ? inputVariants.error : inputVariants.default}
+                    className={
+                      validationErrors.gameType ? inputVariants.error : inputVariants.default
+                    }
                     placeholder="לדוגמה: כדורגל, כדורסל, טיול, הרצאה"
                     aria-invalid={!!validationErrors.gameType}
-                    aria-describedby={validationErrors.gameType ? 'gameType-error gameType-help' : 'gameType-help'}
+                    aria-describedby={
+                      validationErrors.gameType ? 'gameType-error gameType-help' : 'gameType-help'
+                    }
                   />
                   {validationErrors.gameType ? (
-                    <p id="gameType-error" className="text-sm text-red-600 flex items-center gap-1 mt-2">
+                    <p
+                      id="gameType-error"
+                      className="text-sm text-red-600 flex items-center gap-1 mt-2"
+                    >
                       <AlertCircle className="w-4 h-4" />
                       {validationErrors.gameType}
                     </p>
                   ) : (
-                    <p id="gameType-help" className={typography.micro + " mt-2"}>
+                    <p id="gameType-help" className={typography.micro + ' mt-2'}>
                       הקטגוריה תעזור למשתתפים למצוא את האירוע שלך
                     </p>
                   )}
@@ -655,7 +674,10 @@ export default function NewEventPage() {
 
                 {/* Title */}
                 <div>
-                  <label htmlFor="title" className={typography.label + " mb-2 flex items-center gap-2"}>
+                  <label
+                    htmlFor="title"
+                    className={typography.label + ' mb-2 flex items-center gap-2'}
+                  >
                     <AlignLeft className="w-4 h-4 text-blue-600" />
                     <span>כותרת האירוע</span>
                     <span className="text-red-500">*</span>
@@ -688,40 +710,56 @@ export default function NewEventPage() {
 
                 {/* Description */}
                 <div>
-                  <label htmlFor="description" className={typography.label + " mb-2 flex items-center gap-2"}>
+                  <label
+                    htmlFor="description"
+                    className={typography.label + ' mb-2 flex items-center gap-2'}
+                  >
                     <FileText className="w-4 h-4 text-gray-600" />
                     <span>תיאור מפורט</span>
-                    <span className={badgeVariants.neutral + " text-xs"}>אופציונלי</span>
+                    <span className={badgeVariants.neutral + ' text-xs'}>אופציונלי</span>
                   </label>
                   <textarea
                     id="description"
                     value={formData.description}
                     onChange={(e) => handleChange('description', e.target.value)}
-                    className={validationErrors.description ? inputVariants.error : inputVariants.default}
+                    className={
+                      validationErrors.description ? inputVariants.error : inputVariants.default
+                    }
                     rows={4}
                     placeholder="פרט על האירוע - מה יקרה, מה צריך להביא, מי מוזמן..."
                     maxLength={CHAR_LIMITS.description}
                     aria-invalid={!!validationErrors.description}
-                    aria-describedby={validationErrors.description ? 'description-error' : undefined}
+                    aria-describedby={
+                      validationErrors.description ? 'description-error' : undefined
+                    }
                   />
                   <div className="flex items-center justify-between mt-1">
                     {validationErrors.description && (
-                      <p id="description-error" className="text-sm text-red-600 flex items-center gap-1">
+                      <p
+                        id="description-error"
+                        className="text-sm text-red-600 flex items-center gap-1"
+                      >
                         <AlertCircle className="w-4 h-4" />
                         {validationErrors.description}
                       </p>
                     )}
                     <div className="flex-1" />
-                    <CharCounter current={formData.description?.length ?? 0} max={CHAR_LIMITS.description} />
+                    <CharCounter
+                      current={formData.description?.length ?? 0}
+                      max={CHAR_LIMITS.description}
+                    />
                   </div>
                 </div>
 
                 {/* Location */}
                 <div>
-                  <label htmlFor="location" className={typography.label + " mb-2 flex items-center gap-2"}>
+                  <label
+                    htmlFor="location"
+                    className={typography.label + ' mb-2 flex items-center gap-2'}
+                  >
                     <MapPin className="w-4 h-4 text-gray-600" />
                     <span>מיקום</span>
-                    <span className={badgeVariants.neutral + " text-xs"}>אופציונלי</span>
+                    <span className={badgeVariants.neutral + ' text-xs'}>אופציונלי</span>
                   </label>
                   <div className="relative">
                     <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
@@ -730,11 +768,11 @@ export default function NewEventPage() {
                       type="text"
                       value={formData.location}
                       onChange={(e) => handleChange('location', e.target.value)}
-                      className={inputVariants.default + " pl-4 pr-12"}
+                      className={inputVariants.default + ' pl-4 pr-12'}
                       placeholder="למשל: אולם ספורט, מגרש כדורגל ראשי"
                     />
                   </div>
-                  <p className={typography.micro + " mt-2"}>
+                  <p className={typography.micro + ' mt-2'}>
                     ציין את המקום המדויק בו יתקיים האירוע
                   </p>
                 </div>
@@ -751,9 +789,11 @@ export default function NewEventPage() {
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className={typography.labelSmall + " text-green-900 mb-1"}>תצוגה מקדימה</p>
-                    <p className={typography.bodySmall + " text-green-800"}>
-                      {formData.gameType && <span className="font-semibold">{formData.gameType}</span>}
+                    <p className={typography.labelSmall + ' text-green-900 mb-1'}>תצוגה מקדימה</p>
+                    <p className={typography.bodySmall + ' text-green-800'}>
+                      {formData.gameType && (
+                        <span className="font-semibold">{formData.gameType}</span>
+                      )}
                       {formData.gameType && formData.title && ' - '}
                       {formData.title && <span>{formData.title}</span>}
                     </p>
@@ -780,8 +820,8 @@ export default function NewEventPage() {
                   <Clock className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className={typography.h4 + " mb-2"}>שלב 2: תאריך ושעה</h2>
-                  <p className={typography.bodySmall + " text-gray-600"}>
+                  <h2 className={typography.h4 + ' mb-2'}>שלב 2: תאריך ושעה</h2>
+                  <p className={typography.bodySmall + ' text-gray-600'}>
                     קבע מתי האירוע שלך יתקיים. תאריך ההתחלה הוא חובה, תאריך הסיום אופציונלי.
                   </p>
                 </div>
@@ -789,7 +829,7 @@ export default function NewEventPage() {
             </div>
 
             {/* Timing Card */}
-            <div className={cardVariants.default + " p-6"}>
+            <div className={cardVariants.default + ' p-6'}>
               <div className="space-y-6">
                 {/* Start Date/Time */}
                 <div>
@@ -807,9 +847,7 @@ export default function NewEventPage() {
                     label=""
                     required
                   />
-                  <p className={typography.micro + " mt-2"}>
-                    זהו המועד בו ייפתח האירוע למשתתפים
-                  </p>
+                  <p className={typography.micro + ' mt-2'}>זהו המועד בו ייפתח האירוע למשתתפים</p>
                 </div>
 
                 {/* End Date/Time */}
@@ -818,7 +856,7 @@ export default function NewEventPage() {
                     <Calendar className="w-5 h-5 text-gray-600" />
                     <label className={typography.label}>
                       תאריך ושעת סיום
-                      <span className={badgeVariants.neutral + " text-xs mr-2"}>אופציונלי</span>
+                      <span className={badgeVariants.neutral + ' text-xs mr-2'}>אופציונלי</span>
                     </label>
                     <InfoTooltip text="אם האירוע נמשך מספר שעות, ציין מתי הוא מסתיים (לא חובה)" />
                   </div>
@@ -847,12 +885,21 @@ export default function NewEventPage() {
                     <div className="flex items-center gap-3">
                       <CheckCircle2 className="w-5 h-5 text-blue-600" />
                       <div>
-                        <p className={typography.labelSmall + " text-blue-900"}>משך האירוע מוגדר</p>
-                        <p className={typography.micro + " text-blue-700 mt-0.5"}>
-                          האירוע יימשך מ-{new Date(formData.startAt).toLocaleString('he-IL', {
-                            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                          })} עד {new Date(formData.endAt).toLocaleString('he-IL', {
-                            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                        <p className={typography.labelSmall + ' text-blue-900'}>משך האירוע מוגדר</p>
+                        <p className={typography.micro + ' text-blue-700 mt-0.5'}>
+                          האירוע יימשך מ-
+                          {new Date(formData.startAt).toLocaleString('he-IL', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}{' '}
+                          עד{' '}
+                          {new Date(formData.endAt).toLocaleString('he-IL', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
                           })}
                         </p>
                       </div>
@@ -880,8 +927,8 @@ export default function NewEventPage() {
                   <Users className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className={typography.h4 + " mb-2"}>שלב 3: כמות משתתפים</h2>
-                  <p className={typography.bodySmall + " text-gray-600"}>
+                  <h2 className={typography.h4 + ' mb-2'}>שלב 3: כמות משתתפים</h2>
+                  <p className={typography.bodySmall + ' text-gray-600'}>
                     הגדר כמה אנשים יכולים להירשם לאירוע ומה המגבלה להרשמה אחת.
                   </p>
                 </div>
@@ -889,11 +936,14 @@ export default function NewEventPage() {
             </div>
 
             {/* Capacity Card */}
-            <div className={cardVariants.default + " p-6"}>
+            <div className={cardVariants.default + ' p-6'}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Total Capacity */}
                 <div>
-                  <label htmlFor="capacity" className={typography.label + " mb-3 flex items-center gap-2"}>
+                  <label
+                    htmlFor="capacity"
+                    className={typography.label + ' mb-3 flex items-center gap-2'}
+                  >
                     <Users className="w-4 h-4 text-green-600" />
                     <span>מספר מקומות כולל</span>
                     <span className="text-red-500">*</span>
@@ -909,18 +959,27 @@ export default function NewEventPage() {
                       onChange={(e) => handleCapacityChange(e.target.value)}
                       onBlur={handleCapacityBlur}
                       onFocus={handleNumberFocus}
-                      className={validationErrors.capacity ? inputVariants.error + " pl-4 pr-12 text-lg font-semibold" : inputVariants.default + " pl-4 pr-12 text-lg font-semibold"}
+                      className={
+                        validationErrors.capacity
+                          ? inputVariants.error + ' pl-4 pr-12 text-lg font-semibold'
+                          : inputVariants.default + ' pl-4 pr-12 text-lg font-semibold'
+                      }
                       aria-invalid={!!validationErrors.capacity}
-                      aria-describedby={validationErrors.capacity ? 'capacity-error capacity-help' : 'capacity-help'}
+                      aria-describedby={
+                        validationErrors.capacity ? 'capacity-error capacity-help' : 'capacity-help'
+                      }
                     />
                   </div>
                   {validationErrors.capacity ? (
-                    <p id="capacity-error" className="text-sm text-red-600 flex items-center gap-1 mt-2">
+                    <p
+                      id="capacity-error"
+                      className="text-sm text-red-600 flex items-center gap-1 mt-2"
+                    >
                       <AlertCircle className="w-4 h-4" />
                       {validationErrors.capacity}
                     </p>
                   ) : (
-                    <p id="capacity-help" className={typography.micro + " mt-2"}>
+                    <p id="capacity-help" className={typography.micro + ' mt-2'}>
                       המספר הכולל של משתתפים שיכולים להירשם
                     </p>
                   )}
@@ -928,7 +987,10 @@ export default function NewEventPage() {
 
                 {/* Max Spots Per Person */}
                 <div>
-                  <label htmlFor="maxSpots" className={typography.label + " mb-3 flex items-center gap-2"}>
+                  <label
+                    htmlFor="maxSpots"
+                    className={typography.label + ' mb-3 flex items-center gap-2'}
+                  >
                     <UserCheck className="w-4 h-4 text-green-600" />
                     <span>מקסימום מקומות לנרשם</span>
                     <span className="text-red-500">*</span>
@@ -945,18 +1007,29 @@ export default function NewEventPage() {
                       onChange={(e) => handleMaxSpotsChange(e.target.value)}
                       onBlur={handleMaxSpotsBlur}
                       onFocus={handleNumberFocus}
-                      className={validationErrors.maxSpotsPerPerson ? inputVariants.error + " pl-4 pr-12 text-lg font-semibold" : inputVariants.default + " pl-4 pr-12 text-lg font-semibold"}
+                      className={
+                        validationErrors.maxSpotsPerPerson
+                          ? inputVariants.error + ' pl-4 pr-12 text-lg font-semibold'
+                          : inputVariants.default + ' pl-4 pr-12 text-lg font-semibold'
+                      }
                       aria-invalid={!!validationErrors.maxSpotsPerPerson}
-                      aria-describedby={validationErrors.maxSpotsPerPerson ? 'maxSpots-error maxSpots-help' : 'maxSpots-help'}
+                      aria-describedby={
+                        validationErrors.maxSpotsPerPerson
+                          ? 'maxSpots-error maxSpots-help'
+                          : 'maxSpots-help'
+                      }
                     />
                   </div>
                   {validationErrors.maxSpotsPerPerson ? (
-                    <p id="maxSpots-error" className="text-sm text-red-600 flex items-center gap-1 mt-2">
+                    <p
+                      id="maxSpots-error"
+                      className="text-sm text-red-600 flex items-center gap-1 mt-2"
+                    >
                       <AlertCircle className="w-4 h-4" />
                       {validationErrors.maxSpotsPerPerson}
                     </p>
                   ) : (
-                    <p id="maxSpots-help" className={typography.micro + " mt-2"}>
+                    <p id="maxSpots-help" className={typography.micro + ' mt-2'}>
                       כמה מקומות יכול נרשם אחד להזמין (1-10)
                     </p>
                   )}
@@ -973,10 +1046,12 @@ export default function NewEventPage() {
                   <div className="flex items-start gap-3">
                     <Info className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className={typography.labelSmall + " text-amber-900 mb-1"}>דוגמה</p>
-                      <p className={typography.bodySmall + " text-amber-800"}>
-                        עם {formData.capacity} מקומות כולל ומקסימום {formData.maxSpotsPerPerson} מקומות לנרשם,
-                        לפחות {Math.ceil(formData.capacity / formData.maxSpotsPerPerson)} אנשים יצטרכו להירשם כדי למלא את האירוע.
+                      <p className={typography.labelSmall + ' text-amber-900 mb-1'}>דוגמה</p>
+                      <p className={typography.bodySmall + ' text-amber-800'}>
+                        עם {formData.capacity} מקומות כולל ומקסימום {formData.maxSpotsPerPerson}{' '}
+                        מקומות לנרשם, לפחות{' '}
+                        {Math.ceil(formData.capacity / formData.maxSpotsPerPerson)} אנשים יצטרכו
+                        להירשם כדי למלא את האירוע.
                       </p>
                     </div>
                   </div>
@@ -1002,8 +1077,8 @@ export default function NewEventPage() {
                   <Sparkles className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className={typography.h4 + " mb-2"}>שלב 4: הגדרות נוספות</h2>
-                  <p className={typography.bodySmall + " text-gray-600"}>
+                  <h2 className={typography.h4 + ' mb-2'}>שלב 4: הגדרות נוספות</h2>
+                  <p className={typography.bodySmall + ' text-gray-600'}>
                     כל ההגדרות בשלב זה הן אופציונליות. אפשר לדלג ולסיים את יצירת האירוע.
                   </p>
                 </div>
@@ -1011,7 +1086,7 @@ export default function NewEventPage() {
             </div>
 
             {/* Custom Fields - Expandable */}
-            <div className={cardVariants.default + " overflow-hidden"}>
+            <div className={cardVariants.default + ' overflow-hidden'}>
               <button
                 type="button"
                 onClick={() => toggleSection('customFields')}
@@ -1021,7 +1096,7 @@ export default function NewEventPage() {
                   <Database className="w-5 h-5 text-purple-600" />
                   <div className="text-right">
                     <h3 className={typography.h5}>שדות נוספים להרשמה</h3>
-                    <p className={typography.micro + " text-gray-600 mt-1"}>
+                    <p className={typography.micro + ' text-gray-600 mt-1'}>
                       הוסף שדות מותאמים אישית (שם, טלפון, גיל וכו')
                     </p>
                   </div>
@@ -1053,7 +1128,7 @@ export default function NewEventPage() {
             </div>
 
             {/* Conditions - Expandable */}
-            <div className={cardVariants.default + " overflow-hidden"}>
+            <div className={cardVariants.default + ' overflow-hidden'}>
               <button
                 type="button"
                 onClick={() => toggleSection('conditions')}
@@ -1063,7 +1138,7 @@ export default function NewEventPage() {
                   <FileText className="w-5 h-5 text-blue-600" />
                   <div className="text-right">
                     <h3 className={typography.h5}>תנאי השתתפות</h3>
-                    <p className={typography.micro + " text-gray-600 mt-1"}>
+                    <p className={typography.micro + ' text-gray-600 mt-1'}>
                       הגדר תנאים והגבלות לאירוע (גיל, ביגוד וכו')
                     </p>
                   </div>
@@ -1085,29 +1160,41 @@ export default function NewEventPage() {
                   >
                     <div className="p-6 space-y-4">
                       <div>
-                        <label htmlFor="conditions" className={typography.label + " mb-2"}>
+                        <label htmlFor="conditions" className={typography.label + ' mb-2'}>
                           תנאי השתתפות
                         </label>
                         <textarea
                           id="conditions"
                           value={formData.conditions}
                           onChange={(e) => handleChange('conditions', e.target.value)}
-                          className={validationErrors.conditions ? inputVariants.error : inputVariants.default}
+                          className={
+                            validationErrors.conditions
+                              ? inputVariants.error
+                              : inputVariants.default
+                          }
                           rows={4}
                           placeholder="לדוגמה: האירוע מיועד לגילאי 10-16 בלבד, חובה להביא נעלי ספורט..."
                           maxLength={CHAR_LIMITS.conditions}
                           aria-invalid={!!validationErrors.conditions}
-                          aria-describedby={validationErrors.conditions ? 'conditions-error' : undefined}
+                          aria-describedby={
+                            validationErrors.conditions ? 'conditions-error' : undefined
+                          }
                         />
                         <div className="flex items-center justify-between mt-1">
                           {validationErrors.conditions && (
-                            <p id="conditions-error" className="text-sm text-red-600 flex items-center gap-1">
+                            <p
+                              id="conditions-error"
+                              className="text-sm text-red-600 flex items-center gap-1"
+                            >
                               <AlertCircle className="w-4 h-4" />
                               {validationErrors.conditions}
                             </p>
                           )}
                           <div className="flex-1" />
-                          <CharCounter current={formData.conditions?.length ?? 0} max={CHAR_LIMITS.conditions} />
+                          <CharCounter
+                            current={formData.conditions?.length ?? 0}
+                            max={CHAR_LIMITS.conditions}
+                          />
                         </div>
                       </div>
 
@@ -1118,7 +1205,7 @@ export default function NewEventPage() {
                           onChange={(e) => handleChange('requireAcceptance', e.target.checked)}
                           className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 hover:border-gray-400 transition-colors cursor-pointer"
                         />
-                        <span className={typography.bodySmall + " font-medium"}>
+                        <span className={typography.bodySmall + ' font-medium'}>
                           דרוש אישור תנאי השתתפות בעת ההרשמה
                         </span>
                       </label>
@@ -1129,7 +1216,7 @@ export default function NewEventPage() {
             </div>
 
             {/* Completion Message - Expandable */}
-            <div className={cardVariants.default + " overflow-hidden"}>
+            <div className={cardVariants.default + ' overflow-hidden'}>
               <button
                 type="button"
                 onClick={() => toggleSection('completionMessage')}
@@ -1139,7 +1226,7 @@ export default function NewEventPage() {
                   <CheckCircle2 className="w-5 h-5 text-green-600" />
                   <div className="text-right">
                     <h3 className={typography.h5}>הודעה לנרשמים</h3>
-                    <p className={typography.micro + " text-gray-600 mt-1"}>
+                    <p className={typography.micro + ' text-gray-600 mt-1'}>
                       הודעה מותאמת אישית שתוצג לאחר השלמת ההרשמה
                     </p>
                   </div>
@@ -1160,31 +1247,43 @@ export default function NewEventPage() {
                     className="border-t border-gray-200"
                   >
                     <div className="p-6">
-                      <label htmlFor="completionMessage" className={typography.label + " mb-2"}>
+                      <label htmlFor="completionMessage" className={typography.label + ' mb-2'}>
                         הודעת אישור
                       </label>
                       <textarea
                         id="completionMessage"
                         value={formData.completionMessage}
                         onChange={(e) => handleChange('completionMessage', e.target.value)}
-                        className={validationErrors.completionMessage ? inputVariants.error : inputVariants.default}
+                        className={
+                          validationErrors.completionMessage
+                            ? inputVariants.error
+                            : inputVariants.default
+                        }
                         rows={4}
                         placeholder="לדוגמה: מעולה! נרשמת בהצלחה למשחק. נתראה ביום חמישי בשעה 16:00!"
                         maxLength={CHAR_LIMITS.completionMessage}
                         aria-invalid={!!validationErrors.completionMessage}
-                        aria-describedby={validationErrors.completionMessage ? 'completion-error' : undefined}
+                        aria-describedby={
+                          validationErrors.completionMessage ? 'completion-error' : undefined
+                        }
                       />
                       <div className="flex items-center justify-between mt-1">
                         {validationErrors.completionMessage && (
-                          <p id="completion-error" className="text-sm text-red-600 flex items-center gap-1">
+                          <p
+                            id="completion-error"
+                            className="text-sm text-red-600 flex items-center gap-1"
+                          >
                             <AlertCircle className="w-4 h-4" />
                             {validationErrors.completionMessage}
                           </p>
                         )}
                         <div className="flex-1" />
-                        <CharCounter current={formData.completionMessage?.length ?? 0} max={CHAR_LIMITS.completionMessage} />
+                        <CharCounter
+                          current={formData.completionMessage?.length ?? 0}
+                          max={CHAR_LIMITS.completionMessage}
+                        />
                       </div>
-                      <p className={typography.micro + " mt-2"}>
+                      <p className={typography.micro + ' mt-2'}>
                         ההודעה תוצג למשתתפים מיד לאחר שיסיימו את ההרשמה
                       </p>
                     </div>
@@ -1194,7 +1293,7 @@ export default function NewEventPage() {
             </div>
 
             {/* Payment Configuration - Expandable */}
-            <div className={cardVariants.default + " overflow-hidden"}>
+            <div className={cardVariants.default + ' overflow-hidden'}>
               <button
                 type="button"
                 onClick={() => toggleSection('payment')}
@@ -1204,7 +1303,7 @@ export default function NewEventPage() {
                   <CreditCard className="w-5 h-5 text-green-600" />
                   <div className="text-right">
                     <h3 className={typography.h5}>הגדרות תשלום</h3>
-                    <p className={typography.micro + " text-gray-600 mt-1"}>
+                    <p className={typography.micro + ' text-gray-600 mt-1'}>
                       הפוך את האירוע לאירוע בתשלום דרך YaadPay
                     </p>
                   </div>
@@ -1233,7 +1332,9 @@ export default function NewEventPage() {
                           onChange={(e) => handleChange('paymentRequired', e.target.checked)}
                           className="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 hover:border-gray-400 transition-colors cursor-pointer"
                         />
-                        <span className={typography.bodySmall + " font-medium"}>דרוש תשלום לאירוע זה</span>
+                        <span className={typography.bodySmall + ' font-medium'}>
+                          דרוש תשלום לאירוע זה
+                        </span>
                       </label>
 
                       {/* Conditional: Payment Settings */}
@@ -1246,7 +1347,7 @@ export default function NewEventPage() {
                         >
                           {/* Payment Timing */}
                           <div>
-                            <label htmlFor="paymentTiming" className={typography.label + " mb-2"}>
+                            <label htmlFor="paymentTiming" className={typography.label + ' mb-2'}>
                               מועד התשלום <span className="text-red-500">*</span>
                             </label>
                             <select
@@ -1256,19 +1357,24 @@ export default function NewEventPage() {
                               className={inputVariants.default}
                             >
                               <option value="UPFRONT">תשלום מראש (לפני ההרשמה) - מומלץ</option>
-                              <option value="POST_REGISTRATION">תשלום לאחר ההרשמה (קבלת חשבונית במייל)</option>
+                              <option value="POST_REGISTRATION">
+                                תשלום לאחר ההרשמה (קבלת חשבונית במייל)
+                              </option>
                               <option value="OPTIONAL">אופציונלי (ניתן לשלם או לא)</option>
                             </select>
-                            <p className={typography.micro + " mt-2"}>
-                              {formData.paymentTiming === 'UPFRONT' && 'המשתתף ישלם לפני השלמת ההרשמה דרך YaadPay'}
-                              {formData.paymentTiming === 'POST_REGISTRATION' && 'המשתתף יקבל קישור לתשלום במייל לאחר ההרשמה'}
-                              {formData.paymentTiming === 'OPTIONAL' && 'המשתתף יוכל לבחור האם לשלם או לא'}
+                            <p className={typography.micro + ' mt-2'}>
+                              {formData.paymentTiming === 'UPFRONT' &&
+                                'המשתתף ישלם לפני השלמת ההרשמה דרך YaadPay'}
+                              {formData.paymentTiming === 'POST_REGISTRATION' &&
+                                'המשתתף יקבל קישור לתשלום במייל לאחר ההרשמה'}
+                              {formData.paymentTiming === 'OPTIONAL' &&
+                                'המשתתף יוכל לבחור האם לשלם או לא'}
                             </p>
                           </div>
 
                           {/* Pricing Model */}
                           <div>
-                            <label htmlFor="pricingModel" className={typography.label + " mb-2"}>
+                            <label htmlFor="pricingModel" className={typography.label + ' mb-2'}>
                               מודל תמחור <span className="text-red-500">*</span>
                             </label>
                             <select
@@ -1280,9 +1386,11 @@ export default function NewEventPage() {
                               <option value="FIXED_PRICE">מחיר קבוע להרשמה</option>
                               <option value="PER_GUEST">מחיר לכל אורח (טבלאות)</option>
                             </select>
-                            <p className={typography.micro + " mt-2"}>
-                              {formData.pricingModel === 'FIXED_PRICE' && 'מחיר קבוע לכל הרשמה, ללא קשר למספר אורחים'}
-                              {formData.pricingModel === 'PER_GUEST' && 'המחיר מחושב לפי מספר האורחים (מחיר × מספר אורחים)'}
+                            <p className={typography.micro + ' mt-2'}>
+                              {formData.pricingModel === 'FIXED_PRICE' &&
+                                'מחיר קבוע לכל הרשמה, ללא קשר למספר אורחים'}
+                              {formData.pricingModel === 'PER_GUEST' &&
+                                'המחיר מחושב לפי מספר האורחים (מחיר × מספר אורחים)'}
                             </p>
                           </div>
 
@@ -1292,12 +1400,14 @@ export default function NewEventPage() {
                               initial={{ opacity: 0, y: -10 }}
                               animate={{ opacity: 1, y: 0 }}
                             >
-                              <label htmlFor="priceAmount" className={typography.label + " mb-2"}>
+                              <label htmlFor="priceAmount" className={typography.label + ' mb-2'}>
                                 מחיר {formData.pricingModel === 'PER_GUEST' ? 'לאורח' : 'להרשמה'}{' '}
                                 <span className="text-red-500">*</span>
                               </label>
                               <div className="relative">
-                                <DollarSign className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-lg text-gray-500 pointer-events-none z-10">
+                                  ₪
+                                </span>
                                 <input
                                   id="priceAmount"
                                   type="number"
@@ -1306,20 +1416,27 @@ export default function NewEventPage() {
                                   value={formData.priceAmount || ''}
                                   onChange={(e) => {
                                     const value = e.target.value ? parseFloat(e.target.value) : 0
-                                    setFormData(prev => ({ ...prev, priceAmount: value || undefined }))
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      priceAmount: value || undefined,
+                                    }))
                                   }}
-                                  className={inputVariants.default + " pl-4 pr-12"}
+                                  className={inputVariants.default + ' pl-4 pr-12'}
                                   placeholder="50.00"
                                 />
                               </div>
-                              <p className={typography.micro + " mt-2"}>
+                              <p className={typography.micro + ' mt-2'}>
                                 מחיר בשקלים חדשים (₪). לדוגמה: 50.00 לאירוע של 50 שקל
                               </p>
                               {formData.priceAmount && (
                                 <div className="mt-3 bg-green-50 border-2 border-green-200 rounded-lg p-3">
-                                  <p className={typography.bodySmall + " text-green-800 font-medium"}>
+                                  <p
+                                    className={typography.bodySmall + ' text-green-800 font-medium'}
+                                  >
                                     💰 מחיר מוצג:{' '}
-                                    <span className="text-lg">₪{formData.priceAmount.toFixed(2)}</span>
+                                    <span className="text-lg">
+                                      ₪{formData.priceAmount.toFixed(2)}
+                                    </span>
                                     {formData.pricingModel === 'PER_GUEST' && ' לאורח'}
                                   </p>
                                 </div>
@@ -1333,8 +1450,9 @@ export default function NewEventPage() {
                               <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                               <div className="text-sm text-blue-800">
                                 <p className="font-medium mb-1">מטבע: שקל חדש (₪ ILS)</p>
-                                <p className={typography.micro + " text-blue-700"}>
-                                  כרגע המערכת תומכת רק בתשלומים בשקלים דרך YaadPay. תמיכה במטבעות נוספים תתווסף בעתיד.
+                                <p className={typography.micro + ' text-blue-700'}>
+                                  כרגע המערכת תומכת רק בתשלומים בשקלים דרך YaadPay. תמיכה במטבעות
+                                  נוספים תתווסף בעתיד.
                                 </p>
                               </div>
                             </div>
@@ -1357,7 +1475,11 @@ export default function NewEventPage() {
   return (
     <>
       <ToastContainer />
-      <EventPreviewModal isOpen={showPreview} onClose={() => setShowPreview(false)} eventData={formData} />
+      <EventPreviewModal
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+        eventData={formData}
+      />
       <AnimatePresence>{showSuccess && <SuccessOverlay />}</AnimatePresence>
 
       {/* Draft Recovery Modal */}
@@ -1390,8 +1512,8 @@ export default function NewEventPage() {
               <div className="flex items-start gap-3">
                 <Clock className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className={typography.labelSmall + " text-blue-900 mb-1"}>זמן שמירה</p>
-                  <p className={typography.micro + " text-blue-700"}>
+                  <p className={typography.labelSmall + ' text-blue-900 mb-1'}>זמן שמירה</p>
+                  <p className={typography.micro + ' text-blue-700'}>
                     {draftData.savedAt
                       ? new Date(draftData.savedAt).toLocaleString('he-IL', {
                           weekday: 'long',
@@ -1412,20 +1534,24 @@ export default function NewEventPage() {
               <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-4 space-y-3">
                 <div className="flex items-center gap-2 mb-2">
                   <FileText className="w-5 h-5 text-gray-600" />
-                  <p className={typography.labelSmall + " text-gray-900"}>תצוגה מקדימה של הטיוטה</p>
+                  <p className={typography.labelSmall + ' text-gray-900'}>תצוגה מקדימה של הטיוטה</p>
                 </div>
 
                 <div className="space-y-2 text-sm">
                   {draftData.formData.gameType && (
                     <div className="flex items-start gap-2">
                       <span className="text-gray-500 min-w-[80px]">סוג אירוע:</span>
-                      <span className="text-gray-900 font-medium">{draftData.formData.gameType}</span>
+                      <span className="text-gray-900 font-medium">
+                        {draftData.formData.gameType}
+                      </span>
                     </div>
                   )}
                   {draftData.formData.title && (
                     <div className="flex items-start gap-2">
                       <span className="text-gray-500 min-w-[80px]">כותרת:</span>
-                      <span className="text-gray-900 font-medium truncate">{draftData.formData.title}</span>
+                      <span className="text-gray-900 font-medium truncate">
+                        {draftData.formData.title}
+                      </span>
                     </div>
                   )}
                   {draftData.formData.location && (
@@ -1466,12 +1592,13 @@ export default function NewEventPage() {
         >
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
             <div>
-              <h1 className={typography.h1 + " flex items-center gap-3 mb-2"}>
+              <h1 className={typography.h1 + ' flex items-center gap-3 mb-2'}>
                 <Zap className="w-8 h-8 text-blue-600" />
                 יצירת אירוע חדש
               </h1>
-              <p className={typography.bodySmall + " text-gray-600"}>
-                מלא את הפרטים בשלבים הבאים. השדות המסומנים ב-<span className="text-red-600 font-bold">*</span> הם חובה.
+              <p className={typography.bodySmall + ' text-gray-600'}>
+                מלא את הפרטים בשלבים הבאים. השדות המסומנים ב-
+                <span className="text-red-600 font-bold">*</span> הם חובה.
               </p>
             </div>
 
@@ -1480,7 +1607,7 @@ export default function NewEventPage() {
               <button
                 type="button"
                 onClick={saveDraft}
-                className={buttonVariants.ghost + " " + buttonSizes.md}
+                className={buttonVariants.ghost + ' ' + buttonSizes.md}
                 title="Ctrl+S"
               >
                 <Save className="w-4 h-4" />
@@ -1491,7 +1618,7 @@ export default function NewEventPage() {
                 type="button"
                 onClick={() => setShowPreview(true)}
                 disabled={!formData.title}
-                className={buttonVariants.secondary + " " + buttonSizes.md}
+                className={buttonVariants.secondary + ' ' + buttonSizes.md}
                 title="Ctrl+P"
               >
                 <Eye className="w-4 h-4" />
@@ -1509,7 +1636,8 @@ export default function NewEventPage() {
             >
               <Database className="w-4 h-4" />
               <span>
-                נשמר אוטומטית ב-{lastSavedAt.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+                נשמר אוטומטית ב-
+                {lastSavedAt.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
               </span>
             </motion.div>
           )}
@@ -1562,7 +1690,7 @@ export default function NewEventPage() {
                   }
                 }}
                 disabled={isLoading}
-                className={buttonVariants.ghost + " " + buttonSizes.md}
+                className={buttonVariants.ghost + ' ' + buttonSizes.md}
               >
                 ביטול
               </button>
@@ -1572,7 +1700,7 @@ export default function NewEventPage() {
                   type="button"
                   onClick={prevStep}
                   disabled={isLoading}
-                  className={buttonVariants.secondary + " " + buttonSizes.md}
+                  className={buttonVariants.secondary + ' ' + buttonSizes.md}
                 >
                   <ArrowRight className="w-5 h-5" />
                   <span>חזור</span>
@@ -1590,7 +1718,7 @@ export default function NewEventPage() {
                     nextStep()
                   }}
                   disabled={!validateStep(currentStep)}
-                  className={buttonVariants.primary + " " + buttonSizes.lg}
+                  className={buttonVariants.primary + ' ' + buttonSizes.lg}
                 >
                   <span>המשך</span>
                   <ArrowLeft className="w-5 h-5" />
@@ -1598,8 +1726,12 @@ export default function NewEventPage() {
               ) : (
                 <button
                   type="submit"
-                  disabled={isLoading || Object.values(validationErrors).some((error) => error !== '')}
-                  className={buttonVariants.success + " " + buttonSizes.lg + " shadow-lg hover:shadow-xl"}
+                  disabled={
+                    isLoading || Object.values(validationErrors).some((error) => error !== '')
+                  }
+                  className={
+                    buttonVariants.success + ' ' + buttonSizes.lg + ' shadow-lg hover:shadow-xl'
+                  }
                 >
                   {isLoading ? (
                     <>
@@ -1627,7 +1759,7 @@ export default function NewEventPage() {
                       type="button"
                       onClick={prevStep}
                       disabled={isLoading}
-                      className={buttonVariants.ghost + " " + buttonSizes.lg + " flex-1"}
+                      className={buttonVariants.ghost + ' ' + buttonSizes.lg + ' flex-1'}
                     >
                       <ArrowRight className="w-5 h-5" />
                       <span>חזור</span>
@@ -1641,7 +1773,7 @@ export default function NewEventPage() {
                       nextStep()
                     }}
                     disabled={!validateStep(currentStep)}
-                    className={buttonVariants.primary + " " + buttonSizes.lg + " flex-1"}
+                    className={buttonVariants.primary + ' ' + buttonSizes.lg + ' flex-1'}
                   >
                     <span>המשך לשלב הבא</span>
                     <ArrowLeft className="w-5 h-5" />
@@ -1650,8 +1782,10 @@ export default function NewEventPage() {
               ) : (
                 <button
                   type="submit"
-                  disabled={isLoading || Object.values(validationErrors).some((error) => error !== '')}
-                  className={buttonVariants.success + " " + buttonSizes.lg + " w-full shadow-lg"}
+                  disabled={
+                    isLoading || Object.values(validationErrors).some((error) => error !== '')
+                  }
+                  className={buttonVariants.success + ' ' + buttonSizes.lg + ' w-full shadow-lg'}
                 >
                   {isLoading ? (
                     <>
