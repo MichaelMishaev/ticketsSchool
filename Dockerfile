@@ -42,10 +42,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 COPY --chown=nextjs:nodejs start.sh ./
 
-# Copy Prisma binaries from builder (CRITICAL for migrations)
+# Copy Prisma binaries and dependencies from builder (CRITICAL for migrations)
+# Copy the complete Prisma installation including CLI, client, and WASM files
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.bin ./node_modules/.bin
 
 RUN chmod +x start.sh
 
