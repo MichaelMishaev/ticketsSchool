@@ -25,7 +25,7 @@ export async function POST(
     // Find school (outside transaction for TABLE_BASED check)
     const school = await prisma.school.findUnique({
       where: { slug: schoolSlug },
-      select: { id: true, name: true }
+      select: { id: true, name: true },
     })
 
     if (!school) {
@@ -36,11 +36,11 @@ export async function POST(
     const event = await prisma.event.findFirst({
       where: {
         slug: eventSlug,
-        schoolId: school.id
+        schoolId: school.id,
       },
       include: {
-        tables: true
-      }
+        tables: true,
+      },
     })
 
     if (!event) {
@@ -52,7 +52,7 @@ export async function POST(
       const newToken = generateCheckInToken()
       await prisma.event.update({
         where: { id: event.id },
-        data: { checkInToken: newToken }
+        data: { checkInToken: newToken },
       })
       event.checkInToken = newToken
     }
@@ -90,12 +90,12 @@ export async function POST(
       where: {
         phoneNumber,
         schoolId: school.id,
-        active: true
-      }
+        active: true,
+      },
     })
 
     // Find first active ban (date-based OR game-based with remaining games)
-    const activeBan = bans.find(ban => {
+    const activeBan = bans.find((ban) => {
       // Date-based ban (not expired)
       if (ban.expiresAt && ban.expiresAt >= new Date()) {
         return true
@@ -115,7 +115,9 @@ export async function POST(
       } else {
         // Game-based ban
         const remainingGames = activeBan.bannedGamesCount - activeBan.eventsBlocked
-        throw new Error(`מצטערים, חשבונך חסום ל-${remainingGames} משחקים נוספים. סיבה: ${activeBan.reason}`)
+        throw new Error(
+          `מצטערים, חשבונך חסום ל-${remainingGames} משחקים נוספים. סיבה: ${activeBan.reason}`
+        )
       }
     }
 
@@ -124,8 +126,8 @@ export async function POST(
       where: {
         eventId: event.id,
         phoneNumber: phoneNumber,
-        status: { not: 'CANCELLED' }
-      }
+        status: { not: 'CANCELLED' },
+      },
     })
 
     if (existingRegistration) {
@@ -141,11 +143,12 @@ export async function POST(
       }
 
       // Detect POST_REGISTRATION payment mode
-      const requiresPostPayment = event.paymentRequired && event.paymentTiming === 'POST_REGISTRATION'
+      const requiresPostPayment =
+        event.paymentRequired && event.paymentTiming === 'POST_REGISTRATION'
 
       const result = await reserveTableForGuests(event.id, guestsCount, {
         phoneNumber: phoneNumber || '',
-        data
+        data,
       })
 
       // Calculate payment amount if POST_REGISTRATION
@@ -177,8 +180,8 @@ export async function POST(
             payerEmail: data.email || null,
             payerPhone: phoneNumber,
             payerName: data.name,
-            yaadPayOrderId: paymentIntentId
-          }
+            yaadPayOrderId: paymentIntentId,
+          },
         })
 
         // Update registration with payment details
@@ -187,8 +190,8 @@ export async function POST(
           data: {
             paymentStatus: 'PENDING',
             amountDue,
-            paymentIntentId
-          }
+            paymentIntentId,
+          },
         })
       }
 
@@ -200,14 +203,16 @@ export async function POST(
         qrCodeImage = await generateQRCodeImage(result.registration.id, event.id, {
           width: 300,
           margin: 2,
-          checkInToken: event.checkInToken || undefined
+          checkInToken: event.checkInToken || undefined,
         })
       }
 
       // Send appropriate email based on payment mode
       if (data.email) {
         try {
-          const eventDate = format(new Date(event.startAt), 'EEEE, dd בMMMM yyyy בשעה HH:mm', { locale: he })
+          const eventDate = format(new Date(event.startAt), 'EEEE, dd בMMMM yyyy בשעה HH:mm', {
+            locale: he,
+          })
 
           if (requiresPostPayment && result.status !== 'WAITLIST' && paymentIntentId && amountDue) {
             // Send invoice email for POST_REGISTRATION
@@ -223,7 +228,7 @@ export async function POST(
               currency: event.currency,
               paymentLink,
               customerName: data.name,
-              confirmationCode: result.registration.confirmationCode
+              confirmationCode: result.registration.confirmationCode,
             })
 
             console.log('✅ Payment invoice email sent to:', data.email)
@@ -243,7 +248,7 @@ export async function POST(
                 qrCodeImage,
                 status: result.status as 'CONFIRMED' | 'WAITLIST',
                 schoolName: school.name || 'TicketCap',
-                cancellationUrl
+                cancellationUrl,
               })
 
               console.log('✅ Registration confirmation email sent to:', data.email)
@@ -263,11 +268,12 @@ export async function POST(
         qrCodeImage, // Include QR code image in response (undefined for pending payments)
         requiresPayment: requiresPostPayment && result.status !== 'WAITLIST',
         paymentIntentId: requiresPostPayment ? paymentIntentId : undefined,
-        message: requiresPostPayment && result.status !== 'WAITLIST'
-          ? 'ההרשמה נקלטה - אנא בדוק את המייל לקבלת קישור לתשלום'
-          : result.status === 'WAITLIST'
-            ? 'נרשמת לרשימת ההמתנה'
-            : 'השולחן הוזמן בהצלחה'
+        message:
+          requiresPostPayment && result.status !== 'WAITLIST'
+            ? 'ההרשמה נקלטה - אנא בדוק את המייל לקבלת קישור לתשלום'
+            : result.status === 'WAITLIST'
+              ? 'נרשמת לרשימת ההמתנה'
+              : 'השולחן הוזמן בהצלחה',
       })
     }
 
@@ -283,98 +289,106 @@ export async function POST(
     const requiresPostPayment = event.paymentRequired && event.paymentTiming === 'POST_REGISTRATION'
 
     // Start a transaction to ensure atomic operation and prevent race conditions
-    const registration = await prisma.$transaction(async (tx) => {
-      // Calculate current confirmed registrations within transaction
-      const currentConfirmed = await tx.registration.aggregate({
-        where: {
-          eventId: event.id,
-          status: 'CONFIRMED'
-        },
-        _sum: {
-          spotsCount: true
-        }
-      })
-
-      const totalSpotsTaken = currentConfirmed._sum.spotsCount || 0
-      const spotsLeft = event.capacity - totalSpotsTaken
-
-      // Determine registration status
-      const registrationStatus: 'CONFIRMED' | 'WAITLIST' =
-        spotsLeft >= spotsCount ? 'CONFIRMED' : 'WAITLIST'
-
-      // Generate secure confirmation code
-      const confirmationCode = generateConfirmationCode()
-
-      // Calculate payment amount if POST_REGISTRATION
-      let amountDue: Decimal | null = null
-      let paymentIntentId: string | null = null
-      let paymentStatus: 'PENDING' | undefined = undefined
-
-      if (requiresPostPayment && event.priceAmount && registrationStatus === 'CONFIRMED') {
-        // Calculate based on pricing model
-        if (event.pricingModel === 'PER_GUEST') {
-          amountDue = new Decimal(event.priceAmount).times(spotsCount)
-        } else {
-          // FIXED_PRICE - single price regardless of spot count
-          amountDue = new Decimal(event.priceAmount)
-        }
-
-        // Generate unique payment intent ID
-        paymentIntentId = createId()
-        paymentStatus = 'PENDING'
-      }
-
-      // Create registration within transaction (without QR code first)
-      const registration = await tx.registration.create({
-        data: {
-          eventId: event.id,
-          data,
-          spotsCount,
-          status: registrationStatus,
-          confirmationCode,
-          phoneNumber: phoneNumber,
-          email: data.email || null,
-          paymentStatus: paymentStatus,
-          amountDue,
-          paymentIntentId
-        }
-      })
-
-      // Generate QR code after we have the registration ID (skip for PENDING payments)
-      if (!requiresPostPayment || registrationStatus === 'WAITLIST') {
-        const qrCodeData = generateQRCodeData(registration.id, event.id)
-
-        // Update registration with QR code
-        await tx.registration.update({
-          where: { id: registration.id },
-          data: { qrCode: qrCodeData }
-        })
-      }
-
-      // Create Payment record if POST_REGISTRATION
-      if (requiresPostPayment && amountDue && paymentIntentId && registrationStatus === 'CONFIRMED') {
-        await tx.payment.create({
-          data: {
-            registrationId: registration.id,
+    const registration = await prisma.$transaction(
+      async (tx) => {
+        // Calculate current confirmed registrations within transaction
+        const currentConfirmed = await tx.registration.aggregate({
+          where: {
             eventId: event.id,
-            schoolId: school.id,
-            amount: amountDue,
-            currency: event.currency,
-            status: 'PENDING',
-            paymentMethod: 'yaadpay',
-            payerEmail: data.email || null,
-            payerPhone: phoneNumber,
-            payerName: data.name,
-            yaadPayOrderId: paymentIntentId
-          }
+            status: 'CONFIRMED',
+          },
+          _sum: {
+            spotsCount: true,
+          },
         })
-      }
 
-      return registration
-    }, {
-      isolationLevel: 'Serializable',
-      timeout: 10000
-    })
+        const totalSpotsTaken = currentConfirmed._sum.spotsCount || 0
+        const spotsLeft = event.capacity - totalSpotsTaken
+
+        // Determine registration status
+        const registrationStatus: 'CONFIRMED' | 'WAITLIST' =
+          spotsLeft >= spotsCount ? 'CONFIRMED' : 'WAITLIST'
+
+        // Generate secure confirmation code
+        const confirmationCode = generateConfirmationCode()
+
+        // Calculate payment amount if POST_REGISTRATION
+        let amountDue: Decimal | null = null
+        let paymentIntentId: string | null = null
+        let paymentStatus: 'PENDING' | undefined = undefined
+
+        if (requiresPostPayment && event.priceAmount && registrationStatus === 'CONFIRMED') {
+          // Calculate based on pricing model
+          if (event.pricingModel === 'PER_GUEST') {
+            amountDue = new Decimal(event.priceAmount).times(spotsCount)
+          } else {
+            // FIXED_PRICE - single price regardless of spot count
+            amountDue = new Decimal(event.priceAmount)
+          }
+
+          // Generate unique payment intent ID
+          paymentIntentId = createId()
+          paymentStatus = 'PENDING'
+        }
+
+        // Create registration within transaction (without QR code first)
+        const registration = await tx.registration.create({
+          data: {
+            eventId: event.id,
+            data,
+            spotsCount,
+            status: registrationStatus,
+            confirmationCode,
+            phoneNumber: phoneNumber,
+            email: data.email || null,
+            paymentStatus: paymentStatus,
+            amountDue,
+            paymentIntentId,
+          },
+        })
+
+        // Generate QR code after we have the registration ID (skip for PENDING payments)
+        if (!requiresPostPayment || registrationStatus === 'WAITLIST') {
+          const qrCodeData = generateQRCodeData(registration.id, event.id)
+
+          // Update registration with QR code
+          await tx.registration.update({
+            where: { id: registration.id },
+            data: { qrCode: qrCodeData },
+          })
+        }
+
+        // Create Payment record if POST_REGISTRATION
+        if (
+          requiresPostPayment &&
+          amountDue &&
+          paymentIntentId &&
+          registrationStatus === 'CONFIRMED'
+        ) {
+          await tx.payment.create({
+            data: {
+              registrationId: registration.id,
+              eventId: event.id,
+              schoolId: school.id,
+              amount: amountDue,
+              currency: event.currency,
+              status: 'PENDING',
+              paymentMethod: 'yaadpay',
+              payerEmail: data.email || null,
+              payerPhone: phoneNumber,
+              payerName: data.name,
+              yaadPayOrderId: paymentIntentId,
+            },
+          })
+        }
+
+        return registration
+      },
+      {
+        isolationLevel: 'Serializable',
+        timeout: 10000,
+      }
+    )
 
     // Generate QR code image only if FREE or WAITLIST (skip for PENDING payments)
     let qrCodeImage: string | undefined
@@ -384,16 +398,23 @@ export async function POST(
       qrCodeImage = await generateQRCodeImage(registration.id, event.id, {
         width: 300,
         margin: 2,
-        checkInToken: event.checkInToken || undefined
+        checkInToken: event.checkInToken || undefined,
       })
     }
 
     // Send appropriate email based on payment mode
     if (data.email) {
       try {
-        const eventDate = format(new Date(event.startAt), 'EEEE, dd בMMMM yyyy בשעה HH:mm', { locale: he })
+        const eventDate = format(new Date(event.startAt), 'EEEE, dd בMMMM yyyy בשעה HH:mm', {
+          locale: he,
+        })
 
-        if (requiresPostPayment && registration.status === 'CONFIRMED' && registration.paymentIntentId && registration.amountDue) {
+        if (
+          requiresPostPayment &&
+          registration.status === 'CONFIRMED' &&
+          registration.paymentIntentId &&
+          registration.amountDue
+        ) {
           // Send invoice email for POST_REGISTRATION
           const paymentLink = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9000'}/payment/pay?intent=${registration.paymentIntentId}`
 
@@ -406,7 +427,7 @@ export async function POST(
             currency: event.currency,
             paymentLink,
             customerName: data.name,
-            confirmationCode: registration.confirmationCode
+            confirmationCode: registration.confirmationCode,
           })
 
           console.log('✅ Payment invoice email sent to:', data.email)
@@ -426,7 +447,7 @@ export async function POST(
               qrCodeImage,
               status: registration.status as 'CONFIRMED' | 'WAITLIST',
               schoolName: school.name || 'TicketCap',
-              cancellationUrl
+              cancellationUrl,
             })
 
             console.log('✅ Registration confirmation email sent to:', data.email)
@@ -447,94 +468,67 @@ export async function POST(
       qrCodeImage, // Include QR code image in response (undefined for pending payments)
       requiresPayment: requiresPostPayment && registration.status === 'CONFIRMED',
       paymentIntentId: requiresPostPayment ? registration.paymentIntentId : undefined,
-      message: requiresPostPayment && registration.status === 'CONFIRMED'
-        ? 'ההרשמה נקלטה - אנא בדוק את המייל לקבלת קישור לתשלום'
-        : registration.status === 'WAITLIST'
-          ? 'נרשמת לרשימת ההמתנה'
-          : 'ההרשמה הושלמה בהצלחה'
+      message:
+        requiresPostPayment && registration.status === 'CONFIRMED'
+          ? 'ההרשמה נקלטה - אנא בדוק את המייל לקבלת קישור לתשלום'
+          : registration.status === 'WAITLIST'
+            ? 'נרשמת לרשימת ההמתנה'
+            : 'ההרשמה הושלמה בהצלחה',
     })
   } catch (error: unknown) {
-    console.error('Error creating registration:', error)
+    // Enhanced error logging for debugging
+    console.error('❌ Registration error:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined,
+    })
 
     // Handle specific error messages
     const errorMessage = error instanceof Error ? error.message : ''
 
     if (errorMessage.includes('School not found')) {
-      return NextResponse.json(
-        { error: 'School not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'School not found' }, { status: 404 })
     }
 
     if (errorMessage.includes('Event not found')) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
     if (errorMessage.includes('registration is closed') || errorMessage.includes('is paused')) {
-      return NextResponse.json(
-        { error: errorMessage },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: errorMessage }, { status: 400 })
     }
 
     if (errorMessage.includes('Invalid spots count')) {
-      return NextResponse.json(
-        { error: errorMessage },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: errorMessage }, { status: 400 })
     }
 
     if (errorMessage.includes('Phone number already registered')) {
-      return NextResponse.json(
-        { error: 'מספר הטלפון כבר רשום לאירוע זה' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'מספר הטלפון כבר רשום לאירוע זה' }, { status: 400 })
     }
 
     if (errorMessage.includes('Invalid phone number')) {
-      return NextResponse.json(
-        { error: 'מספר הטלפון אינו תקין' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'מספר הטלפון אינו תקין' }, { status: 400 })
     }
 
     if (errorMessage.includes('Invalid guest count')) {
-      return NextResponse.json(
-        { error: 'מספר האורחים אינו תקין' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'מספר האורחים אינו תקין' }, { status: 400 })
     }
 
     if (errorMessage.includes('Phone number is required')) {
-      return NextResponse.json(
-        { error: 'מספר טלפון הוא שדה חובה' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'מספר טלפון הוא שדה חובה' }, { status: 400 })
     }
 
     if (errorMessage.includes('Name is required')) {
-      return NextResponse.json(
-        { error: 'שם הוא שדה חובה' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'שם הוא שדה חובה' }, { status: 400 })
     }
 
     if (errorMessage.includes('Phone number is required for table reservation')) {
-      return NextResponse.json(
-        { error: 'מספר טלפון הוא שדה חובה להזמנת שולחן' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'מספר טלפון הוא שדה חובה להזמנת שולחן' }, { status: 400 })
     }
 
     if (errorMessage.includes('חשבונך חסום')) {
       // User is banned - return the full Hebrew message
-      return NextResponse.json(
-        { error: errorMessage },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: errorMessage }, { status: 403 })
     }
 
     if (errorMessage.includes('requires upfront payment')) {
@@ -545,8 +539,15 @@ export async function POST(
       )
     }
 
+    // Include error details in development for debugging
+    const isDev = process.env.NODE_ENV !== 'production'
     return NextResponse.json(
-      { error: 'Failed to register' },
+      {
+        error: 'Failed to register',
+        details: isDev ? errorMessage : undefined,
+        code:
+          error instanceof Error && 'code' in error ? (error as { code: string }).code : undefined,
+      },
       { status: 500 }
     )
   }
