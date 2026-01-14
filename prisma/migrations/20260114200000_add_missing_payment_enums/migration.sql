@@ -108,6 +108,41 @@ EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
 
+-- Add eventType column to Event table if it doesn't exist
+DO $$ BEGIN
+    ALTER TABLE "public"."Event" ADD COLUMN "eventType" "public"."EventType" NOT NULL DEFAULT 'CAPACITY_BASED';
+EXCEPTION
+    WHEN duplicate_column THEN null;
+END $$;
+
+-- Add table-based event columns
+DO $$ BEGIN
+    ALTER TABLE "public"."Event" ADD COLUMN "allowCancellation" BOOLEAN NOT NULL DEFAULT true;
+EXCEPTION
+    WHEN duplicate_column THEN null;
+END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "public"."Event" ADD COLUMN "cancellationDeadlineHours" INTEGER NOT NULL DEFAULT 2;
+EXCEPTION
+    WHEN duplicate_column THEN null;
+END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "public"."Event" ADD COLUMN "requireCancellationReason" BOOLEAN NOT NULL DEFAULT false;
+EXCEPTION
+    WHEN duplicate_column THEN null;
+END $$;
+
+-- Add check-in token column
+DO $$ BEGIN
+    ALTER TABLE "public"."Event" ADD COLUMN "checkInToken" TEXT;
+EXCEPTION
+    WHEN duplicate_column THEN null;
+END $$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "Event_checkInToken_key" ON "public"."Event"("checkInToken");
+
 -- Add payment-related columns to Event table if they don't exist
 DO $$ BEGIN
     ALTER TABLE "public"."Event" ADD COLUMN "paymentRequired" BOOLEAN NOT NULL DEFAULT false;
@@ -162,6 +197,94 @@ UPDATE "public"."Registration" SET "cancelledBy" = 'CUSTOMER' WHERE "cancelledBy
 -- Add indexes for payment fields if they don't exist
 CREATE INDEX IF NOT EXISTS "Registration_paymentStatus_idx" ON "public"."Registration"("paymentStatus");
 CREATE UNIQUE INDEX IF NOT EXISTS "Registration_paymentIntentId_key" ON "public"."Registration"("paymentIntentId");
+
+-- Add guestsCount column for table-based events
+DO $$ BEGIN
+    ALTER TABLE "public"."Registration" ADD COLUMN "guestsCount" INTEGER;
+EXCEPTION
+    WHEN duplicate_column THEN null;
+END $$;
+
+-- Add waitlistPriority column
+DO $$ BEGIN
+    ALTER TABLE "public"."Registration" ADD COLUMN "waitlistPriority" INTEGER;
+EXCEPTION
+    WHEN duplicate_column THEN null;
+END $$;
+
+-- Add QR code column
+DO $$ BEGIN
+    ALTER TABLE "public"."Registration" ADD COLUMN "qrCode" TEXT;
+EXCEPTION
+    WHEN duplicate_column THEN null;
+END $$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "Registration_qrCode_key" ON "public"."Registration"("qrCode");
+
+-- Add cancellation columns
+DO $$ BEGIN
+    ALTER TABLE "public"."Registration" ADD COLUMN "cancellationToken" TEXT;
+EXCEPTION
+    WHEN duplicate_column THEN null;
+END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "public"."Registration" ADD COLUMN "cancelledAt" TIMESTAMP(3);
+EXCEPTION
+    WHEN duplicate_column THEN null;
+END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "public"."Registration" ADD COLUMN "cancellationReason" TEXT;
+EXCEPTION
+    WHEN duplicate_column THEN null;
+END $$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "Registration_cancellationToken_key" ON "public"."Registration"("cancellationToken");
+CREATE INDEX IF NOT EXISTS "Registration_cancellationToken_idx" ON "public"."Registration"("cancellationToken");
+CREATE INDEX IF NOT EXISTS "Registration_eventId_waitlistPriority_idx" ON "public"."Registration"("eventId", "waitlistPriority");
+CREATE INDEX IF NOT EXISTS "Registration_qrCode_idx" ON "public"."Registration"("qrCode");
+
+-- Add School billing columns if missing
+DO $$ BEGIN
+    ALTER TABLE "public"."School" ADD COLUMN "plan" "public"."SubscriptionPlan" NOT NULL DEFAULT 'FREE';
+EXCEPTION
+    WHEN duplicate_column THEN null;
+END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "public"."School" ADD COLUMN "subscriptionStatus" "public"."SubscriptionStatus" NOT NULL DEFAULT 'ACTIVE';
+EXCEPTION
+    WHEN duplicate_column THEN null;
+END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "public"."School" ADD COLUMN "stripeCustomerId" TEXT;
+EXCEPTION
+    WHEN duplicate_column THEN null;
+END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "public"."School" ADD COLUMN "stripeSubscriptionId" TEXT;
+EXCEPTION
+    WHEN duplicate_column THEN null;
+END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "public"."School" ADD COLUMN "trialEndsAt" TIMESTAMP(3);
+EXCEPTION
+    WHEN duplicate_column THEN null;
+END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "public"."School" ADD COLUMN "subscriptionEndsAt" TIMESTAMP(3);
+EXCEPTION
+    WHEN duplicate_column THEN null;
+END $$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "School_stripeCustomerId_key" ON "public"."School"("stripeCustomerId");
+CREATE UNIQUE INDEX IF NOT EXISTS "School_stripeSubscriptionId_key" ON "public"."School"("stripeSubscriptionId");
+CREATE INDEX IF NOT EXISTS "School_plan_idx" ON "public"."School"("plan");
 
 DO $$ BEGIN
     ALTER TABLE "public"."Registration" ADD COLUMN "paymentIntentId" TEXT;
