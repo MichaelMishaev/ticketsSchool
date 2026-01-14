@@ -141,10 +141,27 @@ END $$;
 
 -- Add payment-related columns to Registration table if they don't exist
 DO $$ BEGIN
-    ALTER TABLE "public"."Registration" ADD COLUMN "paymentStatus" "public"."PaymentStatus";
+    ALTER TABLE "public"."Registration" ADD COLUMN "paymentStatus" "public"."PaymentStatus" DEFAULT 'PENDING';
 EXCEPTION
     WHEN duplicate_column THEN null;
 END $$;
+
+-- Update any NULL paymentStatus to PENDING
+UPDATE "public"."Registration" SET "paymentStatus" = 'PENDING' WHERE "paymentStatus" IS NULL;
+
+-- Add cancelledBy column if it doesn't exist (was probably missing from earlier migrations)
+DO $$ BEGIN
+    ALTER TABLE "public"."Registration" ADD COLUMN "cancelledBy" "public"."CancellationSource" DEFAULT 'CUSTOMER';
+EXCEPTION
+    WHEN duplicate_column THEN null;
+END $$;
+
+-- Update any NULL cancelledBy to CUSTOMER
+UPDATE "public"."Registration" SET "cancelledBy" = 'CUSTOMER' WHERE "cancelledBy" IS NULL;
+
+-- Add indexes for payment fields if they don't exist
+CREATE INDEX IF NOT EXISTS "Registration_paymentStatus_idx" ON "public"."Registration"("paymentStatus");
+CREATE UNIQUE INDEX IF NOT EXISTS "Registration_paymentIntentId_key" ON "public"."Registration"("paymentIntentId");
 
 DO $$ BEGIN
     ALTER TABLE "public"."Registration" ADD COLUMN "paymentIntentId" TEXT;
