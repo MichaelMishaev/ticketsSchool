@@ -1,8 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Share2, ExternalLink, CheckCircle2 } from 'lucide-react'
-import Image from 'next/image'
+import { Share2, ExternalLink, CheckCircle2, Copy } from 'lucide-react'
 import ShareOptionsModal from './ShareOptionsModal'
 
 interface EventHeroHeaderProps {
@@ -124,12 +123,8 @@ export default function EventHeroHeader({ event }: EventHeroHeaderProps) {
                     >
                       {/* Icon with smooth transition */}
                       <div className="relative w-4 h-4">
-                        <Image
-                          src="/icons/copy-icon.png"
-                          alt="Copy"
-                          width={16}
-                          height={16}
-                          className={`absolute inset-0 w-4 h-4 object-contain transition-all duration-200 ${
+                        <Copy
+                          className={`absolute inset-0 w-4 h-4 text-gray-600 transition-all duration-200 ${
                             copiedLink
                               ? 'opacity-0 scale-0 rotate-180'
                               : 'opacity-100 scale-100 rotate-0'
