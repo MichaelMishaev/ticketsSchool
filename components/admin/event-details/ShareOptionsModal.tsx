@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { CheckCircle2, Mail, MessageCircle, Send } from 'lucide-react'
-import Image from 'next/image'
+import { CheckCircle2, Mail, MessageCircle, Send, Copy } from 'lucide-react'
 
 interface ShareOptionsModalProps {
   isOpen: boolean
@@ -16,7 +15,7 @@ export default function ShareOptionsModal({
   isOpen,
   onClose,
   url,
-  eventTitle
+  eventTitle,
 }: ShareOptionsModalProps) {
   const modalRef = useRef<HTMLDivElement>(null)
   const [copied, setCopied] = useState(false)
@@ -51,21 +50,21 @@ export default function ShareOptionsModal({
       label: 'WhatsApp',
       icon: MessageCircle,
       color: '#25D366',
-      url: shareUrls.whatsapp
+      url: shareUrls.whatsapp,
     },
     {
       id: 'telegram',
       label: 'Telegram',
       icon: Send,
       color: '#0088CC',
-      url: shareUrls.telegram
+      url: shareUrls.telegram,
     },
     {
       id: 'email',
       label: 'Email',
       icon: Mail,
       color: '#6B7280',
-      url: shareUrls.email
+      url: shareUrls.email,
     },
   ]
 
@@ -140,17 +139,14 @@ export default function ShareOptionsModal({
       dir="rtl"
     >
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40"
-        aria-hidden="true"
-      />
+      <div className="absolute inset-0 bg-black/40" aria-hidden="true" />
 
       {/* Compact Dropdown */}
       <div
         ref={modalRef}
         className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xs overflow-hidden"
         style={{
-          animation: 'scaleIn 200ms ease-out'
+          animation: 'scaleIn 200ms ease-out',
         }}
       >
         {/* Options List */}
@@ -188,19 +184,17 @@ export default function ShareOptionsModal({
           >
             {/* Icon */}
             <div className="flex-shrink-0 w-10 h-10 rounded-full bg-white border-2 border-blue-600 flex items-center justify-center overflow-hidden">
-              <div className="relative w-full h-full">
-                <Image
-                  src="/icons/copy-icon.png"
-                  alt="Copy"
-                  width={40}
-                  height={40}
-                  className={`absolute inset-0 object-contain transition-all duration-200 ${
+              <div className="relative w-5 h-5">
+                <Copy
+                  className={`absolute inset-0 w-5 h-5 text-blue-600 transition-all duration-200 ${
                     copied ? 'opacity-0 scale-0' : 'opacity-100 scale-100'
                   }`}
                 />
-                <CheckCircle2 className={`absolute inset-0 w-5 h-5 text-green-600 m-auto transition-all duration-200 ${
-                  copied ? 'opacity-100 scale-100' : 'opacity-0 scale-0'
-                }`} />
+                <CheckCircle2
+                  className={`absolute inset-0 w-5 h-5 text-green-600 transition-all duration-200 ${
+                    copied ? 'opacity-100 scale-100' : 'opacity-0 scale-0'
+                  }`}
+                />
               </div>
             </div>
 
