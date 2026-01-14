@@ -16,11 +16,12 @@ CREATE TABLE IF NOT EXISTS "_prisma_migrations" (
 
 -- Insert baseline migrations (only if they don't already exist)
 -- These mark all migrations as "applied" so prisma migrate deploy can work
+-- NOTE: checksum uses md5() to fit in VARCHAR(64) column
 
 INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, applied_steps_count)
 SELECT
     gen_random_uuid()::varchar(36),
-    'baseline_checksum_' || migration_name,
+    md5(migration_name),
     NOW(),
     migration_name,
     1

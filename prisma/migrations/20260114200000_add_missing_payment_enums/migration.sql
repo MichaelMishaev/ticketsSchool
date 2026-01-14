@@ -194,6 +194,25 @@ END $$;
 -- Update any NULL cancelledBy to CUSTOMER
 UPDATE "public"."Registration" SET "cancelledBy" = 'CUSTOMER' WHERE "cancelledBy" IS NULL;
 
+-- Add payment columns BEFORE creating indexes on them
+DO $$ BEGIN
+    ALTER TABLE "public"."Registration" ADD COLUMN "paymentIntentId" TEXT;
+EXCEPTION
+    WHEN duplicate_column THEN null;
+END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "public"."Registration" ADD COLUMN "amountDue" DECIMAL(10, 2);
+EXCEPTION
+    WHEN duplicate_column THEN null;
+END $$;
+
+DO $$ BEGIN
+    ALTER TABLE "public"."Registration" ADD COLUMN "amountPaid" DECIMAL(10, 2);
+EXCEPTION
+    WHEN duplicate_column THEN null;
+END $$;
+
 -- Add indexes for payment fields if they don't exist
 CREATE INDEX IF NOT EXISTS "Registration_paymentStatus_idx" ON "public"."Registration"("paymentStatus");
 CREATE UNIQUE INDEX IF NOT EXISTS "Registration_paymentIntentId_key" ON "public"."Registration"("paymentIntentId");
@@ -285,21 +304,3 @@ END $$;
 CREATE UNIQUE INDEX IF NOT EXISTS "School_stripeCustomerId_key" ON "public"."School"("stripeCustomerId");
 CREATE UNIQUE INDEX IF NOT EXISTS "School_stripeSubscriptionId_key" ON "public"."School"("stripeSubscriptionId");
 CREATE INDEX IF NOT EXISTS "School_plan_idx" ON "public"."School"("plan");
-
-DO $$ BEGIN
-    ALTER TABLE "public"."Registration" ADD COLUMN "paymentIntentId" TEXT;
-EXCEPTION
-    WHEN duplicate_column THEN null;
-END $$;
-
-DO $$ BEGIN
-    ALTER TABLE "public"."Registration" ADD COLUMN "amountDue" DECIMAL(10, 2);
-EXCEPTION
-    WHEN duplicate_column THEN null;
-END $$;
-
-DO $$ BEGIN
-    ALTER TABLE "public"."Registration" ADD COLUMN "amountPaid" DECIMAL(10, 2);
-EXCEPTION
-    WHEN duplicate_column THEN null;
-END $$;
