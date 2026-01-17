@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
         title: true,
         schoolId: true,
         status: true,
+        startAt: true,
         paymentRequired: true,
         paymentTiming: true,
         pricingModel: true,
@@ -102,6 +103,11 @@ export async function POST(request: NextRequest) {
 
     if (event.status === 'PAUSED') {
       return NextResponse.json({ error: 'ההרשמה לאירוע מושהית' }, { status: 400 })
+    }
+
+    // Check if event has already started (registration closes at start time)
+    if (new Date(event.startAt) <= new Date()) {
+      return NextResponse.json({ error: 'ההרשמה נסגרה - האירוע כבר התחיל' }, { status: 400 })
     }
 
     // Verify price is configured
@@ -193,9 +199,10 @@ export async function POST(request: NextRequest) {
     // Create registration + payment in atomic transaction
     const result = await prisma.$transaction(
       async (tx) => {
-        // Generate unique payment intent ID using cuid
+        // Generate unique payment intent ID and cancellation token using cuid
         const { createId } = await import('@paralleldrive/cuid2')
         const paymentIntentId = createId()
+        const cancellationToken = createId() // SECURITY: Used for user ticket page URL
 
         // Check for idempotency: if this paymentIntentId already exists, return existing
         const existingPayment = await tx.payment.findFirst({
@@ -233,6 +240,7 @@ export async function POST(request: NextRequest) {
             paymentStatus: 'PROCESSING',
             paymentIntentId: paymentIntentId,
             amountDue: amountDue,
+            cancellationToken: cancellationToken, // SECURITY: Used for user ticket page URL
           },
         })
 

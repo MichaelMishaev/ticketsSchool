@@ -347,11 +347,12 @@ async function handleCallback(request: NextRequest) {
         registrationId: payment.registrationId,
       })
 
-      // Generate QR code for registration
+      // Generate QR code for registration (with secure ticket URL)
       try {
         const qrCodeImage = await generateQRCodeImage(payment.registration.id, payment.event.id, {
           width: 300,
           margin: 2,
+          cancellationToken: payment.registration.cancellationToken || undefined,
         })
 
         // Send confirmation email (don't fail redirect if email fails)

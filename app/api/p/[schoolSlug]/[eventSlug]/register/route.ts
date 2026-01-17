@@ -67,6 +67,11 @@ export async function POST(
       throw new Error('Event registration is paused')
     }
 
+    // Check if event has already started (registration closes at start time)
+    if (new Date(event.startAt) <= new Date()) {
+      throw new Error('Registration is closed - event has already started')
+    }
+
     // CRITICAL SECURITY CHECK: Reject UPFRONT payment events (UNLESS registering for waitlist)
     // UPFRONT payment events must go through the payment API first (/api/payment/create)
     // This prevents users from bypassing payment by calling the registration API directly
@@ -224,7 +229,7 @@ export async function POST(
         qrCodeImage = await generateQRCodeImage(result.registration.id, event.id, {
           width: 300,
           margin: 2,
-          checkInToken: event.checkInToken || undefined,
+          cancellationToken: result.registration.cancellationToken || undefined,
         })
       }
 
@@ -252,7 +257,10 @@ export async function POST(
               confirmationCode: result.registration.confirmationCode,
             })
 
-            registrationLogger.info('Payment invoice email sent', { email: data.email, eventId: event.id })
+            registrationLogger.info('Payment invoice email sent', {
+              email: data.email,
+              eventId: event.id,
+            })
           } else {
             // Send regular confirmation email (FREE or WAITLIST)
             if (qrCodeImage) {
@@ -272,12 +280,18 @@ export async function POST(
                 cancellationUrl,
               })
 
-              registrationLogger.info('Registration confirmation email sent', { email: data.email, eventId: event.id })
+              registrationLogger.info('Registration confirmation email sent', {
+                email: data.email,
+                eventId: event.id,
+              })
             }
           }
         } catch (emailError) {
           // Log error but don't fail the registration
-          registrationLogger.error('Failed to send registration email', { error: emailError, email: data.email })
+          registrationLogger.error('Failed to send registration email', {
+            error: emailError,
+            email: data.email,
+          })
         }
       }
 
@@ -352,6 +366,9 @@ export async function POST(
           paymentStatus = 'PENDING'
         }
 
+        // Generate cancellation token (used for both cancellation URL and secure QR code)
+        const cancellationToken = createId()
+
         // Create registration within transaction (without QR code first)
         const registration = await tx.registration.create({
           data: {
@@ -365,6 +382,7 @@ export async function POST(
             paymentStatus: paymentStatus,
             amountDue,
             paymentIntentId,
+            cancellationToken, // SECURITY: Used for user ticket page URL
           },
         })
 
@@ -419,7 +437,7 @@ export async function POST(
       qrCodeImage = await generateQRCodeImage(registration.id, event.id, {
         width: 300,
         margin: 2,
-        checkInToken: event.checkInToken || undefined,
+        cancellationToken: registration.cancellationToken || undefined,
       })
     }
 
@@ -451,7 +469,10 @@ export async function POST(
             confirmationCode: registration.confirmationCode,
           })
 
-          registrationLogger.info('Payment invoice email sent', { email: data.email, eventId: event.id })
+          registrationLogger.info('Payment invoice email sent', {
+            email: data.email,
+            eventId: event.id,
+          })
         } else {
           // Send regular confirmation email (FREE or WAITLIST)
           if (qrCodeImage) {
@@ -471,12 +492,18 @@ export async function POST(
               cancellationUrl,
             })
 
-            registrationLogger.info('Registration confirmation email sent', { email: data.email, eventId: event.id })
+            registrationLogger.info('Registration confirmation email sent', {
+              email: data.email,
+              eventId: event.id,
+            })
           }
         }
       } catch (emailError) {
         // Log error but don't fail the registration
-        registrationLogger.error('Failed to send registration email', { error: emailError, email: data.email })
+        registrationLogger.error('Failed to send registration email', {
+          error: emailError,
+          email: data.email,
+        })
       }
     }
 
