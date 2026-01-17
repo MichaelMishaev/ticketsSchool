@@ -2,7 +2,19 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Calendar, Users, Clock, Edit, ExternalLink, Trash2, UtensilsCrossed, Copy, Check, Search, X } from 'lucide-react'
+import {
+  Calendar,
+  Users,
+  Clock,
+  Edit,
+  ExternalLink,
+  Trash2,
+  UtensilsCrossed,
+  Copy,
+  Check,
+  Search,
+  X,
+} from 'lucide-react'
 import { format } from 'date-fns'
 import CreateEventDropdown from '@/components/CreateEventDropdown'
 
@@ -43,7 +55,7 @@ export default function EventsPage() {
 
     try {
       const response = await fetch(`/api/events/${eventId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
       })
       if (response.ok) {
         fetchEvents() // Refresh the list
@@ -62,7 +74,7 @@ export default function EventsPage() {
       const response = await fetch(`/api/events/${eventId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({ status: newStatus }),
       })
       if (response.ok) {
         fetchEvents() // Refresh the list
@@ -90,7 +102,9 @@ export default function EventsPage() {
     setSearchResult(null)
 
     try {
-      const response = await fetch(`/api/registrations/search?code=${encodeURIComponent(searchCode.trim())}`)
+      const response = await fetch(
+        `/api/registrations/search?code=${encodeURIComponent(searchCode.trim())}`
+      )
       const data = await response.json()
 
       if (response.ok) {
@@ -117,11 +131,21 @@ export default function EventsPage() {
 
     // Restaurant/dining
     if (normalizedType.includes('מסעדה') || normalizedType.includes('restaurant')) return '🍽️'
-    if (normalizedType.includes('בית קפה') || normalizedType.includes('cafe') || normalizedType.includes('coffee')) return '☕'
+    if (
+      normalizedType.includes('בית קפה') ||
+      normalizedType.includes('cafe') ||
+      normalizedType.includes('coffee')
+    )
+      return '☕'
     if (normalizedType.includes('בר') || normalizedType.includes('bar')) return '🍺'
 
     // Sports
-    if (normalizedType.includes('כדורגל') || normalizedType.includes('soccer') || normalizedType.includes('football')) return '⚽'
+    if (
+      normalizedType.includes('כדורגל') ||
+      normalizedType.includes('soccer') ||
+      normalizedType.includes('football')
+    )
+      return '⚽'
     if (normalizedType.includes('כדורסל') || normalizedType.includes('basketball')) return '🏀'
     if (normalizedType.includes('טניס') || normalizedType.includes('tennis')) return '🎾'
     if (normalizedType.includes('שחייה') || normalizedType.includes('swimming')) return '🏊'
@@ -144,14 +168,23 @@ export default function EventsPage() {
     }
     const { text, className } = statusMap[status] || statusMap.CLOSED
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${className}`}>
+      <span
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${className}`}
+      >
         {text}
       </span>
     )
   }
 
+  // Check if event has already started
+  const isEventPast = (startAt: string | Date): boolean => {
+    const now = new Date()
+    const eventStart = new Date(startAt)
+    return now > eventStart
+  }
+
   // Filter events based on selected type
-  const filteredEvents = events.filter(event => {
+  const filteredEvents = events.filter((event) => {
     if (eventTypeFilter === 'ALL') return true
     return event.eventType === eventTypeFilter
   })
@@ -220,7 +253,9 @@ export default function EventsPage() {
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-gray-700">קוד אישור:</span>
-                <span className="font-mono font-bold text-green-800">{searchResult.confirmationCode}</span>
+                <span className="font-mono font-bold text-green-800">
+                  {searchResult.confirmationCode}
+                </span>
               </div>
               {searchResult.data?.name && (
                 <div className="flex items-center gap-2">
@@ -230,24 +265,34 @@ export default function EventsPage() {
               )}
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-gray-700">טלפון:</span>
-                <span className="text-gray-900 font-mono" dir="ltr">{searchResult.phoneNumber}</span>
+                <span className="text-gray-900 font-mono" dir="ltr">
+                  {searchResult.phoneNumber}
+                </span>
               </div>
               {searchResult.data?.email && (
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-gray-700">אימייל:</span>
-                  <span className="text-gray-900" dir="ltr">{searchResult.data.email}</span>
+                  <span className="text-gray-900" dir="ltr">
+                    {searchResult.data.email}
+                  </span>
                 </div>
               )}
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-gray-700">סטטוס:</span>
-                <span className={`font-semibold ${
-                  searchResult.status === 'CONFIRMED' ? 'text-green-700' :
-                  searchResult.status === 'WAITLIST' ? 'text-yellow-700' :
-                  'text-red-700'
-                }`}>
-                  {searchResult.status === 'CONFIRMED' ? '✓ אושר' :
-                   searchResult.status === 'WAITLIST' ? '⏳ רשימת המתנה' :
-                   '✕ בוטל'}
+                <span
+                  className={`font-semibold ${
+                    searchResult.status === 'CONFIRMED'
+                      ? 'text-green-700'
+                      : searchResult.status === 'WAITLIST'
+                        ? 'text-yellow-700'
+                        : 'text-red-700'
+                  }`}
+                >
+                  {searchResult.status === 'CONFIRMED'
+                    ? '✓ אושר'
+                    : searchResult.status === 'WAITLIST'
+                      ? '⏳ רשימת המתנה'
+                      : '✕ בוטל'}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -299,11 +344,13 @@ export default function EventsPage() {
           >
             <span className="flex items-center gap-2">
               <span>כל האירועים</span>
-              <span className={`inline-flex items-center justify-center min-w-[24px] h-6 px-2 rounded-full text-xs font-bold ${
-                eventTypeFilter === 'ALL'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-600 group-hover:bg-blue-100 group-hover:text-blue-700'
-              }`}>
+              <span
+                className={`inline-flex items-center justify-center min-w-[24px] h-6 px-2 rounded-full text-xs font-bold ${
+                  eventTypeFilter === 'ALL'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 text-gray-600 group-hover:bg-blue-100 group-hover:text-blue-700'
+                }`}
+              >
                 {events.length}
               </span>
             </span>
@@ -320,12 +367,14 @@ export default function EventsPage() {
           >
             <span className="flex items-center gap-2">
               <span>אירועים</span>
-              <span className={`inline-flex items-center justify-center min-w-[24px] h-6 px-2 rounded-full text-xs font-bold ${
-                eventTypeFilter === 'CAPACITY_BASED'
-                  ? 'bg-purple-500 text-white'
-                  : 'bg-gray-100 text-gray-600 group-hover:bg-purple-100 group-hover:text-purple-700'
-              }`}>
-                {events.filter(e => e.eventType === 'CAPACITY_BASED').length}
+              <span
+                className={`inline-flex items-center justify-center min-w-[24px] h-6 px-2 rounded-full text-xs font-bold ${
+                  eventTypeFilter === 'CAPACITY_BASED'
+                    ? 'bg-purple-500 text-white'
+                    : 'bg-gray-100 text-gray-600 group-hover:bg-purple-100 group-hover:text-purple-700'
+                }`}
+              >
+                {events.filter((e) => e.eventType === 'CAPACITY_BASED').length}
               </span>
             </span>
           </button>
@@ -342,12 +391,14 @@ export default function EventsPage() {
             <span className="flex items-center gap-2">
               <span className="text-base">🍽️</span>
               <span>מסעדות</span>
-              <span className={`inline-flex items-center justify-center min-w-[24px] h-6 px-2 rounded-full text-xs font-bold ${
-                eventTypeFilter === 'TABLE_BASED'
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-gray-100 text-gray-600 group-hover:bg-orange-100 group-hover:text-orange-700'
-              }`}>
-                {events.filter(e => e.eventType === 'TABLE_BASED').length}
+              <span
+                className={`inline-flex items-center justify-center min-w-[24px] h-6 px-2 rounded-full text-xs font-bold ${
+                  eventTypeFilter === 'TABLE_BASED'
+                    ? 'bg-orange-500 text-white'
+                    : 'bg-gray-100 text-gray-600 group-hover:bg-orange-100 group-hover:text-orange-700'
+                }`}
+              >
+                {events.filter((e) => e.eventType === 'TABLE_BASED').length}
               </span>
             </span>
           </button>
@@ -369,135 +420,163 @@ export default function EventsPage() {
       ) : (
         <div className="space-y-4">
           {filteredEvents.map((event) => (
-            <div key={event.id} className="bg-white shadow-md rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
+            <div
+              key={event.id}
+              className="bg-white shadow-md rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
+            >
               <div className="px-4 py-5 sm:px-6">
-                  {/* Header Section - Title and Status */}
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4 pb-4 border-b border-gray-200">
-                    {/* Left side: Title and metadata */}
-                    <div className="flex-1">
-                      <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3">
-                        {event.title}
-                      </h3>
+                {/* Header Section - Title and Status */}
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4 pb-4 border-b border-gray-200">
+                  {/* Left side: Title and metadata */}
+                  <div className="flex-1">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3">
+                      {event.title}
+                    </h3>
 
-                      {/* Metadata Row */}
-                      <div className="flex flex-wrap gap-3">
-                        <div className="flex items-center text-sm text-gray-700">
-                          <Calendar className="w-4 h-4 ml-1.5 text-gray-500 flex-shrink-0" />
-                          <span className="font-medium">{format(new Date(event.startAt), 'dd/MM/yyyy HH:mm')}</span>
-                        </div>
-                        <div className="flex items-center text-sm text-gray-700">
-                          <Users className="w-4 h-4 ml-1.5 text-gray-500 flex-shrink-0" />
-                          <span className="font-medium">{event.totalSpotsTaken} / {event.totalCapacity || event.capacity}</span>
-                        </div>
-                        {event.school && (
-                          <span className="inline-flex items-center text-sm font-medium text-purple-700 bg-purple-50 px-2.5 py-1 rounded-md border border-purple-200">
-                            🏫 {event.school.name}
-                          </span>
-                        )}
-                        {event.gameType && (
-                          <span className="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md font-medium text-sm border border-blue-200">
-                            {getGameTypeIcon(event.gameType)} {event.gameType}
-                          </span>
-                        )}
+                    {/* Metadata Row */}
+                    <div className="flex flex-wrap gap-3">
+                      <div className="flex items-center text-sm text-gray-700">
+                        <Calendar className="w-4 h-4 ml-1.5 text-gray-500 flex-shrink-0" />
+                        <span className="font-medium">
+                          {format(new Date(event.startAt), 'dd/MM/yyyy HH:mm')}
+                        </span>
                       </div>
-                    </div>
-
-                    {/* Right side: Status dropdown with explanation */}
-                    <div className="flex flex-col gap-1.5 lg:items-end">
-                      <select
-                        value={event.status}
-                        onChange={(e) => handleStatusChange(event.id, e.target.value as 'OPEN' | 'PAUSED' | 'CLOSED')}
-                        className="text-sm px-3 py-2 border-2 border-gray-300 rounded-lg min-h-[44px] min-w-[110px] font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <option value="OPEN">פתוח ✓</option>
-                        <option value="PAUSED">מושהה ⏸</option>
-                        <option value="CLOSED">סגור ✕</option>
-                      </select>
-                      <p className="text-xs text-gray-600 leading-snug max-w-[280px] lg:text-left">
-                        {event.status === 'OPEN' && 'משתמשים יכולים להירשם לאירוע'}
-                        {event.status === 'PAUSED' && 'השהיה זמנית - ניתן לפתוח מחדש מאוחר יותר'}
-                        {event.status === 'CLOSED' && 'סגירה סופית - האירוע הסתיים או תקופת ההרשמה עברה'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Description */}
-                  {event.description && (
-                    <p className="text-sm text-gray-600 mb-4 leading-relaxed">{event.description}</p>
-                  )}
-
-                  {/* Primary Action - Full width, prominent */}
-                  <Link
-                    href={`/admin/events/${event.id}`}
-                    className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 active:bg-blue-800 min-h-[48px] w-full mb-3 shadow-sm hover:shadow transition-all"
-                    title="ערוך וצפה בהרשמות"
-                  >
-                    <Edit className="w-5 h-5" />
-                    <span>ערוך וצפה בהרשמות</span>
-                  </Link>
-
-                  {/* Secondary Actions */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    <button
-                      onClick={() => copyShareLink(event)}
-                      className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-white bg-green-600 rounded-lg hover:bg-green-700 active:bg-green-800 min-h-[44px] transition-colors shadow-sm"
-                      title="העתק קישור שיתוף"
-                    >
-                      {copiedEventId === event.id ? (
-                        <>
-                          <Check className="w-4 h-4" />
-                          <span>הועתק! ✓</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-4 h-4" />
-                          <span>העתק קישור</span>
-                        </>
+                      {/* Past Event Badge */}
+                      {isEventPast(event.startAt) && (
+                        <span
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 text-gray-700 rounded-md font-semibold text-xs border border-gray-300"
+                          role="status"
+                          aria-label="האירוע כבר החל"
+                          title="האירוע כבר החל"
+                        >
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>הסתיים</span>
+                        </span>
                       )}
-                    </button>
-                    <Link
-                      href={`/p/${event.school.slug}/${event.slug}`}
-                      target="_blank"
-                      className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 min-h-[44px] transition-colors"
-                      title="צפה בדף ההרשמה"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      <span>תצוגה מקדימה</span>
-                    </Link>
-                    {event._count.registrations === 0 && (
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault()
-                          handleDeleteEvent(event.id, event.title)
-                        }}
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 active:bg-red-800 min-h-[44px] transition-colors"
-                        title="מחק אירוע"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span>מחק</span>
-                      </button>
-                    )}
+                      <div className="flex items-center text-sm text-gray-700">
+                        <Users className="w-4 h-4 ml-1.5 text-gray-500 flex-shrink-0" />
+                        <span className="font-medium">
+                          {event.totalSpotsTaken} / {event.totalCapacity || event.capacity}
+                        </span>
+                      </div>
+                      {event.school && (
+                        <span className="inline-flex items-center text-sm font-medium text-purple-700 bg-purple-50 px-2.5 py-1 rounded-md border border-purple-200">
+                          🏫 {event.school.name}
+                        </span>
+                      )}
+                      {event.gameType && (
+                        <span className="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md font-medium text-sm border border-blue-200">
+                          {getGameTypeIcon(event.gameType)} {event.gameType}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Event Code - Technical details */}
-                  <div className="pt-3 border-t border-gray-200">
-                    <div className="text-xs space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-gray-400">קוד:</span>
-                        <span className="font-mono font-medium text-gray-700">{event.slug}</span>
-                      </div>
-                      <div className="flex items-start gap-2 bg-blue-50 p-2 rounded border border-blue-200">
-                        <span className="text-blue-600 whitespace-nowrap font-medium">🔗 קישור שיתוף:</span>
-                        <span className="font-mono text-blue-800 break-all select-all">{typeof window !== 'undefined' ? `${window.location.origin}/p/${event.school.slug}/${event.slug}` : ''}</span>
-                      </div>
+                  {/* Right side: Status dropdown with explanation */}
+                  <div className="flex flex-col gap-1.5 lg:items-end">
+                    <select
+                      value={event.status}
+                      onChange={(e) =>
+                        handleStatusChange(event.id, e.target.value as 'OPEN' | 'PAUSED' | 'CLOSED')
+                      }
+                      className="text-sm px-3 py-2 border-2 border-gray-300 rounded-lg min-h-[44px] min-w-[110px] font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <option value="OPEN">פתוח ✓</option>
+                      <option value="PAUSED">מושהה ⏸</option>
+                      <option value="CLOSED">סגור ✕</option>
+                    </select>
+                    <p className="text-xs text-gray-600 leading-snug max-w-[280px] lg:text-left">
+                      {event.status === 'OPEN' && 'משתמשים יכולים להירשם לאירוע'}
+                      {event.status === 'PAUSED' && 'השהיה זמנית - ניתן לפתוח מחדש מאוחר יותר'}
+                      {event.status === 'CLOSED' &&
+                        'סגירה סופית - האירוע הסתיים או תקופת ההרשמה עברה'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Description */}
+                {event.description && (
+                  <p className="text-sm text-gray-600 mb-4 leading-relaxed">{event.description}</p>
+                )}
+
+                {/* Primary Action - Full width, prominent */}
+                <Link
+                  href={`/admin/events/${event.id}`}
+                  className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 active:bg-blue-800 min-h-[48px] w-full mb-3 shadow-sm hover:shadow transition-all"
+                  title="ערוך וצפה בהרשמות"
+                >
+                  <Edit className="w-5 h-5" />
+                  <span>ערוך וצפה בהרשמות</span>
+                </Link>
+
+                {/* Secondary Actions */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <button
+                    onClick={() => copyShareLink(event)}
+                    className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-white bg-green-600 rounded-lg hover:bg-green-700 active:bg-green-800 min-h-[44px] transition-colors shadow-sm"
+                    title="העתק קישור שיתוף"
+                  >
+                    {copiedEventId === event.id ? (
+                      <>
+                        <Check className="w-4 h-4" />
+                        <span>הועתק! ✓</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" />
+                        <span>העתק קישור</span>
+                      </>
+                    )}
+                  </button>
+                  <Link
+                    href={`/p/${event.school.slug}/${event.slug}`}
+                    target="_blank"
+                    className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 min-h-[44px] transition-colors"
+                    title="צפה בדף ההרשמה"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <span>תצוגה מקדימה</span>
+                  </Link>
+                  {event._count.registrations === 0 && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        handleDeleteEvent(event.id, event.title)
+                      }}
+                      className="flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 active:bg-red-800 min-h-[44px] transition-colors"
+                      title="מחק אירוע"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>מחק</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Event Code - Technical details */}
+                <div className="pt-3 border-t border-gray-200">
+                  <div className="text-xs space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400">קוד:</span>
+                      <span className="font-mono font-medium text-gray-700">{event.slug}</span>
+                    </div>
+                    <div className="flex items-start gap-2 bg-blue-50 p-2 rounded border border-blue-200">
+                      <span className="text-blue-600 whitespace-nowrap font-medium">
+                        🔗 קישור שיתוף:
+                      </span>
+                      <span className="font-mono text-blue-800 break-all select-all">
+                        {typeof window !== 'undefined'
+                          ? `${window.location.origin}/p/${event.school.slug}/${event.slug}`
+                          : ''}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-    )
-  }
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
