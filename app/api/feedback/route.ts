@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger-v2'
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
-    console.error('Error creating feedback:', error)
+    logger.error('Error creating feedback', { source: 'feedback', error })
     return NextResponse.json(
       { error: 'שגיאה בשליחת המשוב. אנא נסה שוב.' },
       { status: 500 }

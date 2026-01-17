@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger-v2'
 
 // DELETE /api/events/[id]/tables/bulk-delete - Delete multiple tables at once
 export async function DELETE(
@@ -86,7 +87,7 @@ export async function DELETE(
       count: result.count
     })
   } catch (error) {
-    console.error('Failed to bulk delete tables:', error)
+    logger.error('Failed to bulk delete tables', { source: 'tables', error })
     return NextResponse.json(
       { error: 'Failed to bulk delete tables' },
       { status: 500 }

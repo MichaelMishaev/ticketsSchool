@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin } from '@/lib/auth.server'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * DELETE /api/admin/team/invitations/[id]
@@ -62,7 +63,7 @@ export async function DELETE(
       message: 'Invitation revoked successfully'
     })
   } catch (error) {
-    console.error('Error revoking invitation:', error)
+    logger.error('Error revoking invitation', { source: 'team', error })
     return NextResponse.json(
       { error: 'Failed to revoke invitation' },
       { status: 500 }

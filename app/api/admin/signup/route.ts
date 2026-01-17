@@ -6,6 +6,7 @@ import { sendVerificationEmail } from '@/lib/email'
 import { encodeSession, SESSION_COOKIE_NAME, type AuthSession } from '@/lib/auth.server'
 import { randomUUID } from 'crypto'
 import { validatePassword } from '@/lib/password-validator'
+import { authLogger } from '@/lib/logger-v2'
 
 // Lazy getter for JWT_SECRET - only validates when actually used (not at import time)
 function getJWTSecret(): string {
@@ -24,14 +25,14 @@ interface SignupRequest {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('[Signup] Starting signup process')
+    authLogger.debug('Starting signup process')
     const body: SignupRequest = await request.json()
     const { email, password, name } = body
-    console.log('[Signup] Received data:', { email, name })
+    authLogger.debug('Received signup data', { email, name })
 
     // Validation
     if (!email || !password || !name) {
-      console.log('[Signup] Validation failed: missing required fields')
+      authLogger.warn('Signup validation failed: missing required fields')
       return NextResponse.json({ error: 'חסרים שדות חובה' }, { status: 400 })
     }
 
@@ -59,28 +60,28 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if email already exists
-    console.log('[Signup] Checking if email exists:', email)
+    authLogger.debug('Checking if email exists', { email })
     const existingAdmin = await prisma.admin.findUnique({
       where: { email: email.toLowerCase() },
     })
 
     if (existingAdmin) {
-      console.log('[Signup] Email already exists')
+      authLogger.info('Signup attempt with existing email', { email })
       return NextResponse.json({ error: 'כתובת המייל הזאת כבר קיימת במערכת' }, { status: 409 })
     }
 
     // Hash password
-    console.log('[Signup] Hashing password')
+    authLogger.debug('Hashing password')
     const passwordHash = await bcrypt.hash(password, 10)
 
     // Generate email verification token (24 hour expiry)
-    console.log('[Signup] Generating verification token')
+    authLogger.debug('Generating verification token')
     const verificationToken = jwt.sign({ email: email.toLowerCase() }, getJWTSecret(), {
       expiresIn: '24h',
     })
 
     // Create admin without school (onboarding will be completed after email verification)
-    console.log('[Signup] Creating admin account')
+    authLogger.debug('Creating admin account')
     const admin = await prisma.admin.create({
       data: {
         email: email.toLowerCase(),
@@ -93,19 +94,19 @@ export async function POST(request: NextRequest) {
         onboardingCompleted: false, // Will be completed after onboarding
       },
     })
-    console.log('[Signup] Admin account created successfully')
+    authLogger.info('Admin account created successfully', { adminId: admin.id, email })
 
     // Send verification email
-    console.log('[Signup] Sending verification email')
+    authLogger.debug('Sending verification email')
     const emailSent = await sendVerificationEmail(email.toLowerCase(), verificationToken, name)
 
     if (!emailSent) {
-      console.warn('[Signup] Verification email failed to send, but account was created')
+      authLogger.warn('Verification email failed to send, but account was created', { email })
     } else {
-      console.log('[Signup] Verification email sent successfully')
+      authLogger.info('Verification email sent successfully', { email })
     }
 
-    console.log('[Signup] Signup completed successfully')
+    authLogger.info('Signup completed successfully', { adminId: admin.id })
     return NextResponse.json({
       success: true,
       message: 'החשבון נוצר בהצלחה! שלחנו לך מייל לאימות.',
@@ -118,14 +119,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     // Log full error details server-side only
     const requestId = randomUUID()
-    console.error('[Signup] ERROR - Request ID:', requestId)
-    console.error('[Signup] ERROR - Full error object:', error)
-    console.error('[Signup] ERROR - Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      type: typeof error,
-      name: error instanceof Error ? error.name : undefined,
-      cause: error instanceof Error ? error.cause : undefined,
+    authLogger.error('Signup failed', {
+      error,
+      requestId,
     })
 
     // Return generic error to client (no internal details exposed)

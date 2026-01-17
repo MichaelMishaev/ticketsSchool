@@ -1,6 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin } from '@/lib/auth.server'
+import { sendOverbookingAlertEmail } from '@/lib/email'
+import { logger } from '@/lib/logger-v2'
+
+// Type for overbooking alert data
+interface OverbookingAlertData {
+  adminEmail: string
+  adminName: string
+  eventName: string
+  eventId: string
+  capacity: number
+  currentConfirmed: number
+  attemptedSpots: number
+  registrantName: string
+  registrantPhone: string
+}
 
 export async function PATCH(
   request: NextRequest,
@@ -9,15 +24,16 @@ export async function PATCH(
   try {
     // Check authentication
     const admin = await getCurrentAdmin()
-    console.log('[Registration PATCH] Authentication check:', admin ? 'Authenticated' : 'Not authenticated')
+    logger.debug('Registration PATCH authentication check', { source: 'registration', authenticated: !!admin })
     if (!admin) {
-      console.error('[Registration PATCH] Unauthorized: No admin session found')
+      logger.warn('Registration PATCH unauthorized: No admin session found', { source: 'registration' })
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
-    console.log('[Registration PATCH] Admin authenticated:', {
+    logger.debug('Registration PATCH admin authenticated', {
+      source: 'registration',
       adminId: admin.adminId,
       email: admin.email,
       role: admin.role,
@@ -27,13 +43,13 @@ export async function PATCH(
     const { id, registrationId } = await params
     const data = await request.json()
 
-    // Verify admin has access to this event's school
-    const event = await prisma.event.findUnique({
+    // Verify admin has access to this event's school (include title for alerts)
+    const eventCheck = await prisma.event.findUnique({
       where: { id },
-      select: { schoolId: true }
+      select: { schoolId: true, title: true }
     })
 
-    if (!event) {
+    if (!eventCheck) {
       return NextResponse.json(
         { error: 'Event not found' },
         { status: 404 }
@@ -41,7 +57,7 @@ export async function PATCH(
     }
 
     // Check school access (SUPER_ADMIN can access all, others must match schoolId)
-    if (admin.role !== 'SUPER_ADMIN' && admin.schoolId !== event.schoolId) {
+    if (admin.role !== 'SUPER_ADMIN' && admin.schoolId !== eventCheck.schoolId) {
       return NextResponse.json(
         { error: 'Forbidden: You do not have access to this event' },
         { status: 403 }
@@ -50,7 +66,7 @@ export async function PATCH(
 
     // Use transaction to ensure atomic operation and prevent race conditions
     const registration = await prisma.$transaction(async (tx) => {
-      // Get current registration with assigned table info
+      // Get current registration with assigned table info and contact details
       const currentRegistration = await tx.registration.findUnique({
         where: { id: registrationId, eventId: id },
         include: {
@@ -78,73 +94,49 @@ export async function PATCH(
       const isIncreasingConfirmedSpots = oldStatus === 'CONFIRMED' && newStatus === 'CONFIRMED' && newSpotsCount > oldSpotsCount
 
       if (isPromotingToConfirmed || isIncreasingConfirmedSpots) {
-        // Check if spotsReserved column exists (Phase 2 migration applied)
-        const eventCheck = await tx.$queryRaw<Array<any>>`
-          SELECT column_name
-          FROM information_schema.columns
-          WHERE table_name = 'Event' AND column_name = 'spotsReserved'
+        // Get event with lock
+        const [event] = await tx.$queryRaw<Array<{
+          id: string
+          capacity: number
+          spotsReserved: number | null
+        }>>`
+          SELECT id, capacity, "spotsReserved" FROM "Event"
+          WHERE id = ${id}
+          FOR UPDATE
         `
 
-        const useSpotsReserved = eventCheck.length > 0
+        if (!event) {
+          throw new Error('Event not found')
+        }
 
-        if (useSpotsReserved) {
-          // PHASE 2: Use atomic counter
-          const spotsNeeded = isPromotingToConfirmed ? newSpotsCount : (newSpotsCount - oldSpotsCount)
+        // CRITICAL: Always validate against REAL aggregate count to prevent overbooking
+        // The spotsReserved counter can get out of sync, so we must verify with actual data
+        const confirmedAgg = await tx.registration.aggregate({
+          where: {
+            eventId: id,
+            status: 'CONFIRMED',
+            id: { not: registrationId } // Exclude this registration if it was already confirmed
+          },
+          _sum: { spotsCount: true }
+        })
 
-          const [event] = await tx.$queryRaw<Array<{
-            id: string
-            capacity: number
-            spotsReserved: number
-          }>>`
-            SELECT id, capacity, "spotsReserved" FROM "Event"
-            WHERE id = ${id}
-            FOR UPDATE
-          `
+        const actualConfirmed = confirmedAgg._sum.spotsCount || 0
+        const spotsNeeded = isPromotingToConfirmed ? newSpotsCount : (newSpotsCount - oldSpotsCount)
+        const actualSpotsLeft = event.capacity - actualConfirmed
 
-          if (!event) {
-            throw new Error('Event not found')
-          }
+        // Block if not enough actual capacity
+        if (actualSpotsLeft < spotsNeeded) {
+          throw new Error(`לא ניתן לאשר: נותרו רק ${actualSpotsLeft} מקומות פנויים, אך ההרשמה דורשת ${spotsNeeded} מקומות`)
+        }
 
-          // Try to atomically reserve spots
-          const updated = await tx.$executeRaw`
+        // Also update the spotsReserved counter for performance optimization
+        // But the aggregate check above is the source of truth
+        if (event.spotsReserved !== null) {
+          await tx.$executeRaw`
             UPDATE "Event"
             SET "spotsReserved" = "spotsReserved" + ${spotsNeeded}
             WHERE id = ${id}
-            AND "spotsReserved" + ${spotsNeeded} <= capacity
           `
-
-          if (updated === 0) {
-            const spotsLeft = event.capacity - event.spotsReserved
-            throw new Error(`Cannot promote: only ${spotsLeft} spots remaining, but registration requires ${spotsNeeded} more spots`)
-          }
-        } else {
-          // PHASE 1: Use aggregate count with row lock
-          const [event] = await tx.$queryRaw<Array<{ id: string; capacity: number }>>`
-            SELECT id, capacity FROM "Event"
-            WHERE id = ${id}
-            FOR UPDATE
-          `
-
-          if (!event) {
-            throw new Error('Event not found')
-          }
-
-          // Count current confirmed spots (excluding this registration)
-          const confirmedAgg = await tx.registration.aggregate({
-            where: {
-              eventId: id,
-              status: 'CONFIRMED',
-              id: { not: registrationId }
-            },
-            _sum: { spotsCount: true }
-          })
-
-          const currentConfirmed = confirmedAgg._sum.spotsCount || 0
-          const spotsLeft = event.capacity - currentConfirmed
-
-          if (spotsLeft < newSpotsCount) {
-            throw new Error(`Cannot promote: only ${spotsLeft} spots remaining, but registration requires ${newSpotsCount} spots`)
-          }
         }
       } else if (oldStatus === 'CONFIRMED' && newStatus !== 'CONFIRMED') {
         // Freeing up spots - update counter if it exists (capacity-based)
@@ -216,12 +208,63 @@ export async function PATCH(
       timeout: 10000
     })
 
+    // SAFETY CHECK: Detect if overbooking somehow occurred (shouldn't happen, but alert if it does)
+    if (data.status === 'CONFIRMED') {
+      try {
+        const [overbookCheck] = await prisma.$queryRaw<Array<{
+          capacity: number
+          confirmedSpots: bigint
+        }>>`
+          SELECT e.capacity,
+                 COALESCE(SUM(r."spotsCount"), 0) as "confirmedSpots"
+          FROM "Event" e
+          LEFT JOIN "Registration" r ON r."eventId" = e.id AND r.status = 'CONFIRMED'
+          WHERE e.id = ${id}
+          GROUP BY e.id
+        `
+
+        if (overbookCheck && Number(overbookCheck.confirmedSpots) > overbookCheck.capacity) {
+          logger.error('OVERBOOKING DETECTED', {
+            source: 'registration',
+            eventId: id,
+            capacity: overbookCheck.capacity,
+            confirmedSpots: Number(overbookCheck.confirmedSpots),
+            overage: Number(overbookCheck.confirmedSpots) - overbookCheck.capacity
+          })
+
+          // Get registration details for the alert
+          const regDetails = await prisma.registration.findUnique({
+            where: { id: registrationId },
+            select: { phoneNumber: true, spotsCount: true, data: true }
+          })
+          const regData = (regDetails?.data as Record<string, any>) || {}
+
+          // Send overbooking alert email
+          sendOverbookingAlertEmail({
+            adminEmail: admin.email,
+            adminName: admin.email.split('@')[0],
+            eventName: eventCheck.title,
+            eventId: id,
+            capacity: overbookCheck.capacity,
+            currentConfirmed: Number(overbookCheck.confirmedSpots),
+            attemptedSpots: regDetails?.spotsCount || 0,
+            registrantName: regData.studentName || regData.name || regData.parentName || 'לא צוין',
+            registrantPhone: regDetails?.phoneNumber || 'לא צוין'
+          }).catch((emailError) => {
+            logger.error('Failed to send overbooking alert email', { source: 'registration', error: emailError })
+          })
+        }
+      } catch (checkError) {
+        logger.error('Error checking for overbooking', { source: 'registration', error: checkError })
+      }
+    }
+
     return NextResponse.json(registration)
   } catch (error: any) {
-    console.error('Error updating registration:', error)
+    logger.error('Error updating registration', { source: 'registration', error })
 
-    // Handle specific error messages
-    if (error.message.includes('Cannot promote')) {
+    // Handle specific error messages (capacity validation errors)
+    if (error.message.includes('Cannot promote') || error.message.includes('לא ניתן לאשר')) {
       return NextResponse.json(
         { error: error.message },
         { status: 400 }
@@ -319,7 +362,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error('Error deleting registration:', error)
+    logger.error('Error deleting registration', { source: 'registration', error })
 
     if (error.message.includes('not found')) {
       return NextResponse.json(

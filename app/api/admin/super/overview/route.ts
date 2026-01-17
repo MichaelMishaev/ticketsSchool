@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireSuperAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
 import { randomUUID } from 'crypto'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * GET /api/admin/super/overview
@@ -33,7 +34,10 @@ export async function GET() {
       .map((event) => event.id)
 
     if (orphanedEventIds.length > 0) {
-      console.warn(`Found ${orphanedEventIds.length} orphaned events without valid schools`)
+      logger.warn('Found orphaned events without valid schools', {
+        source: 'super-admin',
+        orphanedCount: orphanedEventIds.length,
+      })
       // Delete orphaned events
       const deleted = await prisma.event.deleteMany({
         where: {
@@ -42,7 +46,7 @@ export async function GET() {
           },
         },
       })
-      console.log(`Deleted ${deleted.count} orphaned events`)
+      logger.info('Deleted orphaned events', { source: 'super-admin', deletedCount: deleted.count })
     }
 
     // Fetch all events with school and registration data
@@ -122,13 +126,13 @@ export async function GET() {
   } catch (error) {
     // Log full error details server-side only
     const requestId = randomUUID()
-    console.error('[Super Admin Overview] ERROR - Request ID:', requestId)
-    console.error('Super admin overview error:', error)
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
-    console.error('Error details:', {
-      message: error instanceof Error ? error.message : String(error),
-      name: error instanceof Error ? error.name : 'Unknown',
-      type: typeof error,
+    logger.error('Super admin overview error', {
+      source: 'super-admin',
+      requestId,
+      error,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      errorName: error instanceof Error ? error.name : 'Unknown',
+      errorStack: error instanceof Error ? error.stack : undefined,
     })
 
     // Check if it's a forbidden error (not super admin)

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSuperAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * GET /api/admin/super/schools
@@ -54,7 +55,7 @@ export async function GET() {
 
     return NextResponse.json({ schools: formattedSchools })
   } catch (error) {
-    console.error('Get schools error:', error)
+    logger.error('Get schools error', { source: 'super-admin', error })
 
     if (error instanceof Error && error.message.includes('Super admin required')) {
       return NextResponse.json(
@@ -125,7 +126,7 @@ export async function DELETE(request: NextRequest) {
       }
     })
   } catch (error) {
-    console.error('Delete school error:', error)
+    logger.error('Delete school error', { source: 'super-admin', error })
 
     if (error instanceof Error && error.message.includes('Super admin required')) {
       return NextResponse.json(

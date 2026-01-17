@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireSuperAdmin } from '@/lib/auth.server'
+import { logger } from '@/lib/logger-v2'
 
 export async function POST() {
   try {
     // This is a system-wide operation - require SUPER_ADMIN access
     await requireSuperAdmin()
 
-    console.log('🔧 Starting registration status fix...')
+    logger.info('Starting registration status fix', { source: 'admin' })
 
     const events = await prisma.event.findMany({
       include: {
@@ -59,7 +60,7 @@ export async function POST() {
       fixes: fixes
     })
   } catch (error) {
-    console.error('Error fixing registration statuses:', error)
+    logger.error('Error fixing registration statuses', { source: 'admin', error })
     return NextResponse.json(
       { error: 'Failed to fix registration statuses' },
       { status: 500 }

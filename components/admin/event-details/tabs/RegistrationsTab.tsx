@@ -241,8 +241,8 @@ export default function RegistrationsTab({
       } else {
         const error = await response.json()
 
-        // Check if error is due to capacity
-        if (error.error && error.error.includes('Cannot promote')) {
+        // Check if error is due to capacity (supports both English and Hebrew messages)
+        if (error.error && (error.error.includes('Cannot promote') || error.error.includes('לא ניתן לאשר'))) {
           // Event is full - offer to add to waitlist
           const addToWaitlist = confirm(
             `האירוע מלא! ${error.error}\n\nהאם להוסיף את ההרשמה לרשימת המתנה במקום?`

@@ -5,6 +5,7 @@ import { createPaymentRequest, generatePaymentRedirectHTML } from '@/lib/yaadpay
 import { Decimal } from '@prisma/client/runtime/library'
 import { rateLimit } from '@/lib/rate-limiter'
 import { encryptPhone, encryptEmail } from '@/lib/encryption'
+import { paymentLogger } from '@/lib/logger-v2'
 
 const paymentLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
 
   // Runtime safety check - prevent using mock mode in production
   if (process.env.NODE_ENV === 'production' && process.env.YAADPAY_MOCK_MODE === 'true') {
-    console.error('⚠️  CRITICAL: Mock mode is enabled in production!')
+    paymentLogger.error('CRITICAL: Mock mode is enabled in production!')
     return NextResponse.json({ error: 'תצורה לא תקינה של מערכת התשלומים' }, { status: 500 })
   }
 
@@ -208,7 +209,7 @@ export async function POST(request: NextRequest) {
 
         if (existingPayment && existingPayment.registration) {
           // Payment already created, return existing
-          console.log(`[Payment] Idempotency check: Payment ${paymentIntentId} already exists`)
+          paymentLogger.info('Idempotency check: Payment already exists', { paymentIntentId })
           return {
             registration: existingPayment.registration,
             payment: existingPayment,
@@ -271,7 +272,11 @@ export async function POST(request: NextRequest) {
 
     // MOCK MODE: Simulate successful payment for development (bypass YaadPay)
     if (process.env.YAADPAY_MOCK_MODE === 'true') {
-      console.log('[Payment] MOCK MODE: Simulating successful payment')
+      paymentLogger.info('MOCK MODE: Simulating successful payment', {
+        paymentIntentId: result.payment.yaadPayOrderId,
+        registrationId: result.registration.id,
+        eventId: event.id,
+      })
 
       // Simulate payment success - redirect to callback with success params
       const callbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9000'}/api/payment/callback`
@@ -383,7 +388,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    console.log('[Payment] Created payment session:', {
+    paymentLogger.info('Created payment session', {
       paymentIntentId: result.payment.yaadPayOrderId,
       registrationId: result.registration.id,
       eventId: event.id,
@@ -402,7 +407,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error: unknown) {
-    console.error('[Payment] Error creating payment session:', error)
+    paymentLogger.error('Error creating payment session', { error })
 
     // Handle specific errors
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'

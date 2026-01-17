@@ -1,6 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 
+// Edge Runtime compatible structured logging
+// Logs are captured by the platform (Railway, Vercel, etc.)
+function logAuth(
+  level: 'info' | 'warn' | 'error',
+  message: string,
+  context: Record<string, unknown> = {}
+) {
+  const timestamp = new Date().toISOString()
+  const logEntry = {
+    timestamp,
+    level,
+    source: 'middleware',
+    message,
+    ...context,
+  }
+  // Output as JSON for easy parsing in log aggregation
+  console[level](JSON.stringify(logEntry))
+}
+
 // Lazy getter for JWT secret - only validates when actually used (not at import time)
 function getJWTSecret(): Uint8Array {
   const jwtSecret = process.env.JWT_SECRET
@@ -38,7 +57,9 @@ const PUBLIC_PATHS = [
 ]
 
 export async function middleware(request: NextRequest) {
-  const { pathname} = request.nextUrl
+  const startTime = Date.now()
+  const { pathname } = request.nextUrl
+  const requestId = crypto.randomUUID().slice(0, 8)
 
   // Allow public paths
   if (PUBLIC_PATHS.some(path => pathname.startsWith(path))) {
@@ -56,12 +77,18 @@ export async function middleware(request: NextRequest) {
   const sessionCookie = request.cookies.get('admin_session')
 
   if (!sessionCookie) {
+    logAuth('warn', 'Missing session cookie', {
+      requestId,
+      pathname,
+      method: request.method,
+      durationMs: Date.now() - startTime,
+    })
 
     // API routes return 401
     if (pathname.startsWith('/api/')) {
       return NextResponse.json(
         { error: 'Unauthorized' },
-        { status: 401 }
+        { status: 401, headers: { 'X-Request-ID': requestId } }
       )
     }
 
@@ -71,18 +98,28 @@ export async function middleware(request: NextRequest) {
 
   // Verify JWT session
   try {
-    await jwtVerify(sessionCookie.value, getJWTSecret(), {
+    const { payload } = await jwtVerify(sessionCookie.value, getJWTSecret(), {
       algorithms: ['HS256']
     })
 
-    // Session is valid, allow request
-    return NextResponse.next()
+    // Add request ID to response headers for tracing
+    const response = NextResponse.next()
+    response.headers.set('X-Request-ID', requestId)
+    return response
   } catch (error) {
-    console.error('[Middleware] Invalid session token:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+
+    logAuth('error', 'Invalid session token', {
+      requestId,
+      pathname,
+      method: request.method,
+      error: errorMessage,
+      durationMs: Date.now() - startTime,
+    })
 
     // Clear invalid session
     const response = pathname.startsWith('/api/')
-      ? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      ? NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: { 'X-Request-ID': requestId } })
       : NextResponse.redirect(new URL('/admin/login', request.url))
 
     response.cookies.delete('admin_session')

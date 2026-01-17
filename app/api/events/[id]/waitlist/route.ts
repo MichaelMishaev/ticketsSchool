@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth.server'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * GET /api/events/[id]/waitlist
@@ -133,7 +134,7 @@ export async function GET(
       }
     })
   } catch (error: any) {
-    console.error('Waitlist fetch error:', error)
+    logger.error('Waitlist fetch error', { source: 'events', error })
 
     // Handle auth errors
     if (error.message === 'Unauthorized') {

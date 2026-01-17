@@ -411,6 +411,101 @@ export async function sendWelcomeEmail(email: string, name: string, schoolName: 
 }
 
 /**
+ * Send overbooking alert email to admin
+ * Called when someone tries to promote from waitlist but event is full
+ */
+export async function sendOverbookingAlertEmail(params: {
+  adminEmail: string
+  adminName: string
+  eventName: string
+  eventId: string
+  capacity: number
+  currentConfirmed: number
+  attemptedSpots: number
+  registrantName: string
+  registrantPhone: string
+}): Promise<boolean> {
+  const {
+    adminEmail,
+    adminName,
+    eventName,
+    eventId,
+    capacity,
+    currentConfirmed,
+    attemptedSpots,
+    registrantName,
+    registrantPhone,
+  } = params
+
+  const eventUrl = `${BASE_URL}/admin/events/${eventId}?tab=registrations`
+  const overbookAmount = (currentConfirmed + attemptedSpots) - capacity
+
+  const html = `
+    <!DOCTYPE html>
+    <html dir="rtl" lang="he">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; direction: rtl;">
+      <div style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+        <h1 style="color: white; margin: 0; font-size: 28px;">⚠️ התראת חריגה מתפוסה</h1>
+        <p style="color: #fecaca; margin: 10px 0 0;">נחסמה הרשמה שהייתה גורמת לחריגה</p>
+      </div>
+
+      <div style="background: #f7fafc; padding: 30px; border-radius: 0 0 10px 10px;">
+        <h2 style="color: #2d3748; margin-top: 0;">שלום ${adminName},</h2>
+        <p style="font-size: 16px; color: #4a5568;">
+          בוצע ניסיון לאשר הרשמה מרשימת ההמתנה, אך הפעולה נחסמה מכיוון שהייתה גורמת לחריגה מתפוסת האירוע.
+        </p>
+
+        <div style="background: #fee2e2; border: 2px solid #dc2626; border-radius: 8px; padding: 20px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #7f1d1d;">🚨 פרטי הניסיון</h3>
+          <p style="margin: 8px 0;"><strong>אירוע:</strong> ${eventName}</p>
+          <p style="margin: 8px 0;"><strong>תפוסה מקסימלית:</strong> ${capacity}</p>
+          <p style="margin: 8px 0;"><strong>מאושרים כרגע:</strong> ${currentConfirmed}</p>
+          <p style="margin: 8px 0;"><strong>מקומות שהתבקשו:</strong> ${attemptedSpots}</p>
+          <p style="margin: 8px 0; color: #dc2626; font-weight: bold;">חריגה שנמנעה: ${overbookAmount} מקומות</p>
+        </div>
+
+        <div style="background: white; border: 2px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #2d3748;">👤 פרטי הנרשם</h3>
+          <p style="margin: 8px 0;"><strong>שם:</strong> ${registrantName}</p>
+          <p style="margin: 8px 0;"><strong>טלפון:</strong> ${registrantPhone}</p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${eventUrl}"
+             style="background: #dc2626; color: white; padding: 14px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; font-size: 16px;">
+            צפה באירוע
+          </a>
+        </div>
+
+        <div style="background: #dbeafe; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 4px;">
+          <p style="margin: 0; color: #1e40af; font-size: 14px;">
+            <strong>💡 מה לעשות?</strong><br>
+            • בדוק אם יש הרשמות מבוטלות שאפשר למחוק<br>
+            • שקול להגדיל את תפוסת האירוע<br>
+            • צור קשר עם הנרשם להסביר את המצב
+          </p>
+        </div>
+
+        <p style="font-size: 12px; color: #718096; border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 30px; text-align: center;">
+          התראה זו נשלחה אוטומטית ממערכת Kartis
+        </p>
+      </div>
+    </body>
+    </html>
+  `
+
+  return sendEmail({
+    to: adminEmail,
+    subject: `⚠️ התראת חריגה מתפוסה - ${eventName}`,
+    html,
+  })
+}
+
+/**
  * Send payment invoice email
  */
 export async function sendPaymentInvoiceEmail(params: {

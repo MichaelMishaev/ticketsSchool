@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { Loader2, AlertCircle } from 'lucide-react'
 import EventTabNavigation, { TabId } from '@/components/admin/event-details/EventTabNavigation'
@@ -60,6 +60,7 @@ export default function EventDetailsTabbed() {
   const [registrations, setRegistrations] = useState<Registration[]>([])
   const [loading, setLoading] = useState(true)
   const [checkInLink, setCheckInLink] = useState<string | null>(null)
+  const tabContentRef = useRef<HTMLDivElement>(null)
 
   // Check if check-in is available (same logic as CheckInTab)
   // Check-in should only show when it's the event day AND event hasn't ended
@@ -84,6 +85,18 @@ export default function EventDetailsTabbed() {
       setActiveTab(urlTab)
     }
   }, [searchParams])
+
+  // Scroll to top of tab content when tab changes
+  // This ensures users see the top of the tab, not the footer
+  useEffect(() => {
+    if (tabContentRef.current) {
+      // Scroll the tab content container into view at the top
+      tabContentRef.current.scrollIntoView({ behavior: 'instant', block: 'start' })
+    } else {
+      // Fallback: scroll window to top
+      window.scrollTo({ top: 0, behavior: 'instant' })
+    }
+  }, [activeTab])
 
   // Fetch event data
   useEffect(() => {
@@ -156,6 +169,7 @@ export default function EventDetailsTabbed() {
 
       {/* Tab Content - Add padding for bottom bars */}
       <div
+        ref={tabContentRef}
         role="tabpanel"
         id={`${activeTab}-panel`}
         aria-labelledby={`${activeTab}-tab`}

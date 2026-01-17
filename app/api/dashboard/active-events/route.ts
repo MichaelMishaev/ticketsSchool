@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin } from '@/lib/auth.server'
+import { logger } from '@/lib/logger-v2'
 
 export async function GET(request: NextRequest) {
   try {
@@ -92,7 +93,7 @@ export async function GET(request: NextRequest) {
       events: eventsWithDetails
     })
   } catch (error) {
-    console.error('Error fetching active events:', error)
+    logger.error('Error fetching active events', { source: 'dashboard', error })
     return NextResponse.json(
       { error: 'Failed to fetch active events' },
       { status: 500 }

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin } from '@/lib/auth.server'
 import { sendTeamInvitationEmail } from '@/lib/email'
 import crypto from 'crypto'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * POST /api/admin/team/invitations/[id]/resend
@@ -88,7 +89,7 @@ export async function POST(
         newToken
       )
     } catch (emailError) {
-      console.error('Failed to resend invitation email:', emailError)
+      logger.error('Failed to resend invitation email', { source: 'team', error: emailError })
       return NextResponse.json(
         { error: 'Failed to send email, but invitation was updated' },
         { status: 500 }
@@ -100,7 +101,7 @@ export async function POST(
       message: 'Invitation resent successfully'
     })
   } catch (error) {
-    console.error('Error resending invitation:', error)
+    logger.error('Error resending invitation', { source: 'team', error })
     return NextResponse.json(
       { error: 'Failed to resend invitation' },
       { status: 500 }

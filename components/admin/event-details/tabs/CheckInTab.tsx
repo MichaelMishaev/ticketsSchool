@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Calendar, Clock, Copy, Check, QrCode, Search, UserCheck, RefreshCw } from 'lucide-react'
+import { Calendar, Clock, Copy, Check, QrCode, Search, UserCheck, RefreshCw, Users, ListChecks, UserX } from 'lucide-react'
 
 interface CheckInTabProps {
   eventId: string
@@ -302,7 +302,7 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
     stats.confirmed > 0 ? Math.round((stats.checkedIn / stats.confirmed) * 100) : 0
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-44 md:pb-6" dir="rtl">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-44 md:pb-6 overflow-x-hidden" dir="rtl">
       {/* Success Toast */}
       {showSuccessToast && (
         <div className="fixed bottom-40 md:bottom-6 left-1/2 -translate-x-1/2 z-50 animate-[slideUp_300ms_ease-out]">
@@ -423,18 +423,18 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-sm text-green-700 mb-1">הגיעו</p>
-                <p className="text-3xl font-bold text-green-600">{stats.checkedIn}</p>
+            <div className="grid grid-cols-3 gap-3 sm:gap-4 w-full">
+              <div className="text-center p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg min-w-0 overflow-hidden">
+                <p className="text-xs sm:text-sm text-green-700 mb-1 truncate">הגיעו</p>
+                <p className="text-2xl sm:text-3xl font-bold text-green-600">{stats.checkedIn}</p>
               </div>
-              <div className="text-center p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-sm text-amber-700 mb-1">ממתינים</p>
-                <p className="text-3xl font-bold text-amber-600">{stats.notCheckedIn}</p>
+              <div className="text-center p-3 sm:p-4 bg-amber-50 border border-amber-200 rounded-lg min-w-0 overflow-hidden">
+                <p className="text-xs sm:text-sm text-amber-700 mb-1 truncate">ממתינים</p>
+                <p className="text-2xl sm:text-3xl font-bold text-amber-600">{stats.notCheckedIn}</p>
               </div>
-              <div className="text-center p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-700 mb-1">רשימת המתנה</p>
-                <p className="text-3xl font-bold text-blue-600">{stats.waitlist}</p>
+              <div className="text-center p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg min-w-0 overflow-hidden">
+                <p className="text-xs sm:text-sm text-blue-700 mb-1 truncate">המתנה</p>
+                <p className="text-2xl sm:text-3xl font-bold text-blue-600">{stats.waitlist}</p>
               </div>
             </div>
           </div>
@@ -586,46 +586,121 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
           </div>
         </>
       ) : (
-        // Before Event Day - Preview
+        // Before Event Day - Modern Preview (2026 Design)
         <>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Calendar className="w-8 h-8 text-blue-600" />
-            </div>
-
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              האירוע מתחיל בעוד {daysUntilEvent} ימים
-            </h2>
-            <p className="text-gray-600 mb-6">עמוד הכניסה יפתח ביום האירוע</p>
-
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg">
-              <Clock className="w-4 h-4" />
-              <span className="text-sm font-medium">
-                {eventDateObj.toLocaleDateString('he-IL', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
-              </span>
-            </div>
-
-            {/* Preview Stats */}
-            <div className="mt-8 grid grid-cols-3 gap-4 max-w-md mx-auto">
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-sm text-green-700 mb-1">מאושרים</p>
-                <p className="text-2xl font-bold text-green-600">{stats.confirmed}</p>
-              </div>
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-sm text-amber-700 mb-1">המתנה</p>
-                <p className="text-2xl font-bold text-amber-600">{stats.waitlist}</p>
-              </div>
-              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <p className="text-sm text-gray-700 mb-1">ביטולים</p>
-                <p className="text-2xl font-bold text-gray-600">{stats.cancelled}</p>
+          {/* Loading Skeleton */}
+          {loading ? (
+            <div className="space-y-6 animate-pulse" role="status" aria-label="טוען נתונים...">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+                <div className="w-20 h-20 bg-gray-200 rounded-full mx-auto mb-6"></div>
+                <div className="h-8 bg-gray-200 rounded-lg max-w-md mx-auto mb-4"></div>
+                <div className="h-4 bg-gray-200 rounded-lg max-w-xs mx-auto mb-8"></div>
+                <div className="space-y-4">
+                  <div className="h-32 bg-gray-200 rounded-xl"></div>
+                  <div className="h-32 bg-gray-200 rounded-xl"></div>
+                  <div className="h-32 bg-gray-200 rounded-xl"></div>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <>
+              {/* Hero Section - Compact */}
+              <div className="relative bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-xl shadow-md overflow-hidden mb-4">
+                <div className="relative p-5 text-center text-white">
+                  {/* Icon */}
+                  <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mx-auto mb-3 border border-white/30">
+                    <Calendar className="w-6 h-6 text-white" />
+                  </div>
+
+                  {/* Heading */}
+                  <h1 className="text-xl sm:text-2xl font-bold mb-2">
+                    האירוע מתחיל בעוד{' '}
+                    <span className="inline-block px-2 py-0.5 bg-white/20 rounded-md border border-white/30">
+                      {daysUntilEvent}
+                    </span>{' '}
+                    ימים
+                  </h1>
+
+                  <p className="text-blue-100 text-sm mb-3">
+                    עמוד הכניסה יפתח ביום האירוע
+                  </p>
+
+                  {/* Event Date Badge */}
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 backdrop-blur-md text-white rounded-lg border border-white/20 text-sm">
+                    <Clock className="w-4 h-4" />
+                    <span className="font-medium">
+                      {eventDateObj.toLocaleDateString('he-IL', {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long',
+                      })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats Grid - Compact 3-Column */}
+              <div className="grid grid-cols-3 gap-3" role="region" aria-label="סטטיסטיקות הרשמה">
+                {/* Confirmed Card */}
+                <article
+                  className="bg-green-50 border border-green-200 rounded-xl p-4 text-center"
+                  aria-labelledby="stat-confirmed"
+                >
+                  <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center mx-auto mb-2">
+                    <Users className="w-5 h-5 text-white" aria-hidden="true" />
+                  </div>
+                  <p id="stat-confirmed" className="text-xs font-medium text-green-700 mb-1">
+                    מאושרים
+                  </p>
+                  <p className="text-2xl font-bold text-green-600 tabular-nums">
+                    {stats.confirmed}
+                  </p>
+                </article>
+
+                {/* Waitlist Card */}
+                <article
+                  className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center"
+                  aria-labelledby="stat-waitlist"
+                >
+                  <div className="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center mx-auto mb-2">
+                    <ListChecks className="w-5 h-5 text-white" aria-hidden="true" />
+                  </div>
+                  <p id="stat-waitlist" className="text-xs font-medium text-amber-700 mb-1">
+                    המתנה
+                  </p>
+                  <p className="text-2xl font-bold text-amber-600 tabular-nums">
+                    {stats.waitlist}
+                  </p>
+                </article>
+
+                {/* Cancelled Card */}
+                <article
+                  className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center"
+                  aria-labelledby="stat-cancelled"
+                >
+                  <div className="w-10 h-10 bg-gray-400 rounded-lg flex items-center justify-center mx-auto mb-2">
+                    <UserX className="w-5 h-5 text-white" aria-hidden="true" />
+                  </div>
+                  <p id="stat-cancelled" className="text-xs font-medium text-gray-600 mb-1">
+                    ביטולים
+                  </p>
+                  <p className="text-2xl font-bold text-gray-500 tabular-nums">
+                    {stats.cancelled}
+                  </p>
+                </article>
+              </div>
+
+              {/* Info Card - Compact */}
+              <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center gap-3" role="note">
+                <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <QrCode className="w-4 h-4 text-white" aria-hidden="true" />
+                </div>
+                <p className="text-sm text-blue-700">
+                  <span className="font-medium">מערכת הכניסה תפעל ביום האירוע</span> - סריקת QR ורישום נוכחות
+                </p>
+              </div>
+            </>
+          )}
         </>
       )}
 
@@ -639,6 +714,11 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
             transform: translate(-50%, 0);
             opacity: 1;
           }
+        }
+
+        /* Smooth number transitions */
+        .tabular-nums {
+          font-variant-numeric: tabular-nums;
         }
       `}</style>
     </div>

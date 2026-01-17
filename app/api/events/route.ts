@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { EventFormData } from '@/types'
 import { getCurrentAdmin } from '@/lib/auth.server'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * Hebrew to English transliteration map
@@ -189,7 +190,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(eventsWithSpots)
   } catch (error) {
-    console.error('Error fetching events:', error)
+    logger.error('Error fetching events', { source: 'events', error })
     return NextResponse.json(
       { error: 'Failed to fetch events' },
       { status: 500 }
@@ -250,6 +251,15 @@ export async function POST(request: NextRequest) {
     if (isNaN(startAt.getTime())) {
       return NextResponse.json(
         { error: 'Invalid start date' },
+        { status: 400 }
+      )
+    }
+
+    // Prevent creating events with past dates
+    const now = new Date()
+    if (startAt < now) {
+      return NextResponse.json(
+        { error: 'לא ניתן ליצור אירוע עם תאריך ושעה שעברו' },
         { status: 400 }
       )
     }
@@ -326,7 +336,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(event)
   } catch (error) {
-    console.error('Error creating event:', error)
+    logger.error('Error creating event', { source: 'events', error })
     return NextResponse.json(
       { error: 'Failed to create event' },
       { status: 500 }

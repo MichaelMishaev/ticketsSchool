@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin } from '@/lib/auth.server'
+import { logger } from '@/lib/logger-v2'
 
 function generateCSV(event: any): string {
   const headers = ['#', 'קוד אישור', 'סטטוס', 'מקומות', 'תאריך הרשמה']
@@ -93,7 +94,7 @@ export async function GET(
       }
     })
   } catch (error) {
-    console.error('Error exporting CSV:', error)
+    logger.error('Error exporting CSV', { source: 'events', error })
     return NextResponse.json(
       { error: 'Failed to export CSV' },
       { status: 500 }

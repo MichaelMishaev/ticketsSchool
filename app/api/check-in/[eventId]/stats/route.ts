@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth.server'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * GET /api/check-in/[eventId]/stats
@@ -91,7 +92,7 @@ export async function GET(
       },
     })
   } catch (error) {
-    console.error('Error fetching check-in stats:', error)
+    logger.error('Error fetching check-in stats', { source: 'check-in', error })
     return NextResponse.json({ error: 'Failed to load statistics' }, { status: 500 })
   }
 }

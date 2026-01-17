@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger-v2'
 
 // POST /api/events/[id]/tables/save-as-template - Save current tables as template
 export async function POST(
@@ -113,7 +114,7 @@ export async function POST(
       }
     }, { status: 201 })
   } catch (error) {
-    console.error('Failed to save template:', error)
+    logger.error('Failed to save template', { source: 'tables', error })
     return NextResponse.json(
       { error: 'Failed to save template' },
       { status: 500 }

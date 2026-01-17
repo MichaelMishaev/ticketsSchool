@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import * as jwt from 'jsonwebtoken'
 import { sendPasswordResetEmail } from '@/lib/email'
 import { rateLimit } from '@/lib/rate-limiter'
+import { logger } from '@/lib/logger-v2'
 
 const forgotPasswordLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
     const emailSent = await sendPasswordResetEmail(admin.email, resetToken, admin.name)
 
     if (!emailSent) {
-      console.warn('Password reset email failed to send')
+      logger.warn('Password reset email failed to send', { source: 'auth', email: email.toLowerCase() })
     }
 
     return NextResponse.json({
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
       emailSent,
     })
   } catch (error) {
-    console.error('Forgot password error:', error)
+    logger.error('Forgot password error', { source: 'auth', error })
     return NextResponse.json({ error: 'שגיאה בשליחת המייל. נסה שוב.' }, { status: 500 })
   }
 }

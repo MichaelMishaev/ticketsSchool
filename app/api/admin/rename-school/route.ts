@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin } from '@/lib/auth.server'
 import { randomUUID } from 'crypto'
+import { logger } from '@/lib/logger-v2'
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'oldName and newName are required' }, { status: 400 })
     }
 
-    console.log(`[Rename School] Attempting to rename "${oldName}" to "${newName}"`)
+    logger.info('Attempting to rename school', { source: 'admin', oldName, newName })
 
     // Find the school by old name
     const school = await prisma.school.findFirst({
@@ -40,11 +41,7 @@ export async function POST(request: NextRequest) {
       data: { name: newName },
     })
 
-    console.log(`[Rename School] ✅ Successfully renamed school:`)
-    console.log(`  ID: ${updatedSchool.id}`)
-    console.log(`  Old Name: ${oldName}`)
-    console.log(`  New Name: ${updatedSchool.name}`)
-    console.log(`  Slug: ${updatedSchool.slug}`)
+    logger.info('Successfully renamed school', { source: 'admin', schoolId: updatedSchool.id, oldName, newName: updatedSchool.name, slug: updatedSchool.slug })
 
     return NextResponse.json({
       success: true,
@@ -58,12 +55,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     // Log full error details server-side only
     const requestId = randomUUID()
-    console.error('[Rename School] ERROR - Request ID:', requestId)
-    console.error('[Rename School] Error:', error)
-    console.error('[Rename School] Error details:', {
-      message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-    })
+    logger.error('Error renaming school', { source: 'admin', requestId, error })
 
     // Return generic error to client (no internal details exposed)
     return NextResponse.json(

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin } from '@/lib/auth.server'
+import { logger } from '@/lib/logger-v2'
 
 export async function GET(request: NextRequest) {
   try {
@@ -87,7 +88,7 @@ export async function GET(request: NextRequest) {
       occupancyRate
     })
   } catch (error) {
-    console.error('Error fetching dashboard stats:', error)
+    logger.error('Error fetching dashboard stats', { source: 'dashboard', error })
     return NextResponse.json(
       { error: 'Failed to fetch stats' },
       { status: 500 }

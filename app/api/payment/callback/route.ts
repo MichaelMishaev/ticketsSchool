@@ -6,6 +6,7 @@ import { generateQRCodeImage } from '@/lib/qr-code'
 import { format } from 'date-fns'
 import { he } from 'date-fns/locale'
 import { Decimal } from '@prisma/client/runtime/library'
+import { paymentLogger } from '@/lib/logger-v2'
 
 // In-memory nonce tracking for callback replay protection
 const processedCallbacks = new Set<string>()
@@ -13,9 +14,9 @@ const processedCallbacks = new Set<string>()
 // Cleanup old nonces every hour to prevent memory leak
 setInterval(
   () => {
-    console.log(
-      `[Payment Callback] Clearing ${processedCallbacks.size} processed callbacks from memory`
-    )
+    paymentLogger.debug('Clearing processed callbacks from memory', {
+      count: processedCallbacks.size,
+    })
     processedCallbacks.clear()
   },
   60 * 60 * 1000
@@ -63,10 +64,10 @@ async function handleCallback(request: NextRequest) {
     // Parse callback parameters
     const params = parseCallbackParams(request)
 
-    console.log('[Payment Callback] Received:', {
-      CCode: params.CCode,
-      Order: params.Order,
-      Id: params.Id,
+    paymentLogger.info('Callback received', {
+      cCode: params.CCode,
+      orderId: params.Order,
+      transactionId: params.Id,
       method: request.method,
     })
 
@@ -74,7 +75,7 @@ async function handleCallback(request: NextRequest) {
     const validation = validateCallback(params)
 
     if (!validation.isValid) {
-      console.error('[Payment Callback] Invalid callback:', validation.errorMessage)
+      paymentLogger.error('Invalid callback', { error: validation.errorMessage })
       return NextResponse.redirect(
         new URL(
           `/payment/failed?error=${encodeURIComponent(validation.errorMessage || 'Invalid callback')}`,
@@ -102,7 +103,7 @@ async function handleCallback(request: NextRequest) {
     })
 
     if (!payment) {
-      console.error('[Payment Callback] Payment not found:', validation.orderId)
+      paymentLogger.error('Payment not found', { orderId: validation.orderId })
       return NextResponse.redirect(
         new URL(`/payment/failed?error=${encodeURIComponent('תשלום לא נמצא במערכת')}`, request.url)
       )
@@ -110,7 +111,10 @@ async function handleCallback(request: NextRequest) {
 
     // CRITICAL: Idempotency check - if already completed, skip processing
     if (payment.status === 'COMPLETED') {
-      console.log('[Payment Callback] Payment already completed, redirecting to success')
+      paymentLogger.info('Payment already completed, redirecting to success', {
+        orderId: validation.orderId,
+        registrationId: payment.registrationId,
+      })
       return NextResponse.redirect(
         new URL(`/payment/success?code=${payment.registration.confirmationCode}`, request.url)
       )
@@ -118,9 +122,10 @@ async function handleCallback(request: NextRequest) {
 
     // Verify multi-tenant isolation
     if (payment.schoolId !== payment.event.schoolId) {
-      console.error('[Payment Callback] School ID mismatch:', {
+      paymentLogger.error('School ID mismatch - multi-tenant isolation breach', {
         paymentSchoolId: payment.schoolId,
         eventSchoolId: payment.event.schoolId,
+        orderId: validation.orderId,
       })
       return NextResponse.redirect(
         new URL(`/payment/failed?error=${encodeURIComponent('שגיאה במערכת')}`, request.url)
@@ -132,11 +137,10 @@ async function handleCallback(request: NextRequest) {
 
     // Check if already processed (replay attack detection)
     if (processedCallbacks.has(callbackFingerprint)) {
-      console.warn('[Payment Callback] REPLAY ATTACK DETECTED - Callback already processed', {
+      paymentLogger.warn('REPLAY ATTACK DETECTED - Callback already processed', {
         orderId: validation.orderId,
         transactionId: validation.transactionId,
         amount: validation.amount,
-        timestamp: new Date().toISOString(),
         method: request.method,
       })
 
@@ -154,7 +158,7 @@ async function handleCallback(request: NextRequest) {
           },
         })
       } catch (err) {
-        console.error('[Payment] Failed to log replay attack:', err)
+        paymentLogger.error('Failed to log replay attack', { error: err })
       }
 
       // Return success (idempotent) but don't process again
@@ -197,14 +201,13 @@ async function handleCallback(request: NextRequest) {
 
           // EXACT match required - no tolerance for tampering
           if (!expectedAmount.equals(paidAmount)) {
-            console.error('[Payment] AMOUNT MISMATCH DETECTED - Potential tampering!', {
+            paymentLogger.error('AMOUNT MISMATCH DETECTED - Potential tampering!', {
               paymentId: payment.id,
               expected: expectedAmount.toString(),
               received: paidAmount.toString(),
               orderId: validation.orderId,
               transactionId: validation.transactionId,
               difference: expectedAmount.minus(paidAmount).toString(),
-              timestamp: new Date().toISOString(),
             })
 
             // Log to security incident system
@@ -221,7 +224,7 @@ async function handleCallback(request: NextRequest) {
                 },
               })
             } catch (err) {
-              console.error('[Payment] Failed to log breach incident:', err)
+              paymentLogger.error('Failed to log breach incident', { error: err })
             }
 
             throw new Error('amount_mismatch')
@@ -329,7 +332,9 @@ async function handleCallback(request: NextRequest) {
 
     // If already processed in concurrent request, redirect to success
     if (result.alreadyProcessed) {
-      console.log('[Payment Callback] Payment processed by concurrent request, redirecting')
+      paymentLogger.info('Payment processed by concurrent request, redirecting', {
+        orderId: validation.orderId,
+      })
       return NextResponse.redirect(
         new URL(`/payment/success?code=${payment.registration.confirmationCode}`, request.url)
       )
@@ -337,7 +342,10 @@ async function handleCallback(request: NextRequest) {
 
     // Handle success case
     if (result.success) {
-      console.log('[Payment Callback] Payment successful, sending confirmation email')
+      paymentLogger.info('Payment successful, sending confirmation email', {
+        orderId: validation.orderId,
+        registrationId: payment.registrationId,
+      })
 
       // Generate QR code for registration
       try {
@@ -371,16 +379,23 @@ async function handleCallback(request: NextRequest) {
               cancellationUrl,
             })
 
-            console.log(
-              '[Payment Callback] Confirmation email sent to:',
-              payment.registration.email
-            )
+            paymentLogger.info('Confirmation email sent', {
+              email: payment.registration.email,
+              orderId: validation.orderId,
+            })
           } catch (emailError) {
-            console.error('[Payment Callback] Failed to send confirmation email:', emailError)
+            paymentLogger.error('Failed to send confirmation email', {
+              error: emailError,
+              email: payment.registration.email,
+              orderId: validation.orderId,
+            })
           }
         }
       } catch (qrError) {
-        console.error('[Payment Callback] Failed to generate QR code:', qrError)
+        paymentLogger.error('Failed to generate QR code', {
+          error: qrError,
+          registrationId: payment.registrationId,
+        })
       }
 
       // Redirect to success page
@@ -389,7 +404,11 @@ async function handleCallback(request: NextRequest) {
       )
     } else {
       // Handle failure case
-      console.error('[Payment Callback] Payment failed:', result.errorMessage)
+      paymentLogger.error('Payment failed', {
+        error: result.errorMessage,
+        orderId: validation.orderId,
+        registrationId: payment.registrationId,
+      })
       return NextResponse.redirect(
         new URL(
           `/payment/failed?error=${encodeURIComponent(result.errorMessage || 'תשלום נכשל')}`,
@@ -398,7 +417,7 @@ async function handleCallback(request: NextRequest) {
       )
     }
   } catch (error) {
-    console.error('[Payment Callback] Unexpected error:', error)
+    paymentLogger.error('Unexpected error in payment callback', { error })
 
     // Map error to safe error code (prevent XSS)
     let errorCode = 'default'

@@ -9,6 +9,7 @@ import { he } from 'date-fns/locale'
 import { createId } from '@paralleldrive/cuid2'
 import { Decimal } from '@prisma/client/runtime/library'
 import { generateCheckInToken, validateCheckInTokenFormat } from '@/lib/check-in-token'
+import { registrationLogger } from '@/lib/logger-v2'
 
 /**
  * POST /api/p/[schoolSlug]/[eventSlug]/register
@@ -66,11 +67,31 @@ export async function POST(
       throw new Error('Event registration is paused')
     }
 
-    // CRITICAL SECURITY CHECK: Reject UPFRONT payment events
+    // CRITICAL SECURITY CHECK: Reject UPFRONT payment events (UNLESS registering for waitlist)
     // UPFRONT payment events must go through the payment API first (/api/payment/create)
     // This prevents users from bypassing payment by calling the registration API directly
+    // EXCEPTION: If event is FULL, allow waitlist registration without payment
     if (event.paymentRequired && event.paymentTiming === 'UPFRONT') {
-      throw new Error('This event requires upfront payment. Please complete payment first.')
+      // Calculate current capacity to check if waitlist registration is allowed
+      const currentConfirmed = await prisma.registration.aggregate({
+        where: {
+          eventId: event.id,
+          status: 'CONFIRMED',
+        },
+        _sum: {
+          spotsCount: true,
+        },
+      })
+      const totalSpotsTaken = currentConfirmed._sum.spotsCount || 0
+      const spotsLeft = event.capacity - totalSpotsTaken
+      const spotsCount = Number(data.spotsCount) || 1
+
+      // If there are spots available, user must pay first (reject direct registration)
+      // If event is FULL, allow waitlist registration without payment
+      if (spotsLeft >= spotsCount) {
+        throw new Error('This event requires upfront payment. Please complete payment first.')
+      }
+      // Event is full - continue to waitlist registration below
     }
 
     // Validate required contact information
@@ -231,7 +252,7 @@ export async function POST(
               confirmationCode: result.registration.confirmationCode,
             })
 
-            console.log('✅ Payment invoice email sent to:', data.email)
+            registrationLogger.info('Payment invoice email sent', { email: data.email, eventId: event.id })
           } else {
             // Send regular confirmation email (FREE or WAITLIST)
             if (qrCodeImage) {
@@ -251,12 +272,12 @@ export async function POST(
                 cancellationUrl,
               })
 
-              console.log('✅ Registration confirmation email sent to:', data.email)
+              registrationLogger.info('Registration confirmation email sent', { email: data.email, eventId: event.id })
             }
           }
         } catch (emailError) {
           // Log error but don't fail the registration
-          console.error('❌ Failed to send email:', emailError)
+          registrationLogger.error('Failed to send registration email', { error: emailError, email: data.email })
         }
       }
 
@@ -430,7 +451,7 @@ export async function POST(
             confirmationCode: registration.confirmationCode,
           })
 
-          console.log('✅ Payment invoice email sent to:', data.email)
+          registrationLogger.info('Payment invoice email sent', { email: data.email, eventId: event.id })
         } else {
           // Send regular confirmation email (FREE or WAITLIST)
           if (qrCodeImage) {
@@ -450,12 +471,12 @@ export async function POST(
               cancellationUrl,
             })
 
-            console.log('✅ Registration confirmation email sent to:', data.email)
+            registrationLogger.info('Registration confirmation email sent', { email: data.email, eventId: event.id })
           }
         }
       } catch (emailError) {
         // Log error but don't fail the registration
-        console.error('❌ Failed to send email:', emailError)
+        registrationLogger.error('Failed to send registration email', { error: emailError, email: data.email })
       }
     }
 
@@ -477,11 +498,7 @@ export async function POST(
     })
   } catch (error: unknown) {
     // Enhanced error logging for debugging
-    console.error('❌ Registration error:', {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      name: error instanceof Error ? error.name : undefined,
-    })
+    registrationLogger.error('Registration error', { error })
 
     // Handle specific error messages
     const errorMessage = error instanceof Error ? error.message : ''

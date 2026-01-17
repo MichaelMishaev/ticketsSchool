@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
 import { randomUUID } from 'crypto'
+import { logger } from '@/lib/logger-v2'
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,12 +32,12 @@ export async function POST(request: NextRequest) {
     // Auto-notify PPA if critical or high severity
     if (severity === 'critical' || severity === 'high') {
       // Log the notification (in production, would send actual email/API call to PPA)
-      console.error('[BREACH - PPA NOTIFICATION REQUIRED]', {
+      logger.error('BREACH - PPA NOTIFICATION REQUIRED', {
+        source: 'admin',
         breachId: breach.id,
         severity: breach.severity,
         affectedUsers: breach.affectedUsers,
-        timestamp: new Date().toISOString(),
-        schoolId: breach.schoolId,
+        schoolId: breach.schoolId || undefined,
       })
 
       await prisma.breachIncident.update({
@@ -49,7 +50,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Log for DPO notification
-    console.log('[Breach Detected] DPO should be notified:', {
+    logger.info('Breach detected - DPO should be notified', {
+      source: 'admin',
       breachId: breach.id,
       severity: breach.severity,
       incidentType: breach.incidentType,
@@ -63,8 +65,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     const requestId = randomUUID()
-    console.error('[Breach Report] ERROR - Request ID:', requestId)
-    console.error('[Breach Report] ERROR - Full error:', error)
+    logger.error('Breach report error', { source: 'admin', requestId, error })
 
     return NextResponse.json(
       {
@@ -107,7 +108,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ breaches })
   } catch (error) {
-    console.error('[Breach List] ERROR:', error)
+    logger.error('Error fetching breach list', { source: 'admin', error })
     return NextResponse.json({ error: 'שגיאה בטעינת רשימת אירועים' }, { status: 500 })
   }
 }

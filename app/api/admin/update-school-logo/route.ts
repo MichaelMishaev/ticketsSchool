@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin } from '@/lib/auth.server'
 import { saveLogo, deleteLogo } from '@/lib/logo-storage'
 import { validateImageFile } from '@/lib/image-validation'
+import { logger } from '@/lib/logger-v2'
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     // Handle delete action
     if (action === 'delete') {
-      console.log(`[Delete Logo] Admin ${admin.email} deleting logo for school ${admin.schoolId}`)
+      logger.info('Admin deleting logo for school', { source: 'admin', adminEmail: admin.email, schoolId: admin.schoolId })
 
       // Delete from storage (no-op for base64, but needed for future S3)
       await deleteLogo(admin.schoolId)
@@ -37,10 +38,7 @@ export async function POST(request: NextRequest) {
         data: { logo: null },
       })
 
-      console.log(`[Delete Logo] ✅ Successfully deleted logo:`)
-      console.log(`  School ID: ${updatedSchool.id}`)
-      console.log(`  School Name: ${updatedSchool.name}`)
-      console.log(`  Deleted by: ${admin.email}`)
+      logger.info('Successfully deleted logo', { source: 'admin', schoolId: updatedSchool.id, schoolName: updatedSchool.name, deletedBy: admin.email })
 
       return NextResponse.json({
         success: true,
@@ -62,15 +60,12 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'לא נבחר קובץ' }, { status: 400 })
       }
 
-      console.log(`[Upload Logo] Admin ${admin.email} uploading logo for school ${admin.schoolId}`)
-      console.log(`  File name: ${file.name}`)
-      console.log(`  File size: ${Math.round(file.size / 1024)}KB`)
-      console.log(`  File type: ${file.type}`)
+      logger.info('Admin uploading logo for school', { source: 'admin', adminEmail: admin.email, schoolId: admin.schoolId, fileName: file.name, fileSizeKB: Math.round(file.size / 1024), fileType: file.type })
 
       // Client-side validation (File object)
       const validation = validateImageFile(file)
       if (!validation.valid) {
-        console.log(`[Upload Logo] ❌ Validation failed: ${validation.error}`)
+        logger.warn('Logo validation failed', { source: 'admin', validationError: validation.error })
         return NextResponse.json({ error: validation.error }, { status: 400 })
       }
 
@@ -87,11 +82,7 @@ export async function POST(request: NextRequest) {
         data: { logo: logoDataUrl },
       })
 
-      console.log(`[Upload Logo] ✅ Successfully uploaded logo:`)
-      console.log(`  School ID: ${updatedSchool.id}`)
-      console.log(`  School Name: ${updatedSchool.name}`)
-      console.log(`  Logo size: ${Math.round(logoDataUrl.length / 1024)}KB (base64)`)
-      console.log(`  Uploaded by: ${admin.email}`)
+      logger.info('Successfully uploaded logo', { source: 'admin', schoolId: updatedSchool.id, schoolName: updatedSchool.name, logoSizeKB: Math.round(logoDataUrl.length / 1024), uploadedBy: admin.email })
 
       return NextResponse.json({
         success: true,
@@ -111,7 +102,7 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     )
   } catch (error) {
-    console.error('[Update Logo] Error:', error)
+    logger.error('Error updating logo', { source: 'admin', error })
     return NextResponse.json(
       {
         error: 'שגיאה בעדכון הלוגו. נסה שוב.',

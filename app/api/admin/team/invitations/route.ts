@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin } from '@/lib/auth.server'
 import { sendTeamInvitationEmail } from '@/lib/email'
 import { randomBytes, randomUUID } from 'crypto'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * POST /api/admin/team/invitations
@@ -42,7 +43,8 @@ export async function POST(request: NextRequest) {
     // Validate schoolId exists for non-SUPER_ADMIN (CRIT-4 fix)
     if (admin.role !== 'SUPER_ADMIN') {
       if (!admin.schoolId) {
-        console.error('[Team Invitations] INVARIANT VIOLATION: Non-SUPER_ADMIN has no schoolId', {
+        logger.error('INVARIANT VIOLATION: Non-SUPER_ADMIN has no schoolId', {
+          source: 'team',
           adminId: admin.adminId,
           email: admin.email,
           role: admin.role,
@@ -146,7 +148,7 @@ export async function POST(request: NextRequest) {
         token
       )
     } catch (emailError) {
-      console.error('Failed to send invitation email:', emailError)
+      logger.error('Failed to send invitation email', { source: 'team', error: emailError })
       // Don't fail the request if email sending fails - invitation is still created
     }
 
@@ -161,7 +163,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Error creating invitation:', error)
+    logger.error('Error creating invitation', { source: 'team', error })
     return NextResponse.json({ error: 'Failed to create invitation' }, { status: 500 })
   }
 }
@@ -227,12 +229,13 @@ export async function GET() {
   } catch (error) {
     // Log full error details server-side only
     const requestId = randomUUID()
-    console.error('[Team Invitations GET] ERROR - Request ID:', requestId)
-    console.error('Error fetching invitations:', error)
-    if (error instanceof Error) {
-      console.error('Error message:', error.message)
-      console.error('Error stack:', error.stack)
-    }
+    logger.error('Error fetching invitations', {
+      source: 'team',
+      requestId,
+      error,
+      errorMessage: error instanceof Error ? error.message : undefined,
+      errorStack: error instanceof Error ? error.stack : undefined,
+    })
 
     // Return generic error to client (no internal details exposed)
     return NextResponse.json(

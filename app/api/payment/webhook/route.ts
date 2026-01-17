@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { validateCallback, type YaadPayCallback } from '@/lib/yaadpay'
 import { PaymentStatus } from '@prisma/client'
+import { paymentLogger } from '@/lib/logger-v2'
 
 /**
  * YaadPay Webhook Handler (Server-to-Server Notification)
@@ -32,18 +33,17 @@ export async function POST(request: NextRequest) {
       signature: searchParams.get('signature') || undefined,
     }
 
-    console.log('[Webhook] YaadPay webhook received:', {
+    paymentLogger.info('Webhook received', {
       orderId: params.Order,
       transactionId: params.Id,
       cCode: params.CCode,
-      timestamp: new Date().toISOString()
     })
 
     // Validate callback parameters
     const validation = validateCallback(params)
 
     if (!validation.isValid) {
-      console.error('[Webhook] Invalid webhook parameters:', validation.errorMessage)
+      paymentLogger.error('Invalid webhook parameters', { error: validation.errorMessage })
       // Return 200 OK even for invalid webhooks to prevent YaadPay retries
       // Log the error but don't fail
       return NextResponse.json({
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!registration) {
-      console.error('[Webhook] Payment not found for orderId:', orderId)
+      paymentLogger.error('Payment not found for orderId', { orderId })
       // Return 200 OK to prevent retries for non-existent payments
       return NextResponse.json({
         received: true,
@@ -88,11 +88,11 @@ export async function POST(request: NextRequest) {
       const alreadyFailed = registration.payment.status === 'FAILED' && !isSuccess
 
       if (alreadyProcessed || alreadyFailed) {
-        console.log('[Webhook] Payment already processed (duplicate webhook):', {
+        paymentLogger.info('Payment already processed (duplicate webhook)', {
           orderId,
           currentStatus: registration.payment.status,
           webhookSuccess: isSuccess,
-          processingTime: Date.now() - startTime
+          processingTimeMs: Date.now() - startTime,
         })
 
         // Return success for duplicate webhooks (idempotency)
@@ -111,11 +111,11 @@ export async function POST(request: NextRequest) {
     const newPaymentStatus: PaymentStatus = isSuccess ? 'COMPLETED' : 'FAILED'
     const newRegistrationPaymentStatus = isSuccess ? 'COMPLETED' : 'FAILED'
 
-    console.log('[Webhook] Processing payment update:', {
+    paymentLogger.info('Processing payment update', {
       orderId,
       newStatus: newPaymentStatus,
       isSuccess,
-      transactionId
+      transactionId,
     })
 
     await prisma.$transaction(async (tx) => {
@@ -168,13 +168,13 @@ export async function POST(request: NextRequest) {
 
     const processingTime = Date.now() - startTime
 
-    console.log('[Webhook] Payment processed successfully:', {
+    paymentLogger.info('Payment processed successfully via webhook', {
       orderId,
       transactionId,
       status: newPaymentStatus,
       isSuccess,
       confirmationCode,
-      processingTime: `${processingTime}ms`
+      processingTimeMs: processingTime,
     })
 
     // ============================================================================
@@ -192,10 +192,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const processingTime = Date.now() - startTime
 
-    console.error('[Webhook] Error processing webhook:', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      processingTime: `${processingTime}ms`
+    paymentLogger.error('Error processing webhook', {
+      error,
+      processingTimeMs: processingTime,
     })
 
     // CRITICAL: Return 200 OK even on error to prevent YaadPay retries

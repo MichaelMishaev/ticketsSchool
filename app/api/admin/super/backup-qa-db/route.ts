@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireSuperAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
 import { randomUUID } from 'crypto'
+import { logger } from '@/lib/logger-v2'
 import 'server-only'
 
 export async function GET(request: NextRequest) {
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
     // Only SUPER_ADMIN can backup database
     await requireSuperAdmin()
 
-    console.log('📦 Starting QA database backup...')
+    logger.info('Starting QA database backup', { source: 'super-admin' })
 
     // Fetch all data
     const [schools, admins, events, registrations, teamInvitations, usageRecords, feedback] =
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
       },
     }
 
-    console.log('✅ Backup completed:', backup.stats)
+    logger.info('Backup completed', { source: 'super-admin', stats: backup.stats })
 
     // Return as downloadable JSON file
     return new NextResponse(JSON.stringify(backup, null, 2), {
@@ -65,11 +66,12 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     // Log full error details server-side only
     const requestId = randomUUID()
-    console.error('[Backup QA DB] ERROR - Request ID:', requestId)
-    console.error('❌ Backup failed:', error)
-    console.error('Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
+    logger.error('Backup failed', {
+      source: 'super-admin',
+      requestId,
+      error,
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      errorStack: error instanceof Error ? error.stack : undefined,
     })
 
     // Return generic error to client (no internal details exposed)

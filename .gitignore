@@ -115,6 +115,7 @@ app/docs/ideogram.md
 # Database backups (may contain sensitive data)
 backups/
 *.sql
+!prisma/migrations/**/*.sql
 *.dump
 *_backup*.sql
 *_backup*.dump

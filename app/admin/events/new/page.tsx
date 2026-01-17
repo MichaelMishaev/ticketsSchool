@@ -253,6 +253,16 @@ export default function NewEventPage() {
         }
         break
 
+      case 'startAt':
+        if (typeof value === 'string' && value) {
+          const selectedDateTime = new Date(value)
+          const now = new Date()
+          if (selectedDateTime < now) {
+            errors.startAt = 'לא ניתן לבחור תאריך ושעה שעברו'
+          }
+        }
+        break
+
       case 'endAt':
         if (typeof value === 'string' && formData.startAt && value) {
           if (new Date(value) <= new Date(formData.startAt)) {
@@ -381,7 +391,15 @@ export default function NewEventPage() {
           !validationErrors.gameType
         )
       case 1: // Timing
-        return formData.startAt !== '' && !validationErrors.endAt
+        // Also check that startAt is not in the past
+        if (formData.startAt) {
+          const selectedDateTime = new Date(formData.startAt)
+          const now = new Date()
+          if (selectedDateTime < now) {
+            return false
+          }
+        }
+        return formData.startAt !== '' && !validationErrors.endAt && !validationErrors.startAt
       case 2: // Capacity
         return formData.capacity >= 1 && formData.maxSpotsPerPerson >= 1
       case 3: // Advanced
@@ -459,6 +477,14 @@ export default function NewEventPage() {
 
     if (!formData.startAt) {
       addToast('תאריך התחלה הוא שדה חובה', 'error')
+      return
+    }
+
+    // Validate startAt is not in the past
+    const selectedDateTime = new Date(formData.startAt)
+    const now = new Date()
+    if (selectedDateTime < now) {
+      addToast('לא ניתן ליצור אירוע עם תאריך ושעה שעברו', 'error')
       return
     }
 

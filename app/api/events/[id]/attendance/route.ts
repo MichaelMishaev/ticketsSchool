@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth.server'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * GET /api/events/[id]/attendance
@@ -101,7 +102,7 @@ export async function GET(
       })
     })
   } catch (error) {
-    console.error('Error fetching attendance data:', error)
+    logger.error('Error fetching attendance data', { source: 'events', error })
     return NextResponse.json(
       { error: 'Failed to load attendance data' },
       { status: 500 }

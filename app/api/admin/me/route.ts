@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * GET /api/admin/me
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest) {
 
     return response
   } catch (error) {
-    console.error('Get current admin error:', error)
+    logger.error('Get current admin error', { source: 'auth', error })
     return NextResponse.json(
       { error: 'Server error' },
       { status: 500 }

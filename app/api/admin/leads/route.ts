@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
 import { normalizePhoneNumber } from '@/lib/utils'
+import { logger } from '@/lib/logger-v2'
 
 export async function GET(request: NextRequest) {
   try {
@@ -173,7 +174,7 @@ export async function GET(request: NextRequest) {
       total: leads.length,
     })
   } catch (error) {
-    console.error('Failed to fetch leads:', error)
+    logger.error('Failed to fetch leads', { source: 'admin', error })
     return NextResponse.json(
       { error: 'Failed to fetch leads' },
       { status: 500 }

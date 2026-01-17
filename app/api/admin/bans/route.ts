@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth.server'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * GET /api/admin/bans
@@ -111,7 +112,7 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (error) {
-    console.error('Error fetching bans:', error)
+    logger.error('Error fetching bans', { source: 'admin', error })
     return NextResponse.json(
       { error: 'Failed to load bans' },
       { status: 500 }
@@ -225,7 +226,7 @@ export async function POST(request: NextRequest) {
       bans: createdBans
     })
   } catch (error) {
-    console.error('Error creating ban:', error)
+    logger.error('Error creating ban', { source: 'admin', error })
     return NextResponse.json(
       { error: 'Failed to create ban' },
       { status: 500 }

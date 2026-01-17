@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger-v2'
 
 // GET /api/templates - List all templates (school-specific + public)
 export async function GET(request: NextRequest) {
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ templates })
   } catch (error) {
-    console.error('Failed to fetch templates:', error)
+    logger.error('Failed to fetch templates', { source: 'templates', error })
     return NextResponse.json(
       { error: 'Failed to fetch templates' },
       { status: 500 }
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ template }, { status: 201 })
   } catch (error) {
-    console.error('Failed to create template:', error)
+    logger.error('Failed to create template', { source: 'templates', error })
     return NextResponse.json(
       { error: 'Failed to create template' },
       { status: 500 }

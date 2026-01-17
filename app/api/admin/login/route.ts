@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { login } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limiter'
+import { authLogger } from '@/lib/logger-v2'
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Login API error:', error)
+    authLogger.error('Login API error', { error })
     return NextResponse.json({ error: 'שגיאת שרת' }, { status: 500 })
   }
 }

@@ -4,9 +4,7 @@ import { useState, useEffect } from 'react'
 import {
   QrCode,
   ClipboardCheck,
-  TrendingUp,
   ArrowLeft,
-  Sparkles,
   Calendar,
   BarChart,
 } from 'lucide-react'
@@ -87,79 +85,61 @@ export default function CheckInHeroCard({
   // Archive view for past events
   if (pastEvent) {
     return (
-      <div className="relative group">
-        {/* Gray/purple gradient glow */}
-        <div className="absolute -inset-0.5 bg-gradient-to-r from-gray-600 via-purple-600 to-gray-600 rounded-2xl opacity-20 blur-lg"></div>
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        {/* Top accent */}
+        <div className="h-1 bg-purple-500"></div>
 
-        {/* Main Card */}
-        <div className="relative bg-white/95 backdrop-blur-sm rounded-2xl border-2 border-gray-200/80 shadow-xl overflow-hidden">
-          {/* Gray/purple gradient accent */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-gray-500 via-purple-500 to-gray-500"></div>
-
-          <div className="relative p-6">
-            {/* Archive icon and title */}
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2.5 bg-gradient-to-br from-gray-50 to-purple-50 rounded-xl border border-gray-200/50">
-                <Calendar className="w-6 h-6 text-gray-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900">סיכום נוכחות</h3>
-              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-bold rounded">
-                ארכיון
-              </span>
+        <div className="p-6">
+          {/* Archive icon and title */}
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2.5 bg-purple-50 rounded-lg border border-purple-200">
+              <Calendar className="w-6 h-6 text-purple-600" />
             </div>
+            <h3 className="text-xl font-bold text-gray-900">סיכום נוכחות</h3>
+            <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-bold rounded">
+              ארכיון
+            </span>
+          </div>
 
             <p className="text-sm text-gray-600 mb-5 leading-relaxed">
               האירוע הסתיים - צפה בסיכום הנוכחות והדוחות המלאים
             </p>
 
-            {/* Stats Preview - Same as before */}
-            {stats && stats.totalRegistrations > 0 && (
-              <div className="grid grid-cols-3 gap-3 mb-5">
-                <div className="p-3 bg-gradient-to-br from-gray-50 to-blue-50/30 rounded-lg border border-gray-200/50 text-center">
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="text-2xl font-black text-gray-900">
-                      {stats.totalRegistrations}
-                    </div>
-                    <div className="text-xs text-gray-700 font-bold">נרשמו</div>
-                  </div>
+          {/* Stats Preview - Clean Design */}
+          {stats && stats.totalRegistrations > 0 && (
+            <div className="grid grid-cols-3 gap-3 mb-5">
+              <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
+                <div className="text-2xl font-black text-gray-900">
+                  {stats.totalRegistrations}
                 </div>
-                <div className="p-3 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border border-green-200/50 text-center">
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="text-2xl font-black text-green-600">{stats.checkedInCount}</div>
-                    <div className="text-xs text-gray-700 font-bold">הגיעו</div>
-                  </div>
-                </div>
-                <div className="p-3 bg-gradient-to-br from-purple-50 to-pink-50/30 rounded-lg border border-purple-200/50 text-center">
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="text-2xl font-black text-purple-600">
-                      {stats.checkInPercentage}%
-                    </div>
-                    <div className="text-xs text-gray-700 font-bold">תפוסה</div>
-                  </div>
-                </div>
+                <div className="text-xs text-gray-700 font-bold">נרשמו</div>
               </div>
-            )}
+              <div className="p-3 bg-green-50 rounded-lg border border-green-200 text-center">
+                <div className="text-2xl font-black text-green-600">{stats.checkedInCount}</div>
+                <div className="text-xs text-gray-700 font-bold">הגיעו</div>
+              </div>
+              <div className="p-3 bg-purple-50 rounded-lg border border-purple-200 text-center">
+                <div className="text-2xl font-black text-purple-600">
+                  {stats.checkInPercentage}%
+                </div>
+                <div className="text-xs text-gray-700 font-bold">אחוז הגעה</div>
+              </div>
+            </div>
+          )}
 
-            {/* CTA Button - Navigate to Reports */}
-            <button
-              onClick={onNavigateToReports}
-              className="w-full flex items-center justify-center gap-2.5 px-6 py-4
-                       bg-gradient-to-r from-gray-600 via-purple-600 to-gray-600
-                       text-white rounded-xl font-bold text-sm
-                       hover:from-gray-700 hover:via-purple-700 hover:to-gray-700
-                       active:scale-[0.97] transition-all duration-200
-                       shadow-lg shadow-gray-500/30
-                       focus:outline-none focus:ring-4 focus:ring-gray-500/30
-                       group/btn overflow-hidden relative"
-            >
-              {/* Shine effect on hover */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700"></div>
-
-              <BarChart className="w-5 h-5 relative" />
-              <span className="relative">צפה בדוח נוכחות מלא</span>
-              <ArrowLeft className="w-4 h-4 relative group-hover/btn:translate-x-1 transition-transform" />
-            </button>
-          </div>
+          {/* CTA Button - Navigate to Reports */}
+          <button
+            onClick={onNavigateToReports}
+            className="w-full flex items-center justify-center gap-2.5 px-6 py-4
+                     bg-purple-600 text-white rounded-lg font-bold text-sm
+                     hover:bg-purple-700 active:scale-[0.98] transition-all duration-200
+                     shadow-sm hover:shadow-md
+                     focus:outline-none focus:ring-4 focus:ring-purple-500/30"
+          >
+            <BarChart className="w-5 h-5" />
+            <span>צפה בדוח נוכחות מלא</span>
+            <ArrowLeft className="w-4 h-4" />
+          </button>
         </div>
       </div>
     )
@@ -167,79 +147,58 @@ export default function CheckInHeroCard({
 
   // Active event view
   return (
-    <div className="relative group">
-      {/* Gradient Background Glow */}
-      <div className="absolute -inset-0.5 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 rounded-2xl opacity-20 blur-lg group-hover:opacity-30 transition-opacity duration-300"></div>
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      {/* Top accent */}
+      <div className="h-1 bg-green-500"></div>
 
-      {/* Main Card */}
-      <div className="relative bg-white/95 backdrop-blur-sm rounded-2xl border-2 border-gray-200/80 shadow-xl overflow-hidden">
-        {/* Top Gradient Accent */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500"></div>
-
-        {/* Decorative Corner Gradient */}
-        <div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-br from-green-500/5 via-emerald-500/5 to-transparent rounded-br-[200px] pointer-events-none"></div>
-
-        <div className="relative p-6">
-          {/* Header with Icon */}
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-2.5 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200/50">
-              <ClipboardCheck className="w-6 h-6 text-green-600" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900">ניהול כניסה ונוכחות</h3>
+      <div className="p-6">
+        {/* Header with Icon */}
+        <div className="flex items-center gap-3 mb-3">
+          <div className="p-2.5 bg-green-50 rounded-lg border border-green-200">
+            <ClipboardCheck className="w-6 h-6 text-green-600" />
           </div>
-
-          <p className="text-sm text-gray-600 mb-5 leading-relaxed">
-            סרוק QR, סמן נוכחות, וקבל סטטיסטיקה בזמן אמת
-          </p>
-
-          {/* Stats Preview - Enhanced */}
-          {stats && stats.totalRegistrations > 0 && (
-            <div className="grid grid-cols-3 gap-3 mb-5">
-              <div className="p-3 bg-gradient-to-br from-gray-50 to-blue-50/30 rounded-lg border border-gray-200/50 text-center">
-                <div className="flex flex-col items-center gap-1">
-                  <div className="text-2xl font-black text-gray-900">
-                    {stats.totalRegistrations}
-                  </div>
-                  <div className="text-xs text-gray-700 font-bold">נרשמו</div>
-                </div>
-              </div>
-              <div className="p-3 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border border-green-200/50 text-center">
-                <div className="flex flex-col items-center gap-1">
-                  <div className="text-2xl font-black text-green-600">{stats.checkedInCount}</div>
-                  <div className="text-xs text-gray-700 font-bold">הגיעו</div>
-                </div>
-              </div>
-              <div className="p-3 bg-gradient-to-br from-purple-50 to-pink-50/30 rounded-lg border border-purple-200/50 text-center">
-                <div className="flex flex-col items-center gap-1">
-                  <div className="text-2xl font-black text-purple-600">
-                    {stats.checkInPercentage}%
-                  </div>
-                  <div className="text-xs text-gray-700 font-bold">אחוז הגעה</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* CTA Button - Premium Style */}
-          <button
-            onClick={onNavigateToCheckIn}
-            className="w-full flex items-center justify-center gap-2.5 px-6 py-4
-                     bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600
-                     text-white rounded-xl font-bold text-sm
-                     hover:from-green-700 hover:via-emerald-700 hover:to-teal-700
-                     active:scale-[0.97] transition-all duration-200
-                     shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-emerald-500/40
-                     focus:outline-none focus:ring-4 focus:ring-green-500/30
-                     group/btn overflow-hidden relative"
-          >
-            {/* Shine effect on hover */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700"></div>
-
-            <QrCode className="w-5 h-5 relative" />
-            <span className="relative">פתח מסך כניסה ונוכחות</span>
-            <ArrowLeft className="w-4 h-4 relative group-hover/btn:translate-x-1 transition-transform" />
-          </button>
+          <h3 className="text-xl font-bold text-gray-900">ניהול כניסה ונוכחות</h3>
         </div>
+
+        <p className="text-sm text-gray-600 mb-5 leading-relaxed">
+          סרוק QR, סמן נוכחות, וקבל סטטיסטיקה בזמן אמת
+        </p>
+
+        {/* Stats Preview - Clean Design */}
+        {stats && stats.totalRegistrations > 0 && (
+          <div className="grid grid-cols-3 gap-3 mb-5">
+            <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
+              <div className="text-2xl font-black text-gray-900">
+                {stats.totalRegistrations}
+              </div>
+              <div className="text-xs text-gray-700 font-bold">נרשמו</div>
+            </div>
+            <div className="p-3 bg-green-50 rounded-lg border border-green-200 text-center">
+              <div className="text-2xl font-black text-green-600">{stats.checkedInCount}</div>
+              <div className="text-xs text-gray-700 font-bold">הגיעו</div>
+            </div>
+            <div className="p-3 bg-purple-50 rounded-lg border border-purple-200 text-center">
+              <div className="text-2xl font-black text-purple-600">
+                {stats.checkInPercentage}%
+              </div>
+              <div className="text-xs text-gray-700 font-bold">אחוז הגעה</div>
+            </div>
+          </div>
+        )}
+
+        {/* CTA Button - Clean Style */}
+        <button
+          onClick={onNavigateToCheckIn}
+          className="w-full flex items-center justify-center gap-2.5 px-6 py-4
+                   bg-green-600 text-white rounded-lg font-bold text-sm
+                   hover:bg-green-700 active:scale-[0.98] transition-all duration-200
+                   shadow-sm hover:shadow-md
+                   focus:outline-none focus:ring-4 focus:ring-green-500/30"
+        >
+          <QrCode className="w-5 h-5" />
+          <span>פתח מסך כניסה ונוכחות</span>
+          <ArrowLeft className="w-4 h-4" />
+        </button>
       </div>
     </div>
   )

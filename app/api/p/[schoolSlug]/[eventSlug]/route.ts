@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger-v2'
 
 // Disable caching for this route to ensure fresh data
 export const dynamic = 'force-dynamic'
@@ -135,7 +136,7 @@ export async function GET(
 
     return response
   } catch (error) {
-    console.error('Error fetching event:', error)
+    logger.error('Error fetching event', { source: 'public-api', error })
     return NextResponse.json(
       { error: 'Failed to fetch event' },
       { status: 500 }

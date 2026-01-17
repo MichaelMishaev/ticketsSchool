@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendVerificationEmail } from '@/lib/email'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * Resend verification email for unverified accounts
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Resend verification email
-    console.log('[Resend Verification] Sending verification email to:', email)
+    logger.info('Sending verification email', { source: 'auth', email })
     const emailSent = await sendVerificationEmail(
       email.toLowerCase(),
       admin.verificationToken,
@@ -56,20 +57,20 @@ export async function POST(request: NextRequest) {
     )
 
     if (!emailSent) {
-      console.error('[Resend Verification] Failed to send email')
+      logger.error('Failed to send verification email', { source: 'auth', email })
       return NextResponse.json(
         { error: 'שגיאה בשליחת המייל. נסה שוב מאוחר יותר.' },
         { status: 500 }
       )
     }
 
-    console.log('[Resend Verification] Email sent successfully')
+    logger.info('Verification email sent successfully', { source: 'auth', email })
     return NextResponse.json({
       success: true,
       message: 'מייל האימות נשלח מחדש! בדוק את תיבת הדואר שלך.',
     })
   } catch (error) {
-    console.error('[Resend Verification] Error:', error)
+    logger.error('Resend verification error', { source: 'auth', error })
     return NextResponse.json(
       { error: 'שגיאה בשליחת מייל האימות.' },
       { status: 500 }

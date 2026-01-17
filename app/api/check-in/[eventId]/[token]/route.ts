@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { validateCheckInTokenFormat } from '@/lib/check-in-token'
 import { validateQRCodeData } from '@/lib/qr-code'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * GET /api/check-in/[eventId]/[token]
@@ -117,7 +118,7 @@ export async function GET(
       registrations: enhancedRegistrations,
     })
   } catch (error) {
-    console.error('Error fetching check-in data:', error)
+    logger.error('Error fetching check-in data', { source: 'check-in', error })
     return NextResponse.json({ error: 'Failed to load check-in data' }, { status: 500 })
   }
 }
@@ -295,7 +296,7 @@ export async function POST(
       },
     })
   } catch (error: unknown) {
-    console.error('Error checking in:', error)
+    logger.error('Error checking in', { source: 'check-in', error })
 
     // Handle unique constraint violation (already checked in)
     if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {

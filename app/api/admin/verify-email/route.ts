@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import * as jwt from 'jsonwebtoken'
 import { sendWelcomeEmail } from '@/lib/email'
 import { login } from '@/lib/auth.server'
+import { logger } from '@/lib/logger-v2'
 
 // Base URL for redirects - use environment variable to avoid Docker container hostname issues
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9000'
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Email verification error:', error)
+    logger.error('Email verification error', { source: 'auth', error })
     return NextResponse.json(
       { error: 'שגיאה באימות המייל. נסה שוב.' },
       { status: 500 }

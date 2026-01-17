@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth.server'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * GET /api/admin/attendance/history?phone={phone}
@@ -87,7 +88,7 @@ export async function GET(request: NextRequest) {
       recentEvents
     })
   } catch (error) {
-    console.error('Error fetching attendance history:', error)
+    logger.error('Error fetching attendance history', { source: 'admin', error })
     return NextResponse.json(
       { error: 'Failed to load attendance history' },
       { status: 500 }

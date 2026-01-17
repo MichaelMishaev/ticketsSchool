@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Calendar, Users, School, TrendingUp, Search, Filter, Trash2, UserX, Building2, AlertTriangle } from 'lucide-react'
+import { Calendar, Users, School, TrendingUp, Search, Filter, Trash2, UserX, Building2, AlertTriangle, FileText } from 'lucide-react'
+import Link from 'next/link'
 import Modal from '@/components/Modal'
 
 interface EventStats {
@@ -292,6 +293,13 @@ export default function SuperAdminDashboard() {
             <School className="w-4 h-4" />
             בתי ספר
           </button>
+          <Link
+            href="/admin/logs"
+            className="flex items-center gap-2 px-6 py-3 font-medium text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors"
+          >
+            <FileText className="w-4 h-4" />
+            לוגים
+          </Link>
         </div>
       </div>
 

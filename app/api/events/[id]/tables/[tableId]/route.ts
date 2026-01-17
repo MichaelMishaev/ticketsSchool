@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger-v2'
 
 // PUT /api/events/[id]/tables/[tableId] - Update table
 export async function PUT(
@@ -91,7 +92,7 @@ export async function PUT(
 
     return NextResponse.json({ table })
   } catch (error) {
-    console.error('Failed to update table:', error)
+    logger.error('Failed to update table', { source: 'tables', error })
     return NextResponse.json(
       { error: 'Failed to update table' },
       { status: 500 }
@@ -162,7 +163,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Failed to delete table:', error)
+    logger.error('Failed to delete table', { source: 'tables', error })
     return NextResponse.json(
       { error: 'Failed to delete table' },
       { status: 500 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin } from '@/lib/auth.server'
 import { randomUUID } from 'crypto'
+import { logger } from '@/lib/logger-v2'
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'שם הארגון לא יכול להיות ריק' }, { status: 400 })
     }
 
-    console.log(`[Update School Name] Admin ${admin.email} updating school name to "${newName}"`)
+    logger.info('Admin updating school name', { source: 'admin', adminEmail: admin.email, newName })
 
     // Check if another school already has this name
     const existingSchool = await prisma.school.findFirst({
@@ -51,11 +52,7 @@ export async function POST(request: NextRequest) {
       data: { name: newName.trim() },
     })
 
-    console.log(`[Update School Name] ✅ Successfully updated school:`)
-    console.log(`  School ID: ${updatedSchool.id}`)
-    console.log(`  New Name: ${updatedSchool.name}`)
-    console.log(`  Slug: ${updatedSchool.slug}`)
-    console.log(`  Updated by: ${admin.email}`)
+    logger.info('Successfully updated school name', { source: 'admin', schoolId: updatedSchool.id, newName: updatedSchool.name, slug: updatedSchool.slug, updatedBy: admin.email })
 
     return NextResponse.json({
       success: true,
@@ -69,12 +66,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     // Log full error details server-side only
     const requestId = randomUUID()
-    console.error('[Update School Name] ERROR - Request ID:', requestId)
-    console.error('[Update School Name] Error:', error)
-    console.error('[Update School Name] Error details:', {
-      message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-    })
+    logger.error('Error updating school name', { source: 'admin', requestId, error })
 
     // Return generic error to client (no internal details exposed)
     return NextResponse.json(

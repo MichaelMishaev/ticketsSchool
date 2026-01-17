@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger-v2'
 
 // DELETE /api/templates/[templateId] - Delete template
 export async function DELETE(
@@ -45,7 +46,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Failed to delete template:', error)
+    logger.error('Failed to delete template', { source: 'templates', error })
     return NextResponse.json(
       { error: 'Failed to delete template' },
       { status: 500 }

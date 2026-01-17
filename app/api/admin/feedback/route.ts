@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireSuperAdmin } from '@/lib/auth.server'
+import { logger } from '@/lib/logger-v2'
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(feedbacks)
   } catch (error) {
-    console.error('Error fetching feedbacks:', error)
+    logger.error('Error fetching feedbacks', { source: 'admin', error })
     return NextResponse.json(
       { error: 'שגיאה בטעינת המשובים' },
       { status: 500 }

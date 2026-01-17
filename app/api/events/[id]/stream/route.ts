@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin } from '@/lib/auth.server'
+import { logger } from '@/lib/logger-v2'
 
 export const runtime = 'nodejs' // SSE requires Node.js runtime
 export const dynamic = 'force-dynamic'
@@ -128,7 +129,7 @@ export async function GET(request: NextRequest, { params }: StreamParams) {
               controller.enqueue(encoder.encode(heartbeat))
             }
           } catch (error) {
-            console.error('SSE polling error:', error)
+            logger.error('SSE polling error', { source: 'events', error })
             // Don't close stream on polling errors, just log and continue
           }
         }, 2000) // Poll every 2 seconds
@@ -150,7 +151,7 @@ export async function GET(request: NextRequest, { params }: StreamParams) {
       }
     })
   } catch (error) {
-    console.error('SSE endpoint error:', error)
+    logger.error('SSE endpoint error', { source: 'events', error })
     return new Response('Internal server error', { status: 500 })
   }
 }

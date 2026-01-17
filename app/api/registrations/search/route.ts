@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getCurrentAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * Search for a registration by confirmation code
@@ -75,7 +76,7 @@ export async function GET(request: Request) {
       data: registration
     })
   } catch (error) {
-    console.error('Error searching registration:', error)
+    logger.error('Error searching registration', { source: 'registration', error })
     return NextResponse.json(
       { error: 'שגיאה בחיפוש הרשמה' },
       { status: 500 }

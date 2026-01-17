@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger-v2'
 
 // POST /api/events/[id]/tables/reorder - Reorder tables
 export async function POST(
@@ -76,7 +77,7 @@ export async function POST(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Failed to reorder tables:', error)
+    logger.error('Failed to reorder tables', { source: 'tables', error })
     return NextResponse.json(
       { error: 'Failed to reorder tables' },
       { status: 500 }

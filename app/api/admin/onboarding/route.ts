@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin, encodeSession, SESSION_COOKIE_NAME, AuthSession } from '@/lib/auth.server'
 import { randomUUID } from 'crypto'
+import { logger } from '@/lib/logger-v2'
 
 interface OnboardingRequest {
   schoolName: string
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'לא מחובר' }, { status: 401 })
     }
 
-    console.log('[Onboarding] Starting onboarding for admin:', currentAdmin.adminId)
+    logger.info('Starting onboarding for admin', { source: 'auth', adminId: currentAdmin.adminId })
 
     const body: OnboardingRequest = await request.json()
     const { schoolName, schoolSlug } = body
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
       return { school, admin }
     })
 
-    console.log('[Onboarding] Onboarding completed successfully')
+    logger.info('Onboarding completed successfully', { source: 'auth' })
 
     // Create updated session with new school information
     const updatedSession: AuthSession = {
@@ -128,11 +129,14 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     // Log full error details server-side only
     const requestId = randomUUID()
-    console.error('[Onboarding] ERROR - Request ID:', requestId)
-    console.error('[Onboarding] Error:', error)
-    console.error('[Onboarding] Error details:', {
-      message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
+    logger.error('Onboarding error', {
+      source: 'auth',
+      requestId,
+      error,
+      errorDetails: {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      },
     })
 
     // Return generic error to client (no internal details exposed)

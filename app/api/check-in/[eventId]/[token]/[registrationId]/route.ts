@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { validateCheckInTokenFormat } from '@/lib/check-in-token'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * DELETE /api/check-in/[eventId]/[token]/[registrationId]
@@ -111,7 +112,7 @@ export async function DELETE(
       }
     })
   } catch (error) {
-    console.error('Error undoing check-in:', error)
+    logger.error('Error undoing check-in', { source: 'check-in', error })
     return NextResponse.json(
       { error: 'Failed to undo check-in' },
       { status: 500 }

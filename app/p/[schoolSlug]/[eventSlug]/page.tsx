@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import { Calendar, MapPin, Clock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { Calendar, MapPin, Clock, CheckCircle, AlertCircle, Loader2, Check, X } from 'lucide-react'
 import { format } from 'date-fns'
 import { he } from 'date-fns/locale'
 import FeedbackInline from '@/components/FeedbackInline'
@@ -50,6 +50,13 @@ interface Event {
   school: School
 }
 
+// Field validation state
+interface FieldValidation {
+  isValid: boolean
+  message: string
+  touched: boolean
+}
+
 export default function EventPage() {
   const params = useParams()
   const schoolSlug = params.schoolSlug as string
@@ -67,6 +74,9 @@ export default function EventPage() {
   const [isWaitlist, setIsWaitlist] = useState(false)
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [qrCodeImage, setQrCodeImage] = useState<string | null>(null)
+
+  // 2026 UX: Real-time validation state
+  const [fieldValidation, setFieldValidation] = useState<Record<string, FieldValidation>>({})
 
   // Modal state
   const [modalState, setModalState] = useState<{
@@ -153,14 +163,21 @@ export default function EventPage() {
         }
 
         setEvent(data)
-        // Initialize form data
+        // Initialize form data and validation state
         const initialData: any = {}
+        const initialValidation: Record<string, FieldValidation> = {}
         if (data.fieldsSchema && Array.isArray(data.fieldsSchema)) {
           data.fieldsSchema.forEach((field: any) => {
             initialData[field.name] = ''
+            initialValidation[field.name] = {
+              isValid: !field.required,
+              message: '',
+              touched: false,
+            }
           })
         }
         setFormData(initialData)
+        setFieldValidation(initialValidation)
       } else {
         // Handle non-OK responses
         let errorData
@@ -182,6 +199,87 @@ export default function EventPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // 2026 UX: Real-time field validation
+  const validateField = (name: string, value: any, field: any): FieldValidation => {
+    // Required field validation
+    if (field.required && (!value || (typeof value === 'string' && value.trim() === ''))) {
+      return {
+        isValid: false,
+        message: `${field.label} הוא שדה חובה`,
+        touched: true,
+      }
+    }
+
+    // Email validation
+    if (field.type === 'email' && value) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(value)) {
+        return {
+          isValid: false,
+          message: 'כתובת אימייל לא תקינה',
+          touched: true,
+        }
+      }
+    }
+
+    // Phone validation (Israeli format)
+    if (name === 'phone' && value) {
+      const cleanPhone = value.replace(/[\s\-]/g, '')
+
+      // Check if starts with 05
+      if (!cleanPhone.startsWith('05')) {
+        return {
+          isValid: false,
+          message: 'מספר טלפון חייב להתחיל ב-05',
+          touched: true,
+        }
+      }
+
+      // Check length (must be exactly 10 digits)
+      if (cleanPhone.length < 10) {
+        return {
+          isValid: false,
+          message: `מספר טלפון קצר מדי (${cleanPhone.length}/10 ספרות)`,
+          touched: true,
+        }
+      }
+
+      if (cleanPhone.length > 10) {
+        return {
+          isValid: false,
+          message: `מספר טלפון ארוך מדי (${cleanPhone.length}/10 ספרות)`,
+          touched: true,
+        }
+      }
+
+      // Check all digits
+      if (!/^\d+$/.test(cleanPhone)) {
+        return {
+          isValid: false,
+          message: 'מספר טלפון יכול להכיל רק ספרות',
+          touched: true,
+        }
+      }
+    }
+
+    return {
+      isValid: true,
+      message: '',
+      touched: true,
+    }
+  }
+
+  // Handle field change with validation
+  const handleFieldChange = (name: string, value: any, field: any) => {
+    setFormData({ ...formData, [name]: value })
+
+    // Validate after a short delay (debounced)
+    setTimeout(() => {
+      const validation = validateField(name, value, field)
+      setFieldValidation((prev) => ({ ...prev, [name]: validation }))
+    }, 300)
   }
 
   // Get missing required fields for validation
@@ -256,7 +354,9 @@ export default function EventPage() {
           : { ...formData, spotsCount } // Capacity-based: send spotsCount
 
       // Handle upfront payment flow
-      if (event?.paymentRequired && event?.paymentTiming === 'UPFRONT') {
+      // CRITICAL: Skip payment for WAITLIST registrations - only pay when confirmed!
+      // If event is full (isFull = true), user joins waitlist without payment first
+      if (event?.paymentRequired && event?.paymentTiming === 'UPFRONT' && !isFull) {
         // Create payment session (redirect to YaadPay)
         const response = await fetch('/api/payment/create', {
           method: 'POST',
@@ -548,7 +648,7 @@ export default function EventPage() {
 
   return (
     <div
-      className="min-h-screen py-6 sm:py-12"
+      className="min-h-screen py-6 sm:py-12 pb-32 md:pb-12"
       style={{
         background: `linear-gradient(to bottom right, ${gradientFrom}, ${gradientTo})`,
       }}
@@ -627,30 +727,43 @@ export default function EventPage() {
               )}
             </div>
 
-            {/* Pricing Information */}
+            {/* 2026 UX: Improved Pricing Display */}
             {event.paymentRequired && (
               <div className="pt-4 pb-4 border-t border-gray-200">
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">מחיר</span>
+                <div className="bg-white rounded-xl p-5 border-2 border-gray-200 shadow-sm">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                        <span className="text-xl">💳</span>
+                      </div>
+                      <span className="text-base font-semibold text-gray-700">מחיר האירוע</span>
+                    </div>
                     <div className="text-left">
                       {event.pricingModel === 'FREE' && (
-                        <span className="text-lg font-bold text-green-600">חינמי</span>
+                        <span className="text-2xl font-black text-green-600">חינמי</span>
                       )}
                       {event.pricingModel === 'FIXED_PRICE' && event.priceAmount && (
-                        <span className="text-lg font-bold text-gray-900">
-                          ₪{event.priceAmount}
-                        </span>
+                        <div className="text-left">
+                          <div className="text-3xl font-black text-gray-900">
+                            ₪{event.priceAmount}
+                          </div>
+                          <div className="text-xs text-gray-500">מחיר קבוע</div>
+                        </div>
                       )}
                       {event.pricingModel === 'PER_GUEST' && event.priceAmount && (
                         <div>
-                          <div className="text-lg font-bold text-gray-900">
+                          <div className="text-xl font-bold text-gray-600 line-through">
                             ₪{event.priceAmount} למשתתף
                           </div>
                           {(event.eventType === 'TABLE_BASED' ? guestsCount : spotsCount) > 1 && (
-                            <div className="text-sm text-gray-600 mt-1">
-                              {event.eventType === 'TABLE_BASED' ? guestsCount : spotsCount} משתתפים
-                              × ₪{event.priceAmount} = ₪{totalPrice}
+                            <div className="mt-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
+                              <div className="text-sm text-gray-600">
+                                {event.eventType === 'TABLE_BASED' ? guestsCount : spotsCount}{' '}
+                                משתתפים × ₪{event.priceAmount}
+                              </div>
+                              <div className="text-2xl font-black text-gray-900 mt-1">
+                                ₪{totalPrice}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -658,15 +771,21 @@ export default function EventPage() {
                     </div>
                   </div>
                   {event.paymentTiming === 'UPFRONT' && (
-                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-green-200">
-                      <span className="text-xs text-green-700 font-medium">💳 תשלום מראש נדרש</span>
+                    <div className="flex items-center gap-2 pt-3 border-t border-gray-200">
+                      <div className="flex-1 flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg">
+                        <span className="text-sm text-blue-800 font-semibold">
+                          💳 תשלום מקוון מאובטח
+                        </span>
+                      </div>
                     </div>
                   )}
                   {event.paymentTiming === 'POST_REGISTRATION' && (
-                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-green-200">
-                      <span className="text-xs text-blue-700 font-medium">
-                        📧 קישור לתשלום יישלח לאימייל
-                      </span>
+                    <div className="flex items-center gap-2 pt-3 border-t border-gray-200">
+                      <div className="flex-1 flex items-center gap-2 px-3 py-2 bg-green-50 rounded-lg">
+                        <span className="text-sm text-green-800 font-semibold">
+                          📧 קישור לתשלום יישלח לאימייל
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -711,8 +830,8 @@ export default function EventPage() {
           </div>
         </div>
 
-        {/* Registration Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
+        {/* Registration Form - 2026 UX Enhanced */}
+        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 mb-6">
           <h2 className="text-xl font-bold text-gray-900 mb-6">
             {event.eventType === 'TABLE_BASED'
               ? 'הרשמה לאירוע'
@@ -721,10 +840,11 @@ export default function EventPage() {
                 : 'טופס הרשמה'}
           </h2>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* 2026 UX: Enhanced field spacing from 16px to 24px */}
             {event.fieldsSchema.map((field: any) => (
               <div key={field.id}>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   {field.label}
                   {field.required && <span className="text-red-500 mr-1">*</span>}
                 </label>
@@ -733,8 +853,19 @@ export default function EventPage() {
                     name={field.name}
                     required={field.required}
                     value={formData[field.name] || ''}
-                    onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+                    onChange={(e) => handleFieldChange(field.name, e.target.value, field)}
+                    onBlur={() => {
+                      const validation = validateField(field.name, formData[field.name], field)
+                      setFieldValidation((prev) => ({ ...prev, [field.name]: validation }))
+                    }}
+                    className={`w-full px-4 py-4 border-2 rounded-lg transition-all duration-200 text-gray-900 bg-white
+                      ${
+                        fieldValidation[field.name]?.touched && !fieldValidation[field.name]?.isValid
+                          ? 'border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/20'
+                          : fieldValidation[field.name]?.isValid && fieldValidation[field.name]?.touched
+                            ? 'border-green-500 focus:border-green-500 focus:ring-4 focus:ring-green-500/20'
+                            : 'border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20'
+                      }`}
                   >
                     <option value="">בחר...</option>
                     {field.options?.map((option: string) => (
@@ -744,23 +875,56 @@ export default function EventPage() {
                     ))}
                   </select>
                 ) : field.type === 'checkbox' ? (
-                  <input
-                    name={field.name}
-                    type="checkbox"
-                    checked={formData[field.name] || false}
-                    onChange={(e) => setFormData({ ...formData, [field.name]: e.target.checked })}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
+                  <div className="flex items-center gap-3">
+                    <input
+                      name={field.name}
+                      type="checkbox"
+                      checked={formData[field.name] || false}
+                      onChange={(e) => handleFieldChange(field.name, e.target.checked, field)}
+                      className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-4 focus:ring-blue-500/20"
+                    />
+                    <span className="text-sm text-gray-700">{field.placeholder || field.label}</span>
+                  </div>
                 ) : (
-                  <input
-                    name={field.name}
-                    type={field.type === 'number' ? 'number' : 'text'}
-                    required={field.required}
-                    value={formData[field.name] || ''}
-                    onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
-                    placeholder={field.placeholder}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
-                  />
+                  <div className="relative">
+                    <input
+                      name={field.name}
+                      type={field.type === 'number' ? 'number' : field.type === 'email' ? 'email' : 'text'}
+                      required={field.required}
+                      value={formData[field.name] || ''}
+                      onChange={(e) => handleFieldChange(field.name, e.target.value, field)}
+                      onBlur={() => {
+                        const validation = validateField(field.name, formData[field.name], field)
+                        setFieldValidation((prev) => ({ ...prev, [field.name]: validation }))
+                      }}
+                      placeholder={field.placeholder}
+                      className={`w-full px-4 py-4 pr-12 border-2 rounded-lg transition-all duration-200 text-gray-900 bg-white text-base
+                        ${
+                          fieldValidation[field.name]?.touched && !fieldValidation[field.name]?.isValid
+                            ? 'border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/20'
+                            : fieldValidation[field.name]?.isValid && fieldValidation[field.name]?.touched
+                              ? 'border-green-500 focus:border-green-500 focus:ring-4 focus:ring-green-500/20'
+                              : 'border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20'
+                        }`}
+                    />
+                    {/* 2026 UX: Real-time validation icon */}
+                    {fieldValidation[field.name]?.touched && (
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                        {fieldValidation[field.name]?.isValid ? (
+                          <Check className="w-5 h-5 text-green-600" />
+                        ) : (
+                          <X className="w-5 h-5 text-red-600" />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {/* 2026 UX: Inline validation message */}
+                {fieldValidation[field.name]?.touched && fieldValidation[field.name]?.message && (
+                  <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {fieldValidation[field.name]?.message}
+                  </p>
                 )}
               </div>
             ))}
@@ -786,7 +950,7 @@ export default function EventPage() {
               (() => {
                 // Calculate max selectable spots
                 const maxSelectable = isFull
-                  ? Math.min(5, event.maxSpotsPerPerson) // Waitlist: reasonable limit (max 5)
+                  ? event.maxSpotsPerPerson // Waitlist: use full event limit
                   : Math.min(event.maxSpotsPerPerson, spotsLeft) // Normal: available spots only
 
                 return (
@@ -805,7 +969,7 @@ export default function EventPage() {
                             }
                           }}
                           disabled={spotsCount <= 1}
-                          className="w-14 h-14 flex items-center justify-center bg-white border-2 border-gray-300 rounded-xl hover:bg-blue-50 hover:border-blue-400 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300 transition-all text-gray-700 font-bold text-2xl shadow-sm active:scale-95"
+                          className="w-14 h-14 flex items-center justify-center bg-white border-2 border-gray-300 rounded-xl hover:bg-blue-50 hover:border-blue-400 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300 transition-all text-gray-700 font-bold text-2xl shadow-sm active:scale-95 focus:outline-none focus:ring-4 focus:ring-blue-500/20"
                           aria-label="הפחת מספר מקומות"
                         >
                           −
@@ -817,7 +981,7 @@ export default function EventPage() {
                           onChange={(e) => setSpotsCount(parseInt(e.target.value))}
                           required
                           style={{ backgroundColor: schoolColor }}
-                          className="flex-1 px-4 py-4 rounded-xl focus:ring-2 focus:ring-blue-500 text-white text-center font-bold text-xl shadow-md border-0 appearance-none cursor-pointer"
+                          className="flex-1 px-4 py-4 rounded-xl focus:ring-4 focus:ring-blue-500/30 text-white text-center font-bold text-xl shadow-md border-0 appearance-none cursor-pointer"
                         >
                           {Array.from({ length: maxSelectable }, (_, i) => i + 1).map((num) => (
                             <option key={num} value={num} className="bg-white text-gray-900">
@@ -835,7 +999,7 @@ export default function EventPage() {
                             }
                           }}
                           disabled={spotsCount >= maxSelectable}
-                          className="w-14 h-14 flex items-center justify-center bg-white border-2 border-gray-300 rounded-xl hover:bg-blue-50 hover:border-blue-400 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300 transition-all text-gray-700 font-bold text-2xl shadow-sm active:scale-95"
+                          className="w-14 h-14 flex items-center justify-center bg-white border-2 border-gray-300 rounded-xl hover:bg-blue-50 hover:border-blue-400 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300 transition-all text-gray-700 font-bold text-2xl shadow-sm active:scale-95 focus:outline-none focus:ring-4 focus:ring-blue-500/20"
                           aria-label="הוסף מספר מקומות"
                         >
                           +
@@ -866,7 +1030,7 @@ export default function EventPage() {
                       required
                       checked={acceptedTerms}
                       onChange={(e) => setAcceptedTerms(e.target.checked)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-0.5"
+                      className="rounded border-gray-300 text-blue-600 focus:ring-4 focus:ring-blue-500/20 mt-0.5 w-5 h-5"
                     />
                     <span className="text-sm text-gray-700">
                       אני מאשר/ת שקראתי ומסכים/ה לתנאי ההשתתפות
@@ -878,8 +1042,8 @@ export default function EventPage() {
 
             {/* Missing Fields Indicator */}
             {!isFormValid && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="flex items-start gap-2">
+              <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
+                <div className="flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-red-800 mb-2">
@@ -898,10 +1062,11 @@ export default function EventPage() {
               </div>
             )}
 
+            {/* 2026 UX: Desktop submit button (hidden on mobile) */}
             <button
               type="submit"
               disabled={submitting || event.status !== 'OPEN' || !isFormValid}
-              className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="hidden md:flex w-full h-14 items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-4 focus:ring-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg active:scale-[0.98]"
             >
               {submitting ? (
                 <span className="flex items-center justify-center">
@@ -928,6 +1093,40 @@ export default function EventPage() {
             </button>
           </form>
         </div>
+      </div>
+
+      {/* 2026 UX: Sticky CTA Button (Mobile Only) */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t-2 border-gray-200 shadow-2xl z-50">
+        <button
+          type="submit"
+          form="registration-form"
+          onClick={handleSubmit}
+          disabled={submitting || event.status !== 'OPEN' || !isFormValid}
+          className="w-full h-14 flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-4 focus:ring-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg active:scale-[0.98]"
+        >
+          {submitting ? (
+            <span className="flex items-center justify-center">
+              <Loader2 className="w-5 h-5 animate-spin ml-2" />
+              {event.paymentRequired && event.paymentTiming === 'UPFRONT'
+                ? 'מעביר לתשלום...'
+                : 'שולח...'}
+            </span>
+          ) : !isFormValid ? (
+            'נא למלא את כל השדות החובה'
+          ) : event.paymentRequired && event.paymentTiming === 'UPFRONT' ? (
+            totalPrice > 0 ? (
+              `המשך לתשלום (₪${totalPrice})`
+            ) : (
+              'המשך לתשלום'
+            )
+          ) : event.eventType === 'TABLE_BASED' ? (
+            'אשר הזמנה'
+          ) : isFull ? (
+            'הרשמה לרשימת המתנה'
+          ) : (
+            'שלח הרשמה'
+          )}
+        </button>
       </div>
 
       {/* Modal for errors and confirmations */}

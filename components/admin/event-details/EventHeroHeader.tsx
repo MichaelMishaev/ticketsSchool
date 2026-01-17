@@ -79,7 +79,7 @@ export default function EventHeroHeader({ event }: EventHeroHeaderProps) {
                 {getStatusLabel(event.status)}
               </span>
             </div>
-            <p className="text-sm text-gray-600">שתף את קישור ההרשמה כדי להתחיל לקבל משתתפים</p>
+            <p className="text-sm text-gray-600">יש לשתף את קישור ההרשמה לאירוע כדי שהמשתתפים יוכלו להרשם</p>
           </div>
         </div>
 

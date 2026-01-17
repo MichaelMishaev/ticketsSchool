@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma, Prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth.server'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * POST /api/events/[id]/waitlist/[regId]/assign
@@ -189,7 +190,7 @@ export async function POST(
       table: result.table
     })
   } catch (error: any) {
-    console.error('Waitlist assignment error:', error)
+    logger.error('Waitlist assignment error', { source: 'events', error })
 
     // Handle auth errors
     if (error.message === 'Unauthorized') {

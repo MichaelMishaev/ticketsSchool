@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger-v2'
 
 // POST /api/events/[id]/tables/from-template - Create tables from template
 export async function POST(
@@ -142,7 +143,7 @@ export async function POST(
       }
     }, { status: 201 })
   } catch (error) {
-    console.error('Failed to create tables from template:', error)
+    logger.error('Failed to create tables from template', { source: 'tables', error })
     return NextResponse.json(
       { error: 'Failed to create tables from template' },
       { status: 500 }

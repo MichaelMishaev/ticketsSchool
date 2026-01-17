@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth.server'
 import { generateCheckInToken, validateCheckInTokenFormat } from '@/lib/check-in-token'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * GET /api/events/[id]/check-in-link
@@ -55,7 +56,7 @@ export async function GET(
       eventTitle: event.title
     })
   } catch (error) {
-    console.error('Error getting check-in link:', error)
+    logger.error('Error getting check-in link', { source: 'events', error })
     return NextResponse.json(
       { error: 'Failed to get check-in link' },
       { status: 500 }
@@ -112,7 +113,7 @@ export async function POST(
       message: 'Check-in link regenerated successfully. Old link is now invalid.'
     })
   } catch (error) {
-    console.error('Error regenerating check-in link:', error)
+    logger.error('Error regenerating check-in link', { source: 'events', error })
     return NextResponse.json(
       { error: 'Failed to regenerate check-in link' },
       { status: 500 }

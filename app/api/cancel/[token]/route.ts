@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * GET /api/cancel/[token]
@@ -107,7 +108,7 @@ export async function GET(
       hoursUntilEvent: Math.round(hoursUntilEvent * 10) / 10
     })
   } catch (error) {
-    console.error('Cancellation preview error:', error)
+    logger.error('Cancellation preview error', { source: 'registration', error })
     return NextResponse.json(
       { error: 'Failed to load cancellation details' },
       { status: 500 }
@@ -140,7 +141,7 @@ export async function POST(
       message: 'Reservation cancelled successfully'
     })
   } catch (error: any) {
-    console.error('Cancellation error:', error)
+    logger.error('Cancellation error', { source: 'registration', error })
 
     // Return user-friendly error message
     return NextResponse.json(

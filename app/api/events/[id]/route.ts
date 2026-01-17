@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin, requireSchoolAccess } from '@/lib/auth.server'
+import { logger } from '@/lib/logger-v2'
 
 export async function GET(
   request: NextRequest,
@@ -80,7 +81,7 @@ export async function GET(
       totalSpotsTaken
     })
   } catch (error) {
-    console.error('Error fetching event:', error)
+    logger.error('Error fetching event', { source: 'events', error })
     return NextResponse.json(
       { error: 'Failed to fetch event' },
       { status: 500 }
@@ -166,7 +167,7 @@ export async function PATCH(
 
     return NextResponse.json(event)
   } catch (error) {
-    console.error('Error updating event:', error)
+    logger.error('Error updating event', { source: 'events', error })
     return NextResponse.json(
       { error: 'Failed to update event' },
       { status: 500 }
@@ -230,7 +231,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting event:', error)
+    logger.error('Error deleting event', { source: 'events', error })
     return NextResponse.json(
       { error: 'Failed to delete event' },
       { status: 500 }

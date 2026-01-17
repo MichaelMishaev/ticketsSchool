@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger-v2'
 
 // GET /api/events/[id]/tables - List tables
 export async function GET(
@@ -57,7 +58,7 @@ export async function GET(
 
     return NextResponse.json({ tables })
   } catch (error) {
-    console.error('Failed to fetch tables:', error)
+    logger.error('Failed to fetch tables', { source: 'tables', error })
     return NextResponse.json(
       { error: 'Failed to fetch tables' },
       { status: 500 }
@@ -223,7 +224,7 @@ export async function POST(
       count: createdTables.length
     }, { status: 201 })
   } catch (error) {
-    console.error('Failed to create table:', error)
+    logger.error('Failed to create table', { source: 'tables', error })
     return NextResponse.json(
       { error: 'Failed to create table' },
       { status: 500 }

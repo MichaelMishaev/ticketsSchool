@@ -3,6 +3,7 @@ import { OAuth2Client } from 'google-auth-library'
 import { prisma } from '@/lib/prisma'
 import { randomUUID } from 'crypto'
 import pkceChallenge from 'pkce-challenge'
+import { authLogger } from '@/lib/logger-v2'
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
@@ -12,7 +13,7 @@ const REDIRECT_URI = `${BASE_URL}/api/auth/google/callback`
 export async function GET(request: NextRequest) {
   try {
     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
-      console.error('[Google OAuth] Missing Google OAuth credentials')
+      authLogger.error('Missing Google OAuth credentials')
       return NextResponse.redirect(new URL('/admin/login?error=oauth_not_configured', BASE_URL))
     }
 
@@ -54,27 +55,14 @@ export async function GET(request: NextRequest) {
     authUrl.searchParams.set('code_challenge', code_challenge) // PKCE
     authUrl.searchParams.set('code_challenge_method', 'S256') // PKCE
 
-    console.log('[Google OAuth] State stored in DB with PKCE, redirecting to Google')
+    authLogger.debug('State stored in DB with PKCE, redirecting to Google')
 
     // Simply redirect - no cookies needed
     return NextResponse.redirect(authUrl.toString())
   } catch (error) {
     // Log full error details server-side only
     const requestId = randomUUID()
-    console.error('[Google OAuth] ERROR - Request ID:', requestId)
-    console.error('[Google OAuth] Error initiating OAuth flow:', error)
-    console.error(
-      '[Google OAuth] Error type:',
-      error instanceof Error ? error.constructor.name : typeof error
-    )
-    console.error(
-      '[Google OAuth] Error message:',
-      error instanceof Error ? error.message : String(error)
-    )
-    console.error(
-      '[Google OAuth] Error stack:',
-      error instanceof Error ? error.stack : 'No stack trace'
-    )
+    authLogger.error('Error initiating OAuth flow', { error, requestId })
 
     // Return generic error to client (no internal details exposed)
     return NextResponse.redirect(new URL(`/admin/login?error=oauth_init_failed`, BASE_URL))

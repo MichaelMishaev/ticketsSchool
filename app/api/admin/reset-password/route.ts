@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import * as bcrypt from 'bcryptjs'
 import * as jwt from 'jsonwebtoken'
+import { logger } from '@/lib/logger-v2'
 
 // Lazy getter for JWT_SECRET - only validates when actually used (not at import time)
 function getJWTSecret(): string {
@@ -89,7 +90,7 @@ export async function POST(request: NextRequest) {
       message: 'הסיסמה שונתה בהצלחה! אפשר להתחבר עכשיו.',
     })
   } catch (error) {
-    console.error('Reset password error:', error)
+    logger.error('Reset password error', { source: 'auth', error })
     return NextResponse.json(
       { error: 'שגיאה באיפוס הסיסמה. נסה שוב.' },
       { status: 500 }
