@@ -1776,16 +1776,16 @@ export default function NewEventPage() {
           </motion.div>
 
           {/* Navigation Buttons - Mobile (Fixed Bottom Bar) */}
-          <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 p-4 shadow-lg z-40">
+          <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 p-3 shadow-lg z-40">
             <div className="max-w-4xl mx-auto">
               {currentStep < steps.length - 1 ? (
-                <div className="flex gap-3">
+                <div className="flex gap-2">
                   {currentStep > 0 && (
                     <button
                       type="button"
                       onClick={prevStep}
                       disabled={isLoading}
-                      className={buttonVariants.ghost + ' ' + buttonSizes.lg + ' flex-1'}
+                      className={buttonVariants.ghost + ' ' + buttonSizes.md + ' flex-1'}
                     >
                       <ArrowRight className="w-5 h-5" />
                       <span>חזור</span>
@@ -1799,9 +1799,9 @@ export default function NewEventPage() {
                       nextStep()
                     }}
                     disabled={!validateStep(currentStep)}
-                    className={buttonVariants.primary + ' ' + buttonSizes.lg + ' flex-1'}
+                    className={buttonVariants.primary + ' ' + buttonSizes.md + ' flex-1'}
                   >
-                    <span>המשך לשלב הבא</span>
+                    <span>המשך</span>
                     <ArrowLeft className="w-5 h-5" />
                   </button>
                 </div>
@@ -1811,7 +1811,7 @@ export default function NewEventPage() {
                   disabled={
                     isLoading || Object.values(validationErrors).some((error) => error !== '')
                   }
-                  className={buttonVariants.success + ' ' + buttonSizes.lg + ' w-full shadow-lg'}
+                  className={buttonVariants.success + ' ' + buttonSizes.md + ' w-full shadow-lg'}
                 >
                   {isLoading ? (
                     <>
