@@ -176,11 +176,34 @@ export default function EventsPage() {
     )
   }
 
-  // Check if event has already started
-  const isEventPast = (startAt: string | Date): boolean => {
+  // Get event timing status for badge display
+  // Returns: 'active' | 'registration-ended' | 'event-ended'
+  const getEventTimingStatus = (
+    startAt: string | Date
+  ): 'active' | 'registration-ended' | 'event-ended' => {
     const now = new Date()
     const eventStart = new Date(startAt)
-    return now > eventStart
+
+    // Event hasn't started yet
+    if (now <= eventStart) {
+      return 'active'
+    }
+
+    // Check if it's the same calendar day
+    const nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const eventDate = new Date(
+      eventStart.getFullYear(),
+      eventStart.getMonth(),
+      eventStart.getDate()
+    )
+
+    if (nowDate.getTime() === eventDate.getTime()) {
+      // Same day as event - registration ended but event ongoing
+      return 'registration-ended'
+    }
+
+    // Next day or later - event fully ended
+    return 'event-ended'
   }
 
   // Filter events based on selected type
@@ -441,15 +464,26 @@ export default function EventsPage() {
                           {format(new Date(event.startAt), 'dd/MM/yyyy HH:mm')}
                         </span>
                       </div>
-                      {/* Past Event Badge */}
-                      {isEventPast(event.startAt) && (
+                      {/* Event Timing Status Badges - High visibility UX */}
+                      {getEventTimingStatus(event.startAt) === 'registration-ended' && (
                         <span
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 text-gray-700 rounded-md font-semibold text-xs border border-gray-300"
+                          className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-100 text-amber-800 rounded-lg font-bold text-sm border-2 border-amber-400 shadow-sm animate-pulse"
                           role="status"
-                          aria-label="האירוע כבר החל"
-                          title="האירוע כבר החל"
+                          aria-label="ההרשמה הסתיימה"
+                          title="האירוע התחיל היום - ההרשמה סגורה"
                         >
-                          <Clock className="w-3.5 h-3.5" />
+                          <Clock className="w-4 h-4" />
+                          <span>ההרשמה הסתיימה</span>
+                        </span>
+                      )}
+                      {getEventTimingStatus(event.startAt) === 'event-ended' && (
+                        <span
+                          className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg font-bold text-sm border-2 border-gray-400 shadow-sm"
+                          role="status"
+                          aria-label="האירוע הסתיים"
+                          title="האירוע כבר עבר"
+                        >
+                          <Clock className="w-4 h-4" />
                           <span>הסתיים</span>
                         </span>
                       )}

@@ -476,6 +476,73 @@ export default function EventPage() {
     )
   }
 
+  // Check event timing state
+  const now = new Date()
+  const eventStart = new Date(event.startAt)
+  const eventEnd = event.endAt
+    ? new Date(event.endAt)
+    : new Date(eventStart.getTime() + 2 * 60 * 60 * 1000) // Default: startAt + 2 hours
+
+  const hasEventStarted = now >= eventStart
+  const hasEventEnded = now >= eventEnd
+
+  // Event has ended - show informational message
+  if (hasEventEnded) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+          <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">האירוע הסתיים</h1>
+          <p className="text-gray-600 mb-6">לא ניתן להירשם לאירוע שכבר התקיים</p>
+
+          {/* Event details for transparency */}
+          <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
+            <div className="flex items-center justify-center gap-2 text-gray-700">
+              <Calendar className="w-4 h-4" />
+              <span>{format(eventStart, "EEEE, d בMMMM yyyy 'בשעה' HH:mm", { locale: he })}</span>
+            </div>
+            {event.location && (
+              <div className="flex items-center justify-center gap-2 text-gray-700">
+                <MapPin className="w-4 h-4" />
+                <span>{event.location}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Event has started but not ended - registration closed
+  if (hasEventStarted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+          <Clock className="w-16 h-16 text-amber-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">האירוע התחיל</h1>
+          <p className="text-gray-600 mb-6">ההרשמה נסגרה - האירוע מתקיים כעת</p>
+
+          {/* Event details for context */}
+          <div className="bg-amber-50 rounded-lg p-4 space-y-2 text-sm border border-amber-200">
+            <div className="flex items-center justify-center gap-2 text-gray-700">
+              <Calendar className="w-4 h-4" />
+              <span>{format(eventStart, "EEEE, d בMMMM yyyy 'בשעה' HH:mm", { locale: he })}</span>
+            </div>
+            {event.location && (
+              <div className="flex items-center justify-center gap-2 text-gray-700">
+                <MapPin className="w-4 h-4" />
+                <span>{event.location}</span>
+              </div>
+            )}
+            <div className="pt-2 border-t border-amber-200 text-amber-800 font-medium">
+              הרשמה אפשרית רק לפני תחילת האירוע
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // For TABLE_BASED events, don't check capacity (backend handles table availability)
   // For CAPACITY_BASED events, check if spots are available
   const spotsLeft =
@@ -860,9 +927,11 @@ export default function EventPage() {
                     }}
                     className={`w-full px-4 py-4 border-2 rounded-lg transition-all duration-200 text-gray-900 bg-white
                       ${
-                        fieldValidation[field.name]?.touched && !fieldValidation[field.name]?.isValid
+                        fieldValidation[field.name]?.touched &&
+                        !fieldValidation[field.name]?.isValid
                           ? 'border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/20'
-                          : fieldValidation[field.name]?.isValid && fieldValidation[field.name]?.touched
+                          : fieldValidation[field.name]?.isValid &&
+                              fieldValidation[field.name]?.touched
                             ? 'border-green-500 focus:border-green-500 focus:ring-4 focus:ring-green-500/20'
                             : 'border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20'
                       }`}
@@ -883,13 +952,21 @@ export default function EventPage() {
                       onChange={(e) => handleFieldChange(field.name, e.target.checked, field)}
                       className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-4 focus:ring-blue-500/20"
                     />
-                    <span className="text-sm text-gray-700">{field.placeholder || field.label}</span>
+                    <span className="text-sm text-gray-700">
+                      {field.placeholder || field.label}
+                    </span>
                   </div>
                 ) : (
                   <div className="relative">
                     <input
                       name={field.name}
-                      type={field.type === 'number' ? 'number' : field.type === 'email' ? 'email' : 'text'}
+                      type={
+                        field.type === 'number'
+                          ? 'number'
+                          : field.type === 'email'
+                            ? 'email'
+                            : 'text'
+                      }
                       required={field.required}
                       value={formData[field.name] || ''}
                       onChange={(e) => handleFieldChange(field.name, e.target.value, field)}
@@ -900,9 +977,11 @@ export default function EventPage() {
                       placeholder={field.placeholder}
                       className={`w-full px-4 py-4 pr-12 border-2 rounded-lg transition-all duration-200 text-gray-900 bg-white text-base
                         ${
-                          fieldValidation[field.name]?.touched && !fieldValidation[field.name]?.isValid
+                          fieldValidation[field.name]?.touched &&
+                          !fieldValidation[field.name]?.isValid
                             ? 'border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/20'
-                            : fieldValidation[field.name]?.isValid && fieldValidation[field.name]?.touched
+                            : fieldValidation[field.name]?.isValid &&
+                                fieldValidation[field.name]?.touched
                               ? 'border-green-500 focus:border-green-500 focus:ring-4 focus:ring-green-500/20'
                               : 'border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20'
                         }`}
