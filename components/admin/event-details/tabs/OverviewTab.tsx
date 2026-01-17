@@ -13,6 +13,8 @@ import {
   User,
 } from 'lucide-react'
 import CheckInHeroCard from '@/components/admin/event-details/CheckInHeroCard'
+import CheckInShareCard from '@/components/admin/event-details/CheckInShareCard'
+import RegistrationShareCard from '@/components/admin/event-details/RegistrationShareCard'
 import EventHeroHeader from '@/components/admin/event-details/EventHeroHeader'
 
 interface Registration {
@@ -155,24 +157,14 @@ export default function OverviewTab({ event, onEventUpdate, onTabChange }: Overv
 
   return (
     <>
-      {/* Hero Header - Event Title + Sharing (MOST IMPORTANT) */}
+      {/* Hero Header - Event Title + Status */}
       <EventHeroHeader event={event} />
 
       <div
         className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-44 md:pb-6 space-y-6 overflow-x-hidden"
         dir="rtl"
       >
-        {/* Edit Button - Always Visible (Top Right) */}
-        <div className="flex justify-end">
-          <button
-            onClick={() => router.push(`/admin/events/${event.id}/edit`)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 transition-all focus:outline-none focus:ring-4 focus:ring-blue-500/20 shadow-sm"
-          >
-            <Edit className="w-4 h-4" />
-            <span>ערוך אירוע</span>
-          </button>
-        </div>
-
+        {/* LAYER 2: Event Details - When & Where (CONTEXT FIRST) */}
         {/* Event Info Card - Clean, Minimal Design */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
           {/* Event Meta */}
@@ -239,19 +231,29 @@ export default function OverviewTab({ event, onEventUpdate, onTabChange }: Overv
                   </div>
                   <div className="flex flex-wrap gap-2 text-xs font-medium text-green-700">
                     {event.pricingModel === 'FIXED_PRICE' && (
-                      <span className="px-2 py-0.5 bg-white border border-green-200 rounded">מחיר קבוע</span>
+                      <span className="px-2 py-0.5 bg-white border border-green-200 rounded">
+                        מחיר קבוע
+                      </span>
                     )}
                     {event.pricingModel === 'PER_GUEST' && (
-                      <span className="px-2 py-0.5 bg-white border border-green-200 rounded">מחיר למשתתף</span>
+                      <span className="px-2 py-0.5 bg-white border border-green-200 rounded">
+                        מחיר למשתתף
+                      </span>
                     )}
                     {event.paymentTiming === 'UPFRONT' && (
-                      <span className="px-2 py-0.5 bg-white border border-green-200 rounded">תשלום מראש</span>
+                      <span className="px-2 py-0.5 bg-white border border-green-200 rounded">
+                        תשלום מראש
+                      </span>
                     )}
                     {event.paymentTiming === 'POST_REGISTRATION' && (
-                      <span className="px-2 py-0.5 bg-white border border-green-200 rounded">תשלום לאחר הרשמה</span>
+                      <span className="px-2 py-0.5 bg-white border border-green-200 rounded">
+                        תשלום לאחר הרשמה
+                      </span>
                     )}
                     {event.paymentTiming === 'OPTIONAL' && (
-                      <span className="px-2 py-0.5 bg-white border border-green-200 rounded">אופציונלי</span>
+                      <span className="px-2 py-0.5 bg-white border border-green-200 rounded">
+                        אופציונלי
+                      </span>
                     )}
                   </div>
                 </div>
@@ -260,6 +262,28 @@ export default function OverviewTab({ event, onEventUpdate, onTabChange }: Overv
           )}
         </div>
 
+        {/* Registration Share Card - Share to get attendees */}
+        <RegistrationShareCard
+          eventSlug={event.slug}
+          schoolSlug={event.school.slug}
+          eventTitle={event.title}
+        />
+
+        {/* Check-In Share Card - Share with gate person */}
+        <CheckInShareCard eventId={event.id} eventTitle={event.title} />
+
+        {/* Edit Button - Secondary action, minimal visual weight */}
+        <div className="flex justify-end -mt-2">
+          <button
+            onClick={() => router.push(`/admin/events/${event.id}/edit`)}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          >
+            <Edit className="w-4 h-4" />
+            <span>ערוך אירוע</span>
+          </button>
+        </div>
+
+        {/* LAYER 3: Capacity Status - How Full? */}
         {/* Unified Capacity Widget - Progress Bar + Interactive Stats */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
           {/* Header with Count */}
@@ -360,7 +384,7 @@ export default function OverviewTab({ event, onEventUpdate, onTabChange }: Overv
           </div>
         </div>
 
-        {/* Check-In Hero Card - Discoverable but secondary to sharing */}
+        {/* Check-In Hero Card - Stats and access */}
         <CheckInHeroCard
           eventId={event.id}
           eventStartAt={event.startAt}

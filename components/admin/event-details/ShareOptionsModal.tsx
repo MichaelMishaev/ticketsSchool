@@ -9,6 +9,7 @@ interface ShareOptionsModalProps {
   onClose: () => void
   url: string
   eventTitle: string
+  shareType?: 'registration' | 'check-in'
 }
 
 export default function ShareOptionsModal({
@@ -16,6 +17,7 @@ export default function ShareOptionsModal({
   onClose,
   url,
   eventTitle,
+  shareType = 'registration',
 }: ShareOptionsModalProps) {
   const modalRef = useRef<HTMLDivElement>(null)
   const [copied, setCopied] = useState(false)
@@ -31,10 +33,18 @@ export default function ShareOptionsModal({
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // URL encoding for share messages
-  const shareMessage = encodeURIComponent(`${eventTitle} - הרשם כאן: ${url}`)
+  // URL encoding for share messages (context-aware based on shareType)
+  const getShareMessage = () => {
+    if (shareType === 'check-in') {
+      return `${eventTitle} - קישור צ׳ק-אין (לא צריך סיסמה!): ${url}`
+    }
+    return `${eventTitle} - הרשם כאן: ${url}`
+  }
+  const shareMessage = encodeURIComponent(getShareMessage())
   const encodedUrl = encodeURIComponent(url)
-  const encodedTitle = encodeURIComponent(eventTitle)
+  const encodedTitle = encodeURIComponent(
+    shareType === 'check-in' ? `${eventTitle} - קישור צ׳ק-אין` : eventTitle
+  )
 
   // Share URLs
   const shareUrls = {
