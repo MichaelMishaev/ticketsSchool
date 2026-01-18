@@ -87,17 +87,19 @@ export async function GET(request: NextRequest) {
 
     const totalAdmins = admins.length
     // Consider active if logged in within the date range
+    // Fix: Use < instead of <= for upper bound (consistent with other queries)
     const activeAdmins = admins.filter(
-      (a) => a.isActive && a.lastLoginAt && a.lastLoginAt >= from && a.lastLoginAt <= to
+      (a) => a.isActive && a.lastLoginAt && a.lastLoginAt >= from && a.lastLoginAt < to
     ).length
 
     // New schools trend (by day in date range)
+    // Fix: Use < instead of <= for upper bound (consistent with Prisma queries)
     const newSchoolsByDay = await prisma.$queryRaw<Array<{ date: Date; count: bigint }>>`
       SELECT
         DATE_TRUNC('day', "createdAt") as date,
         COUNT(*) as count
       FROM "School"
-      WHERE "createdAt" >= ${from} AND "createdAt" <= ${to}
+      WHERE "createdAt" >= ${from} AND "createdAt" < ${to}
       GROUP BY DATE_TRUNC('day', "createdAt")
       ORDER BY date
     `
@@ -154,9 +156,10 @@ export async function GET(request: NextRequest) {
       },
     })
 
+    // Fix: Use < instead of <= for upper bound (consistent with other queries)
     const previousActiveAdmins = admins.filter(
       (a) =>
-        a.isActive && a.lastLoginAt && a.lastLoginAt >= previousFrom && a.lastLoginAt <= previousTo
+        a.isActive && a.lastLoginAt && a.lastLoginAt >= previousFrom && a.lastLoginAt < previousTo
     ).length
 
     return NextResponse.json({

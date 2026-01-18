@@ -267,13 +267,19 @@ export default function StatisticsDashboard() {
 
   const handleRefresh = async () => {
     setRefreshing(true)
-    await loadData()
-    setRefreshing(false)
+    try {
+      await loadData()
+    } finally {
+      // Always reset refreshing state, even if loadData throws an error
+      setRefreshing(false)
+    }
   }
 
   const handleExport = async (type: string) => {
     const { from, to } = getDateParams()
     const params = new URLSearchParams({ type, from, to })
+
+    let tempLink: HTMLAnchorElement | null = null
 
     try {
       const response = await fetch(`/api/admin/super/statistics/export?${params}`)
@@ -281,21 +287,34 @@ export default function StatisticsDashboard() {
 
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `statistics_${type}_${new Date().toISOString().split('T')[0]}.csv`
-      document.body.appendChild(a)
-      a.click()
+      tempLink = document.createElement('a')
+      tempLink.href = url
+      tempLink.download = `statistics_${type}_${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(tempLink)
+      tempLink.click()
       window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
     } catch (err) {
       console.error('Export error:', err)
       alert('שגיאה בייצוא הנתונים')
+    } finally {
+      // Cleanup: always remove the temporary link element from DOM
+      if (tempLink && document.body.contains(tempLink)) {
+        document.body.removeChild(tempLink)
+      }
     }
   }
 
   useEffect(() => {
     loadData()
+
+    // Cleanup: abort any pending request when component unmounts
+    // This prevents memory leaks and state updates on unmounted components
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+        abortControllerRef.current = null
+      }
+    }
   }, [loadData])
 
   // Format currency
@@ -465,6 +484,7 @@ export default function StatisticsDashboard() {
           <button
             onClick={handleRefresh}
             disabled={refreshing}
+            aria-label={refreshing ? 'מרענן נתונים...' : 'רענן נתונים'}
             className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
@@ -602,9 +622,10 @@ export default function StatisticsDashboard() {
                           cy="50%"
                           innerRadius={60}
                           outerRadius={80}
-                          label={({ name, percent }) =>
-                            `${name} (${((percent || 0) * 100).toFixed(0)}%)`
-                          }
+                          label={({ name, percent }) => {
+                            const percentValue = Number(percent) || 0
+                            return `${name} (${(percentValue * 100).toFixed(0)}%)`
+                          }}
                         >
                           {revenueData.byStatus.map((_, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -982,9 +1003,10 @@ export default function StatisticsDashboard() {
                           cy="50%"
                           innerRadius={60}
                           outerRadius={80}
-                          label={({ name, percent }) =>
-                            `${name} (${((percent || 0) * 100).toFixed(0)}%)`
-                          }
+                          label={({ name, percent }) => {
+                            const percentValue = Number(percent) || 0
+                            return `${name} (${(percentValue * 100).toFixed(0)}%)`
+                          }}
                         >
                           {platformData.byPlan.map((_, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

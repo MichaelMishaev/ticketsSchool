@@ -15,6 +15,12 @@ export async function GET(request: NextRequest) {
     const fromParam = searchParams.get('from')
     const toParam = searchParams.get('to')
 
+    // Validate export type with whitelist (security: prevent enumeration attacks)
+    const VALID_EXPORT_TYPES = ['revenue', 'registrations', 'capacity', 'checkins', 'platform']
+    if (!VALID_EXPORT_TYPES.includes(type)) {
+      return NextResponse.json({ error: 'Invalid export type' }, { status: 400 })
+    }
+
     if (!fromParam || !toParam) {
       return NextResponse.json({ error: 'Missing date range parameters' }, { status: 400 })
     }
@@ -27,10 +33,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid date format' }, { status: 400 })
     }
 
-    // Validate date range (max 1 year)
+    // Validate date order (from must be before to)
+    if (from >= to) {
+      return NextResponse.json({ error: 'Start date must be before end date' }, { status: 400 })
+    }
+
+    // Validate date range (max 1 year, min 1 minute)
+    const rangeMs = to.getTime() - from.getTime()
     const maxRange = 365 * 24 * 60 * 60 * 1000
-    if (to.getTime() - from.getTime() > maxRange) {
+    const minRange = 60 * 1000 // 1 minute minimum
+    if (rangeMs > maxRange) {
       return NextResponse.json({ error: 'Date range too large (max 1 year)' }, { status: 400 })
+    }
+    if (rangeMs < minRange) {
+      return NextResponse.json({ error: 'Date range too small (min 1 minute)' }, { status: 400 })
     }
 
     let csv = ''
@@ -86,7 +102,15 @@ function formatDateForFilename(date: Date): string {
 
 function escapeCsv(value: string | number | null | undefined): string {
   if (value === null || value === undefined) return ''
-  const str = String(value)
+  const str = String(value).trim()
+
+  // Security: Prevent CSV injection (formula injection attacks)
+  // When opened in Excel/Google Sheets, formulas starting with =, +, -, @ can execute
+  if (str.match(/^[=+\-@]/)) {
+    // Prefix with single quote to disable formula execution in Excel
+    return `"'${str.replace(/"/g, '""')}"`
+  }
+
   if (str.includes(',') || str.includes('"') || str.includes('\n')) {
     return `"${str.replace(/"/g, '""')}"`
   }

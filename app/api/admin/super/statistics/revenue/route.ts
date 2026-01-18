@@ -54,24 +54,24 @@ export async function GET(request: NextRequest) {
     const failedPayments = payments.filter((p) => p.status === 'FAILED')
 
     const totalRevenue = completedPayments.reduce((sum, p) => sum + Number(p.amount), 0)
-    const totalRefunds = refundedPayments.reduce(
-      (sum, p) => sum + Number(p.refundAmount || p.amount),
-      0
-    )
+    // Fix: Use refundAmount only, not full amount as fallback (prevents overstating refunds)
+    const totalRefunds = refundedPayments.reduce((sum, p) => sum + Number(p.refundAmount || 0), 0)
     const netRevenue = totalRevenue - totalRefunds
     const averagePayment =
       completedPayments.length > 0 ? totalRevenue / completedPayments.length : 0
 
     // Get revenue by day using raw SQL for proper date grouping
+    // Fix: Use < instead of <= for upper bound (consistent with Prisma query)
+    // Fix: Use COALESCE("refundAmount", 0) not amount (prevents overstating refunds)
     const byDayRaw = await prisma.$queryRaw<
       Array<{ date: Date; revenue: Prisma.Decimal; refunds: Prisma.Decimal }>
     >`
       SELECT
         DATE_TRUNC('day', "createdAt") as date,
         COALESCE(SUM(CASE WHEN status = 'COMPLETED' THEN amount ELSE 0 END), 0) as revenue,
-        COALESCE(SUM(CASE WHEN status = 'REFUNDED' THEN COALESCE("refundAmount", amount) ELSE 0 END), 0) as refunds
+        COALESCE(SUM(CASE WHEN status = 'REFUNDED' THEN COALESCE("refundAmount", 0) ELSE 0 END), 0) as refunds
       FROM "Payment"
-      WHERE "createdAt" >= ${from} AND "createdAt" <= ${to}
+      WHERE "createdAt" >= ${from} AND "createdAt" < ${to}
       GROUP BY DATE_TRUNC('day', "createdAt")
       ORDER BY date
     `

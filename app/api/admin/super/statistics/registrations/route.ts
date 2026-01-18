@@ -65,6 +65,7 @@ export async function GET(request: NextRequest) {
       totalRegistrations > 0 ? Math.round((cancelled.length / totalRegistrations) * 100) : 0
 
     // Get registrations by day
+    // Fix: Use < instead of <= for upper bound (consistent with Prisma query)
     const byDayRaw = await prisma.$queryRaw<
       Array<{
         date: Date
@@ -79,7 +80,7 @@ export async function GET(request: NextRequest) {
         COUNT(*) FILTER (WHERE status = 'WAITLIST') as waitlist,
         COUNT(*) FILTER (WHERE status = 'CANCELLED') as cancelled
       FROM "Registration"
-      WHERE "createdAt" >= ${from} AND "createdAt" <= ${to}
+      WHERE "createdAt" >= ${from} AND "createdAt" < ${to}
       GROUP BY DATE_TRUNC('day', "createdAt")
       ORDER BY date
     `
