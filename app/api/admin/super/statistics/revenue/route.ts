@@ -22,6 +22,11 @@ export async function GET(request: NextRequest) {
     const from = new Date(fromParam)
     const to = new Date(toParam)
 
+    // Validate date format
+    if (isNaN(from.getTime()) || isNaN(to.getTime())) {
+      return NextResponse.json({ error: 'Invalid date format' }, { status: 400 })
+    }
+
     // Validate date range (max 1 year)
     const maxRange = 365 * 24 * 60 * 60 * 1000
     if (to.getTime() - from.getTime() > maxRange) {
@@ -36,7 +41,7 @@ export async function GET(request: NextRequest) {
     // Get all payments in the date range
     const payments = await prisma.payment.findMany({
       where: {
-        createdAt: { gte: from, lte: to },
+        createdAt: { gte: from, lt: to },
       },
       include: {
         school: { select: { name: true } },
@@ -97,7 +102,7 @@ export async function GET(request: NextRequest) {
     // Get revenue by school
     const schoolRevenue: Record<string, { revenue: number; count: number }> = {}
     completedPayments.forEach((p) => {
-      const schoolName = p.school.name
+      const schoolName = p.school?.name || 'בית ספר לא ידוע'
       if (!schoolRevenue[schoolName]) {
         schoolRevenue[schoolName] = { revenue: 0, count: 0 }
       }
@@ -116,7 +121,7 @@ export async function GET(request: NextRequest) {
     // Get previous period data for comparison
     const previousPayments = await prisma.payment.findMany({
       where: {
-        createdAt: { gte: previousFrom, lte: previousTo },
+        createdAt: { gte: previousFrom, lt: previousTo },
         status: 'COMPLETED',
       },
     })

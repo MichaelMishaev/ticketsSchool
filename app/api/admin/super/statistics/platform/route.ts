@@ -21,6 +21,11 @@ export async function GET(request: NextRequest) {
     const from = new Date(fromParam)
     const to = new Date(toParam)
 
+    // Validate date format
+    if (isNaN(from.getTime()) || isNaN(to.getTime())) {
+      return NextResponse.json({ error: 'Invalid date format' }, { status: 400 })
+    }
+
     // Validate date range (max 1 year)
     const maxRange = 365 * 24 * 60 * 60 * 1000
     if (to.getTime() - from.getTime() > maxRange) {
@@ -122,13 +127,13 @@ export async function GET(request: NextRequest) {
     // Usage metrics for the period
     const eventsCreated = await prisma.event.count({
       where: {
-        createdAt: { gte: from, lte: to },
+        createdAt: { gte: from, lt: to },
       },
     })
 
     const registrationsProcessed = await prisma.registration.count({
       where: {
-        createdAt: { gte: from, lte: to },
+        createdAt: { gte: from, lt: to },
       },
     })
 
@@ -136,7 +141,7 @@ export async function GET(request: NextRequest) {
     const emailsRecord = await prisma.usageRecord.aggregate({
       where: {
         resourceType: 'EMAIL_SENT',
-        createdAt: { gte: from, lte: to },
+        createdAt: { gte: from, lt: to },
       },
       _sum: { amount: true },
     })
@@ -145,7 +150,7 @@ export async function GET(request: NextRequest) {
     // Previous period stats
     const previousSchools = await prisma.school.count({
       where: {
-        createdAt: { lte: previousTo },
+        createdAt: { lt: previousTo },
       },
     })
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   DollarSign,
@@ -160,6 +160,9 @@ export default function StatisticsDashboard() {
   const [checkinsData, setCheckinsData] = useState<CheckinsData | null>(null)
   const [platformData, setPlatformData] = useState<PlatformData | null>(null)
 
+  // AbortController ref to cancel stale requests
+  const abortControllerRef = useRef<AbortController | null>(null)
+
   const getDateParams = useCallback(() => {
     const now = new Date()
     const to = now.toISOString()
@@ -186,12 +189,12 @@ export default function StatisticsDashboard() {
   }, [dateRange])
 
   const fetchData = useCallback(
-    async (tab: ActiveTab) => {
+    async (tab: ActiveTab, signal: AbortSignal) => {
       const { from, to } = getDateParams()
       const params = new URLSearchParams({ from, to })
 
       try {
-        const response = await fetch(`/api/admin/super/statistics/${tab}?${params}`)
+        const response = await fetch(`/api/admin/super/statistics/${tab}?${params}`, { signal })
         if (response.status === 403) {
           router.push('/admin')
           return null
@@ -201,6 +204,10 @@ export default function StatisticsDashboard() {
         }
         return await response.json()
       } catch (err) {
+        // Don't log abort errors - they're expected when switching tabs quickly
+        if (err instanceof Error && err.name === 'AbortError') {
+          return null
+        }
         console.error(`Error fetching ${tab} data:`, err)
         throw err
       }
@@ -209,13 +216,24 @@ export default function StatisticsDashboard() {
   )
 
   const loadData = useCallback(async () => {
+    // Cancel any previous request to prevent race conditions
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+
+    // Create new AbortController for this request
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+
     setLoading(true)
     setError(null)
 
     try {
       // Fetch data for the active tab
-      const data = await fetchData(activeTab)
-      if (!data) return
+      const data = await fetchData(activeTab, abortController.signal)
+
+      // Check if this request was aborted (user switched tabs)
+      if (abortController.signal.aborted || !data) return
 
       switch (activeTab) {
         case 'revenue':
@@ -235,10 +253,15 @@ export default function StatisticsDashboard() {
           break
       }
     } catch (err) {
+      // Don't show error for aborted requests
+      if (err instanceof Error && err.name === 'AbortError') return
       setError('שגיאה בטעינת הנתונים. אנא נסה שוב.')
       console.error('Error loading data:', err)
     } finally {
-      setLoading(false)
+      // Only update loading state if this is the current request
+      if (!abortController.signal.aborted) {
+        setLoading(false)
+      }
     }
   }, [activeTab, fetchData])
 
@@ -293,14 +316,20 @@ export default function StatisticsDashboard() {
     return date.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' })
   }
 
-  // Calculate percentage change
+  // Calculate percentage change - handles edge cases properly
   const calculateChange = (
     current: number,
     previous: number
-  ): { value: number; isPositive: boolean } => {
-    if (previous === 0) return { value: 0, isPositive: true }
+  ): { value: number; isPositive: boolean; isNew: boolean } => {
+    // Both zero - no change
+    if (previous === 0 && current === 0) return { value: 0, isPositive: true, isNew: false }
+    // Previous zero but current has value - this is "new" data (infinite growth)
+    if (previous === 0 && current > 0) return { value: 100, isPositive: true, isNew: true }
+    // Previous zero and current negative (shouldn't happen but handle it)
+    if (previous === 0) return { value: 100, isPositive: false, isNew: true }
+    // Normal calculation
     const change = ((current - previous) / previous) * 100
-    return { value: Math.abs(Math.round(change)), isPositive: change >= 0 }
+    return { value: Math.abs(Math.round(change)), isPositive: change >= 0, isNew: false }
   }
 
   // Stat Card Component
@@ -351,7 +380,7 @@ export default function StatisticsDashboard() {
                 ) : (
                   <TrendingDown className="w-4 h-4" />
                 )}
-                <span>{change.value}% מהתקופה הקודמת</span>
+                <span>{change.isNew ? 'חדש!' : `${change.value}% מהתקופה הקודמת`}</span>
               </div>
             )}
           </div>

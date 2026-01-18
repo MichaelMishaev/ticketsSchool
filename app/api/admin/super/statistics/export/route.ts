@@ -22,6 +22,11 @@ export async function GET(request: NextRequest) {
     const from = new Date(fromParam)
     const to = new Date(toParam)
 
+    // Validate date format
+    if (isNaN(from.getTime()) || isNaN(to.getTime())) {
+      return NextResponse.json({ error: 'Invalid date format' }, { status: 400 })
+    }
+
     // Validate date range (max 1 year)
     const maxRange = 365 * 24 * 60 * 60 * 1000
     if (to.getTime() - from.getTime() > maxRange) {
@@ -91,7 +96,7 @@ function escapeCsv(value: string | number | null | undefined): string {
 async function exportRevenue(from: Date, to: Date): Promise<string> {
   const payments = await prisma.payment.findMany({
     where: {
-      createdAt: { gte: from, lte: to },
+      createdAt: { gte: from, lt: to },
     },
     include: {
       school: { select: { name: true } },
@@ -104,9 +109,9 @@ async function exportRevenue(from: Date, to: Date): Promise<string> {
   const headers = ['תאריך', 'בית ספר', 'אירוע', 'קוד אישור', 'סכום', 'סטטוס', 'שיטת תשלום']
   const rows = payments.map((p) => [
     new Date(p.createdAt).toLocaleString('he-IL'),
-    p.school.name,
-    p.event.title,
-    p.registration.confirmationCode,
+    p.school?.name || 'בית ספר לא ידוע',
+    p.event?.title || 'אירוע לא ידוע',
+    p.registration?.confirmationCode || '',
     Number(p.amount),
     translatePaymentStatus(p.status),
     p.paymentMethod || 'yaadpay',
@@ -118,7 +123,7 @@ async function exportRevenue(from: Date, to: Date): Promise<string> {
 async function exportRegistrations(from: Date, to: Date): Promise<string> {
   const registrations = await prisma.registration.findMany({
     where: {
-      createdAt: { gte: from, lte: to },
+      createdAt: { gte: from, lt: to },
     },
     include: {
       event: {
@@ -134,8 +139,8 @@ async function exportRegistrations(from: Date, to: Date): Promise<string> {
   const headers = ['תאריך', 'בית ספר', 'אירוע', 'קוד אישור', 'מקומות', 'סטטוס', 'אימייל', 'טלפון']
   const rows = registrations.map((r) => [
     new Date(r.createdAt).toLocaleString('he-IL'),
-    r.event.school.name,
-    r.event.title,
+    r.event?.school?.name || 'בית ספר לא ידוע',
+    r.event?.title || 'אירוע לא ידוע',
     r.confirmationCode,
     r.spotsCount,
     translateRegistrationStatus(r.status),
@@ -149,7 +154,7 @@ async function exportRegistrations(from: Date, to: Date): Promise<string> {
 async function exportCapacity(from: Date, to: Date): Promise<string> {
   const events = await prisma.event.findMany({
     where: {
-      startAt: { gte: from, lte: to },
+      startAt: { gte: from, lt: to },
     },
     include: {
       school: { select: { name: true } },
@@ -175,7 +180,7 @@ async function exportCapacity(from: Date, to: Date): Promise<string> {
     const fillRate = e.capacity > 0 ? Math.round((e.spotsReserved / e.capacity) * 100) : 0
     return [
       new Date(e.startAt).toLocaleString('he-IL'),
-      e.school.name,
+      e.school?.name || 'בית ספר לא ידוע',
       e.title,
       e.capacity,
       e.spotsReserved,
@@ -190,7 +195,7 @@ async function exportCapacity(from: Date, to: Date): Promise<string> {
 async function exportCheckins(from: Date, to: Date): Promise<string> {
   const checkIns = await prisma.checkIn.findMany({
     where: {
-      checkedInAt: { gte: from, lte: to },
+      checkedInAt: { gte: from, lt: to },
       undoneAt: null,
     },
     include: {
@@ -222,9 +227,9 @@ async function exportCheckins(from: Date, to: Date): Promise<string> {
   ]
   const rows = checkIns.map((c) => [
     new Date(c.checkedInAt).toLocaleString('he-IL'),
-    c.registration.event.school.name,
-    c.registration.event.title,
-    c.registration.confirmationCode,
+    c.registration?.event?.school?.name || 'בית ספר לא ידוע',
+    c.registration?.event?.title || 'אירוע לא ידוע',
+    c.registration?.confirmationCode || '',
     c.isLate ? 'כן' : 'לא',
     c.minutesLate || 0,
     c.checkedInBy || '',
@@ -235,6 +240,9 @@ async function exportCheckins(from: Date, to: Date): Promise<string> {
 
 async function exportPlatform(from: Date, to: Date): Promise<string> {
   const schools = await prisma.school.findMany({
+    where: {
+      createdAt: { gte: from, lt: to },
+    },
     include: {
       _count: {
         select: {

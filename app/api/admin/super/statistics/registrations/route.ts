@@ -22,6 +22,11 @@ export async function GET(request: NextRequest) {
     const from = new Date(fromParam)
     const to = new Date(toParam)
 
+    // Validate date format
+    if (isNaN(from.getTime()) || isNaN(to.getTime())) {
+      return NextResponse.json({ error: 'Invalid date format' }, { status: 400 })
+    }
+
     // Validate date range (max 1 year)
     const maxRange = 365 * 24 * 60 * 60 * 1000
     if (to.getTime() - from.getTime() > maxRange) {
@@ -36,7 +41,7 @@ export async function GET(request: NextRequest) {
     // Get all registrations in the date range
     const registrations = await prisma.registration.findMany({
       where: {
-        createdAt: { gte: from, lte: to },
+        createdAt: { gte: from, lt: to },
       },
       include: {
         event: {
@@ -89,7 +94,7 @@ export async function GET(request: NextRequest) {
     // Get registrations by school
     const schoolStats: Record<string, { confirmed: number; waitlist: number }> = {}
     registrations.forEach((r) => {
-      const schoolName = r.event.school.name
+      const schoolName = r.event?.school?.name || 'בית ספר לא ידוע'
       if (!schoolStats[schoolName]) {
         schoolStats[schoolName] = { confirmed: 0, waitlist: 0 }
       }
@@ -117,8 +122,8 @@ export async function GET(request: NextRequest) {
       const key = r.eventId
       if (!eventStats[key]) {
         eventStats[key] = {
-          eventTitle: r.event.title,
-          schoolName: r.event.school.name,
+          eventTitle: r.event?.title || 'אירוע לא ידוע',
+          schoolName: r.event?.school?.name || 'בית ספר לא ידוע',
           registrations: 0,
         }
       }
@@ -132,13 +137,13 @@ export async function GET(request: NextRequest) {
     // Get previous period data for comparison
     const previousRegistrations = await prisma.registration.count({
       where: {
-        createdAt: { gte: previousFrom, lte: previousTo },
+        createdAt: { gte: previousFrom, lt: previousTo },
       },
     })
 
     const previousConfirmed = await prisma.registration.count({
       where: {
-        createdAt: { gte: previousFrom, lte: previousTo },
+        createdAt: { gte: previousFrom, lt: previousTo },
         status: 'CONFIRMED',
       },
     })

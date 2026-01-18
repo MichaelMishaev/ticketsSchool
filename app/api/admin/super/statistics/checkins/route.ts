@@ -21,6 +21,11 @@ export async function GET(request: NextRequest) {
     const from = new Date(fromParam)
     const to = new Date(toParam)
 
+    // Validate date format
+    if (isNaN(from.getTime()) || isNaN(to.getTime())) {
+      return NextResponse.json({ error: 'Invalid date format' }, { status: 400 })
+    }
+
     // Validate date range (max 1 year)
     const maxRange = 365 * 24 * 60 * 60 * 1000
     if (to.getTime() - from.getTime() > maxRange) {
@@ -35,7 +40,7 @@ export async function GET(request: NextRequest) {
     // Get all events in the date range with their registrations and check-ins
     const events = await prisma.event.findMany({
       where: {
-        startAt: { gte: from, lte: to },
+        startAt: { gte: from, lt: to },
       },
       include: {
         school: { select: { name: true } },
@@ -66,7 +71,7 @@ export async function GET(request: NextRequest) {
     }> = []
 
     events.forEach((event) => {
-      const schoolName = event.school.name
+      const schoolName = event.school?.name || 'בית ספר לא ידוע'
       if (!schoolStats[schoolName]) {
         schoolStats[schoolName] = { checkedIn: 0, notCheckedIn: 0 }
       }
@@ -131,7 +136,7 @@ export async function GET(request: NextRequest) {
     // Get previous period data for comparison
     const previousEvents = await prisma.event.findMany({
       where: {
-        startAt: { gte: previousFrom, lte: previousTo },
+        startAt: { gte: previousFrom, lt: previousTo },
       },
       include: {
         registrations: {
