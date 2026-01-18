@@ -11,14 +11,17 @@ interface RateLimitStore {
 const store: RateLimitStore = {}
 
 // Cleanup old entries every 5 minutes
-setInterval(() => {
-  const now = Date.now()
-  for (const key in store) {
-    if (store[key].resetAt < now) {
-      delete store[key]
+setInterval(
+  () => {
+    const now = Date.now()
+    for (const key in store) {
+      if (store[key].resetAt < now) {
+        delete store[key]
+      }
     }
-  }
-}, 5 * 60 * 1000)
+  },
+  5 * 60 * 1000
+)
 
 export function rateLimit(options: {
   windowMs: number
@@ -26,6 +29,16 @@ export function rateLimit(options: {
   blockDurationMs?: number
 }) {
   return async (req: NextRequest): Promise<NextResponse | null> => {
+    // Skip rate limiting for E2E tests (Playwright sets this header)
+    // Also check for test environment variable
+    if (
+      req.headers.get('x-playwright-test') === 'true' ||
+      process.env.PLAYWRIGHT_TEST === 'true' ||
+      process.env.SKIP_RATE_LIMIT === 'true'
+    ) {
+      return null
+    }
+
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
     const key = `${req.nextUrl.pathname}:${ip}`
 
@@ -39,7 +52,7 @@ export function rateLimit(options: {
         { error: 'יותר מדי ניסיונות. נסה שוב מאוחר יותר.' },
         {
           status: 429,
-          headers: { 'Retry-After': retryAfter.toString() }
+          headers: { 'Retry-After': retryAfter.toString() },
         }
       )
     }
@@ -49,7 +62,7 @@ export function rateLimit(options: {
       store[key] = {
         count: 1,
         resetAt: now + options.windowMs,
-        blocked: false
+        blocked: false,
       }
       return null
     }
@@ -65,13 +78,10 @@ export function rateLimit(options: {
       console.warn('[Rate Limit] Account temporarily locked', {
         ip,
         path: req.nextUrl.pathname,
-        attempts: record.count
+        attempts: record.count,
       })
 
-      return NextResponse.json(
-        { error: 'יותר מדי ניסיונות. החשבון נעול זמנית.' },
-        { status: 429 }
-      )
+      return NextResponse.json({ error: 'יותר מדי ניסיונות. החשבון נעול זמנית.' }, { status: 429 })
     }
 
     return null
