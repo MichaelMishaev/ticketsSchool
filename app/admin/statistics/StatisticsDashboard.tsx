@@ -225,17 +225,21 @@ export default function StatisticsDashboard() {
     const abortController = new AbortController()
     abortControllerRef.current = abortController
 
+    // Capture the tab we're loading data for (prevents stale closure issues)
+    const tabToLoad = activeTab
+
     setLoading(true)
     setError(null)
 
     try {
-      // Fetch data for the active tab
-      const data = await fetchData(activeTab, abortController.signal)
+      // Fetch data for the captured tab
+      const data = await fetchData(tabToLoad, abortController.signal)
 
       // Check if this request was aborted (user switched tabs)
       if (abortController.signal.aborted || !data) return
 
-      switch (activeTab) {
+      // Use captured tabToLoad to ensure we update the correct state
+      switch (tabToLoad) {
         case 'revenue':
           setRevenueData(data)
           break
@@ -280,23 +284,27 @@ export default function StatisticsDashboard() {
     const params = new URLSearchParams({ type, from, to })
 
     let tempLink: HTMLAnchorElement | null = null
+    let objectUrl: string | null = null
 
     try {
       const response = await fetch(`/api/admin/super/statistics/export?${params}`)
       if (!response.ok) throw new Error('Export failed')
 
       const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
+      objectUrl = window.URL.createObjectURL(blob)
       tempLink = document.createElement('a')
-      tempLink.href = url
+      tempLink.href = objectUrl
       tempLink.download = `statistics_${type}_${new Date().toISOString().split('T')[0]}.csv`
       document.body.appendChild(tempLink)
       tempLink.click()
-      window.URL.revokeObjectURL(url)
     } catch (err) {
       console.error('Export error:', err)
       alert('שגיאה בייצוא הנתונים')
     } finally {
+      // Cleanup: always revoke object URL to prevent memory leak
+      if (objectUrl) {
+        window.URL.revokeObjectURL(objectUrl)
+      }
       // Cleanup: always remove the temporary link element from DOM
       if (tempLink && document.body.contains(tempLink)) {
         document.body.removeChild(tempLink)

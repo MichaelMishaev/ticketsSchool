@@ -83,6 +83,7 @@ export async function GET(request: NextRequest) {
     }))
 
     // Get revenue by status
+    // Note: For REFUNDED status, use refundAmount (not full amount) for consistency with totalRefunds
     const statusCounts: Record<string, { count: number; amount: number }> = {}
     payments.forEach((p) => {
       const status = p.status
@@ -90,7 +91,9 @@ export async function GET(request: NextRequest) {
         statusCounts[status] = { count: 0, amount: 0 }
       }
       statusCounts[status].count++
-      statusCounts[status].amount += Number(p.amount)
+      // Use refundAmount for REFUNDED status to match totalRefunds calculation
+      const amountToAdd = status === 'REFUNDED' ? Number(p.refundAmount || 0) : Number(p.amount)
+      statusCounts[status].amount += amountToAdd
     })
 
     const byStatus = Object.entries(statusCounts).map(([status, data]) => ({

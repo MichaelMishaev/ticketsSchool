@@ -104,17 +104,21 @@ function escapeCsv(value: string | number | null | undefined): string {
   if (value === null || value === undefined) return ''
   const str = String(value).trim()
 
+  // Security: Sanitize tab and carriage return characters first
+  // These can be used to bypass formula injection checks (e.g., "\t=cmd|...")
+  const sanitized = str.replace(/[\t\r]/g, ' ')
+
   // Security: Prevent CSV injection (formula injection attacks)
   // When opened in Excel/Google Sheets, formulas starting with =, +, -, @ can execute
-  if (str.match(/^[=+\-@]/)) {
+  if (sanitized.match(/^[=+\-@]/)) {
     // Prefix with single quote to disable formula execution in Excel
-    return `"'${str.replace(/"/g, '""')}"`
+    return `"'${sanitized.replace(/"/g, '""')}"`
   }
 
-  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-    return `"${str.replace(/"/g, '""')}"`
+  if (sanitized.includes(',') || sanitized.includes('"') || sanitized.includes('\n')) {
+    return `"${sanitized.replace(/"/g, '""')}"`
   }
-  return str
+  return sanitized
 }
 
 async function exportRevenue(from: Date, to: Date): Promise<string> {
