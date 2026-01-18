@@ -281,16 +281,15 @@ export default function SuperAdminDashboard() {
       return new Date(b.startAt).getTime() - new Date(a.startAt).getTime()
     })
 
-  // Navigation items
+  // Navigation items - reordered with most important first for mobile (shows first 5)
   const navItems = [
-    { id: 'overview' as ActiveView, label: 'סקירה כללית', icon: Activity, badge: null },
+    { id: 'overview' as ActiveView, label: 'סקירה', icon: Activity, badge: null },
     {
       id: 'events' as ActiveView,
       label: 'אירועים',
       icon: Calendar,
       badge: statistics?.totalEvents,
     },
-    { id: 'admins' as ActiveView, label: 'משתמשים', icon: Users, badge: admins.length || null },
     {
       id: 'schools' as ActiveView,
       label: 'בתי ספר',
@@ -298,6 +297,7 @@ export default function SuperAdminDashboard() {
       badge: statistics?.totalSchools,
     },
     { id: 'statistics' as ActiveView, label: 'סטטיסטיקות', icon: BarChart3, badge: null },
+    { id: 'admins' as ActiveView, label: 'משתמשים', icon: Users, badge: admins.length || null },
     { id: 'logs' as ActiveView, label: 'לוגים', icon: FileText, badge: null },
   ]
 
@@ -403,24 +403,32 @@ export default function SuperAdminDashboard() {
           <div className="w-8 h-8" /> {/* Spacer for centering */}
         </div>
 
-        {/* Mobile Tab Bar - Icon-Only on Small Screens */}
-        <div className="flex justify-between gap-1">
-          {navItems.slice(0, 4).map((item) => {
+        {/* Mobile Tab Bar - Shows first 5 items with compact layout */}
+        <div className="flex justify-between gap-0.5">
+          {navItems.slice(0, 5).map((item) => {
             const Icon = item.icon
             const isActive = activeView === item.id
 
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveView(item.id)}
-                className={`flex-1 flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-all duration-200 ${
+                onClick={() => {
+                  if (item.id === 'statistics') {
+                    router.push('/admin/statistics')
+                  } else if (item.id === 'logs') {
+                    router.push('/admin/logs')
+                  } else {
+                    setActiveView(item.id)
+                  }
+                }}
+                className={`flex-1 flex flex-col items-center gap-0.5 px-1 py-1.5 rounded-lg transition-all duration-200 ${
                   isActive
                     ? 'bg-purple-600 text-white shadow-md'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
                 <Icon className="w-4 h-4" />
-                <span className="text-[10px] font-medium truncate max-w-full">{item.label}</span>
+                <span className="text-[9px] font-medium truncate max-w-full">{item.label}</span>
               </button>
             )
           })}
