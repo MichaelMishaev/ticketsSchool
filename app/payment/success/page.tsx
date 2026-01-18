@@ -2,7 +2,8 @@
 
 import { useSearchParams } from 'next/navigation'
 import { CheckCircle, Calendar, MapPin, Download } from 'lucide-react'
-import { Suspense } from 'react'
+import { Suspense, useEffect } from 'react'
+import { trackEvent } from '@/lib/analytics'
 
 function isValidReturnUrl(url: string): boolean {
   if (!url || url === '/') return true
@@ -14,8 +15,14 @@ function isValidReturnUrl(url: string): boolean {
 
   // Or same-origin URLs
   try {
-    const parsed = new URL(url, typeof window !== 'undefined' ? window.location.origin : 'http://localhost')
-    return parsed.origin === (typeof window !== 'undefined' ? window.location.origin : 'http://localhost')
+    const parsed = new URL(
+      url,
+      typeof window !== 'undefined' ? window.location.origin : 'http://localhost'
+    )
+    return (
+      parsed.origin ===
+      (typeof window !== 'undefined' ? window.location.origin : 'http://localhost')
+    )
   } catch {
     return false
   }
@@ -31,20 +38,34 @@ function SuccessContent() {
   const rawReturnUrl = searchParams.get('return') || '/'
   const returnUrl = isValidReturnUrl(rawReturnUrl) ? rawReturnUrl : '/'
 
+  // Track payment completion in Google Analytics
+  useEffect(() => {
+    if (code) {
+      trackEvent({
+        action: 'payment_completed',
+        category: 'payment',
+        label: eventTitle,
+        additionalParams: {
+          confirmation_code: code,
+          event_title: eventTitle,
+        },
+      })
+    }
+  }, [code, eventTitle])
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center p-4" dir="rtl">
+    <div
+      className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center p-4"
+      dir="rtl"
+    >
       <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
         {/* Success Icon */}
         <div className="text-center mb-6">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
             <CheckCircle className="w-12 h-12 text-green-600" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            התשלום בוצע בהצלחה!
-          </h1>
-          <p className="text-gray-600">
-            ההזמנה שלך אושרה והמקום שלך נשמר
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">התשלום בוצע בהצלחה!</h1>
+          <p className="text-gray-600">ההזמנה שלך אושרה והמקום שלך נשמר</p>
         </div>
 
         {/* Confirmation Code */}
@@ -60,9 +81,7 @@ function SuccessContent() {
         {/* QR Code */}
         {qrCode && (
           <div className="mb-6 bg-white border-2 border-gray-200 rounded-xl p-6">
-            <p className="text-sm text-gray-500 mb-3 text-center">
-              QR לכניסה לאירוע
-            </p>
+            <p className="text-sm text-gray-500 mb-3 text-center">QR לכניסה לאירוע</p>
             <div className="flex justify-center mb-4">
               <img
                 src={qrCode}
@@ -70,9 +89,7 @@ function SuccessContent() {
                 className="w-48 h-48 border-4 border-gray-300 rounded-lg"
               />
             </div>
-            <p className="text-xs text-gray-500 text-center mb-3">
-              הצג קוד זה בכניסה לאירוע
-            </p>
+            <p className="text-xs text-gray-500 text-center mb-3">הצג קוד זה בכניסה לאירוע</p>
             <a
               href={qrCode}
               download={`ticket-${code}.png`}
@@ -90,9 +107,7 @@ function SuccessContent() {
             <Calendar className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
               <p className="font-medium text-gray-900">{eventTitle}</p>
-              {eventDate && (
-                <p className="text-sm text-gray-600 mt-1">{eventDate}</p>
-              )}
+              {eventDate && <p className="text-sm text-gray-600 mt-1">{eventDate}</p>}
             </div>
           </div>
           {eventLocation && (
@@ -105,9 +120,7 @@ function SuccessContent() {
 
         {/* Success Tips */}
         <div className="bg-green-50 rounded-lg p-4 mb-6 border border-green-200">
-          <p className="text-sm text-green-800 text-center">
-            💡 מומלץ לצלם מסך זה לשמירה
-          </p>
+          <p className="text-sm text-green-800 text-center">💡 מומלץ לצלם מסך זה לשמירה</p>
         </div>
 
         {/* Return Button */}
@@ -124,14 +137,16 @@ function SuccessContent() {
 
 export default function PaymentSuccessPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">טוען...</p>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">טוען...</p>
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <SuccessContent />
     </Suspense>
   )
