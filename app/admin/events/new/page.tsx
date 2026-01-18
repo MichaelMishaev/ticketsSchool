@@ -46,8 +46,348 @@ import {
   AlignLeft,
 } from 'lucide-react'
 
-const AUTOSAVE_KEY = 'eventFormDraft'
+const AUTOSAVE_KEY_PREFIX = 'eventFormDraft'
 const AUTOSAVE_INTERVAL = 10000 // 10 seconds
+
+// Event types for native browser autocomplete (datalist)
+const EVENT_TYPES = [
+  // Sports
+  'כדורגל',
+  'כדורסל',
+  'כדורעף',
+  'טניס',
+  'שחייה',
+  'ריצה',
+  'אתלטיקה',
+  'כדוריד',
+  'טניס שולחן',
+  'בייסבול',
+  'התעמלות',
+  'יוגה',
+  'כושר',
+  'פילאטיס',
+  'קרב מגע',
+  "ג'ודו",
+  'קראטה',
+  'משחק ספורט',
+  'תחרות ספורט',
+  'יום ספורט',
+  'אולימפיאדה',
+  // Cultural
+  'מופע',
+  'הצגה',
+  'קונצרט',
+  'הופעה',
+  'מחול',
+  'פסטיבל',
+  'מסיבה',
+  'טקס',
+  'אירוע תרבותי',
+  'מופע כישרונות',
+  'ערב שירה',
+  'ליל תרבות',
+  'חגיגה',
+  // Educational
+  'הרצאה',
+  'סדנה',
+  'כנס',
+  'סמינר',
+  'סיור לימודי',
+  'תחרות ידע',
+  'חידון',
+  'קורס',
+  'שיעור פתוח',
+  'מפגש לימודי',
+  'אולימפיאדת מדעים',
+  'תחרות רובוטיקה',
+  // Family & Community
+  'יום פתוח',
+  'יום משפחה',
+  'אסיפת הורים',
+  'טיול',
+  'פיקניק',
+  'יום כיף',
+  'מפגש קהילתי',
+  'ארוחה משותפת',
+  'יום הורים',
+  'ערב הורים',
+  'יום גיבוש',
+  'פעילות התנדבות',
+  // Arts
+  'תערוכה',
+  'סדנת אומנות',
+  'סדנת יצירה',
+  'סדנת ציור',
+  'סדנת פיסול',
+  'הצגת תיאטרון',
+  // Health
+  'יום בריאות',
+  'סדנת תזונה',
+  'הרצאת בריאות',
+  'יום מודעות',
+  // Other
+  'אירוע מיוחד',
+  'מפגש',
+  'פעילות',
+  'אירוע',
+]
+
+// Nominatim API for address autocomplete (OpenStreetMap - free)
+const NOMINATIM_API = 'https://nominatim.openstreetmap.org/search'
+
+// Debounce hook for rate limiting API calls
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay)
+    return () => clearTimeout(timer)
+  }, [value, delay])
+
+  return debouncedValue
+}
+
+// Location result from Nominatim
+interface NominatimResult {
+  place_id: number
+  display_name: string
+  lat: string
+  lon: string
+}
+
+// LocationAutocomplete component using Nominatim (OpenStreetMap)
+interface LocationAutocompleteProps {
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
+}
+
+function LocationAutocomplete({
+  value,
+  onChange,
+  placeholder = 'למשל: רחוב הרצל 1 תל אביב, פארק הירקון',
+}: LocationAutocompleteProps) {
+  const [inputValue, setInputValue] = useState(value)
+  const [isOpen, setIsOpen] = useState(false)
+  const [suggestions, setSuggestions] = useState<NominatimResult[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [highlightedIndex, setHighlightedIndex] = useState(-1)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // Sync with external value
+  useEffect(() => {
+    setInputValue(value)
+  }, [value])
+
+  // Debounce search query (500ms to respect Nominatim rate limit)
+  const debouncedQuery = useDebounce(inputValue, 500)
+
+  // Fetch suggestions from Nominatim
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (!debouncedQuery || debouncedQuery.length < 2) {
+        setSuggestions([])
+        return
+      }
+
+      setIsLoading(true)
+      try {
+        const params = new URLSearchParams({
+          q: debouncedQuery,
+          format: 'json',
+          addressdetails: '1',
+          limit: '8',
+          countrycodes: 'il', // Focus on Israel
+          'accept-language': 'he,en', // Prefer Hebrew results
+        })
+
+        const response = await fetch(`${NOMINATIM_API}?${params}`, {
+          headers: {
+            'User-Agent': 'KartisInfo/1.0 (https://kartis.info)', // Required by Nominatim
+          },
+        })
+
+        if (response.ok) {
+          const data: NominatimResult[] = await response.json()
+          setSuggestions(data)
+        }
+      } catch (error) {
+        console.error('Nominatim search error:', error)
+        setSuggestions([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchSuggestions()
+  }, [debouncedQuery])
+
+  // Close on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleSelect = (result: NominatimResult) => {
+    // Use shorter display name (remove country suffix)
+    const shortName = result.display_name.replace(/, ישראל$/, '').replace(/, Israel$/, '')
+    setInputValue(shortName)
+    onChange(shortName)
+    setIsOpen(false)
+    setHighlightedIndex(-1)
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value
+    setInputValue(newValue)
+    onChange(newValue)
+    setIsOpen(true)
+    setHighlightedIndex(-1)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!isOpen && suggestions.length > 0) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        setIsOpen(true)
+        e.preventDefault()
+        return
+      }
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault()
+        setHighlightedIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : 0))
+        break
+      case 'ArrowUp':
+        e.preventDefault()
+        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : suggestions.length - 1))
+        break
+      case 'Enter':
+        e.preventDefault()
+        if (highlightedIndex >= 0 && suggestions[highlightedIndex]) {
+          handleSelect(suggestions[highlightedIndex])
+        } else {
+          setIsOpen(false)
+        }
+        break
+      case 'Escape':
+        setIsOpen(false)
+        setHighlightedIndex(-1)
+        break
+      case 'Tab':
+        setIsOpen(false)
+        break
+    }
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div className="relative">
+        <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
+        <input
+          ref={inputRef}
+          type="text"
+          value={inputValue}
+          onChange={handleInputChange}
+          onFocus={() => setIsOpen(true)}
+          onKeyDown={handleKeyDown}
+          className={inputVariants.default + ' pl-10 pr-12'}
+          placeholder={placeholder}
+          role="combobox"
+          aria-expanded={isOpen}
+          aria-haspopup="listbox"
+          aria-autocomplete="list"
+          aria-controls="location-listbox"
+        />
+        {isLoading && (
+          <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
+        )}
+      </div>
+
+      {/* Dropdown */}
+      <AnimatePresence>
+        {isOpen && suggestions.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.15 }}
+            className="absolute z-50 w-full mt-1 bg-white border-2 border-gray-200 rounded-xl shadow-lg overflow-hidden"
+          >
+            <ul id="location-listbox" role="listbox" className="max-h-60 overflow-auto py-1">
+              {suggestions.map((result, index) => {
+                const isHighlighted = index === highlightedIndex
+                // Shorten display name
+                const shortName = result.display_name
+                  .replace(/, ישראל$/, '')
+                  .replace(/, Israel$/, '')
+
+                return (
+                  <li
+                    key={result.place_id}
+                    role="option"
+                    aria-selected={isHighlighted}
+                    className={`
+                      px-4 py-3 cursor-pointer transition-colors flex items-start gap-3
+                      ${isHighlighted ? 'bg-blue-50 text-blue-900' : 'hover:bg-gray-50'}
+                    `}
+                    onClick={() => handleSelect(result)}
+                    onMouseEnter={() => setHighlightedIndex(index)}
+                  >
+                    <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm leading-snug">{shortName}</span>
+                  </li>
+                )
+              })}
+            </ul>
+            {/* OSM Attribution - Required */}
+            <div className="px-3 py-2 border-t border-gray-100 bg-gray-50 text-xs text-gray-500 flex items-center justify-between">
+              <span>נתונים מ-</span>
+              <a
+                href="https://www.openstreetmap.org/copyright"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                © OpenStreetMap
+              </a>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* No results state */}
+      <AnimatePresence>
+        {isOpen && inputValue.length >= 2 && suggestions.length === 0 && !isLoading && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="absolute z-50 w-full mt-1 bg-white border-2 border-gray-200 rounded-xl shadow-lg p-4 text-center"
+          >
+            <p className="text-sm text-gray-600">
+              לא נמצאו כתובות התואמות ל-&quot;{inputValue}&quot;
+            </p>
+            <p className="text-xs text-gray-500 mt-1">ניתן להקליד כתובת חופשית</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// Get admin-scoped autosave key to prevent cross-user draft leakage
+const getAutosaveKey = (adminId: string | null) => {
+  if (!adminId) return null
+  return `${AUTOSAVE_KEY_PREFIX}_${adminId}`
+}
 
 export default function NewEventPage() {
   const router = useRouter()
@@ -61,6 +401,7 @@ export default function NewEventPage() {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
   const [showDraftModal, setShowDraftModal] = useState(false)
   const [draftData, setDraftData] = useState<any>(null)
+  const [adminId, setAdminId] = useState<string | null>(null)
   const { addToast, ToastContainer } = useToast()
   const titleInputRef = useRef<HTMLInputElement>(null)
 
@@ -113,18 +454,42 @@ export default function NewEventPage() {
     { id: 'advanced', title: 'הגדרות נוספות', description: 'אופציונלי' },
   ]
 
-  // Load draft from localStorage on mount
+  // Fetch admin info and load draft from localStorage on mount
   useEffect(() => {
-    const draft = localStorage.getItem(AUTOSAVE_KEY)
-    if (draft) {
+    const initializeAndLoadDraft = async () => {
       try {
-        const parsed = JSON.parse(draft)
-        setDraftData(parsed)
-        setShowDraftModal(true)
+        // First fetch admin info to get the scoped key
+        const response = await fetch('/api/admin/me', { credentials: 'include' })
+        if (!response.ok) return
+
+        const data = await response.json()
+        const currentAdminId = data.admin?.id
+        if (!currentAdminId) return
+
+        setAdminId(currentAdminId)
+
+        // Now check for draft with admin-scoped key
+        const autosaveKey = getAutosaveKey(currentAdminId)
+        if (!autosaveKey) return
+
+        const draft = localStorage.getItem(autosaveKey)
+        if (draft) {
+          const parsed = JSON.parse(draft)
+          setDraftData(parsed)
+          setShowDraftModal(true)
+        }
+
+        // Clean up old unscoped drafts (migration from old system)
+        const oldDraft = localStorage.getItem('eventFormDraft')
+        if (oldDraft) {
+          localStorage.removeItem('eventFormDraft')
+        }
       } catch (error) {
-        console.error('Failed to load draft:', error)
+        console.error('Failed to initialize or load draft:', error)
       }
     }
+
+    initializeAndLoadDraft()
   }, [])
 
   // Handle draft recovery
@@ -141,19 +506,27 @@ export default function NewEventPage() {
   }
 
   const handleDiscardDraft = () => {
-    localStorage.removeItem(AUTOSAVE_KEY)
+    const autosaveKey = getAutosaveKey(adminId)
+    if (autosaveKey) {
+      localStorage.removeItem(autosaveKey)
+    }
     setDraftData(null)
     setShowDraftModal(false)
     addToast('טיוטה נמחקה', 'info', 2000)
   }
 
-  // Autosave to localStorage
+  // Autosave to localStorage (only when adminId is available)
   useEffect(() => {
+    if (!adminId) return // Don't autosave until we know who the user is
+
+    const autosaveKey = getAutosaveKey(adminId)
+    if (!autosaveKey) return
+
     const interval = setInterval(() => {
       if (hasUnsavedChanges && formData.title) {
         try {
           localStorage.setItem(
-            AUTOSAVE_KEY,
+            autosaveKey,
             JSON.stringify({
               formData,
               currentStep,
@@ -169,7 +542,7 @@ export default function NewEventPage() {
     }, AUTOSAVE_INTERVAL)
 
     return () => clearInterval(interval)
-  }, [formData, currentStep, completedSteps, hasUnsavedChanges])
+  }, [formData, currentStep, completedSteps, hasUnsavedChanges, adminId])
 
   // Track form changes
   useEffect(() => {
@@ -359,9 +732,15 @@ export default function NewEventPage() {
   }
 
   const saveDraft = () => {
+    const autosaveKey = getAutosaveKey(adminId)
+    if (!autosaveKey) {
+      addToast('לא ניתן לשמור טיוטה - נא לרענן את הדף', 'error')
+      return
+    }
+
     try {
       localStorage.setItem(
-        AUTOSAVE_KEY,
+        autosaveKey,
         JSON.stringify({
           formData,
           currentStep,
@@ -377,7 +756,10 @@ export default function NewEventPage() {
   }
 
   const clearDraft = () => {
-    localStorage.removeItem(AUTOSAVE_KEY)
+    const autosaveKey = getAutosaveKey(adminId)
+    if (autosaveKey) {
+      localStorage.removeItem(autosaveKey)
+    }
     setLastSavedAt(null)
   }
 
@@ -668,21 +1050,29 @@ export default function NewEventPage() {
                     <span className="text-red-500">*</span>
                     <InfoTooltip text="בחר את הקטגוריה המתאימה ביותר לאירוע שלך (לדוגמה: כדורגל, הרצאה, טיול, מסיבה)" />
                   </label>
-                  <input
-                    id="gameType"
-                    type="text"
-                    required
-                    value={formData.gameType}
-                    onChange={(e) => handleChange('gameType', e.target.value)}
-                    className={
-                      validationErrors.gameType ? inputVariants.error : inputVariants.default
-                    }
-                    placeholder="לדוגמה: כדורגל, כדורסל, טיול, הרצאה"
-                    aria-invalid={!!validationErrors.gameType}
-                    aria-describedby={
-                      validationErrors.gameType ? 'gameType-error gameType-help' : 'gameType-help'
-                    }
-                  />
+                  <div className="relative">
+                    <Tag className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
+                    <input
+                      id="gameType"
+                      type="text"
+                      required
+                      value={formData.gameType}
+                      onChange={(e) => handleChange('gameType', e.target.value)}
+                      className={
+                        validationErrors.gameType
+                          ? inputVariants.error + ' pr-12'
+                          : inputVariants.default + ' pr-12'
+                      }
+                      placeholder="לדוגמה: כדורגל, כדורסל, טיול, הרצאה"
+                      list="event-type-suggestions"
+                      autoComplete="off"
+                    />
+                    <datalist id="event-type-suggestions">
+                      {EVENT_TYPES.map((type) => (
+                        <option key={type} value={type} />
+                      ))}
+                    </datalist>
+                  </div>
                   {validationErrors.gameType ? (
                     <p
                       id="gameType-error"
@@ -787,19 +1177,12 @@ export default function NewEventPage() {
                     <span>מיקום</span>
                     <span className={badgeVariants.neutral + ' text-xs'}>אופציונלי</span>
                   </label>
-                  <div className="relative">
-                    <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
-                    <input
-                      id="location"
-                      type="text"
-                      value={formData.location}
-                      onChange={(e) => handleChange('location', e.target.value)}
-                      className={inputVariants.default + ' pl-4 pr-12'}
-                      placeholder="למשל: אולם ספורט, מגרש כדורגל ראשי"
-                    />
-                  </div>
+                  <LocationAutocomplete
+                    value={formData.location || ''}
+                    onChange={(value) => handleChange('location', value)}
+                  />
                   <p className={typography.micro + ' mt-2'}>
-                    ציין את המקום המדויק בו יתקיים האירוע
+                    הקלד כתובת או שם מקום - יוצגו הצעות מ-OpenStreetMap
                   </p>
                 </div>
               </div>

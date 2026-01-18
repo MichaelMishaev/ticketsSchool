@@ -1,6 +1,6 @@
 'use client'
 
-import { Calendar, Users, Clock, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react'
+import { Calendar, Users, Clock, TrendingUp, ChevronLeft, Loader2, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
@@ -13,15 +13,102 @@ interface AdminInfo {
   schoolName?: string
 }
 
+// Color-coded styling for stat cards with semantic meaning
+const getCardStyles = (
+  type: 'activeEvents' | 'registrations' | 'waitlist' | 'occupancy',
+  occupancyRate: number = 0
+) => {
+  const styles = {
+    activeEvents: {
+      bg: 'bg-blue-50',
+      border: 'border-blue-200',
+      icon: 'text-blue-600',
+      text: 'text-blue-900',
+      label: 'text-blue-600',
+      hover: 'hover:bg-blue-100 hover:border-blue-300',
+      focus: 'focus:ring-blue-500/50',
+      chevron: 'text-blue-400 group-hover:text-blue-600',
+    },
+    registrations: {
+      bg: 'bg-green-50',
+      border: 'border-green-200',
+      icon: 'text-green-600',
+      text: 'text-green-900',
+      label: 'text-green-600',
+      hover: 'hover:bg-green-100 hover:border-green-300',
+      focus: 'focus:ring-green-500/50',
+      chevron: 'text-green-400 group-hover:text-green-600',
+    },
+    waitlist: {
+      bg: 'bg-orange-50',
+      border: 'border-orange-200',
+      icon: 'text-orange-600',
+      text: 'text-orange-900',
+      label: 'text-orange-600',
+      hover: 'hover:bg-orange-100 hover:border-orange-300',
+      focus: 'focus:ring-orange-500/50',
+      chevron: 'text-orange-400 group-hover:text-orange-600',
+    },
+    occupancy: {
+      // Dynamic color based on percentage - creates visual alarm system
+      bg: occupancyRate >= 80 ? 'bg-red-50' : occupancyRate >= 50 ? 'bg-yellow-50' : 'bg-purple-50',
+      border:
+        occupancyRate >= 80
+          ? 'border-red-200'
+          : occupancyRate >= 50
+            ? 'border-yellow-200'
+            : 'border-purple-200',
+      icon:
+        occupancyRate >= 80
+          ? 'text-red-600'
+          : occupancyRate >= 50
+            ? 'text-yellow-600'
+            : 'text-purple-600',
+      text:
+        occupancyRate >= 80
+          ? 'text-red-900'
+          : occupancyRate >= 50
+            ? 'text-yellow-900'
+            : 'text-purple-900',
+      label:
+        occupancyRate >= 80
+          ? 'text-red-600'
+          : occupancyRate >= 50
+            ? 'text-yellow-600'
+            : 'text-purple-600',
+      hover:
+        occupancyRate >= 80
+          ? 'hover:bg-red-100 hover:border-red-300'
+          : occupancyRate >= 50
+            ? 'hover:bg-yellow-100 hover:border-yellow-300'
+            : 'hover:bg-purple-100 hover:border-purple-300',
+      focus:
+        occupancyRate >= 80
+          ? 'focus:ring-red-500/50'
+          : occupancyRate >= 50
+            ? 'focus:ring-yellow-500/50'
+            : 'focus:ring-purple-500/50',
+      chevron:
+        occupancyRate >= 80
+          ? 'text-red-400 group-hover:text-red-600'
+          : occupancyRate >= 50
+            ? 'text-yellow-400 group-hover:text-yellow-600'
+            : 'text-purple-400 group-hover:text-purple-600',
+    },
+  }
+  return styles[type]
+}
+
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
     activeEvents: 0,
     totalRegistrations: 0,
     waitlistCount: 0,
-    occupancyRate: 0
+    occupancyRate: 0,
   })
   const [recentEvents, setRecentEvents] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isCardLoading, setIsCardLoading] = useState<string | null>(null) // Track which card is loading
   const [adminInfo, setAdminInfo] = useState<AdminInfo | null>(null)
   const [modalData, setModalData] = useState<{
     isOpen: boolean
@@ -41,7 +128,7 @@ export default function AdminDashboard() {
       // Fetch stats and events in parallel
       const [statsResponse, eventsResponse] = await Promise.all([
         fetch('/api/dashboard/stats'),
-        fetch('/api/events')
+        fetch('/api/events'),
       ])
 
       const statsData = await statsResponse.json()
@@ -77,14 +164,16 @@ export default function AdminDashboard() {
     return () => clearTimeout(timer)
   }, [])
 
-  const handleCardClick = async (type: 'activeEvents' | 'registrations' | 'waitlist' | 'occupancy') => {
+  const handleCardClick = async (
+    type: 'activeEvents' | 'registrations' | 'waitlist' | 'occupancy'
+  ) => {
     try {
-      setIsLoading(true)
+      setIsCardLoading(type) // Track which specific card is loading
       const endpoint = {
         activeEvents: '/api/dashboard/active-events',
         registrations: '/api/dashboard/registrations',
         waitlist: '/api/dashboard/waitlist',
-        occupancy: '/api/dashboard/occupancy'
+        occupancy: '/api/dashboard/occupancy',
       }[type]
 
       const response = await fetch(endpoint)
@@ -94,26 +183,25 @@ export default function AdminDashboard() {
         activeEvents: 'אירועים פעילים - פרטים מלאים',
         registrations: 'נרשמים - פרטים מלאים',
         waitlist: 'רשימת המתנה - פרטים מלאים',
-        occupancy: 'אחוז תפוסה - פרטים מלאים'
+        occupancy: 'אחוז תפוסה - פרטים מלאים',
       }
 
       setModalData({
         isOpen: true,
         title: titles[type],
         data,
-        type
+        type,
       })
     } catch (error) {
       console.error('Error fetching drilldown data:', error)
     } finally {
-      setIsLoading(false)
+      setIsCardLoading(null)
     }
   }
 
   const closeModal = () => {
     setModalData({ isOpen: false, title: '', data: null, type: 'activeEvents' })
   }
-
 
   return (
     <div>
@@ -129,90 +217,205 @@ export default function AdminDashboard() {
         )}
       </div>
 
+      {/* Onboarding message for new users */}
+      {!isLoading && stats.activeEvents === 0 && stats.totalRegistrations === 0 && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4 sm:p-6 mb-6">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0">
+              <Sparkles className="h-6 w-6 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-blue-900 mb-1">ברוכים הבאים! 🎉</h3>
+              <p className="text-blue-700 text-sm mb-4">
+                התחל ליצור את האירוע הראשון שלך וצפה בסטטיסטיקות בזמן אמת
+              </p>
+              <CreateEventDropdown variant="page" />
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 md:grid-cols-3 lg:grid-cols-4 mb-6 sm:mb-8">
-        <button
-          onClick={() => handleCardClick('activeEvents')}
-          className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md hover:bg-gray-50 transition-all cursor-pointer text-right w-full group min-h-[88px] sm:min-h-[100px]"
-        >
-          <div className="p-4 sm:p-5">
-            <div className="flex flex-col sm:flex-row sm:items-center">
-              <div className="flex-shrink-0 mb-2 sm:mb-0">
-                <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
+        {/* Active Events Card */}
+        {(() => {
+          const styles = getCardStyles('activeEvents', stats.occupancyRate)
+          return (
+            <button
+              onClick={() => handleCardClick('activeEvents')}
+              disabled={isCardLoading === 'activeEvents'}
+              aria-label={`אירועים פעילים: ${stats.activeEvents}. לחץ לצפייה בפרטים מלאים`}
+              className={`
+                ${styles.bg} ${styles.border} border-2 overflow-hidden shadow-sm rounded-xl
+                ${styles.hover} transition-all duration-200 cursor-pointer text-right w-full group
+                min-h-[88px] sm:min-h-[100px] relative
+                focus:outline-none focus:ring-4 ${styles.focus} focus:ring-offset-2
+                active:scale-[0.98] transform
+                disabled:opacity-70 disabled:cursor-wait
+              `}
+            >
+              {isCardLoading === 'activeEvents' && (
+                <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-xl">
+                  <Loader2 className={`h-6 w-6 animate-spin ${styles.icon}`} />
+                </div>
+              )}
+              <div className="p-3 sm:p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Calendar className={`h-5 w-5 sm:h-6 sm:w-6 ${styles.icon}`} />
+                    <ChevronLeft
+                      className={`h-4 w-4 ${styles.chevron} transition-colors opacity-0 group-hover:opacity-100`}
+                    />
+                  </div>
+                  <div className="text-right flex-1 mr-2">
+                    <dd className={`text-2xl sm:text-3xl font-bold ${styles.text}`}>
+                      {stats.activeEvents}
+                    </dd>
+                    <dt className={`text-xs sm:text-sm font-medium ${styles.label} truncate`}>
+                      אירועים פעילים
+                    </dt>
+                  </div>
+                </div>
               </div>
-              <div className="sm:mr-3 w-full sm:w-0 sm:flex-1">
-                <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
-                  אירועים פעילים
-                </dt>
-                <dd className="text-base sm:text-lg font-medium text-gray-900">{stats.activeEvents}</dd>
-              </div>
-            </div>
-          </div>
-        </button>
+            </button>
+          )
+        })()}
 
-        <button
-          onClick={() => handleCardClick('registrations')}
-          className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md hover:bg-gray-50 transition-all cursor-pointer text-right w-full group min-h-[88px] sm:min-h-[100px]"
-        >
-          <div className="p-4 sm:p-5">
-            <div className="flex flex-col sm:flex-row sm:items-center">
-              <div className="flex-shrink-0 mb-2 sm:mb-0">
-                <Users className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
+        {/* Total Registrations Card */}
+        {(() => {
+          const styles = getCardStyles('registrations', stats.occupancyRate)
+          return (
+            <button
+              onClick={() => handleCardClick('registrations')}
+              disabled={isCardLoading === 'registrations'}
+              aria-label={`סה"כ נרשמים: ${stats.totalRegistrations}. לחץ לצפייה בפרטים מלאים`}
+              className={`
+                ${styles.bg} ${styles.border} border-2 overflow-hidden shadow-sm rounded-xl
+                ${styles.hover} transition-all duration-200 cursor-pointer text-right w-full group
+                min-h-[88px] sm:min-h-[100px] relative
+                focus:outline-none focus:ring-4 ${styles.focus} focus:ring-offset-2
+                active:scale-[0.98] transform
+                disabled:opacity-70 disabled:cursor-wait
+              `}
+            >
+              {isCardLoading === 'registrations' && (
+                <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-xl">
+                  <Loader2 className={`h-6 w-6 animate-spin ${styles.icon}`} />
+                </div>
+              )}
+              <div className="p-3 sm:p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Users className={`h-5 w-5 sm:h-6 sm:w-6 ${styles.icon}`} />
+                    <ChevronLeft
+                      className={`h-4 w-4 ${styles.chevron} transition-colors opacity-0 group-hover:opacity-100`}
+                    />
+                  </div>
+                  <div className="text-right flex-1 mr-2">
+                    <dd className={`text-2xl sm:text-3xl font-bold ${styles.text}`}>
+                      {stats.totalRegistrations}
+                    </dd>
+                    <dt className={`text-xs sm:text-sm font-medium ${styles.label} truncate`}>
+                      סה"כ נרשמים
+                    </dt>
+                  </div>
+                </div>
               </div>
-              <div className="sm:mr-3 w-full sm:w-0 sm:flex-1">
-                <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
-                  סה"כ נרשמים
-                </dt>
-                <dd className="text-base sm:text-lg font-medium text-gray-900">{stats.totalRegistrations}</dd>
-              </div>
-            </div>
-          </div>
-        </button>
+            </button>
+          )
+        })()}
 
-        <button
-          onClick={() => handleCardClick('waitlist')}
-          className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md hover:bg-gray-50 transition-all cursor-pointer text-right w-full group min-h-[88px] sm:min-h-[100px]"
-        >
-          <div className="p-4 sm:p-5">
-            <div className="flex flex-col sm:flex-row sm:items-center">
-              <div className="flex-shrink-0 mb-2 sm:mb-0">
-                <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
+        {/* Waitlist Card */}
+        {(() => {
+          const styles = getCardStyles('waitlist', stats.occupancyRate)
+          return (
+            <button
+              onClick={() => handleCardClick('waitlist')}
+              disabled={isCardLoading === 'waitlist'}
+              aria-label={`ממתינים ברשימת המתנה: ${stats.waitlistCount}. לחץ לצפייה בפרטים מלאים`}
+              className={`
+                ${styles.bg} ${styles.border} border-2 overflow-hidden shadow-sm rounded-xl
+                ${styles.hover} transition-all duration-200 cursor-pointer text-right w-full group
+                min-h-[88px] sm:min-h-[100px] relative
+                focus:outline-none focus:ring-4 ${styles.focus} focus:ring-offset-2
+                active:scale-[0.98] transform
+                disabled:opacity-70 disabled:cursor-wait
+              `}
+            >
+              {isCardLoading === 'waitlist' && (
+                <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-xl">
+                  <Loader2 className={`h-6 w-6 animate-spin ${styles.icon}`} />
+                </div>
+              )}
+              <div className="p-3 sm:p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock className={`h-5 w-5 sm:h-6 sm:w-6 ${styles.icon}`} />
+                    <ChevronLeft
+                      className={`h-4 w-4 ${styles.chevron} transition-colors opacity-0 group-hover:opacity-100`}
+                    />
+                  </div>
+                  <div className="text-right flex-1 mr-2">
+                    <dd className={`text-2xl sm:text-3xl font-bold ${styles.text}`}>
+                      {stats.waitlistCount}
+                    </dd>
+                    <dt className={`text-xs sm:text-sm font-medium ${styles.label} truncate`}>
+                      רשימת המתנה
+                    </dt>
+                  </div>
+                </div>
               </div>
-              <div className="sm:mr-3 w-full sm:w-0 sm:flex-1">
-                <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
-                  ממתינים ברשימת המתנה
-                </dt>
-                <dd className="text-base sm:text-lg font-medium text-gray-900">{stats.waitlistCount}</dd>
-              </div>
-            </div>
-          </div>
-        </button>
+            </button>
+          )
+        })()}
 
-        <button
-          onClick={() => handleCardClick('occupancy')}
-          className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md hover:bg-gray-50 transition-all cursor-pointer text-right w-full group min-h-[88px] sm:min-h-[100px]"
-        >
-          <div className="p-4 sm:p-5">
-            <div className="flex flex-col sm:flex-row sm:items-center">
-              <div className="flex-shrink-0 mb-2 sm:mb-0">
-                <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
+        {/* Occupancy Rate Card - Dynamic color based on percentage */}
+        {(() => {
+          const styles = getCardStyles('occupancy', stats.occupancyRate)
+          return (
+            <button
+              onClick={() => handleCardClick('occupancy')}
+              disabled={isCardLoading === 'occupancy'}
+              aria-label={`אחוז תפוסה: ${stats.occupancyRate}%. לחץ לצפייה בפרטים מלאים`}
+              className={`
+                ${styles.bg} ${styles.border} border-2 overflow-hidden shadow-sm rounded-xl
+                ${styles.hover} transition-all duration-200 cursor-pointer text-right w-full group
+                min-h-[88px] sm:min-h-[100px] relative
+                focus:outline-none focus:ring-4 ${styles.focus} focus:ring-offset-2
+                active:scale-[0.98] transform
+                disabled:opacity-70 disabled:cursor-wait
+              `}
+            >
+              {isCardLoading === 'occupancy' && (
+                <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 rounded-xl">
+                  <Loader2 className={`h-6 w-6 animate-spin ${styles.icon}`} />
+                </div>
+              )}
+              <div className="p-3 sm:p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className={`h-5 w-5 sm:h-6 sm:w-6 ${styles.icon}`} />
+                    <ChevronLeft
+                      className={`h-4 w-4 ${styles.chevron} transition-colors opacity-0 group-hover:opacity-100`}
+                    />
+                  </div>
+                  <div className="text-right flex-1 mr-2">
+                    <dd className={`text-2xl sm:text-3xl font-bold ${styles.text}`}>
+                      {stats.occupancyRate}%
+                    </dd>
+                    <dt className={`text-xs sm:text-sm font-medium ${styles.label} truncate`}>
+                      אחוז תפוסה
+                    </dt>
+                  </div>
+                </div>
               </div>
-              <div className="sm:mr-3 w-full sm:w-0 sm:flex-1">
-                <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
-                  אחוז תפוסה
-                </dt>
-                <dd className="text-base sm:text-lg font-medium text-gray-900">{stats.occupancyRate}%</dd>
-              </div>
-            </div>
-          </div>
-        </button>
+            </button>
+          )
+        })()}
       </div>
 
       <div className="bg-white shadow sm:rounded-md">
         <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">
-            אירועים אחרונים
-          </h3>
+          <h3 className="text-lg leading-6 font-medium text-gray-900">אירועים אחרונים</h3>
         </div>
         <div className="px-4 py-5 sm:p-6">
           {isLoading ? (
