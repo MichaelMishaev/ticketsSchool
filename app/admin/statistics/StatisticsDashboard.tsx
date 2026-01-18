@@ -136,13 +136,13 @@ const DATE_RANGES: Array<{ value: DateRange; label: string }> = [
   { value: '1y', label: 'שנה' },
 ]
 
-// Tab configuration
-const TABS: Array<{ id: ActiveTab; label: string; icon: React.ElementType }> = [
-  { id: 'revenue', label: 'הכנסות', icon: DollarSign },
-  { id: 'registrations', label: 'הרשמות', icon: Users },
-  { id: 'capacity', label: 'תפוסה', icon: BarChart3 },
-  { id: 'checkins', label: 'נוכחות', icon: CheckCircle2 },
-  { id: 'platform', label: 'בריאות המערכת', icon: Activity },
+// Tab configuration - short labels for mobile
+const TABS: Array<{ id: ActiveTab; label: string; shortLabel: string; icon: React.ElementType }> = [
+  { id: 'revenue', label: 'הכנסות', shortLabel: 'הכנסות', icon: DollarSign },
+  { id: 'registrations', label: 'הרשמות', shortLabel: 'הרשמות', icon: Users },
+  { id: 'capacity', label: 'תפוסה', shortLabel: 'תפוסה', icon: BarChart3 },
+  { id: 'checkins', label: 'נוכחות', shortLabel: 'נוכחות', icon: CheckCircle2 },
+  { id: 'platform', label: 'בריאות המערכת', shortLabel: 'מערכת', icon: Activity },
 ]
 
 export default function StatisticsDashboard() {
@@ -457,23 +457,24 @@ export default function StatisticsDashboard() {
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">{error}</div>
       )}
 
-      {/* Tabs */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="flex overflow-x-auto border-b border-gray-200">
+      {/* Tabs - Responsive Grid */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2">
+        <div className="grid grid-cols-5 gap-1">
           {TABS.map((tab) => {
             const Icon = tab.icon
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 sm:px-6 py-3 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
+                className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg font-medium text-xs sm:text-sm transition-colors ${
                   activeTab === tab.id
-                    ? 'border-purple-600 text-purple-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
                 }`}
               >
                 <Icon className="w-4 h-4" />
-                {tab.label}
+                <span className="sm:hidden">{tab.shortLabel}</span>
+                <span className="hidden sm:inline">{tab.label}</span>
               </button>
             )
           })}
