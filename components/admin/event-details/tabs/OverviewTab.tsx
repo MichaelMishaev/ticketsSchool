@@ -1,21 +1,11 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import {
-  Edit,
-  Trash2,
-  Calendar,
-  MapPin,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  CreditCard,
-  User,
-} from 'lucide-react'
+import { Trash2, CheckCircle2, Clock, AlertCircle, CreditCard, User } from 'lucide-react'
 import CheckInHeroCard from '@/components/admin/event-details/CheckInHeroCard'
-import CheckInShareCard from '@/components/admin/event-details/CheckInShareCard'
-import RegistrationShareCard from '@/components/admin/event-details/RegistrationShareCard'
-import EventHeroHeader from '@/components/admin/event-details/EventHeroHeader'
+import CompactEventHero from '@/components/admin/event-details/CompactEventHero'
+import CompactShareCards from '@/components/admin/event-details/CompactShareCards'
+import { useConfirmation } from '@/hooks/useConfirmation'
 
 interface Registration {
   id: string
@@ -63,6 +53,7 @@ interface OverviewTabProps {
 
 export default function OverviewTab({ event, onEventUpdate, onTabChange }: OverviewTabProps) {
   const router = useRouter()
+  const { confirm, ConfirmationDialog } = useConfirmation()
 
   // Calculate stats from actual registrations
   const registrations = event.registrations || []
@@ -157,135 +148,70 @@ export default function OverviewTab({ event, onEventUpdate, onTabChange }: Overv
 
   return (
     <>
-      {/* Hero Header - Event Title + Status */}
-      <EventHeroHeader event={event} />
+      {/* Compact Hero - Event Title, Status, Date, Location combined */}
+      <CompactEventHero event={event} />
 
       <div
-        className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-44 md:pb-6 space-y-6 overflow-x-hidden"
+        className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-44 md:pb-6 space-y-5 overflow-x-hidden"
         dir="rtl"
       >
-        {/* LAYER 2: Event Details - When & Where (CONTEXT FIRST) */}
-        {/* Event Info Card - Clean, Minimal Design */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-          {/* Event Meta */}
-          <div className="p-5 pb-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-blue-50 rounded-lg">
-                  <Calendar className="w-5 h-5 text-blue-600" />
+        {/* Payment Indicator - If event has payment */}
+        {event.paymentRequired && (
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4 shadow-sm md:max-w-2xl md:mx-auto">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-white rounded-lg border border-green-300 shadow-sm flex-shrink-0">
+                <CreditCard className="w-5 h-5 text-green-600" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-sm font-bold text-green-900">אירוע בתשלום</p>
+                  {event.priceAmount && (
+                    <span className="text-xl font-black text-green-700">₪{event.priceAmount}</span>
+                  )}
                 </div>
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-gray-500 mb-0.5">תאריך ושעה</p>
-                  <p className="text-sm font-semibold text-gray-900">{formatDate(event.startAt)}</p>
-                  {event.endAt && (
-                    <p className="text-xs text-gray-500 mt-0.5">עד: {formatDate(event.endAt)}</p>
+                <div className="flex flex-wrap gap-2 text-xs font-medium text-green-700">
+                  {event.pricingModel === 'FIXED_PRICE' && (
+                    <span className="px-2 py-0.5 bg-white border border-green-200 rounded">
+                      מחיר קבוע
+                    </span>
+                  )}
+                  {event.pricingModel === 'PER_GUEST' && (
+                    <span className="px-2 py-0.5 bg-white border border-green-200 rounded">
+                      מחיר למשתתף
+                    </span>
+                  )}
+                  {event.paymentTiming === 'UPFRONT' && (
+                    <span className="px-2 py-0.5 bg-white border border-green-200 rounded">
+                      תשלום מראש
+                    </span>
+                  )}
+                  {event.paymentTiming === 'POST_REGISTRATION' && (
+                    <span className="px-2 py-0.5 bg-white border border-green-200 rounded">
+                      תשלום לאחר הרשמה
+                    </span>
+                  )}
+                  {event.paymentTiming === 'OPTIONAL' && (
+                    <span className="px-2 py-0.5 bg-white border border-green-200 rounded">
+                      אופציונלי
+                    </span>
                   )}
                 </div>
               </div>
-
-              {event.location && (
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-purple-50 rounded-lg">
-                    <MapPin className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs font-bold text-gray-500 mb-0.5">מיקום</p>
-                    <p className="text-sm font-semibold text-gray-900">{event.location}</p>
-                  </div>
-                </div>
-              )}
             </div>
-
-            {event.gameType && (
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm font-semibold">
-                  {event.gameType}
-                </span>
-              </div>
-            )}
-
-            {event.description && (
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
-                  {event.description}
-                </p>
-              </div>
-            )}
           </div>
+        )}
 
-          {/* Payment Indicator - Clean Design */}
-          {event.paymentRequired && (
-            <div className="bg-green-50 border-t border-green-100 p-4">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-white rounded-lg border border-green-200">
-                  <CreditCard className="w-5 h-5 text-green-600" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="text-sm font-bold text-green-900">אירוע בתשלום</p>
-                    {event.priceAmount && (
-                      <span className="text-xl font-black text-green-700">
-                        ₪{event.priceAmount}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-2 text-xs font-medium text-green-700">
-                    {event.pricingModel === 'FIXED_PRICE' && (
-                      <span className="px-2 py-0.5 bg-white border border-green-200 rounded">
-                        מחיר קבוע
-                      </span>
-                    )}
-                    {event.pricingModel === 'PER_GUEST' && (
-                      <span className="px-2 py-0.5 bg-white border border-green-200 rounded">
-                        מחיר למשתתף
-                      </span>
-                    )}
-                    {event.paymentTiming === 'UPFRONT' && (
-                      <span className="px-2 py-0.5 bg-white border border-green-200 rounded">
-                        תשלום מראש
-                      </span>
-                    )}
-                    {event.paymentTiming === 'POST_REGISTRATION' && (
-                      <span className="px-2 py-0.5 bg-white border border-green-200 rounded">
-                        תשלום לאחר הרשמה
-                      </span>
-                    )}
-                    {event.paymentTiming === 'OPTIONAL' && (
-                      <span className="px-2 py-0.5 bg-white border border-green-200 rounded">
-                        אופציונלי
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Registration Share Card - Share to get attendees */}
-        <RegistrationShareCard
+        {/* Compact Share Cards - Registration + Check-In side by side */}
+        <CompactShareCards
+          eventId={event.id}
           eventSlug={event.slug}
           schoolSlug={event.school.slug}
           eventTitle={event.title}
         />
 
-        {/* Check-In Share Card - Share with gate person */}
-        <CheckInShareCard eventId={event.id} eventTitle={event.title} />
-
-        {/* Edit Button - Secondary action, minimal visual weight */}
-        <div className="flex justify-end -mt-2">
-          <button
-            onClick={() => router.push(`/admin/events/${event.id}/edit`)}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-          >
-            <Edit className="w-4 h-4" />
-            <span>ערוך אירוע</span>
-          </button>
-        </div>
-
-        {/* LAYER 3: Capacity Status - How Full? */}
+        {/* Capacity Status - How Full? */}
         {/* Unified Capacity Widget - Progress Bar + Interactive Stats */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 md:max-w-2xl md:mx-auto">
           {/* Header with Count */}
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-bold text-gray-900">תפוסת אירוע</h3>
@@ -403,11 +329,21 @@ export default function OverviewTab({ event, onEventUpdate, onTabChange }: Overv
 
         {/* Delete Action - Only show if no registrations */}
         {confirmedCount === 0 && (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 md:max-w-2xl md:mx-auto">
             <button
-              onClick={() => {
-                if (confirm('האם אתה בטוח שברצונך למחוק את האירוע? פעולה זו לא ניתנת לביטול.')) {
-                  // Handle delete
+              onClick={async () => {
+                const confirmed = await confirm({
+                  title: 'מחיקת אירוע',
+                  description:
+                    'האם אתה בטוח שברצונך למחוק את האירוע? פעולה זו לא ניתנת לביטול ולא ניתן יהיה לשחזר את המידע.',
+                  confirmText: 'מחק אירוע',
+                  cancelText: 'ביטול',
+                  variant: 'danger',
+                })
+
+                if (confirmed) {
+                  // Handle delete - TODO: Implement API call
+                  console.log('Delete event:', event.id)
                 }
               }}
               className="w-full flex items-center justify-center gap-3 px-4 py-3 border-2 border-red-200 text-red-600 rounded-lg font-medium hover:bg-red-50 hover:border-red-300 transition-all focus:outline-none focus:ring-4 focus:ring-red-500/20"
@@ -419,7 +355,7 @@ export default function OverviewTab({ event, onEventUpdate, onTabChange }: Overv
         )}
 
         {/* Recent Activity Feed */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:max-w-2xl md:mx-auto">
           <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Clock className="w-5 h-5 text-gray-400" />
             פעילות אחרונה
@@ -497,6 +433,9 @@ export default function OverviewTab({ event, onEventUpdate, onTabChange }: Overv
           </div>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmationDialog />
     </>
   )
 }

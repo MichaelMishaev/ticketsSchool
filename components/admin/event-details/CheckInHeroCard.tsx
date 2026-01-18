@@ -1,13 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import {
-  QrCode,
-  ClipboardCheck,
-  ArrowLeft,
-  Calendar,
-  BarChart,
-} from 'lucide-react'
+import { QrCode, ClipboardCheck, ArrowLeft, Calendar, BarChart } from 'lucide-react'
 
 interface CheckInHeroCardProps {
   eventId: string
@@ -85,7 +79,7 @@ export default function CheckInHeroCard({
   // Archive view for past events
   if (pastEvent) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden md:max-w-2xl md:mx-auto">
         {/* Top accent */}
         <div className="h-1 bg-purple-500"></div>
 
@@ -101,17 +95,15 @@ export default function CheckInHeroCard({
             </span>
           </div>
 
-            <p className="text-sm text-gray-600 mb-5 leading-relaxed">
-              האירוע הסתיים - צפה בסיכום הנוכחות והדוחות המלאים
-            </p>
+          <p className="text-sm text-gray-600 mb-5 leading-relaxed">
+            האירוע הסתיים - צפה בסיכום הנוכחות והדוחות המלאים
+          </p>
 
           {/* Stats Preview - Clean Design */}
           {stats && stats.totalRegistrations > 0 && (
             <div className="grid grid-cols-3 gap-3 mb-5">
               <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
-                <div className="text-2xl font-black text-gray-900">
-                  {stats.totalRegistrations}
-                </div>
+                <div className="text-2xl font-black text-gray-900">{stats.totalRegistrations}</div>
                 <div className="text-xs text-gray-700 font-bold">נרשמו</div>
               </div>
               <div className="p-3 bg-green-50 rounded-lg border border-green-200 text-center">
@@ -130,7 +122,7 @@ export default function CheckInHeroCard({
           {/* CTA Button - Navigate to Reports */}
           <button
             onClick={onNavigateToReports}
-            className="w-full flex items-center justify-center gap-2.5 px-6 py-4
+            className="w-full flex items-center justify-center gap-2.5 px-6 py-3
                      bg-purple-600 text-white rounded-lg font-bold text-sm
                      hover:bg-purple-700 active:scale-[0.98] transition-all duration-200
                      shadow-sm hover:shadow-md
@@ -147,7 +139,7 @@ export default function CheckInHeroCard({
 
   // Active event view
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden md:max-w-2xl md:mx-auto">
       {/* Top accent */}
       <div className="h-1 bg-green-500"></div>
 
@@ -168,9 +160,7 @@ export default function CheckInHeroCard({
         {stats && stats.totalRegistrations > 0 && (
           <div className="grid grid-cols-3 gap-3 mb-5">
             <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
-              <div className="text-2xl font-black text-gray-900">
-                {stats.totalRegistrations}
-              </div>
+              <div className="text-2xl font-black text-gray-900">{stats.totalRegistrations}</div>
               <div className="text-xs text-gray-700 font-bold">נרשמו</div>
             </div>
             <div className="p-3 bg-green-50 rounded-lg border border-green-200 text-center">
@@ -178,9 +168,7 @@ export default function CheckInHeroCard({
               <div className="text-xs text-gray-700 font-bold">הגיעו</div>
             </div>
             <div className="p-3 bg-purple-50 rounded-lg border border-purple-200 text-center">
-              <div className="text-2xl font-black text-purple-600">
-                {stats.checkInPercentage}%
-              </div>
+              <div className="text-2xl font-black text-purple-600">{stats.checkInPercentage}%</div>
               <div className="text-xs text-gray-700 font-bold">אחוז הגעה</div>
             </div>
           </div>
@@ -189,7 +177,7 @@ export default function CheckInHeroCard({
         {/* CTA Button - Clean Style */}
         <button
           onClick={onNavigateToCheckIn}
-          className="w-full flex items-center justify-center gap-2.5 px-6 py-4
+          className="w-full flex items-center justify-center gap-2.5 px-6 py-3
                    bg-green-600 text-white rounded-lg font-bold text-sm
                    hover:bg-green-700 active:scale-[0.98] transition-all duration-200
                    shadow-sm hover:shadow-md
