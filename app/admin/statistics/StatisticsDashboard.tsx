@@ -307,12 +307,12 @@ export default function StatisticsDashboard() {
   useEffect(() => {
     loadData()
 
-    // Cleanup: abort any pending request when component unmounts
-    // This prevents memory leaks and state updates on unmounted components
+    // Cleanup: capture controller reference to avoid stale closure issues
+    // This ensures we abort the exact controller created for this effect instance
+    const currentController = abortControllerRef.current
     return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
-        abortControllerRef.current = null
+      if (currentController) {
+        currentController.abort()
       }
     }
   }, [loadData])
@@ -342,11 +342,10 @@ export default function StatisticsDashboard() {
   ): { value: number; isPositive: boolean; isNew: boolean } => {
     // Both zero - no change
     if (previous === 0 && current === 0) return { value: 0, isPositive: true, isNew: false }
-    // Previous zero but current has value - this is "new" data (infinite growth)
-    if (previous === 0 && current > 0) return { value: 100, isPositive: true, isNew: true }
-    // Previous zero and current negative (shouldn't happen but handle it)
-    if (previous === 0) return { value: 100, isPositive: false, isNew: true }
-    // Normal calculation
+    // Previous zero but current has value - can't calculate percentage (division by zero)
+    // Show as "new" metric with direction based on value sign
+    if (previous === 0) return { value: 100, isPositive: current > 0, isNew: true }
+    // Normal calculation - previous is non-zero so safe to divide
     const change = ((current - previous) / previous) * 100
     return { value: Math.abs(Math.round(change)), isPositive: change >= 0, isNew: false }
   }

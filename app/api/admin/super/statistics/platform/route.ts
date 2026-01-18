@@ -149,10 +149,11 @@ export async function GET(request: NextRequest) {
     })
     const emailsSent = emailsRecord._sum.amount || 0
 
-    // Previous period stats
+    // Previous period stats - count schools created in the previous period (not cumulative)
+    // This enables accurate period-over-period comparison
     const previousSchools = await prisma.school.count({
       where: {
-        createdAt: { lt: previousTo },
+        createdAt: { gte: previousFrom, lt: previousTo },
       },
     })
 

@@ -67,14 +67,16 @@ export async function GET(request: NextRequest) {
     const eventsOverCapacity = events.filter((e) => e.spotsReserved > e.capacity).length
 
     // Fill rate distribution
+    // Note: max: Infinity ensures events with >100% fill rate (overbooking) are counted in "90%+"
     const fillRanges = [
       { range: 'מתחת ל-50%', min: 0, max: 50, count: 0 },
       { range: '50%-75%', min: 50, max: 75, count: 0 },
       { range: '75%-90%', min: 75, max: 90, count: 0 },
-      { range: '90%+', min: 90, max: 101, count: 0 },
+      { range: '90%+', min: 90, max: Infinity, count: 0 },
     ]
 
     events.forEach((e) => {
+      // Division by zero protection: events with 0 capacity get 0% fill rate
       const fillRate = e.capacity > 0 ? (e.spotsReserved / e.capacity) * 100 : 0
       const range = fillRanges.find((r) => fillRate >= r.min && fillRate < r.max)
       if (range) range.count++
