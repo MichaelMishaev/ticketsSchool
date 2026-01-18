@@ -25,8 +25,10 @@ export default defineConfig({
     actionTimeout: 15000, // 15 seconds for actions like click, fill
     navigationTimeout: 20000, // 20 seconds for page navigation
     // Inject CSS to hide Next.js dev overlay that blocks clicks in tests
+    // Also signal to rate limiter that this is a test (bypass rate limiting)
     extraHTTPHeaders: {
       'X-Disable-Next-Dev-Overlay': 'true',
+      'x-playwright-test': 'true',
     },
   },
 
