@@ -3,27 +3,21 @@ import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin, requireSchoolAccess } from '@/lib/auth.server'
 import { logger } from '@/lib/logger-v2'
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Require authentication
     const admin = await getCurrentAdmin()
     if (!admin) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = await params;
+    const { id } = await params
     const event = await prisma.event.findUnique({
       where: { id },
       include: {
         school: true,
         registrations: {
-          orderBy: { createdAt: 'desc' }
+          orderBy: { createdAt: 'desc' },
         },
         tables: {
           select: {
@@ -32,25 +26,23 @@ export async function GET(
             reservation: {
               select: {
                 guestsCount: true,
-                spotsCount: true
-              }
-            }
-          }
-        }
-      }
+                spotsCount: true,
+              },
+            },
+          },
+        },
+      },
     })
 
-    if (!event) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      )
+    // Check if event exists and is not soft-deleted
+    if (!event || event.deletedAt !== null) {
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
     // Check school access (all roles except SUPER_ADMIN must match schoolId)
     if (admin.role !== 'SUPER_ADMIN' && admin.schoolId !== event.schoolId) {
       return NextResponse.json(
-        { error: 'Forbidden: No access to this school\'s events' },
+        { error: "Forbidden: No access to this school's events" },
         { status: 403 }
       )
     }
@@ -69,7 +61,8 @@ export async function GET(
       }, 0)
     } else {
       // For CAPACITY_BASED events, count confirmed registrations
-      totalSpotsTaken = event.registrations.filter(r => r.status === 'CONFIRMED')
+      totalSpotsTaken = event.registrations
+        .filter((r) => r.status === 'CONFIRMED')
         .reduce((sum, reg) => sum + (reg.spotsCount || 0), 0)
     }
 
@@ -78,51 +71,39 @@ export async function GET(
     return NextResponse.json({
       ...eventData,
       totalCapacity,
-      totalSpotsTaken
+      totalSpotsTaken,
     })
   } catch (error) {
     logger.error('Error fetching event', { source: 'events', error })
-    return NextResponse.json(
-      { error: 'Failed to fetch event' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch event' }, { status: 500 })
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Require authentication
     const admin = await getCurrentAdmin()
     if (!admin) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = await params;
+    const { id } = await params
     const data = await request.json()
 
     // Check event exists and get school
     const existingEvent = await prisma.event.findUnique({
       where: { id },
-      select: { schoolId: true }
+      select: { schoolId: true },
     })
 
     if (!existingEvent) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
     // Check school access (all roles except SUPER_ADMIN must match schoolId)
     if (admin.role !== 'SUPER_ADMIN' && admin.schoolId !== existingEvent.schoolId) {
       return NextResponse.json(
-        { error: 'Forbidden: No access to this school\'s events' },
+        { error: "Forbidden: No access to this school's events" },
         { status: 403 }
       )
     }
@@ -143,7 +124,8 @@ export async function PATCH(
       updateData.endAt = data.endAt ? new Date(data.endAt) : null
     }
     if (data.capacity !== undefined) updateData.capacity = parseInt(data.capacity)
-    if (data.maxSpotsPerPerson !== undefined) updateData.maxSpotsPerPerson = parseInt(data.maxSpotsPerPerson)
+    if (data.maxSpotsPerPerson !== undefined)
+      updateData.maxSpotsPerPerson = parseInt(data.maxSpotsPerPerson)
     if (data.fieldsSchema !== undefined) updateData.fieldsSchema = data.fieldsSchema
     if (data.conditions !== undefined) updateData.conditions = data.conditions
     if (data.requireAcceptance !== undefined) updateData.requireAcceptance = data.requireAcceptance
@@ -161,17 +143,14 @@ export async function PATCH(
       where: { id },
       data: updateData,
       include: {
-        school: true
-      }
+        school: true,
+      },
     })
 
     return NextResponse.json(event)
   } catch (error) {
     logger.error('Error updating event', { source: 'events', error })
-    return NextResponse.json(
-      { error: 'Failed to update event' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to update event' }, { status: 500 })
   }
 }
 
@@ -183,13 +162,10 @@ export async function DELETE(
     // Require authentication
     const admin = await getCurrentAdmin()
     if (!admin) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = await params;
+    const { id } = await params
 
     // Check if event exists and get registration count + school
     const event = await prisma.event.findUnique({
@@ -197,22 +173,19 @@ export async function DELETE(
       select: {
         schoolId: true,
         _count: {
-          select: { registrations: true }
-        }
-      }
+          select: { registrations: true },
+        },
+      },
     })
 
     if (!event) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
     // Check school access (all roles except SUPER_ADMIN must match schoolId)
     if (admin.role !== 'SUPER_ADMIN' && admin.schoolId !== event.schoolId) {
       return NextResponse.json(
-        { error: 'Forbidden: No access to this school\'s events' },
+        { error: "Forbidden: No access to this school's events" },
         { status: 403 }
       )
     }
@@ -220,21 +193,23 @@ export async function DELETE(
     // Only allow deletion of events with no registrations (temp events)
     if (event._count.registrations > 0) {
       return NextResponse.json(
-        { error: 'Cannot delete event with existing registrations. Please remove all registrations first.' },
+        {
+          error:
+            'Cannot delete event with existing registrations. Please remove all registrations first.',
+        },
         { status: 400 }
       )
     }
 
-    await prisma.event.delete({
-      where: { id }
+    // Soft delete - set deletedAt timestamp instead of hard delete
+    await prisma.event.update({
+      where: { id },
+      data: { deletedAt: new Date() },
     })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, message: 'Event archived successfully' })
   } catch (error) {
     logger.error('Error deleting event', { source: 'events', error })
-    return NextResponse.json(
-      { error: 'Failed to delete event' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to delete event' }, { status: 500 })
   }
 }

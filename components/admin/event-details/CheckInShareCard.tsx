@@ -95,7 +95,7 @@ export default function CheckInShareCard({ eventId, eventTitle }: CheckInShareCa
                 <UserCheck className="w-5 h-5 text-teal-600" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-900">קישור צ׳ק-אין</h3>
+                <h3 className="text-lg font-bold text-gray-900">קישור אישורי הגעה</h3>
                 <p className="text-sm text-gray-600">שלח לאדם שיבדוק נוכחות בכניסה</p>
               </div>
             </div>
@@ -113,7 +113,7 @@ export default function CheckInShareCard({ eventId, eventTitle }: CheckInShareCa
               {/* Primary CTA - Share Options */}
               <button
                 onClick={() => setShareModalOpen(true)}
-                className="flex items-center justify-center gap-2.5 px-6 py-4
+                className="flex items-center justify-center gap-2.5 px-6 py-4 md:py-2.5
                          bg-gradient-to-r from-teal-600 via-cyan-600 to-teal-600
                          text-white rounded-xl font-bold text-sm
                          hover:from-teal-700 hover:via-cyan-700 hover:to-teal-700
@@ -132,7 +132,7 @@ export default function CheckInShareCard({ eventId, eventTitle }: CheckInShareCa
               {/* Secondary - Preview */}
               <button
                 onClick={() => window.open(linkData.url, '_blank')}
-                className="flex items-center justify-center gap-2.5 px-6 py-4
+                className="flex items-center justify-center gap-2.5 px-6 py-4 md:py-2.5
                          bg-white border-2 border-gray-300 text-gray-700 rounded-xl font-bold text-sm
                          hover:bg-gradient-to-br hover:from-teal-50 hover:to-cyan-50 hover:border-teal-300
                          active:scale-[0.97] transition-all duration-200

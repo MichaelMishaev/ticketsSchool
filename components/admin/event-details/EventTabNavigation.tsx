@@ -163,7 +163,7 @@ export default function EventTabNavigation({
                 data-tab-id={tab.id}
                 onClick={() => handleTabChange(tab.id)}
                 className={`
-                  inline-flex items-center gap-2 px-6 py-4 font-medium text-sm
+                  inline-flex items-center gap-2 px-6 py-4 md:py-2.5 font-medium text-sm
                   transition-colors duration-200 whitespace-nowrap
                   focus:outline-none focus:ring-2 focus:ring-gray-400/20 focus:z-10
                   min-h-[48px] border-b-2

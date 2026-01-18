@@ -98,12 +98,12 @@ export const buttonVariants = {
   `,
 }
 
-// Button Sizes
+// Button Sizes (Compact, professional for admin interfaces)
 export const buttonSizes = {
   sm: 'px-3 py-1.5 text-sm min-h-[36px]',
-  md: 'px-4 py-2.5 text-base min-h-[44px]',
-  lg: 'px-6 py-3 text-base min-h-[48px]',
-  xl: 'px-8 py-4 text-lg min-h-[56px]',
+  md: 'px-4 py-2 text-sm min-h-[40px] sm:min-h-[44px]', // Compact for admin, accessible on mobile
+  lg: 'px-5 py-2 sm:py-2.5 text-base min-h-[44px]', // Professional size for primary CTAs
+  xl: 'px-6 py-2.5 sm:py-3 text-base min-h-[48px]', // Reduced from py-4 for tighter layout
 }
 
 // Badge Variants
@@ -267,28 +267,29 @@ export const modernBadges = {
 }
 
 /**
- * Unified Button System
+ * Unified Button System (Compact, Professional)
  *
  * Primary CTA uses gray-900 (neutral), semantic colors for specific actions only
+ * Optimized for admin interfaces with tighter spacing
  */
 export const modernButtons = {
   // Primary CTA (neutral gray-900)
   primary:
-    'px-6 py-3 bg-gray-900 text-white rounded-lg font-medium text-sm hover:bg-gray-800 active:scale-[0.98] transition-all focus:outline-none focus:ring-2 focus:ring-gray-400/20',
+    'px-5 py-2 sm:py-2.5 bg-gray-900 text-white rounded-lg font-medium text-sm hover:bg-gray-800 active:scale-[0.98] transition-all focus:outline-none focus:ring-2 focus:ring-gray-400/20 min-h-[44px]',
 
   // Secondary (outlined)
   secondary:
-    'px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-50 hover:border-gray-400 active:scale-[0.98] transition-all focus:outline-none focus:ring-2 focus:ring-gray-400/20',
+    'px-5 py-2 sm:py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-50 hover:border-gray-400 active:scale-[0.98] transition-all focus:outline-none focus:ring-2 focus:ring-gray-400/20 min-h-[44px]',
 
   // Ghost (minimal)
   ghost:
-    'px-4 py-2 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-100 active:scale-[0.98] transition-all focus:outline-none focus:ring-2 focus:ring-gray-300',
+    'px-4 py-1.5 sm:py-2 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-100 active:scale-[0.98] transition-all focus:outline-none focus:ring-2 focus:ring-gray-300 min-h-[40px]',
 
   // Semantic actions
   success:
-    'px-6 py-3 bg-green-600 text-white rounded-lg font-medium text-sm hover:bg-green-700 active:scale-[0.98] transition-all focus:outline-none focus:ring-2 focus:ring-green-300',
+    'px-5 py-2 sm:py-2.5 bg-green-600 text-white rounded-lg font-medium text-sm hover:bg-green-700 active:scale-[0.98] transition-all focus:outline-none focus:ring-2 focus:ring-green-300 min-h-[44px]',
   danger:
-    'px-6 py-3 bg-red-600 text-white rounded-lg font-medium text-sm hover:bg-red-700 active:scale-[0.98] transition-all focus:outline-none focus:ring-2 focus:ring-red-300',
+    'px-5 py-2 sm:py-2.5 bg-red-600 text-white rounded-lg font-medium text-sm hover:bg-red-700 active:scale-[0.98] transition-all focus:outline-none focus:ring-2 focus:ring-red-300 min-h-[44px]',
 }
 
 /**

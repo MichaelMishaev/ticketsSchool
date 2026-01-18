@@ -9,10 +9,33 @@ import { logger } from '@/lib/logger-v2'
  * Maps each Hebrew letter to its English equivalent
  */
 const hebrewToEnglish: Record<string, string> = {
-  'א': 'a', 'ב': 'b', 'ג': 'g', 'ד': 'd', 'ה': 'h', 'ו': 'v', 'ז': 'z', 'ח': 'ch',
-  'ט': 't', 'י': 'y', 'כ': 'k', 'ך': 'k', 'ל': 'l', 'מ': 'm', 'ם': 'm', 'נ': 'n',
-  'ן': 'n', 'ס': 's', 'ע': 'a', 'פ': 'p', 'ף': 'p', 'צ': 'tz', 'ץ': 'tz', 'ק': 'k',
-  'ר': 'r', 'ש': 'sh', 'ת': 't'
+  א: 'a',
+  ב: 'b',
+  ג: 'g',
+  ד: 'd',
+  ה: 'h',
+  ו: 'v',
+  ז: 'z',
+  ח: 'ch',
+  ט: 't',
+  י: 'y',
+  כ: 'k',
+  ך: 'k',
+  ל: 'l',
+  מ: 'm',
+  ם: 'm',
+  נ: 'n',
+  ן: 'n',
+  ס: 's',
+  ע: 'a',
+  פ: 'p',
+  ף: 'p',
+  צ: 'tz',
+  ץ: 'tz',
+  ק: 'k',
+  ר: 'r',
+  ש: 'sh',
+  ת: 't',
 }
 
 /**
@@ -20,7 +43,10 @@ const hebrewToEnglish: Record<string, string> = {
  * Example: "כדורסל" -> "kdvrsl"
  */
 function transliterateHebrew(text: string): string {
-  return text.split('').map(char => hebrewToEnglish[char] || char).join('')
+  return text
+    .split('')
+    .map((char) => hebrewToEnglish[char] || char)
+    .join('')
 }
 
 /**
@@ -59,7 +85,7 @@ async function generateUniqueSlug(title: string, schoolId: string): Promise<stri
 
   // Check if slug already exists for this school
   const existingEvent = await prisma.event.findUnique({
-    where: { slug: baseSlug }
+    where: { slug: baseSlug },
   })
 
   if (!existingEvent) {
@@ -89,14 +115,14 @@ export async function GET(request: NextRequest) {
     // Get current admin session
     const admin = await getCurrentAdmin()
     if (!admin) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Build where clause based on admin role
-    const where: any = {}
+    // Always exclude soft-deleted events
+    const where: any = {
+      deletedAt: null, // Only show active (non-deleted) events
+    }
 
     // Regular admins can only see their school's events (all roles except SUPER_ADMIN)
     if (admin.role !== 'SUPER_ADMIN') {
@@ -128,19 +154,19 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             name: true,
-            slug: true
-          }
+            slug: true,
+          },
         },
         _count: {
-          select: { registrations: true }
+          select: { registrations: true },
         },
         registrations: {
           where: {
-            status: 'CONFIRMED'
+            status: 'CONFIRMED',
           },
           select: {
-            spotsCount: true
-          }
+            spotsCount: true,
+          },
         },
         tables: {
           select: {
@@ -149,16 +175,16 @@ export async function GET(request: NextRequest) {
             reservation: {
               select: {
                 guestsCount: true,
-                spotsCount: true
-              }
-            }
-          }
-        }
-      }
+                spotsCount: true,
+              },
+            },
+          },
+        },
+      },
     })
 
     // Calculate total spots taken and table capacity for each event
-    const eventsWithSpots = events.map(event => {
+    const eventsWithSpots = events.map((event) => {
       let totalSpotsTaken = 0
       let totalCapacity = event.capacity
 
@@ -173,10 +199,7 @@ export async function GET(request: NextRequest) {
         }, 0)
       } else {
         // For CAPACITY_BASED events, count confirmed registrations
-        totalSpotsTaken = event.registrations.reduce(
-          (sum, reg) => sum + reg.spotsCount,
-          0
-        )
+        totalSpotsTaken = event.registrations.reduce((sum, reg) => sum + reg.spotsCount, 0)
       }
 
       // Remove registrations and tables arrays from response and add calculated values
@@ -184,17 +207,14 @@ export async function GET(request: NextRequest) {
       return {
         ...eventData,
         totalSpotsTaken,
-        totalCapacity
+        totalCapacity,
       }
     })
 
     return NextResponse.json(eventsWithSpots)
   } catch (error) {
     logger.error('Error fetching events', { source: 'events', error })
-    return NextResponse.json(
-      { error: 'Failed to fetch events' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 })
   }
 }
 
@@ -203,10 +223,7 @@ export async function POST(request: NextRequest) {
     // Get current admin session
     const admin = await getCurrentAdmin()
     if (!admin) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const data: EventFormData = await request.json()
@@ -217,10 +234,7 @@ export async function POST(request: NextRequest) {
     // Regular admins can ONLY create events for their school (all roles except SUPER_ADMIN)
     if (admin.role !== 'SUPER_ADMIN') {
       if (!admin.schoolId) {
-        return NextResponse.json(
-          { error: 'Admin must have a school assigned' },
-          { status: 400 }
-        )
+        return NextResponse.json({ error: 'Admin must have a school assigned' }, { status: 400 })
       }
       schoolId = admin.schoolId
     }
@@ -232,27 +246,18 @@ export async function POST(request: NextRequest) {
 
     // Validate schoolId exists
     if (!schoolId) {
-      return NextResponse.json(
-        { error: 'School ID is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'School ID is required' }, { status: 400 })
     }
 
     // Validate required fields
     if (!data.title || !data.startAt) {
-      return NextResponse.json(
-        { error: 'Title and start date are required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Title and start date are required' }, { status: 400 })
     }
 
     // Validate dates
     const startAt = new Date(data.startAt)
     if (isNaN(startAt.getTime())) {
-      return NextResponse.json(
-        { error: 'Invalid start date' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Invalid start date' }, { status: 400 })
     }
 
     // Prevent creating events with past dates
@@ -268,10 +273,7 @@ export async function POST(request: NextRequest) {
     if (data.endAt) {
       endAt = new Date(data.endAt)
       if (isNaN(endAt.getTime())) {
-        return NextResponse.json(
-          { error: 'Invalid end date' },
-          { status: 400 }
-        )
+        return NextResponse.json({ error: 'Invalid end date' }, { status: 400 })
       }
     }
 
@@ -284,10 +286,7 @@ export async function POST(request: NextRequest) {
     const eventType = (data as any).eventType || 'CAPACITY_BASED'
     if (eventType === 'CAPACITY_BASED') {
       if (isNaN(capacity) || capacity < 1) {
-        return NextResponse.json(
-          { error: 'Capacity must be a positive number' },
-          { status: 400 }
-        )
+        return NextResponse.json({ error: 'Capacity must be a positive number' }, { status: 400 })
       }
 
       if (isNaN(maxSpotsPerPerson) || maxSpotsPerPerson < 1) {
@@ -304,7 +303,7 @@ export async function POST(request: NextRequest) {
     const event = await prisma.event.create({
       data: {
         slug,
-        schoolId,  // NEW: Set school context
+        schoolId, // NEW: Set school context
         title: data.title,
         description: data.description,
         gameType: data.gameType,
@@ -330,16 +329,13 @@ export async function POST(request: NextRequest) {
         currency: (data as any).currency || 'ILS',
       },
       include: {
-        school: true
-      }
+        school: true,
+      },
     })
 
     return NextResponse.json(event)
   } catch (error) {
     logger.error('Error creating event', { source: 'events', error })
-    return NextResponse.json(
-      { error: 'Failed to create event' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to create event' }, { status: 500 })
   }
 }

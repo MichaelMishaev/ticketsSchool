@@ -125,7 +125,9 @@ export default function EventPreviewModal({ isOpen, onClose, eventData }: EventP
                       <div className="flex items-start gap-3">
                         <Users className="w-5 h-5 text-purple-600 mt-0.5" />
                         <div>
-                          <div className="text-xs font-medium text-purple-600 mb-1">מקומות זמינים</div>
+                          <div className="text-xs font-medium text-purple-600 mb-1">
+                            מקומות זמינים
+                          </div>
                           <div className="text-sm font-semibold text-gray-900">
                             {availableSpots} מקומות
                           </div>
@@ -169,10 +171,15 @@ export default function EventPreviewModal({ isOpen, onClose, eventData }: EventP
                   {/* Custom Fields Preview */}
                   {eventData.fieldsSchema && eventData.fieldsSchema.length > 0 && (
                     <div className="bg-white rounded-lg p-4 border border-gray-200">
-                      <h3 className="text-sm font-semibold text-gray-900 mb-3">שדות נוספים בהרשמה</h3>
+                      <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                        שדות נוספים בהרשמה
+                      </h3>
                       <div className="space-y-3">
                         {eventData.fieldsSchema.map((field, index) => (
-                          <div key={index} className="bg-gray-50 rounded p-3 border border-gray-200">
+                          <div
+                            key={index}
+                            className="bg-gray-50 rounded p-3 border border-gray-200"
+                          >
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-sm font-medium text-gray-900">
                                 {field.label}
@@ -191,7 +198,10 @@ export default function EventPreviewModal({ isOpen, onClose, eventData }: EventP
                             {field.options && field.options.length > 0 && (
                               <div className="mt-2 flex flex-wrap gap-1">
                                 {field.options.map((option, optIdx) => (
-                                  <span key={optIdx} className="text-xs bg-white border border-gray-300 px-2 py-1 rounded">
+                                  <span
+                                    key={optIdx}
+                                    className="text-xs bg-white border border-gray-300 px-2 py-1 rounded"
+                                  >
                                     {option}
                                   </span>
                                 ))}
@@ -220,7 +230,7 @@ export default function EventPreviewModal({ isOpen, onClose, eventData }: EventP
                   <div className="pt-4 border-t border-gray-200">
                     <button
                       disabled
-                      className="w-full bg-blue-600 text-white font-semibold py-4 rounded-lg opacity-50 cursor-not-allowed"
+                      className="w-full bg-blue-600 text-white font-semibold py-4 md:py-2.5 text-base md:text-sm rounded-lg opacity-50 cursor-not-allowed"
                     >
                       הרשמה לאירוע (תצוגה בלבד)
                     </button>

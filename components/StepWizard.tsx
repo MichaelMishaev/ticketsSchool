@@ -17,11 +17,26 @@ interface StepWizardProps {
   completedSteps?: Set<number>
 }
 
-export default function StepWizard({ steps, currentStep, onStepClick, completedSteps = new Set() }: StepWizardProps) {
+export default function StepWizard({
+  steps,
+  currentStep,
+  onStepClick,
+  completedSteps = new Set(),
+}: StepWizardProps) {
   return (
-    <div className="w-full">
+    <div
+      className="w-full"
+      role="navigation"
+      aria-label={`שלב ${currentStep + 1} מתוך ${steps.length}: ${steps[currentStep]?.title}`}
+    >
+      {/* Screen reader announcement for step changes */}
+      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        שלב {currentStep + 1} מתוך {steps.length}: {steps[currentStep]?.title}.{' '}
+        {steps[currentStep]?.description}
+      </div>
+
       {/* Desktop: Horizontal stepper */}
-      <div className="hidden md:block">
+      <div className="hidden md:block" role="group" aria-label="התקדמות בטופס">
         <div className="flex items-center justify-between">
           {steps.map((step, index) => {
             const isActive = index === currentStep
@@ -35,9 +50,11 @@ export default function StepWizard({ steps, currentStep, onStepClick, completedS
                   <button
                     onClick={() => isClickable && onStepClick(index)}
                     disabled={!isClickable}
+                    aria-label={`${step.title}${isCompleted ? ' (הושלם)' : isActive ? ' (שלב נוכחי)' : ''}`}
+                    aria-current={isActive ? 'step' : undefined}
                     className={`
                       relative w-12 h-12 rounded-full flex items-center justify-center
-                      transition-all duration-300 group
+                      transition-all duration-300 group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
                       ${isActive ? 'bg-blue-600 shadow-lg scale-110' : ''}
                       ${isCompleted ? 'bg-green-500' : ''}
                       ${!isActive && !isCompleted ? 'bg-gray-200' : ''}
@@ -47,10 +64,12 @@ export default function StepWizard({ steps, currentStep, onStepClick, completedS
                     {isCompleted ? (
                       <CheckCircle2 className="w-6 h-6 text-white" />
                     ) : (
-                      <span className={`
+                      <span
+                        className={`
                         text-sm font-bold
                         ${isActive ? 'text-white' : 'text-gray-600'}
-                      `}>
+                      `}
+                      >
                         {index + 1}
                       </span>
                     )}
@@ -68,17 +87,17 @@ export default function StepWizard({ steps, currentStep, onStepClick, completedS
 
                   {/* Step label */}
                   <div className="mt-2 text-center">
-                    <div className={`
+                    <div
+                      className={`
                       text-sm font-medium
                       ${isActive ? 'text-blue-600' : ''}
                       ${isCompleted ? 'text-green-600' : ''}
                       ${!isActive && !isCompleted ? 'text-gray-500' : ''}
-                    `}>
+                    `}
+                    >
                       {step.title}
                     </div>
-                    <div className="text-xs text-gray-500 mt-0.5">
-                      {step.description}
-                    </div>
+                    <div className="text-xs text-gray-500 mt-0.5">{step.description}</div>
                   </div>
                 </div>
 
@@ -103,28 +122,30 @@ export default function StepWizard({ steps, currentStep, onStepClick, completedS
 
       {/* Mobile: Vertical compact stepper */}
       <div className="md:hidden">
-        <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">שלב {currentStep + 1} מתוך {steps.length}</span>
-            <span className="text-xs text-gray-500">
+        <div className="bg-white rounded-lg shadow-sm p-3 border border-gray-200">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs font-medium text-gray-600">
+              שלב {currentStep + 1} מתוך {steps.length}
+            </span>
+            <span className="text-xs text-gray-400">
               {Math.round(((currentStep + 1) / steps.length) * 100)}%
             </span>
           </div>
 
-          {/* Progress bar */}
-          <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+          {/* Slimmer progress bar */}
+          <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-blue-600"
+              className="h-full bg-blue-600 rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
               transition={{ duration: 0.5, ease: 'easeInOut' }}
             />
           </div>
 
-          {/* Current step info */}
-          <div className="mt-3">
-            <h3 className="text-base font-semibold text-gray-900">{steps[currentStep].title}</h3>
-            <p className="text-sm text-gray-600">{steps[currentStep].description}</p>
+          {/* Current step - more compact */}
+          <div className="mt-2">
+            <h3 className="text-sm font-semibold text-gray-900">{steps[currentStep].title}</h3>
+            <p className="text-xs text-gray-500">{steps[currentStep].description}</p>
           </div>
         </div>
       </div>

@@ -167,7 +167,7 @@ export default function ShareOptionsModal({
               <button
                 key={option.id}
                 onClick={() => handleShare(option.url)}
-                className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-3.5 md:py-2.5 hover:bg-gray-50 transition-colors"
                 aria-label={`שתף ב-${option.label}`}
               >
                 {/* Icon */}
@@ -217,7 +217,7 @@ export default function ShareOptionsModal({
           {/* Cancel Button */}
           <button
             onClick={onClose}
-            className="w-full flex items-center justify-center px-4 py-4 text-base font-semibold text-blue-600 hover:bg-gray-50 transition-colors border-t border-gray-200"
+            className="w-full flex items-center justify-center px-4 py-4 md:py-2.5 text-base md:text-sm font-semibold text-blue-600 hover:bg-gray-50 transition-colors border-t border-gray-200"
             aria-label="ביטול"
           >
             ביטול

@@ -17,7 +17,6 @@ import {
   buttonSizes,
   inputVariants,
   cardVariants,
-  badgeVariants,
 } from '@/lib/design-tokens'
 import {
   Calendar,
@@ -44,6 +43,7 @@ import {
   HelpCircle,
   Tag,
   AlignLeft,
+  X,
 } from 'lucide-react'
 
 const AUTOSAVE_KEY_PREFIX = 'eventFormDraft'
@@ -132,8 +132,7 @@ const EVENT_TYPES = [
   'אירוע',
 ]
 
-// Nominatim API for address autocomplete (OpenStreetMap - free)
-const NOMINATIM_API = 'https://nominatim.openstreetmap.org/search'
+// Geocode API (server-side proxy to Nominatim - avoids CORS issues)
 
 // Debounce hook for rate limiting API calls
 function useDebounce<T>(value: T, delay: number): T {
@@ -183,8 +182,10 @@ function LocationAutocomplete({
   // Debounce search query (500ms to respect Nominatim rate limit)
   const debouncedQuery = useDebounce(inputValue, 500)
 
-  // Fetch suggestions from Nominatim
+  // Fetch suggestions from Nominatim with AbortController (Issue 6.1)
   useEffect(() => {
+    const controller = new AbortController()
+
     const fetchSuggestions = async () => {
       if (!debouncedQuery || debouncedQuery.length < 2) {
         setSuggestions([])
@@ -193,26 +194,20 @@ function LocationAutocomplete({
 
       setIsLoading(true)
       try {
-        const params = new URLSearchParams({
-          q: debouncedQuery,
-          format: 'json',
-          addressdetails: '1',
-          limit: '8',
-          countrycodes: 'il', // Focus on Israel
-          'accept-language': 'he,en', // Prefer Hebrew results
-        })
-
-        const response = await fetch(`${NOMINATIM_API}?${params}`, {
-          headers: {
-            'User-Agent': 'KartisInfo/1.0 (https://kartis.info)', // Required by Nominatim
-          },
+        // Use server-side proxy to avoid CORS issues with Nominatim
+        const response = await fetch(`/api/geocode?q=${encodeURIComponent(debouncedQuery)}`, {
+          signal: controller.signal,
         })
 
         if (response.ok) {
-          const data: NominatimResult[] = await response.json()
-          setSuggestions(data)
+          const data = await response.json()
+          setSuggestions(data.results || [])
         }
       } catch (error) {
+        // Ignore abort errors (expected on cleanup)
+        if (error instanceof Error && error.name === 'AbortError') {
+          return
+        }
         console.error('Nominatim search error:', error)
         setSuggestions([])
       } finally {
@@ -221,6 +216,9 @@ function LocationAutocomplete({
     }
 
     fetchSuggestions()
+
+    // Cleanup: abort pending fetch on unmount or query change
+    return () => controller.abort()
   }, [debouncedQuery])
 
   // Close on click outside
@@ -403,7 +401,15 @@ export default function NewEventPage() {
   const [draftData, setDraftData] = useState<any>(null)
   const [adminId, setAdminId] = useState<string | null>(null)
   const { addToast, ToastContainer } = useToast()
+
+  // Input refs for focus management (Issue 2.3)
+  const gameTypeInputRef = useRef<HTMLInputElement>(null)
   const titleInputRef = useRef<HTMLInputElement>(null)
+  const capacityInputRef = useRef<HTMLInputElement>(null)
+  const stepContentRef = useRef<HTMLDivElement>(null)
+
+  // Online state for offline detection (Issue 7.2)
+  const [isOnline, setIsOnline] = useState(true)
 
   // Expandable sections state
   const [expandedSections, setExpandedSections] = useState({
@@ -586,6 +592,55 @@ export default function NewEventPage() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [formData])
+
+  // Focus management after step transition (Issue 2.3)
+  useEffect(() => {
+    // Small delay to allow animation to complete
+    const timer = setTimeout(() => {
+      switch (currentStep) {
+        case 0:
+          gameTypeInputRef.current?.focus()
+          break
+        case 1:
+          // DateTimePicker doesn't have a direct ref, scroll to top instead
+          stepContentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          break
+        case 2:
+          capacityInputRef.current?.focus()
+          break
+        case 3:
+          // Advanced step - scroll to top
+          stepContentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          break
+      }
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [currentStep])
+
+  // Online/Offline detection (Issue 7.2)
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true)
+      addToast('חיבור לאינטרנט חזר!', 'success', 3000)
+    }
+
+    const handleOffline = () => {
+      setIsOnline(false)
+      addToast('אין חיבור לאינטרנט. הנתונים יישמרו מקומית.', 'error', 5000)
+    }
+
+    // Check initial state
+    setIsOnline(navigator.onLine)
+
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [addToast])
 
   // Real-time validation
   const validateField = (name: string, value: string | number) => {
@@ -838,6 +893,12 @@ export default function NewEventPage() {
     console.log('[handleSubmit] Called! Current step:', currentStep)
     console.log('[handleSubmit] Should only be called on step 3 (index 3)')
 
+    // Check for internet connectivity (Issue 7.2)
+    if (!navigator.onLine || !isOnline) {
+      addToast('אין חיבור לאינטרנט. אנא בדוק את החיבור שלך ונסה שוב.', 'error')
+      return
+    }
+
     // Prevent submission if not on final step
     if (currentStep < steps.length - 1) {
       console.error('[handleSubmit] ERROR: Form submitted before final step!')
@@ -927,14 +988,18 @@ export default function NewEventPage() {
     setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }))
   }
 
-  // Character counter component
+  // Character counter component - improved visibility on mobile (Issue 1.4)
   const CharCounter = ({ current, max }: { current: number; max: number }) => {
     const percentage = (current / max) * 100
     const isNearLimit = percentage > 80
     const isOverLimit = current > max
 
     return (
-      <div className="flex items-center gap-2 text-xs mt-1">
+      <div
+        className="flex items-center gap-2 text-sm sm:text-xs mt-1"
+        aria-live="polite"
+        aria-atomic="true"
+      >
         <span
           className={`
           ${isOverLimit ? 'text-red-600 font-medium' : ''}
@@ -945,7 +1010,7 @@ export default function NewEventPage() {
           {current} / {max}
         </span>
         {isOverLimit && (
-          <span className="text-red-600 flex items-center gap-1">
+          <span className="text-red-600 flex items-center gap-1" role="alert">
             <AlertCircle className="w-3 h-3" />
             חריגה מהמגבלה
           </span>
@@ -997,15 +1062,22 @@ export default function NewEventPage() {
     </motion.div>
   )
 
-  // Info tooltip component
+  // Info tooltip component - keyboard accessible (Issue 2.4)
   const InfoTooltip = ({ text }: { text: string }) => (
-    <div className="group relative inline-flex">
-      <HelpCircle className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help" />
-      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-10">
+    <button
+      type="button"
+      aria-label="מידע נוסף"
+      className="group relative inline-flex focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 rounded-full"
+    >
+      <HelpCircle className="w-4 h-4 text-gray-400 group-hover:text-gray-600 group-focus:text-gray-600 cursor-help" />
+      <div
+        role="tooltip"
+        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus:opacity-100 group-focus:visible transition-all duration-200 pointer-events-none z-10"
+      >
         {text}
         <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900" />
       </div>
-    </div>
+    </button>
   )
 
   // Render step content
@@ -1015,19 +1087,19 @@ export default function NewEventPage() {
         return (
           <motion.div
             key="step-0-details"
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 20, z: 0 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             className="space-y-6"
           >
-            {/* Step Introduction Card */}
-            <div className="bg-gradient-to-l from-blue-50 to-indigo-50 rounded-xl p-6 border-2 border-blue-200">
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-blue-600 rounded-lg flex-shrink-0">
-                  <FileText className="w-6 h-6 text-white" />
+            {/* Step Introduction Card - hidden on mobile, shown on md+ (Issue 1.2) */}
+            <div className="hidden md:block bg-gradient-to-l from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 border-2 border-blue-200">
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className="p-2 sm:p-3 bg-blue-600 rounded-lg flex-shrink-0">
+                  <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className={typography.h4 + ' mb-2'}>שלב 1: פרטי האירוע</h2>
+                  <h2 className={typography.h4 + ' mb-1 sm:mb-2'}>שלב 1: פרטי האירוע</h2>
                   <p className={typography.bodySmall + ' text-gray-600'}>
                     מלא את המידע הבסיסי על האירוע שלך. שדות המסומנים ב-
                     <span className="text-red-600 font-bold">*</span> הם חובה.
@@ -1053,9 +1125,11 @@ export default function NewEventPage() {
                   <div className="relative">
                     <Tag className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
                     <input
+                      ref={gameTypeInputRef}
                       id="gameType"
                       type="text"
                       required
+                      aria-required="true"
                       value={formData.gameType}
                       onChange={(e) => handleChange('gameType', e.target.value)}
                       className={
@@ -1132,7 +1206,9 @@ export default function NewEventPage() {
                   >
                     <FileText className="w-4 h-4 text-gray-600" />
                     <span>תיאור מפורט</span>
-                    <span className={badgeVariants.neutral + ' text-xs'}>אופציונלי</span>
+                    <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
+                      אופציונלי
+                    </span>
                   </label>
                   <textarea
                     id="description"
@@ -1175,7 +1251,9 @@ export default function NewEventPage() {
                   >
                     <MapPin className="w-4 h-4 text-gray-600" />
                     <span>מיקום</span>
-                    <span className={badgeVariants.neutral + ' text-xs'}>אופציונלי</span>
+                    <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
+                      אופציונלי
+                    </span>
                   </label>
                   <LocationAutocomplete
                     value={formData.location || ''}
@@ -1217,19 +1295,19 @@ export default function NewEventPage() {
         return (
           <motion.div
             key="step-1-timing"
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 20, z: 0 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             className="space-y-6"
           >
-            {/* Step Introduction Card */}
-            <div className="bg-gradient-to-l from-purple-50 to-pink-50 rounded-xl p-6 border-2 border-purple-200">
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-purple-600 rounded-lg flex-shrink-0">
-                  <Clock className="w-6 h-6 text-white" />
+            {/* Step Introduction Card - hidden on mobile, shown on md+ (Issue 1.2) */}
+            <div className="hidden md:block bg-gradient-to-l from-purple-50 to-pink-50 rounded-xl p-4 sm:p-6 border-2 border-purple-200">
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className="p-2 sm:p-3 bg-purple-600 rounded-lg flex-shrink-0">
+                  <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className={typography.h4 + ' mb-2'}>שלב 2: תאריך ושעה</h2>
+                  <h2 className={typography.h4 + ' mb-1 sm:mb-2'}>שלב 2: תאריך ושעה</h2>
                   <p className={typography.bodySmall + ' text-gray-600'}>
                     קבע מתי האירוע שלך יתקיים. תאריך ההתחלה הוא חובה, תאריך הסיום אופציונלי.
                   </p>
@@ -1265,7 +1343,9 @@ export default function NewEventPage() {
                     <Calendar className="w-5 h-5 text-gray-600" />
                     <label className={typography.label}>
                       תאריך ושעת סיום
-                      <span className={badgeVariants.neutral + ' text-xs mr-2'}>אופציונלי</span>
+                      <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium mr-2">
+                        אופציונלי
+                      </span>
                     </label>
                     <InfoTooltip text="אם האירוע נמשך מספר שעות, ציין מתי הוא מסתיים (לא חובה)" />
                   </div>
@@ -1324,19 +1404,19 @@ export default function NewEventPage() {
         return (
           <motion.div
             key="step-2-capacity"
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 20, z: 0 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             className="space-y-6"
           >
-            {/* Step Introduction Card */}
-            <div className="bg-gradient-to-l from-green-50 to-emerald-50 rounded-xl p-6 border-2 border-green-200">
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-green-600 rounded-lg flex-shrink-0">
-                  <Users className="w-6 h-6 text-white" />
+            {/* Step Introduction Card - hidden on mobile, shown on md+ (Issue 1.2) */}
+            <div className="hidden md:block bg-gradient-to-l from-green-50 to-emerald-50 rounded-xl p-4 sm:p-6 border-2 border-green-200">
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className="p-2 sm:p-3 bg-green-600 rounded-lg flex-shrink-0">
+                  <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className={typography.h4 + ' mb-2'}>שלב 3: כמות משתתפים</h2>
+                  <h2 className={typography.h4 + ' mb-1 sm:mb-2'}>שלב 3: כמות משתתפים</h2>
                   <p className={typography.bodySmall + ' text-gray-600'}>
                     הגדר כמה אנשים יכולים להירשם לאירוע ומה המגבלה להרשמה אחת.
                   </p>
@@ -1360,9 +1440,11 @@ export default function NewEventPage() {
                   <div className="relative">
                     <Users className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
                     <input
+                      ref={capacityInputRef}
                       id="capacity"
                       type="number"
                       required
+                      aria-required="true"
                       min="1"
                       value={capacityInput}
                       onChange={(e) => handleCapacityChange(e.target.value)}
@@ -1474,19 +1556,19 @@ export default function NewEventPage() {
         return (
           <motion.div
             key="step-3-advanced"
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 20, z: 0 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             className="space-y-6"
           >
-            {/* Step Introduction Card */}
-            <div className="bg-gradient-to-l from-amber-50 to-orange-50 rounded-xl p-6 border-2 border-amber-200">
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-amber-600 rounded-lg flex-shrink-0">
-                  <Sparkles className="w-6 h-6 text-white" />
+            {/* Step Introduction Card - hidden on mobile, shown on md+ (Issue 1.2) */}
+            <div className="hidden md:block bg-gradient-to-l from-amber-50 to-orange-50 rounded-xl p-4 sm:p-6 border-2 border-amber-200">
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className="p-2 sm:p-3 bg-amber-600 rounded-lg flex-shrink-0">
+                  <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className={typography.h4 + ' mb-2'}>שלב 4: הגדרות נוספות</h2>
+                  <h2 className={typography.h4 + ' mb-1 sm:mb-2'}>שלב 4: הגדרות נוספות</h2>
                   <p className={typography.bodySmall + ' text-gray-600'}>
                     כל ההגדרות בשלב זה הן אופציונליות. אפשר לדלג ולסיים את יצירת האירוע.
                   </p>
@@ -1873,6 +1955,56 @@ export default function NewEventPage() {
                 )}
               </AnimatePresence>
             </div>
+
+            {/* Validation Summary before submit (Issue 4.2) */}
+            {Object.values(validationErrors).some((error) => error !== '') && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-red-50 border-2 border-red-200 rounded-xl p-4"
+                role="alert"
+                aria-live="assertive"
+              >
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <h4 className={typography.labelSmall + ' text-red-900 mb-2'}>
+                      יש לתקן שגיאות לפני יצירת האירוע:
+                    </h4>
+                    <ul className="list-disc list-inside text-sm text-red-800 space-y-1">
+                      {Object.entries(validationErrors)
+                        .filter(([, error]) => error !== '')
+                        .map(([field, error]) => (
+                          <li key={field}>{error}</li>
+                        ))}
+                    </ul>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* All fields valid summary */}
+            {currentStep === 3 &&
+              !Object.values(validationErrors).some((error) => error !== '') &&
+              formData.gameType &&
+              formData.title &&
+              formData.startAt && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-green-50 border-2 border-green-200 rounded-xl p-4"
+                >
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <h4 className={typography.labelSmall + ' text-green-900 mb-1'}>הכל מוכן!</h4>
+                      <p className={typography.micro + ' text-green-700'}>
+                        כל השדות הנדרשים מולאו. לחץ על &quot;צור אירוע&quot; להשלמת התהליך.
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
           </motion.div>
         )
 
@@ -1946,6 +2078,7 @@ export default function NewEventPage() {
                   <p className={typography.labelSmall + ' text-gray-900'}>תצוגה מקדימה של הטיוטה</p>
                 </div>
 
+                {/* Enhanced draft preview (Issue 4.4) */}
                 <div className="space-y-2 text-sm">
                   {draftData.formData.gameType && (
                     <div className="flex items-start gap-2">
@@ -1963,6 +2096,19 @@ export default function NewEventPage() {
                       </span>
                     </div>
                   )}
+                  {draftData.formData.startAt && (
+                    <div className="flex items-start gap-2">
+                      <span className="text-gray-500 min-w-[80px]">תאריך:</span>
+                      <span className="text-gray-900">
+                        {new Date(draftData.formData.startAt).toLocaleString('he-IL', {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                  )}
                   {draftData.formData.location && (
                     <div className="flex items-start gap-2">
                       <span className="text-gray-500 min-w-[80px]">מיקום:</span>
@@ -1973,6 +2119,27 @@ export default function NewEventPage() {
                     <div className="flex items-start gap-2">
                       <span className="text-gray-500 min-w-[80px]">קיבולת:</span>
                       <span className="text-gray-900">{draftData.formData.capacity} משתתפים</span>
+                    </div>
+                  )}
+                  {/* Additional context: custom fields and payment */}
+                  {draftData.formData.fieldsSchema &&
+                    draftData.formData.fieldsSchema.length > 0 && (
+                      <div className="flex items-start gap-2">
+                        <span className="text-gray-500 min-w-[80px]">שדות:</span>
+                        <span className="text-gray-900">
+                          {draftData.formData.fieldsSchema.length} שדות מותאמים
+                        </span>
+                      </div>
+                    )}
+                  {draftData.formData.paymentRequired && (
+                    <div className="flex items-start gap-2">
+                      <span className="text-gray-500 min-w-[80px]">תשלום:</span>
+                      <span className="text-green-700 font-medium flex items-center gap-1">
+                        <CreditCard className="w-3 h-3" />
+                        {draftData.formData.priceAmount
+                          ? `₪${draftData.formData.priceAmount}`
+                          : 'מוגדר'}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -1992,12 +2159,73 @@ export default function NewEventPage() {
         </Modal>
       )}
 
-      <div className="max-w-4xl mx-auto px-4 py-6 pb-24 md:pb-6">
-        {/* Header */}
+      {/* Mobile: Compact Sticky Top Bar */}
+      <div className="md:hidden sticky top-0 z-20 bg-white border-b border-gray-200">
+        <div className="flex items-center justify-between px-4 py-3">
+          {/* RTL: Close button on right */}
+          <button
+            type="button"
+            onClick={() => {
+              if (hasUnsavedChanges) {
+                if (confirm('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לצאת?')) {
+                  router.push('/admin/events')
+                }
+              } else {
+                router.push('/admin/events')
+              }
+            }}
+            className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 p-2 -mr-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="חזרה לרשימת האירועים"
+          >
+            <X className="w-5 h-5" />
+            <span className="text-sm font-medium">ביטול</span>
+          </button>
+
+          {/* Center: Compact title */}
+          <h1 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <Zap className="w-5 h-5 text-blue-600" />
+            אירוע חדש
+          </h1>
+
+          {/* RTL: Save on left */}
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={saveDraft}
+              className="p-2 text-gray-400 hover:text-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="שמור טיוטה"
+            >
+              <Save className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Autosave/Offline indicators - compact */}
+        {(lastSavedAt || !isOnline) && (
+          <div className="px-4 pb-2 flex gap-2">
+            {lastSavedAt && (
+              <span className="text-xs text-green-600 flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                נשמר{' '}
+                {lastSavedAt.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+            {!isOnline && (
+              <span className="text-xs text-amber-600 flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5" />
+                אופליין
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 py-6 pb-20 md:pb-6">
+        {/* Desktop: Original header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="hidden md:block mb-8"
         >
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
             <div>
@@ -2012,7 +2240,7 @@ export default function NewEventPage() {
             </div>
 
             {/* Action buttons - Desktop */}
-            <div className="hidden md:flex items-center gap-3">
+            <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={saveDraft}
@@ -2036,18 +2264,32 @@ export default function NewEventPage() {
             </div>
           </div>
 
-          {/* Autosave indicator */}
+          {/* Autosave indicator - enhanced visibility (Issue 5.3) */}
           {lastSavedAt && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              className="flex items-center gap-2 text-sm bg-green-50 text-green-700 px-3 py-1.5 rounded-full border border-green-200"
+            >
+              <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 0.5 }}>
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
+              </motion.div>
+              <span className="font-medium">
+                נשמר ב-
+                {lastSavedAt.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </motion.div>
+          )}
+
+          {/* Offline indicator */}
+          {!isOnline && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-2 text-sm text-gray-500"
+              className="flex items-center gap-2 text-sm bg-amber-50 text-amber-700 px-3 py-1.5 rounded-full border border-amber-200"
             >
-              <Database className="w-4 h-4" />
-              <span>
-                נשמר אוטומטית ב-
-                {lastSavedAt.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
-              </span>
+              <AlertCircle className="w-4 h-4 text-amber-600" />
+              <span className="font-medium">אין חיבור לאינטרנט</span>
             </motion.div>
           )}
         </motion.div>
