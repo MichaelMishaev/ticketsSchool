@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireSuperAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
 
 export async function DELETE(request: NextRequest) {
   try {
-    // Simple auth check via header
-    const authHeader = request.headers.get('x-admin-prod-auth')
-    if (authHeader !== 'authenticated-6262') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireSuperAdmin()
 
     const { table, id } = await request.json()
 
@@ -18,12 +15,12 @@ export async function DELETE(request: NextRequest) {
     switch (table) {
       case 'Event':
         await prisma.event.delete({
-          where: { id }
+          where: { id },
         })
         break
       case 'Registration':
         await prisma.registration.delete({
-          where: { id }
+          where: { id },
         })
         break
       default:
@@ -33,6 +30,12 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error deleting record:', error)
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (error instanceof Error && error.message.includes('Super admin required')) {
+      return NextResponse.json({ error: 'Forbidden: Super admin access required' }, { status: 403 })
+    }
     return NextResponse.json({ error: 'Failed to delete record' }, { status: 500 })
   }
 }

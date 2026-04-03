@@ -8,20 +8,6 @@ import { he } from 'date-fns/locale'
 import { Decimal } from '@prisma/client/runtime/library'
 import { paymentLogger } from '@/lib/logger-v2'
 
-// In-memory nonce tracking for callback replay protection
-const processedCallbacks = new Set<string>()
-
-// Cleanup old nonces every hour to prevent memory leak
-setInterval(
-  () => {
-    paymentLogger.debug('Clearing processed callbacks from memory', {
-      count: processedCallbacks.size,
-    })
-    processedCallbacks.clear()
-  },
-  60 * 60 * 1000
-)
-
 /**
  * Parse callback parameters from GET or POST request
  */
@@ -135,48 +121,63 @@ async function handleCallback(request: NextRequest) {
     // Generate callback fingerprint for replay detection
     const callbackFingerprint = `${validation.orderId}:${validation.transactionId}:${validation.amount}:${params.CCode}`
 
-    // Check if already processed (replay attack detection)
-    if (processedCallbacks.has(callbackFingerprint)) {
-      paymentLogger.warn('REPLAY ATTACK DETECTED - Callback already processed', {
-        orderId: validation.orderId,
-        transactionId: validation.transactionId,
-        amount: validation.amount,
-        method: request.method,
+    // DB-backed replay attack detection: attempt to insert the fingerprint atomically.
+    // If the unique constraint fires (P2002) this is a replay — handle idempotently.
+    try {
+      await prisma.processedCallback.create({
+        data: { fingerprint: callbackFingerprint },
       })
-
-      // Log security incident
-      try {
-        await prisma.breachIncident.create({
-          data: {
-            schoolId: payment.schoolId,
-            incidentType: 'unauthorized_access',
-            severity: 'medium',
-            description: `Payment callback replay attack detected for order ${validation.orderId}`,
-            affectedUsers: 1,
-            dataTypes: JSON.stringify(['payment']),
-            detectedAt: new Date(),
-          },
+    } catch (e: unknown) {
+      const prismaError = e as { code?: string }
+      if (prismaError.code === 'P2002') {
+        paymentLogger.warn('REPLAY ATTACK DETECTED - Callback already processed', {
+          orderId: validation.orderId,
+          transactionId: validation.transactionId,
+          amount: validation.amount,
+          method: request.method,
         })
-      } catch (err) {
-        paymentLogger.error('Failed to log replay attack', { error: err })
+
+        // Log security incident
+        try {
+          await prisma.breachIncident.create({
+            data: {
+              schoolId: payment.schoolId,
+              incidentType: 'unauthorized_access',
+              severity: 'medium',
+              description: `Payment callback replay attack detected for order ${validation.orderId}`,
+              affectedUsers: 1,
+              dataTypes: JSON.stringify(['payment']),
+              detectedAt: new Date(),
+            },
+          })
+        } catch (err) {
+          paymentLogger.error('Failed to log replay attack', { error: err })
+        }
+
+        // Return success (idempotent) but don't process again
+        const registration = await prisma.registration.findFirst({
+          where: { paymentIntentId: validation.orderId },
+        })
+
+        if (registration) {
+          return NextResponse.redirect(
+            new URL(`/payment/success?code=${registration.confirmationCode}`, request.url)
+          )
+        }
+
+        return NextResponse.redirect(new URL('/payment/error', request.url))
       }
-
-      // Return success (idempotent) but don't process again
-      const registration = await prisma.registration.findFirst({
-        where: { paymentIntentId: validation.orderId },
-      })
-
-      if (registration) {
-        return NextResponse.redirect(
-          new URL(`/payment/success?code=${registration.confirmationCode}`, request.url)
-        )
-      }
-
-      return NextResponse.redirect(new URL('/payment/error', request.url))
+      throw e
     }
 
-    // Mark as processed BEFORE starting transaction
-    processedCallbacks.add(callbackFingerprint)
+    // Fire-and-forget: clean up fingerprints older than 48 hours to keep the table small
+    prisma.processedCallback
+      .deleteMany({
+        where: {
+          createdAt: { lt: new Date(Date.now() - 48 * 60 * 60 * 1000) },
+        },
+      })
+      .catch(() => {})
 
     // Process payment in atomic transaction
     const result = await prisma.$transaction(

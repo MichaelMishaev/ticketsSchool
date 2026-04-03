@@ -562,3 +562,12 @@ enum PaymentStatus {
   REFUNDED // Payment refunded
   CANCELLED // Payment cancelled
 }
+
+// Replay-attack protection: tracks processed payment callback fingerprints
+model ProcessedCallback {
+  id          String   @id @default(cuid())
+  fingerprint String   @unique
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+}

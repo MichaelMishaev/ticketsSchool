@@ -10,6 +10,13 @@ import { createId } from '@paralleldrive/cuid2'
 import { Decimal } from '@prisma/client/runtime/library'
 import { generateCheckInToken, validateCheckInTokenFormat } from '@/lib/check-in-token'
 import { registrationLogger } from '@/lib/logger-v2'
+import { rateLimit } from '@/lib/rate-limiter'
+
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  maxAttempts: 20, // 20 registrations per hour per IP
+  blockDurationMs: 60 * 60 * 1000,
+})
 
 /**
  * POST /api/p/[schoolSlug]/[eventSlug]/register
@@ -19,6 +26,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ schoolSlug: string; eventSlug: string }> }
 ) {
+  // Apply rate limiting FIRST
+  const rateLimitResponse = await registerLimiter(request)
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const { schoolSlug, eventSlug } = await params
     const data = await request.json()
@@ -106,6 +117,80 @@ export async function POST(
 
     if (!data.name || typeof data.name !== 'string' || data.name.trim() === '') {
       throw new Error('Name is required')
+    }
+
+    // Validate and sanitize custom fields against event's fieldsSchema
+    const rawSchema = event.fieldsSchema
+    const fieldsSchema = Array.isArray(rawSchema) ? rawSchema : []
+
+    if (fieldsSchema.length > 0) {
+      // Build set of valid field IDs (plus always-allowed built-in fields)
+      const builtinFields = new Set(['name', 'phone', 'email', 'spotsCount', 'guestsCount'])
+      type SchemaField = {
+        id?: string
+        name?: string
+        label?: string
+        type?: string
+        required?: boolean
+        options?: string[]
+      }
+      const schemaFieldIds = new Set(
+        (fieldsSchema as SchemaField[])
+          .map((f) => f.id ?? f.name)
+          .filter((id): id is string => typeof id === 'string')
+      )
+
+      // Helper: strip HTML tags and trim whitespace
+      const sanitizeString = (value: string): string => value.replace(/<[^>]*>/g, '').trim()
+
+      // Whitelist: remove any keys not in schema or built-ins
+      const allowedKeys = new Set([...builtinFields, ...schemaFieldIds])
+      for (const key of Object.keys(data)) {
+        if (!allowedKeys.has(key)) {
+          delete data[key]
+        }
+      }
+
+      // Validate each schema field
+      for (const field of fieldsSchema as SchemaField[]) {
+        const fieldKey = field.id ?? field.name
+        if (!fieldKey) continue
+
+        const rawValue = data[fieldKey]
+
+        // Check required fields
+        if (field.required) {
+          const isEmpty =
+            rawValue === undefined ||
+            rawValue === null ||
+            (typeof rawValue === 'string' && rawValue.trim() === '') ||
+            rawValue === false
+          if (isEmpty) {
+            throw new Error(
+              `Custom field validation failed: required field "${field.label ?? fieldKey}" is missing`
+            )
+          }
+        }
+
+        // Skip further validation if value is absent (optional field not provided)
+        if (rawValue === undefined || rawValue === null) continue
+
+        // Sanitize and validate string values
+        if (typeof rawValue === 'string') {
+          const sanitized = sanitizeString(rawValue)
+          data[fieldKey] = sanitized
+
+          // Validate select/dropdown options
+          const isSelectType = field.type === 'select' || field.type === 'dropdown'
+          if (isSelectType && Array.isArray(field.options) && field.options.length > 0) {
+            if (!field.options.includes(sanitized)) {
+              throw new Error(
+                `Custom field validation failed: invalid option for field "${field.label ?? fieldKey}"`
+              )
+            }
+          }
+        }
+      }
     }
 
     // Normalize phone number (now guaranteed to be present)
@@ -579,6 +664,13 @@ export async function POST(
       // UPFRONT payment events must go through payment API
       return NextResponse.json(
         { error: 'אירוע זה דורש תשלום מראש. אנא השלם את התשלום תחילה.' },
+        { status: 400 }
+      )
+    }
+
+    if (errorMessage.includes('Custom field validation failed')) {
+      return NextResponse.json(
+        { error: errorMessage.replace('Custom field validation failed: ', '') },
         { status: 400 }
       )
     }

@@ -110,6 +110,53 @@ async function generateUniqueSlug(title: string, schoolId: string): Promise<stri
   return uniqueSlug
 }
 
+const ALLOWED_FIELD_TYPES = [
+  'text',
+  'select',
+  'number',
+  'phone',
+  'email',
+  'checkbox',
+  'textarea',
+  'date',
+] as const
+
+/**
+ * Validate fieldsSchema before storing in the database.
+ * Returns true if valid, false otherwise.
+ */
+function validateFieldsSchema(schema: unknown): boolean {
+  if (schema === null || schema === undefined) return true
+  if (!Array.isArray(schema)) return false
+
+  for (const field of schema) {
+    if (typeof field !== 'object' || field === null) return false
+
+    const f = field as Record<string, unknown>
+
+    // id: non-empty string, alphanumeric + underscores only
+    if (typeof f.id !== 'string' || !/^[a-zA-Z0-9_]+$/.test(f.id)) return false
+
+    // type: must be one of the allowed values
+    if (typeof f.type !== 'string' || !(ALLOWED_FIELD_TYPES as readonly string[]).includes(f.type))
+      return false
+
+    // label: non-empty string
+    if (typeof f.label !== 'string' || f.label.trim() === '') return false
+
+    // required: must be boolean
+    if (typeof f.required !== 'boolean') return false
+
+    // options: required for select fields, must be non-empty array of strings
+    if (f.type === 'select') {
+      if (!Array.isArray(f.options) || f.options.length === 0) return false
+      if (!f.options.every((o: unknown) => typeof o === 'string')) return false
+    }
+  }
+
+  return true
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Get current admin session
@@ -295,6 +342,11 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         )
       }
+    }
+
+    // Validate fieldsSchema structure before storing
+    if (!validateFieldsSchema(data.fieldsSchema)) {
+      return NextResponse.json({ error: 'Invalid fields schema structure' }, { status: 400 })
     }
 
     // Generate unique slug from event title
