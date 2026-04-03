@@ -45,90 +45,120 @@ export default function CompactShareCards({
 
   return (
     <>
-      {/* Simple Share Cards - Side by side */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:max-w-2xl md:mx-auto" dir="rtl">
-        {/* Registration Share Card */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 bg-blue-50 rounded-lg">
-              <Users className="w-4 h-4 text-blue-600" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-bold text-gray-900">קישור הרשמה</h3>
-              <p className="text-xs text-gray-500">שתף למשתתפים</p>
-            </div>
-          </div>
+      {/* Compact Share Cards - Side by side on desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4" dir="rtl">
+        {/* Registration Share Card - Compact */}
+        <div className="group relative">
+          {/* Gradient accent line */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-t-xl" />
 
-          <div className="flex gap-2">
-            <button
-              onClick={() => setRegShareModalOpen(true)}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2
-                       bg-emerald-600 text-white rounded-lg font-semibold text-sm
-                       hover:bg-emerald-700 active:scale-[0.98] transition-all
-                       focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
-              aria-label="שתף קישור להרשמה"
-            >
-              <Share2 className="w-4 h-4" />
-              <span>שתף</span>
-            </button>
+          <div className="relative bg-white rounded-xl border-2 border-gray-200/80 shadow-md overflow-hidden pt-1 hover:shadow-xl transition-all duration-300">
+            <div className="p-5">
+              {/* Header */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-blue-50 rounded-lg border border-blue-200 flex-shrink-0">
+                  <Users className="w-5 h-5 text-blue-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-bold text-gray-900">קישור הרשמה</h3>
+                  <p className="text-xs text-gray-600">שתף כדי שמשתתפים יירשמו</p>
+                </div>
+              </div>
 
-            <button
-              onClick={() => window.open(publicUrl, '_blank')}
-              className="p-2 bg-gray-100 text-gray-600 rounded-lg
-                       hover:bg-gray-200 active:scale-[0.98] transition-all
-                       focus:outline-none focus:ring-2 focus:ring-gray-300"
-              aria-label="תצוגה מקדימה"
-            >
-              <ExternalLink className="w-4 h-4" />
-            </button>
+              {/* Action Buttons - Stacked */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setRegShareModalOpen(true)}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5
+                           bg-gradient-to-r from-emerald-500 to-teal-500
+                           text-white rounded-lg font-bold text-sm
+                           hover:from-emerald-600 hover:to-teal-600
+                           active:scale-[0.98] transition-all duration-200
+                           shadow-lg shadow-emerald-500/25
+                           focus:outline-none focus:ring-4 focus:ring-emerald-500/30
+                           overflow-hidden relative group/btn"
+                  aria-label="שתף קישור להרשמה"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-500" />
+                  <Share2 className="w-4 h-4 relative" />
+                  <span className="relative">שתף</span>
+                </button>
+
+                <button
+                  onClick={() => window.open(publicUrl, '_blank')}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5
+                           bg-white border-2 border-gray-200 text-gray-600 rounded-lg font-semibold text-sm
+                           hover:bg-gray-50 hover:border-gray-300
+                           active:scale-[0.98] transition-all duration-200
+                           focus:outline-none focus:ring-4 focus:ring-gray-200"
+                  aria-label="תצוגה מקדימה"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Check-In Share Card */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
-          {loading ? (
-            <div className="animate-pulse">
-              <div className="h-5 bg-gray-200 rounded w-24 mb-2" />
-              <div className="h-4 bg-gray-100 rounded w-32 mb-3" />
-              <div className="h-9 bg-gray-100 rounded-lg" />
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-teal-50 rounded-lg">
-                  <UserCheck className="w-4 h-4 text-teal-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-bold text-gray-900">קישור צ׳ק-אין</h3>
-                  <p className="text-xs text-gray-500">שלח לאיש הכניסה</p>
-                </div>
+        {/* Check-In Share Card - Compact */}
+        <div className="group relative">
+          {/* Gradient accent line */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 via-cyan-500 to-emerald-500 rounded-t-xl" />
+
+          <div className="relative bg-white rounded-xl border-2 border-gray-200/80 shadow-md overflow-hidden pt-1 hover:shadow-xl transition-all duration-300">
+            {loading ? (
+              <div className="p-5 animate-pulse">
+                <div className="h-6 bg-gray-200 rounded w-32 mb-3" />
+                <div className="h-4 bg-gray-100 rounded w-48 mb-4" />
+                <div className="h-10 bg-gray-100 rounded-lg" />
               </div>
+            ) : (
+              <div className="p-5">
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-teal-50 rounded-lg border border-teal-200 flex-shrink-0">
+                    <UserCheck className="w-5 h-5 text-teal-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-bold text-gray-900"> קישור אישורי הגעה</h3>
+                    <p className="text-xs text-gray-600">שלח לאדם שיבדוק נוכחות</p>
+                  </div>
+                </div>
 
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setCheckInShareModalOpen(true)}
-                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2
-                           bg-teal-600 text-white rounded-lg font-semibold text-sm
-                           hover:bg-teal-700 active:scale-[0.98] transition-all
-                           focus:outline-none focus:ring-2 focus:ring-teal-500/40"
-                >
-                  <Share2 className="w-4 h-4" />
-                  <span>שלח</span>
-                </button>
-
-                {checkInLink && (
+                {/* Action Buttons - Stacked */}
+                <div className="flex gap-2">
                   <button
-                    onClick={() => window.open(checkInLink, '_blank')}
-                    className="p-2 bg-gray-100 text-gray-600 rounded-lg
-                             hover:bg-gray-200 active:scale-[0.98] transition-all
-                             focus:outline-none focus:ring-2 focus:ring-gray-300"
+                    onClick={() => setCheckInShareModalOpen(true)}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5
+                             bg-gradient-to-r from-teal-600 to-cyan-600
+                             text-white rounded-lg font-bold text-sm
+                             hover:from-teal-700 hover:to-cyan-700
+                             active:scale-[0.98] transition-all duration-200
+                             shadow-lg shadow-teal-500/25
+                             focus:outline-none focus:ring-4 focus:ring-teal-500/30
+                             overflow-hidden relative group/btn"
                   >
-                    <ExternalLink className="w-4 h-4" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700" />
+                    <Share2 className="w-4 h-4 relative" />
+                    <span className="relative">שלח</span>
                   </button>
-                )}
+
+                  {checkInLink && (
+                    <button
+                      onClick={() => window.open(checkInLink, '_blank')}
+                      className="flex items-center justify-center gap-2 px-4 py-2.5
+                               bg-white border-2 border-gray-200 text-gray-600 rounded-lg font-semibold text-sm
+                               hover:bg-gray-50 hover:border-gray-300
+                               active:scale-[0.98] transition-all duration-200
+                               focus:outline-none focus:ring-4 focus:ring-gray-200"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
-            </>
-          )}
+            )}
+          </div>
         </div>
       </div>
 

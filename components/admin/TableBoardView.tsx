@@ -3,6 +3,7 @@ import TableBoardClient from './TableBoardClient'
 import TableBoardTabs from './TableBoardTabs'
 import WaitlistManager from './WaitlistManager'
 import ShareLinkCard from './ShareLinkCard'
+import TableBoardStats from './TableBoardStats'
 import { Users, Clock, UtensilsCrossed, ListOrdered } from 'lucide-react'
 
 interface TableBoardViewProps {
@@ -69,12 +70,10 @@ async function getTableBoardData(eventId: string) {
     const guestCount = entry.guestsCount || 0
 
     // Show all tables that fit within capacity (admin can override minimum with confirmation)
-    const matchingTables = availableTables.filter(
-      (table) => guestCount <= table.capacity
-    )
+    const matchingTables = availableTables.filter((table) => guestCount <= table.capacity)
 
     // Best table is the one that meets minimum AND has closest capacity (best fit)
-    let bestTable: typeof matchingTables[0] | null = null
+    let bestTable: (typeof matchingTables)[0] | null = null
 
     if (matchingTables.length > 0) {
       const sortedTables = matchingTables
@@ -87,11 +86,13 @@ async function getTableBoardData(eventId: string) {
           return gapA - gapB // Smallest gap first (best fit)
         })
 
-      bestTable = sortedTables[0] || matchingTables.sort((a, b) => {
-        const gapA = a.capacity - guestCount
-        const gapB = b.capacity - guestCount
-        return gapA - gapB
-      })[0] // Fallback to best fit if none meet minimum
+      bestTable =
+        sortedTables[0] ||
+        matchingTables.sort((a, b) => {
+          const gapA = a.capacity - guestCount
+          const gapB = b.capacity - guestCount
+          return gapA - gapB
+        })[0] // Fallback to best fit if none meet minimum
 
       // Check if this table is a better fit for a higher-priority entry
       // If so, don't recommend it to this entry
@@ -110,7 +111,7 @@ async function getTableBoardData(eventId: string) {
             // If higher-priority entry has a better or equal fit, don't recommend this table
             if (higherGap <= currentGap) {
               // Find next best table that isn't claimed by higher-priority entries
-              const alternativeTables = matchingTables.filter(t => t.id !== bestTable!.id)
+              const alternativeTables = matchingTables.filter((t) => t.id !== bestTable!.id)
               if (alternativeTables.length > 0) {
                 bestTable = alternativeTables.sort((a, b) => {
                   const gapA = a.capacity - guestCount
@@ -135,11 +136,13 @@ async function getTableBoardData(eventId: string) {
         capacity: t.capacity,
         minOrder: t.minOrder,
       })),
-      bestTable: bestTable ? {
-        id: bestTable.id,
-        tableNumber: bestTable.tableNumber,
-        capacity: bestTable.capacity,
-      } : null,
+      bestTable: bestTable
+        ? {
+            id: bestTable.id,
+            tableNumber: bestTable.tableNumber,
+            capacity: bestTable.capacity,
+          }
+        : null,
       hasMatch: matchingTables.length > 0,
     }
   })
@@ -147,8 +150,8 @@ async function getTableBoardData(eventId: string) {
   // Compute dynamic status for each table
   const tablesWithStatus = tables.map((table) => ({
     ...table,
-    hasWaitlistMatch: waitlistWithMatches.some(
-      (w) => w.matchingTables.some((t) => t.id === table.id)
+    hasWaitlistMatch: waitlistWithMatches.some((w) =>
+      w.matchingTables.some((t) => t.id === table.id)
     ),
   }))
 
@@ -158,7 +161,8 @@ async function getTableBoardData(eventId: string) {
     available: tables.filter((t) => t.status === 'AVAILABLE').length,
     reserved: tables.filter((t) => t.status === 'RESERVED').length,
     waitlistCount: waitlist.length,
-    matchAvailable: tablesWithStatus.filter((t) => t.hasWaitlistMatch && t.status === 'AVAILABLE').length,
+    matchAvailable: tablesWithStatus.filter((t) => t.hasWaitlistMatch && t.status === 'AVAILABLE')
+      .length,
   }
 
   return { tables: tablesWithStatus, waitlistWithMatches, event, stats }
@@ -205,8 +209,9 @@ export default async function TableBoardView({ eventId }: TableBoardViewProps) {
               <div className="flex-1 min-w-0" dir="rtl">
                 <p className="text-sm font-semibold text-amber-900 mb-1">יש התאמות זמינות!</p>
                 <p className="text-xs text-amber-800">
-                  {stats.matchAvailable} {stats.matchAvailable === 1 ? 'שולחן פנוי' : 'שולחנות פנויים'}{' '}
-                  מתאימים לאורחים ברשימת ההמתנה. עבור ללשונית "רשימת המתנה" לשיבוץ.
+                  {stats.matchAvailable}{' '}
+                  {stats.matchAvailable === 1 ? 'שולחן פנוי' : 'שולחנות פנויים'} מתאימים לאורחים
+                  ברשימת ההמתנה. עבור ללשונית "רשימת המתנה" לשיבוץ.
                 </p>
               </div>
             </div>
@@ -217,12 +222,7 @@ export default async function TableBoardView({ eventId }: TableBoardViewProps) {
   )
 
   // Waitlist View
-  const waitlistView = (
-    <WaitlistManager
-      eventId={eventId}
-      waitlist={waitlistWithMatches}
-    />
-  )
+  const waitlistView = <WaitlistManager eventId={eventId} waitlist={waitlistWithMatches} />
 
   return (
     <div className="space-y-4" dir="rtl">
@@ -261,39 +261,11 @@ export default async function TableBoardView({ eventId }: TableBoardViewProps) {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard
-          label="סה״כ שולחנות"
-          value={stats.total}
-          icon={<UtensilsCrossed className="w-5 h-5" />}
-          color="blue"
-        />
-        <StatCard
-          label="פנויים"
-          value={stats.available}
-          icon={<Users className="w-5 h-5" />}
-          color="green"
-        />
-        <StatCard
-          label="תפוסים"
-          value={stats.reserved}
-          icon={<Users className="w-5 h-5" />}
-          color="red"
-        />
-        <StatCard
-          label="רשימת המתנה"
-          value={stats.waitlistCount}
-          icon={<ListOrdered className="w-5 h-5" />}
-          color="amber"
-        />
-      </div>
+      <TableBoardStats tables={tables} waitlist={waitlistWithMatches} stats={stats} />
 
       {/* Share Link */}
       {event?.school?.slug && event?.slug && (
-        <ShareLinkCard
-          schoolSlug={event.school.slug}
-          eventSlug={event.slug}
-        />
+        <ShareLinkCard schoolSlug={event.school.slug} eventSlug={event.slug} />
       )}
 
       {/* Tabbed Content */}
@@ -302,62 +274,6 @@ export default async function TableBoardView({ eventId }: TableBoardViewProps) {
         waitlistView={waitlistView}
         waitlistCount={stats.waitlistCount}
       />
-    </div>
-  )
-}
-
-function StatCard({
-  label,
-  value,
-  icon,
-  color,
-}: {
-  label: string
-  value: number
-  icon: React.ReactNode
-  color: 'blue' | 'green' | 'red' | 'amber'
-}) {
-  const colorClasses = {
-    blue: {
-      bg: 'bg-blue-50',
-      icon: 'text-blue-600',
-      gradient: 'from-blue-500/10 to-blue-600/5',
-    },
-    green: {
-      bg: 'bg-green-50',
-      icon: 'text-green-600',
-      gradient: 'from-green-500/10 to-green-600/5',
-    },
-    red: {
-      bg: 'bg-red-50',
-      icon: 'text-red-600',
-      gradient: 'from-red-500/10 to-red-600/5',
-    },
-    amber: {
-      bg: 'bg-amber-50',
-      icon: 'text-amber-600',
-      gradient: 'from-amber-500/10 to-amber-600/5',
-    },
-  }
-
-  const colors = colorClasses[color]
-
-  return (
-    <div className="relative overflow-hidden bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all">
-      {/* Subtle gradient background */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${colors.gradient} pointer-events-none`} />
-
-      <div className="relative p-4">
-        <div className="flex items-start gap-3">
-          <div className={`p-2 rounded-lg ${colors.bg} ${colors.icon} flex-shrink-0`}>
-            {icon}
-          </div>
-          <div className="flex-1">
-            <div className="text-2xl font-bold text-gray-900 leading-none mb-1">{value}</div>
-            <div className="text-xs text-gray-600 font-medium">{label}</div>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }

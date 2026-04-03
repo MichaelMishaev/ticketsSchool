@@ -30,6 +30,30 @@ kartis.info is an enterprise-grade event registration system built for Israeli s
 
 ---
 
+## 🔄 How It Works
+
+### For Schools & Organizations
+1. **Sign up** and complete onboarding to get a unique public URL (`kartis.info/p/your-school`)
+2. **Create an event** — set capacity, date, custom registration fields, and optional payment
+3. **Share the link** — attendees register via a mobile-friendly Hebrew page
+4. **Monitor live** — track registrations, waitlist, and payments from the admin dashboard
+5. **Check in at the door** — scan attendee QR codes with the mobile check-in tool
+
+### For Attendees
+1. Open the public event link shared by the school
+2. Fill in the registration form (fields vary per event)
+3. If payment is required, complete it via YaadPay (Israeli payment gateway)
+4. Receive a confirmation email with a personal QR code ticket
+5. Show QR code at entry for instant check-in
+
+### Event Types
+| Type | Description |
+|------|-------------|
+| **Capacity-based** | Fixed seat pool — first come first served, automatic waitlist when full |
+| **Table-based** | Seat selection at specific tables — ideal for galas, dinners, sports banquets |
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites

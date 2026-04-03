@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Rubik, Inter } from 'next/font/google'
+import { Rubik, Inter, Manrope } from 'next/font/google'
 import './globals.css'
 import GoogleAnalytics from '@/components/GoogleAnalytics'
 import EngagementTracker from '@/components/EngagementTracker'
@@ -14,6 +14,13 @@ const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-inter',
+})
+
+const manrope = Manrope({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-manrope',
+  weight: ['600', '700', '800'],
 })
 
 export const viewport: Viewport = {
@@ -57,7 +64,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="he" dir="rtl">
-      <body className={`${rubik.variable} ${inter.variable} font-sans antialiased`}>
+      <body
+        className={`${rubik.variable} ${inter.variable} ${manrope.variable} font-sans antialiased`}
+      >
         <GoogleAnalytics />
         <EngagementTracker />
         {children}

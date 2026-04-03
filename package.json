@@ -43,6 +43,7 @@
     "encrypt:existing": "tsx scripts/encrypt-existing-data.ts",
     "encrypt:check": "tsx scripts/encrypt-existing-data.ts --dry-run",
     "collect-metrics": "tsx scripts/collect-metrics.ts",
+    "generate:hero": "tsx scripts/generate-hero-image.ts",
     "prepare": "husky"
   },
   "dependencies": {

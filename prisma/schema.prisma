@@ -208,6 +208,7 @@ model Event {
 
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?      // Soft delete - null means active, timestamp means deleted
   registrations Registration[]
   payments      Payment[] // Event ticketing payments
 
@@ -218,6 +219,7 @@ model Event {
   @@index([eventType])
   @@index([checkInToken])
   @@index([paymentRequired])
+  @@index([deletedAt])
 }
 
 enum EventType {

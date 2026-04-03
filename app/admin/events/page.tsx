@@ -9,7 +9,6 @@ import {
   Edit,
   ExternalLink,
   Trash2,
-  UtensilsCrossed,
   Copy,
   Check,
   Search,

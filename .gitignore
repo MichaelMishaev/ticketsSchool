@@ -136,3 +136,9 @@ new-restaurant/
 
 # Markdown files
 *.md
+
+# Docs folder (may contain sensitive API keys and internal docs)
+docs/
+
+# Superpowers system folder
+.superpowers/
