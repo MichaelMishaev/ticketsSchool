@@ -216,6 +216,7 @@ model Event {
   @@index([status])
   @@index([schoolId])
   @@index([schoolId, status])
+  @@index([schoolId, startAt])
   @@index([eventType])
   @@index([checkInToken])
   @@index([paymentRequired])
@@ -264,6 +265,7 @@ model Registration {
   updatedAt DateTime @updatedAt
 
   @@index([eventId])
+  @@index([eventId, status])
   @@index([status])
   @@index([phoneNumber])
   @@index([confirmationCode])
