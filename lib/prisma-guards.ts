@@ -156,38 +156,38 @@ function guardHardDeletes(params: MiddlewareParams): void {
 }
 
 /**
- * Register all runtime guards with Prisma middleware
+ * Apply runtime guards to a Prisma client using the Prisma v6 $extends API.
  *
- * Call this function once when initializing Prisma client.
- * Guards run synchronously before every query.
+ * Returns an extended client that enforces guards on every query.
+ * Replace $use (removed in Prisma v6) with $extends query extensions.
  */
-export function registerPrismaGuards(prisma: any): void {
-  // Skip registration if $use is not available (e.g., during build time)
-  if (typeof prisma.$use !== 'function') {
-    console.log('⚠️  Prisma middleware not available (build time) - skipping guard registration')
-    return
-  }
+export function applyPrismaGuards(client: any) {
+  return client.$extends({
+    query: {
+      $allModels: {
+        async $allOperations({ model, operation, args, query }: {
+          model: string
+          operation: string
+          args: any
+          query: (args: any) => Promise<any>
+        }) {
+          const params: MiddlewareParams = {
+            model,
+            action: operation,
+            args,
+            dataPath: [],
+            runInTransaction: false,
+          }
 
-  prisma.$use(async (params: MiddlewareParams, next: any) => {
-    try {
-      // Run guards (will throw on violation)
-      guardEventSchoolId(params)
-      guardRegistrationEventId(params)
-      guardHardDeletes(params)
+          guardEventSchoolId(params)
+          guardRegistrationEventId(params)
+          guardHardDeletes(params)
 
-      // Continue to next middleware/query
-      return await next(params)
-    } catch (error) {
-      // Re-throw guard violations
-      if (error instanceof Error && error.message.includes(GUARD_PREFIX)) {
-        throw error
+          return query(args)
+        }
       }
-      // Re-throw other errors
-      throw error
     }
   })
-
-  console.log('✅ Runtime invariant guards registered (Event.schoolId, Registration.eventId, Hard Deletes)')
 }
 
 /**

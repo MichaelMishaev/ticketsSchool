@@ -1,7 +1,8 @@
-import type { Metadata } from 'next'
-import { Rubik, Inter } from 'next/font/google'
+import type { Metadata, Viewport } from 'next'
+import { Rubik, Inter, Manrope } from 'next/font/google'
 import './globals.css'
-import { GoogleAnalytics } from '@next/third-parties/google'
+import GoogleAnalytics from '@/components/GoogleAnalytics'
+import EngagementTracker from '@/components/EngagementTracker'
 
 const rubik = Rubik({
   subsets: ['hebrew', 'latin'],
@@ -14,6 +15,19 @@ const inter = Inter({
   display: 'swap',
   variable: '--font-inter',
 })
+
+const manrope = Manrope({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-manrope',
+  weight: ['600', '700', '800'],
+})
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover', // Enables safe area insets on iOS
+}
 
 export const metadata: Metadata = {
   title: 'kartis.info - ניהול כרטיסים',
@@ -50,8 +64,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="he" dir="rtl">
-      <body className={`${rubik.variable} ${inter.variable} font-sans antialiased`}>
-        <GoogleAnalytics gaId="G-SSBW9NRL74" />
+      <body
+        className={`${rubik.variable} ${inter.variable} ${manrope.variable} font-sans antialiased`}
+      >
+        {/* IS 5568 / WCAG 2.4.1 — Skip to main content (first focusable element) */}
+        <a href="#main-content" className="skip-link">
+          דלג לתוכן הראשי
+        </a>
+        <GoogleAnalytics />
+        <EngagementTracker />
         {children}
       </body>
     </html>

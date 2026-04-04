@@ -5,6 +5,7 @@ Comprehensive Playwright E2E test suite implementing all 780 scenarios from `/te
 ## 📊 Current Status
 
 ### ✅ Completed (Infrastructure + 65 P0 Tests)
+
 - **Test Infrastructure** ✅ COMPLETE
   - Fixtures: Data builders for schools, admins, events, registrations
   - Page Objects: Reusable UI interactions (Login, Signup, Events, Registrations, Public Event)
@@ -17,6 +18,7 @@ Comprehensive Playwright E2E test suite implementing all 780 scenarios from `/te
   - `suites/04-public-registration-p0.spec.ts` - Public Registration Flow (~20 tests)
 
 ### 🚧 Remaining Work (~715 tests)
+
 - **P0 Critical** (~180 tests remaining):
   - Event Management P0 (~28 tests)
   - Admin Registration Management P0 (~32 tests)
@@ -34,6 +36,7 @@ Comprehensive Playwright E2E test suite implementing all 780 scenarios from `/te
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 ```bash
 # Ensure development server is running on port 9000
 npm run dev
@@ -65,6 +68,7 @@ npm run test:debug
 ```
 
 ### Running Critical Tests Only
+
 ```bash
 npx playwright test tests/suites/*-p0.spec.ts
 ```
@@ -174,7 +178,7 @@ await eventsPage.createEvent({
   startDate: '2025-12-25',
   startTime: '18:00',
   capacity: 100,
-  location: 'Test Location'
+  location: 'Test Location',
 })
 
 // Public registration
@@ -183,7 +187,7 @@ await publicPage.goto('school-slug', 'event-slug')
 await publicPage.register({
   name: 'Test User',
   email: 'test@test.com',
-  phone: '0501234567'
+  phone: '0501234567',
 })
 await publicPage.expectConfirmation()
 ```
@@ -290,7 +294,7 @@ test.describe('Event Management P0 - Critical Tests', () => {
         startDate: getFutureDate(7),
         startTime: '18:00',
         capacity: 50,
-        location: 'Test Location'
+        location: 'Test Location',
       })
 
       // Verify
@@ -314,6 +318,7 @@ test.describe('Event Management P0 - Critical Tests', () => {
 ## 🎯 Priority Implementation Order
 
 ### Phase 1: Complete P0 Critical (Next 180 tests)
+
 1. **Event Management P0** (~28 tests) - Core CRUD operations
 2. **Admin Registration Management P0** (~32 tests) - Admin managing registrations
 3. **School Management P0** (~22 tests) - Onboarding, team management
@@ -322,12 +327,15 @@ test.describe('Event Management P0 - Critical Tests', () => {
 6. **Performance P0** (~30 tests) - Load times, capacity testing
 
 ### Phase 2: P1 High Priority (337 tests)
+
 Follow same pattern for P1 scenarios from each category
 
 ### Phase 3: P2 Medium Priority (146 tests)
+
 Implement medium priority scenarios
 
 ### Phase 4: P3 Low Priority (22 tests)
+
 Nice-to-have features and edge cases
 
 ---
@@ -335,19 +343,24 @@ Nice-to-have features and edge cases
 ## 🧪 Test Data Management
 
 ### Generated Test Data
+
 All test data uses:
+
 - Emails: `test-{timestamp}-{random}@test.com`
 - School slugs: `test-school-{timestamp}`
 - Event slugs: `test-event-{timestamp}`
 
 ### Cleanup Strategy
+
 The `cleanupTestData()` function removes:
+
 - All registrations with emails containing `@test.com`
 - All events with slugs starting with `test-`
 - All admins with emails containing `@test.com`
 - All schools with slugs starting with `test-`
 
 ### Database State
+
 Tests should be idempotent and not depend on specific database state. Each test creates its own data and cleans up after.
 
 ---
@@ -355,6 +368,7 @@ Tests should be idempotent and not depend on specific database state. Each test 
 ## 🔧 Useful Commands
 
 ### Database Management
+
 ```bash
 # Check database schema
 npx prisma studio
@@ -367,6 +381,7 @@ npx prisma migrate reset
 ```
 
 ### Test Debugging
+
 ```bash
 # Run single test with debug
 npx playwright test tests/suites/01-auth-p0.spec.ts -g "admin can login" --debug
@@ -379,6 +394,7 @@ npx playwright show-report
 ```
 
 ### Performance Testing
+
 ```bash
 # Run performance tests only
 npx playwright test tests/suites/09-performance-p0.spec.ts
@@ -392,12 +408,14 @@ npx playwright test --trace on
 ## 📊 Test Metrics
 
 ### Current Coverage
+
 - **Implemented**: 65 tests (~8% of total 780)
 - **Infrastructure**: 100% complete
 - **P0 Critical**: ~24% complete (65/275)
 - **Overall**: ~8% complete (65/780)
 
 ### Target Coverage
+
 - **Critical Path** (P0): 100% (275 tests)
 - **High Priority** (P1): 80% (~270 tests)
 - **Medium Priority** (P2): 50% (~73 tests)
@@ -410,16 +428,20 @@ npx playwright test --trace on
 ## 🐛 Known Issues & Workarounds
 
 ### Issue: Race Conditions in Concurrent Tests
+
 **Workaround**: Use separate browser contexts and unique test data per test
 
 ### Issue: Hebrew Text Rendering
+
 **Workaround**: Check for `dir="rtl"` attribute and ensure proper character encoding
 
 ### Issue: Session Cookie in API Tests
+
 **Solution**: Extract cookie from page context after login:
+
 ```typescript
 const cookies = await page.context().cookies()
-const sessionCookie = cookies.find(c => c.name === 'admin_session')
+const sessionCookie = cookies.find((c) => c.name === 'admin_session')
 ```
 
 ---
@@ -447,6 +469,7 @@ const sessionCookie = cookies.find(c => c.name === 'admin_session')
 ## 🎓 Examples for Common Scenarios
 
 ### Testing Multi-Tenancy
+
 ```typescript
 // Create two schools with data
 const { schoolA, schoolAAdmin, schoolB, schoolBEvent } = await createCompleteTestScenario()
@@ -460,6 +483,7 @@ expect([403, 404]).toContain(response?.status())
 ```
 
 ### Testing Concurrent Registrations
+
 ```typescript
 // Create multiple browser contexts
 const contexts = await Promise.all([
@@ -469,15 +493,14 @@ const contexts = await Promise.all([
 ])
 
 // Run registrations in parallel
-await Promise.all(
-  contexts.map((ctx, i) => registerUser(ctx, i))
-)
+await Promise.all(contexts.map((ctx, i) => registerUser(ctx, i)))
 
 // Verify atomic capacity enforcement
 expect(confirmedCount + waitlistCount).toBe(totalAttempts)
 ```
 
 ### Testing Mobile UI
+
 ```typescript
 // Set mobile viewport
 await page.setViewportSize({ width: 375, height: 667 })

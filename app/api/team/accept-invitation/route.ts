@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { sign } from 'jsonwebtoken'
 import { cookies } from 'next/headers'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * POST /api/team/accept-invitation
@@ -122,7 +123,7 @@ export async function POST(request: NextRequest) {
       }
     })
   } catch (error) {
-    console.error('Error accepting invitation:', error)
+    logger.error('Error accepting invitation', { source: 'team', error })
     return NextResponse.json(
       { error: 'Failed to accept invitation' },
       { status: 500 }
@@ -191,7 +192,7 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (error) {
-    console.error('Error verifying invitation:', error)
+    logger.error('Error verifying invitation', { source: 'team', error })
     return NextResponse.json(
       { error: 'Failed to verify invitation' },
       { status: 500 }

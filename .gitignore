@@ -67,9 +67,12 @@ dist
 
 # Gatsby files
 .cache/
-public
+public/*
 !public/images/
-!public/images/landing/
+!public/images/**
+!public/restaurants/
+!public/restaurants/**
+!public/file.svg
 
 # Storybook build outputs
 .out
@@ -94,9 +97,6 @@ logs
 *.sln
 *.sw?
 
-# Claude Code skills (local development only)
-.claude/
-
 # Database
 *.db
 *.sqlite
@@ -117,6 +117,7 @@ app/docs/ideogram.md
 # Database backups (may contain sensitive data)
 backups/
 *.sql
+!prisma/migrations/**/*.sql
 *.dump
 *_backup*.sql
 *_backup*.dump
@@ -126,7 +127,21 @@ backups/
 *database_url*
 *db_credentials*
 
-# Canary test credentials (NEVER commit these)
-.env.canary
-*canary*credentials*
-CANARY_CREDENTIALS.md
+# Backup and experimental files
+*-BACKUP-*.tsx
+*-backup.tsx
+*-redesigned.tsx
+*-improved.tsx
+*-original-backup.tsx
+new-test/
+new-restaurant/
+
+# Markdown files
+*.md
+
+# Docs folder (may contain sensitive API keys and internal docs)
+docs/
+
+# Superpowers system folder
+.superpowers/
+.worktrees/

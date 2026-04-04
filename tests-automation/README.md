@@ -26,27 +26,32 @@ tests-automation/
 ## 🚀 Running Tests
 
 ### Run all tests
+
 ```bash
 npx playwright test --config=playwright-automation.config.ts
 ```
 
 ### Run specific test file
+
 ```bash
 npx playwright test tests-automation/public/landing-page.spec.ts --config=playwright-automation.config.ts
 ```
 
 ### Run with UI mode (visual debugging)
+
 ```bash
 npx playwright test --ui --config=playwright-automation.config.ts
 ```
 
 ### Run on specific browser
+
 ```bash
 npx playwright test --project="Desktop Chrome" --config=playwright-automation.config.ts
 npx playwright test --project="Mobile Safari" --config=playwright-automation.config.ts
 ```
 
 ### Run in headed mode (see browser)
+
 ```bash
 npx playwright test --headed --config=playwright-automation.config.ts
 ```
@@ -54,6 +59,7 @@ npx playwright test --headed --config=playwright-automation.config.ts
 ## 📊 View Report
 
 After running tests:
+
 ```bash
 npx playwright show-report playwright-automation-report
 ```
@@ -61,12 +67,14 @@ npx playwright show-report playwright-automation-report
 ## ✅ Test Coverage
 
 ### Public Flows (2 files, 15+ tests)
+
 - Landing page navigation and responsiveness
 - Event registration form validation (Bug #18, #19 fixes)
 - Capacity indicators and waitlist logic
 - Mobile responsiveness (375px - 1920px)
 
 ### Authentication (2 files, 20+ tests)
+
 - Login with email/password
 - Signup with two-step form (Bug #13 fix)
 - Session cookie security (Bug #2 fix)
@@ -74,12 +82,14 @@ npx playwright show-report playwright-automation-report
 - Mobile responsiveness
 
 ### Admin Dashboard (1 file, 12+ tests)
+
 - Stats cards and drilldown modals
 - Super admin button visibility (Bug #12 fix)
 - Navigation and logout
 - Mobile menu and responsiveness
 
 ### Security (1 file, 12+ tests)
+
 - Multi-tenant data isolation (Bug #11 fix)
 - Cross-school event access prevention
 - JWT session security (Bug #2 fix)
@@ -96,6 +106,7 @@ Tests use predefined test accounts and data from `helpers/test-data.ts`:
 ## 🛡️ Critical Security Tests
 
 The `security/multi-tenant-isolation.spec.ts` file contains critical tests that verify:
+
 - School A cannot see School B's events
 - School A cannot access School B's event details
 - Dashboard stats are school-specific
@@ -107,6 +118,7 @@ The `security/multi-tenant-isolation.spec.ts` file contains critical tests that 
 ## 📱 Mobile Testing
 
 All tests include mobile viewport testing:
+
 - iPhone SE: 375px x 667px
 - iPad Pro: 1024px x 1366px
 - Touch targets minimum 44px height
@@ -115,6 +127,7 @@ All tests include mobile viewport testing:
 ## 🐛 Bug Coverage
 
 Tests verify fixes for documented bugs:
+
 - Bug #2: Session tampering (JWT security)
 - Bug #11: Multi-tenant isolation
 - Bug #12: Super admin button visibility
@@ -134,18 +147,23 @@ Tests verify fixes for documented bugs:
 ## 🔧 Troubleshooting
 
 ### Tests fail with "baseURL not available"
+
 Ensure dev server is running on port 9000:
+
 ```bash
 npm run dev
 ```
 
 ### Tests fail with authentication errors
+
 Ensure test accounts exist in database. Create them via:
+
 ```bash
 npm run school -- seed
 ```
 
 ### Tests are flaky
+
 Increase timeouts in `playwright-automation.config.ts`
 
 ## 📚 Adding New Tests
@@ -160,13 +178,11 @@ Increase timeouts in `playwright-automation.config.ts`
 ## 🎯 Priority Test Execution
 
 **Phase 1 (Critical):**
+
 1. `public/event-registration.spec.ts` - User registration flow
 2. `auth/login.spec.ts` - Admin authentication
 3. `security/multi-tenant-isolation.spec.ts` - Data isolation
 
-**Phase 2 (Important):**
-4. `admin/dashboard.spec.ts` - Admin features
-5. `auth/signup.spec.ts` - User onboarding
+**Phase 2 (Important):** 4. `admin/dashboard.spec.ts` - Admin features 5. `auth/signup.spec.ts` - User onboarding
 
-**Phase 3 (Nice-to-have):**
-6. `public/landing-page.spec.ts` - Marketing pages
+**Phase 3 (Nice-to-have):** 6. `public/landing-page.spec.ts` - Marketing pages

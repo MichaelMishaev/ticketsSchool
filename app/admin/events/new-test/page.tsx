@@ -60,6 +60,11 @@ export default function NewEventPageTest() {
     conditions: '',
     requireAcceptance: false,
     completionMessage: '',
+    // Payment settings (Tier 2: Event Ticketing - YaadPay)
+    paymentRequired: false,
+    paymentTiming: 'OPTIONAL',
+    pricingModel: 'FREE',
+    currency: 'ILS',
   })
 
   // String inputs for better UX on number fields

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger-v2'
 
 // POST /api/events/[id]/tables/[tableId]/duplicate - Duplicate single table
 export async function POST(
@@ -88,7 +89,7 @@ export async function POST(
       : baseNumber
 
     // Create duplicates with auto-incremented names
-    const tablesToCreate = []
+    const tablesToCreate: { eventId: string; tableNumber: string; capacity: number; minOrder: number; tableOrder: number; status: string }[] = []
     for (let i = 0; i < count; i++) {
       const newNumber = maxExistingNumber + i + 1
       const newTableNumber = sourceTable.tableNumber.replace(
@@ -126,7 +127,7 @@ export async function POST(
       tables: createdTables
     }, { status: 201 })
   } catch (error) {
-    console.error('Failed to duplicate table:', error)
+    logger.error('Failed to duplicate table', { source: 'tables', error })
     return NextResponse.json(
       { error: 'Failed to duplicate table' },
       { status: 500 }

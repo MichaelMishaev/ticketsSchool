@@ -1,28 +1,56 @@
-/**
- * @LOCKED
- * Reason: Business-critical event details API with multi-tenant isolation
- * Scope:
- *   - Event fetching with registrations
- *   - Multi-tenant access control (CRITICAL)
- *   - School ownership validation
- * See: /docs/infrastructure/GOLDEN_PATHS.md#REGISTRATION_ADMIN_VIEW_V1
- *
- * Multi-Tenant Enforcement Pattern (NON-NEGOTIABLE):
- *   const event = await prisma.event.findUnique({ where: { id }, include: { school: true } })
- *
- *   if (admin.role !== 'SUPER_ADMIN' && event.schoolId !== admin.schoolId) {
- *     return NextResponse.json({ error: 'Access denied' }, { status: 403 })
- *   }
- *
- * Invariants Protected:
- *   - INVARIANT_MT_001: Multi-tenant isolation (no cross-school access)
- *   - INVARIANT_MT_002: No cross-school data leakage
- */
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentAdmin } from '@/lib/auth.server'
+import { getCurrentAdmin, requireSchoolAccess } from '@/lib/auth.server'
+import { logger } from '@/lib/logger-v2'
 
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+const ALLOWED_FIELD_TYPES = [
+  'text',
+  'select',
+  'number',
+  'phone',
+  'email',
+  'checkbox',
+  'textarea',
+  'date',
+] as const
+
+/**
+ * Validate fieldsSchema before storing in the database.
+ * Returns true if valid, false otherwise.
+ */
+function validateFieldsSchema(schema: unknown): boolean {
+  if (schema === null || schema === undefined) return true
+  if (!Array.isArray(schema)) return false
+
+  for (const field of schema) {
+    if (typeof field !== 'object' || field === null) return false
+
+    const f = field as Record<string, unknown>
+
+    // id: non-empty string, alphanumeric + underscores only
+    if (typeof f.id !== 'string' || !/^[a-zA-Z0-9_]+$/.test(f.id)) return false
+
+    // type: must be one of the allowed values
+    if (typeof f.type !== 'string' || !(ALLOWED_FIELD_TYPES as readonly string[]).includes(f.type))
+      return false
+
+    // label: non-empty string
+    if (typeof f.label !== 'string' || f.label.trim() === '') return false
+
+    // required: must be boolean
+    if (typeof f.required !== 'boolean') return false
+
+    // options: required for select fields, must be non-empty array of strings
+    if (f.type === 'select') {
+      if (!Array.isArray(f.options) || f.options.length === 0) return false
+      if (!f.options.every((o: unknown) => typeof o === 'string')) return false
+    }
+  }
+
+  return true
+}
+
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Require authentication
     const admin = await getCurrentAdmin()
@@ -53,7 +81,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       },
     })
 
-    // CRITICAL: Check if event exists and is not soft-deleted
+    // Check if event exists and is not soft-deleted
     if (!event || event.deletedAt !== null) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
@@ -93,7 +121,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       totalSpotsTaken,
     })
   } catch (error) {
-    console.error('Error fetching event:', error)
+    logger.error('Error fetching event', { source: 'events', error })
     return NextResponse.json({ error: 'Failed to fetch event' }, { status: 500 })
   }
 }
@@ -142,79 +170,27 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (data.endAt !== undefined) {
       updateData.endAt = data.endAt ? new Date(data.endAt) : null
     }
-
-    // VALIDATION: Date logic (endAt must be after startAt)
-    if (data.startAt !== undefined && data.endAt !== undefined && data.endAt !== null) {
-      const startAt = new Date(data.startAt)
-      const endAt = new Date(data.endAt)
-
-      if (endAt <= startAt) {
-        return NextResponse.json(
-          { error: 'תאריך סיום חייב להיות אחרי תאריך התחלה (End date must be after start date)' },
-          { status: 400 }
-        )
-      }
-    }
-
-    // VALIDATION: Capacity constraints (INVARIANT_CAP_001 & INVARIANT_CAP_002)
-    if (data.capacity !== undefined) {
-      const newCapacity = parseInt(data.capacity)
-
-      // INVARIANT_CAP_002: Capacity must be > 0
-      if (newCapacity <= 0) {
-        return NextResponse.json(
-          { error: 'נפח חייב להיות גדול מ-0 (Capacity must be greater than 0)' },
-          { status: 400 }
-        )
-      }
-
-      // INVARIANT_CAP_001: Cannot reduce capacity below confirmed registrations
-      // Fetch current spotsReserved atomically
-      const currentEvent = await prisma.event.findUnique({
-        where: { id },
-        select: { spotsReserved: true, capacity: true },
-      })
-
-      if (!currentEvent) {
-        return NextResponse.json({ error: 'Event not found' }, { status: 404 })
-      }
-
-      if (newCapacity < currentEvent.spotsReserved) {
-        return NextResponse.json(
-          {
-            error: `לא ניתן להקטין נפח ל-${newCapacity} כאשר כבר ${currentEvent.spotsReserved} מקומות תפוסים`,
-            details: {
-              requestedCapacity: newCapacity,
-              spotsReserved: currentEvent.spotsReserved,
-              minimumCapacity: currentEvent.spotsReserved,
-            },
-          },
-          { status: 400 }
-        )
-      }
-
-      updateData.capacity = newCapacity
-    }
-
+    if (data.capacity !== undefined) updateData.capacity = parseInt(data.capacity)
     if (data.maxSpotsPerPerson !== undefined)
       updateData.maxSpotsPerPerson = parseInt(data.maxSpotsPerPerson)
-    if (data.fieldsSchema !== undefined) updateData.fieldsSchema = data.fieldsSchema
+    if (data.fieldsSchema !== undefined) {
+      if (!validateFieldsSchema(data.fieldsSchema)) {
+        return NextResponse.json({ error: 'Invalid fields schema structure' }, { status: 400 })
+      }
+      updateData.fieldsSchema = data.fieldsSchema
+    }
     if (data.conditions !== undefined) updateData.conditions = data.conditions
     if (data.requireAcceptance !== undefined) updateData.requireAcceptance = data.requireAcceptance
     if (data.completionMessage !== undefined) updateData.completionMessage = data.completionMessage
+    if (data.coverImage !== undefined) updateData.coverImage = data.coverImage
     if (data.status !== undefined) updateData.status = data.status
-    if (data.autoPromoteWaitlist !== undefined)
-      updateData.autoPromoteWaitlist = data.autoPromoteWaitlist
 
-    // Get old event state before updating (for proactive auto-promotion triggers)
-    const oldEvent = await prisma.event.findUnique({
-      where: { id },
-      select: {
-        capacity: true,
-        spotsReserved: true,
-        autoPromoteWaitlist: true,
-      },
-    })
+    // Payment settings (Tier 2: Event Ticketing - YaadPay)
+    if (data.paymentRequired !== undefined) updateData.paymentRequired = data.paymentRequired
+    if (data.paymentTiming !== undefined) updateData.paymentTiming = data.paymentTiming
+    if (data.pricingModel !== undefined) updateData.pricingModel = data.pricingModel
+    if (data.priceAmount !== undefined) updateData.priceAmount = data.priceAmount
+    if (data.currency !== undefined) updateData.currency = data.currency
 
     const event = await prisma.event.update({
       where: { id },
@@ -224,41 +200,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       },
     })
 
-    // PROACTIVE AUTO-PROMOTION: Trigger after event update
-    // Import at top: import { promoteFromWaitlist } from '@/lib/waitlist-promotion'
-    const shouldPromote =
-      // Checkbox was just enabled
-      (data.autoPromoteWaitlist === true && oldEvent?.autoPromoteWaitlist === false) ||
-      // Capacity increased
-      (data.capacity !== undefined && oldEvent && parseInt(data.capacity) > oldEvent.capacity)
-
-    if (shouldPromote) {
-      // Small delay to ensure transaction commits
-      setTimeout(async () => {
-        try {
-          const availableSpots = event.capacity - event.spotsReserved
-          if (availableSpots > 0) {
-            const { promoteFromWaitlist } = await import('@/lib/waitlist-promotion')
-            await promoteFromWaitlist(event.id, availableSpots)
-            console.log(
-              `[PROACTIVE] Auto-promoted waitlist after event update (${availableSpots} spots)`
-            )
-          }
-        } catch (error) {
-          console.error('[PROACTIVE] Failed to auto-promote after event update:', error)
-        }
-      }, 200)
-    }
-
     return NextResponse.json(event)
   } catch (error) {
-    console.error('Error updating event:', error)
+    logger.error('Error updating event', { source: 'events', error })
     return NextResponse.json({ error: 'Failed to update event' }, { status: 500 })
   }
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -270,21 +220,22 @@ export async function DELETE(
 
     const { id } = await params
 
-    // Check if event exists and is not already soft-deleted
+    // Check if event exists and get registration count + school
     const event = await prisma.event.findUnique({
       where: { id },
       select: {
         schoolId: true,
-        deletedAt: true,
-        title: true,
+        _count: {
+          select: { registrations: true },
+        },
       },
     })
 
-    if (!event || event.deletedAt !== null) {
+    if (!event) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
-    // CRITICAL: Multi-tenant isolation check
+    // Check school access (all roles except SUPER_ADMIN must match schoolId)
     if (admin.role !== 'SUPER_ADMIN' && admin.schoolId !== event.schoolId) {
       return NextResponse.json(
         { error: "Forbidden: No access to this school's events" },
@@ -292,84 +243,26 @@ export async function DELETE(
       )
     }
 
-    // Use atomic transaction for cancellation + soft delete
-    const result = await prisma.$transaction(
-      async (tx) => {
-        // Step 1: Get all non-CANCELLED registrations
-        const registrations = await tx.registration.findMany({
-          where: {
-            eventId: id,
-            status: { not: 'CANCELLED' },
-          },
-          select: {
-            id: true,
-            status: true,
-            spotsCount: true,
-          },
-        })
+    // Only allow deletion of events with no registrations (temp events)
+    if (event._count.registrations > 0) {
+      return NextResponse.json(
+        {
+          error:
+            'Cannot delete event with existing registrations. Please remove all registrations first.',
+        },
+        { status: 400 }
+      )
+    }
 
-        // Step 2: Calculate CONFIRMED spots to decrement
-        const confirmedSpots = registrations
-          .filter((r) => r.status === 'CONFIRMED')
-          .reduce((sum, r) => sum + r.spotsCount, 0)
-
-        const confirmedCount = registrations.filter((r) => r.status === 'CONFIRMED').length
-        const waitlistCount = registrations.filter((r) => r.status === 'WAITLIST').length
-
-        // Step 3: Cancel all non-CANCELLED registrations
-        if (registrations.length > 0) {
-          await tx.registration.updateMany({
-            where: {
-              eventId: id,
-              status: { not: 'CANCELLED' },
-            },
-            data: {
-              status: 'CANCELLED',
-              cancelledAt: new Date(),
-              cancellationReason: 'אירוע בוטל על ידי המארגן',
-              cancelledBy: 'ADMIN',
-            },
-          })
-        }
-
-        // Step 4: Decrement spotsReserved counter
-        if (confirmedSpots > 0) {
-          await tx.$executeRaw`
-            UPDATE "Event"
-            SET "spotsReserved" = GREATEST(0, "spotsReserved" - ${confirmedSpots})
-            WHERE id = ${id}
-          `
-        }
-
-        // Step 5: SOFT DELETE - Set deletedAt timestamp (NEVER actually delete!)
-        await tx.event.update({
-          where: { id },
-          data: {
-            deletedAt: new Date(),
-            status: 'CLOSED',
-          },
-        })
-
-        return {
-          softDeletedEvent: id,
-          eventTitle: event.title,
-          cancelledRegistrations: registrations.length,
-          confirmedCount,
-          waitlistCount,
-        }
-      },
-      {
-        isolationLevel: 'Serializable',
-        timeout: 10000,
-      }
-    )
-
-    return NextResponse.json({
-      success: true,
-      summary: result,
+    // Soft delete - set deletedAt timestamp instead of hard delete
+    await prisma.event.update({
+      where: { id },
+      data: { deletedAt: new Date() },
     })
+
+    return NextResponse.json({ success: true, message: 'Event archived successfully' })
   } catch (error) {
-    console.error('Error soft-deleting event:', error)
+    logger.error('Error deleting event', { source: 'events', error })
     return NextResponse.json({ error: 'Failed to delete event' }, { status: 500 })
   }
 }

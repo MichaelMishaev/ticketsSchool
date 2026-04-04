@@ -9,7 +9,11 @@ interface TableBoardTabsProps {
   waitlistCount: number
 }
 
-export default function TableBoardTabs({ tablesView, waitlistView, waitlistCount }: TableBoardTabsProps) {
+export default function TableBoardTabs({
+  tablesView,
+  waitlistView,
+  waitlistCount,
+}: TableBoardTabsProps) {
   const [activeTab, setActiveTab] = useState<'tables' | 'waitlist'>('tables')
 
   return (
@@ -21,7 +25,7 @@ export default function TableBoardTabs({ tablesView, waitlistView, waitlistCount
             <button
               onClick={() => setActiveTab('tables')}
               className={`
-                flex items-center gap-2 px-6 py-4 border-b-2 font-medium text-sm transition-colors
+                flex items-center gap-2 px-6 py-4 md:py-2.5 border-b-2 font-medium text-sm transition-colors
                 ${
                   activeTab === 'tables'
                     ? 'border-purple-600 text-purple-600'
@@ -35,7 +39,7 @@ export default function TableBoardTabs({ tablesView, waitlistView, waitlistCount
             <button
               onClick={() => setActiveTab('waitlist')}
               className={`
-                flex items-center gap-2 px-6 py-4 border-b-2 font-medium text-sm transition-colors
+                flex items-center gap-2 px-6 py-4 md:py-2.5 border-b-2 font-medium text-sm transition-colors
                 ${
                   activeTab === 'waitlist'
                     ? 'border-amber-600 text-amber-600'

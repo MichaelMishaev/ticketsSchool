@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import SearchableSelect from '@/components/SearchableSelect'
+import DevFeatureLabel from '@/components/dev/DevFeatureLabel'
 
 interface Lead {
   name: string
@@ -537,6 +538,7 @@ export default function LeadsPage() {
           </div>
         )}
       </div>
+      <DevFeatureLabel feature="marketing" />
     </div>
   )
 }

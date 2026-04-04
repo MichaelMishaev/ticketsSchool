@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import { MessageSquare, Trash2, Check, Eye, X, Shield } from 'lucide-react'
+import DevFeatureLabel from '@/components/dev/DevFeatureLabel'
 import { useRouter } from 'next/navigation'
 
 type Feedback = {
@@ -306,6 +307,7 @@ export default function AdminFeedbackPage() {
           ))}
         </div>
       )}
+      <DevFeatureLabel feature="feedback" />
     </div>
   )
 }

@@ -201,9 +201,43 @@ export default function PrivacyPage() {
             </div>
           </section>
 
+          {/* Section 9 - DPO */}
+          <section>
+            <h2 className="text-3xl font-bold text-gray-900 mb-6">9. קצין הגנת המידע</h2>
+            <div className="space-y-4 text-gray-700 leading-relaxed text-lg">
+              <p>
+                בהתאם לתיקון 13 לחוק הגנת הפרטיות, התשמ״א-1981 (בתוקף מ-14 באוגוסט 2025), מינינו קצין הגנת מידע אשר אחראי על כל הנושאים הקשורים להגנת פרטיות ומידע אישי.
+              </p>
+
+              <div className="bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-8 my-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">פרטי קצין הגנת המידע</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Mail className="w-6 h-6 text-purple-600" />
+                    <div>
+                      <div className="font-semibold text-gray-900">דוא״ל:</div>
+                      <a href="mailto:privacy@ticketcap.co.il" className="text-purple-700 hover:text-purple-900 font-mono">
+                        privacy@ticketcap.co.il
+                      </a>
+                    </div>
+                  </div>
+                  <p className="text-gray-600 mt-4">
+                    ניתן לפנות לקצין הגנת המידע בכל נושא הקשור להגנת פרטיות, ניהול מידע אישי, הפעלת זכויות על פי החוק, או דיווח על חשש לאירוע אבטחת מידע.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-yellow-50 border-2 border-yellow-300 rounded-xl p-6 my-4">
+                <p className="text-yellow-900 font-semibold text-center">
+                  ⚖️ עודכן בהתאם לתיקון 13 לחוק הגנת הפרטיות (התשמ״א-1981) - בתוקף מ-14 באוגוסט 2025
+                </p>
+              </div>
+            </div>
+          </section>
+
           {/* Contact Section */}
           <section className="border-t-2 border-gray-200 pt-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-6">9. יצירת קשר</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-6">10. יצירת קשר</h2>
             <div className="space-y-4 text-gray-700 leading-relaxed text-lg">
               <p>
                 לשאלות, הבהרות או בקשות הקשורות למדיניות הפרטיות, אנא צרו איתנו קשר באמצעים הבאים:

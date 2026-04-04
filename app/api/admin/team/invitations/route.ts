@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin } from '@/lib/auth.server'
 import { sendTeamInvitationEmail } from '@/lib/email'
-import crypto from 'crypto'
+import { randomBytes, randomUUID } from 'crypto'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * POST /api/admin/team/invitations
@@ -12,10 +13,7 @@ export async function POST(request: NextRequest) {
   try {
     const admin = await getCurrentAdmin()
     if (!admin) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Only OWNER and ADMIN can invite team members
@@ -29,27 +27,35 @@ export async function POST(request: NextRequest) {
     const { email, role } = await request.json()
 
     if (!email || !role) {
-      return NextResponse.json(
-        { error: 'Email and role are required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Email and role are required' }, { status: 400 })
     }
 
     // Validate role (can't invite SUPER_ADMIN or OWNER unless you are SUPER_ADMIN)
-    const validRoles = admin.role === 'SUPER_ADMIN'
-      ? ['SUPER_ADMIN', 'OWNER', 'ADMIN', 'MANAGER', 'VIEWER', 'SCHOOL_ADMIN']
-      : ['ADMIN', 'MANAGER', 'VIEWER', 'SCHOOL_ADMIN']
+    const validRoles =
+      admin.role === 'SUPER_ADMIN'
+        ? ['SUPER_ADMIN', 'OWNER', 'ADMIN', 'MANAGER', 'VIEWER', 'SCHOOL_ADMIN']
+        : ['ADMIN', 'MANAGER', 'VIEWER', 'SCHOOL_ADMIN']
 
     if (!validRoles.includes(role)) {
-      return NextResponse.json(
-        { error: 'Invalid role for invitation' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Invalid role for invitation' }, { status: 400 })
+    }
+
+    // Validate schoolId exists for non-SUPER_ADMIN (CRIT-4 fix)
+    if (admin.role !== 'SUPER_ADMIN') {
+      if (!admin.schoolId) {
+        logger.error('INVARIANT VIOLATION: Non-SUPER_ADMIN has no schoolId', {
+          source: 'team',
+          adminId: admin.adminId,
+          email: admin.email,
+          role: admin.role,
+        })
+        return NextResponse.json({ error: 'Admin must have a school assigned' }, { status: 403 })
+      }
     }
 
     // Check if admin already exists with this email
     const existingAdmin = await prisma.admin.findUnique({
-      where: { email: email.toLowerCase() }
+      where: { email: email.toLowerCase() },
     })
 
     if (existingAdmin) {
@@ -66,10 +72,7 @@ export async function POST(request: NextRequest) {
         )
       } else {
         // Admin exists but has no school (shouldn't happen in normal flow)
-        return NextResponse.json(
-          { error: 'This email is already registered' },
-          { status: 400 }
-        )
+        return NextResponse.json({ error: 'This email is already registered' }, { status: 400 })
       }
     }
 
@@ -78,28 +81,34 @@ export async function POST(request: NextRequest) {
       where: {
         email_schoolId: {
           email: email.toLowerCase(),
-          schoolId: admin.schoolId!
-        }
-      }
+          schoolId: admin.schoolId!,
+        },
+      },
     })
 
     if (existingInvitation) {
       if (existingInvitation.status === 'PENDING') {
         return NextResponse.json(
-          { error: 'Pending invitation already exists for this email. Use the resend button to send it again.' },
+          {
+            error:
+              'Pending invitation already exists for this email. Use the resend button to send it again.',
+          },
           { status: 400 }
         )
-      } else if (existingInvitation.status === 'REVOKED' || existingInvitation.status === 'EXPIRED') {
+      } else if (
+        existingInvitation.status === 'REVOKED' ||
+        existingInvitation.status === 'EXPIRED'
+      ) {
         // Delete old revoked/expired invitation so we can create a new one
         await prisma.teamInvitation.delete({
-          where: { id: existingInvitation.id }
+          where: { id: existingInvitation.id },
         })
       }
       // If status is ACCEPTED, we continue (shouldn't happen because admin would exist)
     }
 
     // Generate secure token
-    const token = crypto.randomBytes(32).toString('hex')
+    const token = randomBytes(32).toString('hex')
 
     // Create invitation (expires in 7 days)
     const expiresAt = new Date()
@@ -112,21 +121,21 @@ export async function POST(request: NextRequest) {
         role,
         invitedById: admin.adminId,
         token,
-        expiresAt
+        expiresAt,
       },
       include: {
         invitedBy: {
           select: {
             name: true,
-            email: true
-          }
+            email: true,
+          },
         },
         school: {
           select: {
-            name: true
-          }
-        }
-      }
+            name: true,
+          },
+        },
+      },
     })
 
     // Send invitation email
@@ -139,7 +148,7 @@ export async function POST(request: NextRequest) {
         token
       )
     } catch (emailError) {
-      console.error('Failed to send invitation email:', emailError)
+      logger.error('Failed to send invitation email', { source: 'team', error: emailError })
       // Don't fail the request if email sending fails - invitation is still created
     }
 
@@ -150,15 +159,12 @@ export async function POST(request: NextRequest) {
         email: invitation.email,
         role: invitation.role,
         expiresAt: invitation.expiresAt,
-        invitedBy: invitation.invitedBy.name
-      }
+        invitedBy: invitation.invitedBy.name,
+      },
     })
   } catch (error) {
-    console.error('Error creating invitation:', error)
-    return NextResponse.json(
-      { error: 'Failed to create invitation' },
-      { status: 500 }
-    )
+    logger.error('Error creating invitation', { source: 'team', error })
+    return NextResponse.json({ error: 'Failed to create invitation' }, { status: 500 })
   }
 }
 
@@ -170,10 +176,7 @@ export async function GET() {
   try {
     const admin = await getCurrentAdmin()
     if (!admin) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Build where clause
@@ -197,22 +200,22 @@ export async function GET() {
         invitedBy: {
           select: {
             name: true,
-            email: true
-          }
+            email: true,
+          },
         },
         school: {
           select: {
-            name: true
-          }
-        }
+            name: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: 'desc'
-      }
+        createdAt: 'desc',
+      },
     })
 
     return NextResponse.json({
-      invitations: invitations.map(inv => ({
+      invitations: invitations.map((inv) => ({
         id: inv.id,
         email: inv.email,
         role: inv.role,
@@ -220,18 +223,27 @@ export async function GET() {
         expiresAt: inv.expiresAt,
         createdAt: inv.createdAt,
         invitedBy: inv.invitedBy?.name || 'Unknown',
-        schoolName: inv.school?.name || 'Unknown'
-      }))
+        schoolName: inv.school?.name || 'Unknown',
+      })),
     })
   } catch (error) {
-    console.error('Error fetching invitations:', error)
-    // Log more details about the error for debugging
-    if (error instanceof Error) {
-      console.error('Error message:', error.message)
-      console.error('Error stack:', error.stack)
-    }
+    // Log full error details server-side only
+    const requestId = randomUUID()
+    logger.error('Error fetching invitations', {
+      source: 'team',
+      requestId,
+      error,
+      errorMessage: error instanceof Error ? error.message : undefined,
+      errorStack: error instanceof Error ? error.stack : undefined,
+    })
+
+    // Return generic error to client (no internal details exposed)
     return NextResponse.json(
-      { error: 'Failed to fetch invitations', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Failed to fetch invitations',
+        requestId, // For support tracking only
+        timestamp: new Date().toISOString(),
+      },
       { status: 500 }
     )
   }

@@ -9,6 +9,7 @@ import SaveTemplateModal from './SaveTemplateModal'
 import BulkEditModal from './BulkEditModal'
 import { X, Plus, Sparkles, Edit3, Trash2, CheckSquare } from 'lucide-react'
 import Link from 'next/link'
+import { useToast } from '../Toast'
 
 interface Table {
   id: string
@@ -33,6 +34,7 @@ interface TableBoardClientProps {
 
 export default function TableBoardClient({ tables, eventId }: TableBoardClientProps) {
   const router = useRouter()
+  const { addToast, ToastContainer } = useToast()
   const [cancelModal, setCancelModal] = useState<{ show: boolean; registrationId: string | null }>({
     show: false,
     registrationId: null,
@@ -74,11 +76,11 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
       } else {
         const error = await response.json()
         console.error('API Error:', error)
-        alert(error.error || 'שגיאה בעדכון סטטוס שולחן')
+        addToast(error.error || 'שגיאה בעדכון סטטוס שולחן', 'error')
       }
     } catch (error) {
       console.error('Error toggling hold:', error)
-      alert('שגיאה בעדכון סטטוס שולחן')
+      addToast('שגיאה בעדכון סטטוס שולחן', 'error')
     } finally {
       setTogglingHold(false)
     }
@@ -95,23 +97,23 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
 
       if (response.ok) {
         const data = await response.json()
-        alert(`✨ נוצרו ${data.count} שולחנות בהצלחה!`)
+        addToast(`✨ נוצרו ${data.count} שולחנות בהצלחה!`, 'success')
         router.refresh() // Refresh server component data
       } else {
         const error = await response.json()
         console.error('API Error:', error)
 
         if (response.status === 401) {
-          alert('הפג תוקף ההתחברות. אנא התחבר מחדש.')
+          addToast('הפג תוקף ההתחברות. אנא התחבר מחדש.', 'error')
           window.location.href = '/admin/login'
           return
         }
 
-        alert(error.error || 'שגיאה בשכפול שולחן')
+        addToast(error.error || 'שגיאה בשכפול שולחן', 'error')
       }
     } catch (error) {
       console.error('Error duplicating table:', error)
-      alert('שגיאה בשכפול שולחן')
+      addToast('שגיאה בשכפול שולחן', 'error')
       throw error
     }
   }
@@ -127,15 +129,15 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
 
       if (response.ok) {
         const data = await response.json()
-        alert(`✨ נוצרו ${data.count} שולחנות מתבנית "${data.template.name}"!`)
+        addToast(`✨ נוצרו ${data.count} שולחנות מתבנית "${data.template.name}"!`, 'success')
         router.refresh()
       } else {
         const error = await response.json()
-        alert(error.error || 'שגיאה ביצירת שולחנות מתבנית')
+        addToast(error.error || 'שגיאה ביצירת שולחנות מתבנית', 'error')
       }
     } catch (error) {
       console.error('Error applying template:', error)
-      alert('שגיאה ביצירת שולחנות מתבנית')
+      addToast('שגיאה ביצירת שולחנות מתבנית', 'error')
       throw error
     }
   }
@@ -151,14 +153,14 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
 
       if (response.ok) {
         const data = await response.json()
-        alert(`✅ תבנית "${data.template.name}" נשמרה בהצלחה!`)
+        addToast(`✅ תבנית "${data.template.name}" נשמרה בהצלחה!`, 'success')
       } else {
         const error = await response.json()
-        alert(error.error || 'שגיאה בשמירת תבנית')
+        addToast(error.error || 'שגיאה בשמירת תבנית', 'error')
       }
     } catch (error) {
       console.error('Error saving template:', error)
-      alert('שגיאה בשמירת תבנית')
+      addToast('שגיאה בשמירת תבנית', 'error')
       throw error
     }
   }
@@ -195,16 +197,16 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
 
       if (response.ok) {
         const data = await response.json()
-        alert(`✅ עודכנו ${data.count} שולחנות בהצלחה!`)
+        addToast(`✅ עודכנו ${data.count} שולחנות בהצלחה!`, 'success')
         handleDeselectAll()
         router.refresh()
       } else {
         const error = await response.json()
-        alert(error.error || 'שגיאה בעדכון שולחנות')
+        addToast(error.error || 'שגיאה בעדכון שולחנות', 'error')
       }
     } catch (error) {
       console.error('Error bulk editing:', error)
-      alert('שגיאה בעדכון שולחנות')
+      addToast('שגיאה בעדכון שולחנות', 'error')
       throw error
     }
   }
@@ -222,16 +224,16 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
 
       if (response.ok) {
         const data = await response.json()
-        alert(`✅ נמחקו ${data.count} שולחנות בהצלחה!`)
+        addToast(`✅ נמחקו ${data.count} שולחנות בהצלחה!`, 'success')
         handleDeselectAll()
         router.refresh()
       } else {
         const error = await response.json()
-        alert(error.error || 'שגיאה במחיקת שולחנות')
+        addToast(error.error || 'שגיאה במחיקת שולחנות', 'error')
       }
     } catch (error) {
       console.error('Error bulk deleting:', error)
-      alert('שגיאה במחיקת שולחנות')
+      addToast('שגיאה במחיקת שולחנות', 'error')
     }
   }
 
@@ -250,15 +252,15 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
       })
 
       if (response.ok) {
-        alert(`✅ שולחן ${table.tableNumber} נמחק בהצלחה!`)
+        addToast(`✅ שולחן ${table.tableNumber} נמחק בהצלחה!`, 'success')
         router.refresh()
       } else {
         const error = await response.json()
-        alert(error.error || 'שגיאה במחיקת שולחן')
+        addToast(error.error || 'שגיאה במחיקת שולחן', 'error')
       }
     } catch (error) {
       console.error('Error deleting table:', error)
-      alert('שגיאה במחיקת שולחן')
+      addToast('שגיאה במחיקת שולחן', 'error')
     }
   }
 
@@ -293,16 +295,16 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
 
         // If unauthorized, redirect to login
         if (response.status === 401) {
-          alert('הפג תוקף ההתחברות. אנא התחבר מחדש.')
+          addToast('הפג תוקף ההתחברות. אנא התחבר מחדש.', 'error')
           window.location.href = '/admin/login'
           return
         }
 
-        alert(error.error || 'שגיאה בהעברה לרשימת המתנה')
+        addToast(error.error || 'שגיאה בהעברה לרשימת המתנה', 'error')
       }
     } catch (error) {
       console.error('Error moving to waitlist:', error)
-      alert('שגיאה בהעברה לרשימת המתנה')
+      addToast('שגיאה בהעברה לרשימת המתנה', 'error')
     } finally {
       setCancelling(false)
     }
@@ -703,6 +705,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
         onClose={() => setBulkEditModal(false)}
         onConfirm={handleBulkEdit}
       />
+      <ToastContainer />
     </>
   )
 }

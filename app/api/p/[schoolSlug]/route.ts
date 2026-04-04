@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger-v2'
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ schoolSlug: string }> }
 ) {
   try {
-    const { schoolSlug } = await params
-    const slug = schoolSlug // Keep slug variable for backwards compatibility below
+    const { schoolSlug } = await params;
+    const slug = schoolSlug; // Keep slug variable for backwards compatibility below
 
     // First, check if this is a school slug
     const school = await prisma.school.findUnique({
@@ -17,8 +18,8 @@ export async function GET(
         name: true,
         slug: true,
         logo: true,
-        primaryColor: true,
-      },
+        primaryColor: true
+      }
     })
 
     // If it's a school, return school landing page data
@@ -27,10 +28,10 @@ export async function GET(
       const events = await prisma.event.findMany({
         where: {
           schoolId: school.id,
-          status: 'OPEN',
+          status: 'OPEN'
         },
         orderBy: {
-          startAt: 'asc',
+          startAt: 'asc'
         },
         select: {
           id: true,
@@ -42,8 +43,8 @@ export async function GET(
           startAt: true,
           endAt: true,
           capacity: true,
-          status: true,
-        },
+          status: true
+        }
       })
 
       // Calculate spots for each event
@@ -52,11 +53,11 @@ export async function GET(
           const confirmedRegistrations = await prisma.registration.findMany({
             where: {
               eventId: event.id,
-              status: 'CONFIRMED',
+              status: 'CONFIRMED'
             },
             select: {
-              spotsCount: true,
-            },
+              spotsCount: true
+            }
           })
 
           const totalSpotsTaken = confirmedRegistrations.reduce(
@@ -67,7 +68,7 @@ export async function GET(
           return {
             ...event,
             totalSpotsTaken,
-            spotsLeft: event.capacity - totalSpotsTaken,
+            spotsLeft: event.capacity - totalSpotsTaken
           }
         })
       )
@@ -75,7 +76,7 @@ export async function GET(
       return NextResponse.json({
         type: 'school',
         school,
-        events: eventsWithSpots,
+        events: eventsWithSpots
       })
     }
 
@@ -86,7 +87,10 @@ export async function GET(
       { status: 404 }
     )
   } catch (error) {
-    console.error('Error fetching event:', error)
-    return NextResponse.json({ error: 'Failed to fetch event' }, { status: 500 })
+    logger.error('Error fetching school/events', { source: 'public-api', error })
+    return NextResponse.json(
+      { error: 'Failed to fetch event' },
+      { status: 500 }
+    )
   }
 }

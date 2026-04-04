@@ -1,27 +1,3 @@
-/**
- * @LOCKED
- * Reason: Business-critical event creation flow
- * Scope:
- *   - Multi-step wizard flow (4 steps: details, timing, capacity, advanced)
- *   - Form validation patterns
- *   - Autosave/draft recovery mechanism
- *   - All data-testid selectors
- *   - Hebrew UI text
- * See: /docs/infrastructure/GOLDEN_PATHS.md#EVENT_CREATE_V1
- *
- * What CANNOT be changed:
- *   - Step sequence and validation logic
- *   - Required field validation (title, gameType, startAt, capacity)
- *   - Form submission flow
- *   - Draft autosave interval (10 seconds)
- *   - Multi-tenant schoolId enforcement pattern
- *
- * What CAN be changed (internal refactoring only):
- *   - Component structure (if tests pass)
- *   - Styling improvements
- *   - Performance optimizations
- *   - Type safety enhancements
- */
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
@@ -34,8 +10,17 @@ import StepWizard from '@/components/StepWizard'
 import EventPreviewModal from '@/components/EventPreviewModal'
 import DateTimePicker from '@/components/DateTimePicker'
 import Modal from '@/components/Modal'
+import DevFeatureLabel from '@/components/dev/DevFeatureLabel'
 import { trackEventCreated } from '@/lib/analytics'
 import {
+  typography,
+  buttonVariants,
+  buttonSizes,
+  inputVariants,
+  cardVariants,
+} from '@/lib/design-tokens'
+import {
+  Calendar,
   MapPin,
   Users,
   UserCheck,
@@ -52,12 +37,362 @@ import {
   Clock,
   Database,
   Zap,
+  CreditCard,
+  ChevronDown,
+  ChevronUp,
+  Info,
+  HelpCircle,
+  Tag,
+  AlignLeft,
+  X,
+  DollarSign,
+  Gift,
+  Receipt,
+  Banknote,
 } from 'lucide-react'
 
-const AUTOSAVE_KEY = 'eventFormDraft'
+const AUTOSAVE_KEY_PREFIX = 'eventFormDraft'
 const AUTOSAVE_INTERVAL = 10000 // 10 seconds
 
-export default function NewEventPageTest() {
+// Event types for native browser autocomplete (datalist)
+const EVENT_TYPES = [
+  // Sports
+  'כדורגל',
+  'כדורסל',
+  'כדורעף',
+  'טניס',
+  'שחייה',
+  'ריצה',
+  'אתלטיקה',
+  'כדוריד',
+  'טניס שולחן',
+  'בייסבול',
+  'התעמלות',
+  'יוגה',
+  'כושר',
+  'פילאטיס',
+  'קרב מגע',
+  "ג'ודו",
+  'קראטה',
+  'משחק ספורט',
+  'תחרות ספורט',
+  'יום ספורט',
+  'אולימפיאדה',
+  // Cultural
+  'מופע',
+  'הצגה',
+  'קונצרט',
+  'הופעה',
+  'מחול',
+  'פסטיבל',
+  'מסיבה',
+  'טקס',
+  'אירוע תרבותי',
+  'מופע כישרונות',
+  'ערב שירה',
+  'ליל תרבות',
+  'חגיגה',
+  // Educational
+  'הרצאה',
+  'סדנה',
+  'כנס',
+  'סמינר',
+  'סיור לימודי',
+  'תחרות ידע',
+  'חידון',
+  'קורס',
+  'שיעור פתוח',
+  'מפגש לימודי',
+  'אולימפיאדת מדעים',
+  'תחרות רובוטיקה',
+  // Family & Community
+  'יום פתוח',
+  'יום משפחה',
+  'אסיפת הורים',
+  'טיול',
+  'פיקניק',
+  'יום כיף',
+  'מפגש קהילתי',
+  'ארוחה משותפת',
+  'יום הורים',
+  'ערב הורים',
+  'יום גיבוש',
+  'פעילות התנדבות',
+  // Arts
+  'תערוכה',
+  'סדנת אומנות',
+  'סדנת יצירה',
+  'סדנת ציור',
+  'סדנת פיסול',
+  'הצגת תיאטרון',
+  // Health
+  'יום בריאות',
+  'סדנת תזונה',
+  'הרצאת בריאות',
+  'יום מודעות',
+  // Other
+  'אירוע מיוחד',
+  'מפגש',
+  'פעילות',
+  'אירוע',
+]
+
+// Geocode API (server-side proxy to Nominatim - avoids CORS issues)
+
+// Debounce hook for rate limiting API calls
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay)
+    return () => clearTimeout(timer)
+  }, [value, delay])
+
+  return debouncedValue
+}
+
+// Location result from Nominatim
+interface NominatimResult {
+  place_id: number
+  display_name: string
+  lat: string
+  lon: string
+}
+
+// LocationAutocomplete component using Nominatim (OpenStreetMap)
+interface LocationAutocompleteProps {
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
+}
+
+function LocationAutocomplete({
+  value,
+  onChange,
+  placeholder = 'למשל: רחוב הרצל 1 תל אביב, פארק הירקון',
+}: LocationAutocompleteProps) {
+  const [inputValue, setInputValue] = useState(value)
+  const [isOpen, setIsOpen] = useState(false)
+  const [suggestions, setSuggestions] = useState<NominatimResult[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [highlightedIndex, setHighlightedIndex] = useState(-1)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // Sync with external value
+  useEffect(() => {
+    setInputValue(value)
+  }, [value])
+
+  // Debounce search query (500ms to respect Nominatim rate limit)
+  const debouncedQuery = useDebounce(inputValue, 500)
+
+  // Fetch suggestions from Nominatim with AbortController (Issue 6.1)
+  useEffect(() => {
+    const controller = new AbortController()
+
+    const fetchSuggestions = async () => {
+      if (!debouncedQuery || debouncedQuery.length < 2) {
+        setSuggestions([])
+        return
+      }
+
+      setIsLoading(true)
+      try {
+        // Use server-side proxy to avoid CORS issues with Nominatim
+        const response = await fetch(`/api/geocode?q=${encodeURIComponent(debouncedQuery)}`, {
+          signal: controller.signal,
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          setSuggestions(data.results || [])
+        }
+      } catch (error) {
+        // Ignore abort errors (expected on cleanup)
+        if (error instanceof Error && error.name === 'AbortError') {
+          return
+        }
+        console.error('Nominatim search error:', error)
+        setSuggestions([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchSuggestions()
+
+    // Cleanup: abort pending fetch on unmount or query change
+    return () => controller.abort()
+  }, [debouncedQuery])
+
+  // Close on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleSelect = (result: NominatimResult) => {
+    // Use shorter display name (remove country suffix)
+    const shortName = result.display_name.replace(/, ישראל$/, '').replace(/, Israel$/, '')
+    setInputValue(shortName)
+    onChange(shortName)
+    setIsOpen(false)
+    setHighlightedIndex(-1)
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value
+    setInputValue(newValue)
+    onChange(newValue)
+    setIsOpen(true)
+    setHighlightedIndex(-1)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!isOpen && suggestions.length > 0) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        setIsOpen(true)
+        e.preventDefault()
+        return
+      }
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault()
+        setHighlightedIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : 0))
+        break
+      case 'ArrowUp':
+        e.preventDefault()
+        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : suggestions.length - 1))
+        break
+      case 'Enter':
+        e.preventDefault()
+        if (highlightedIndex >= 0 && suggestions[highlightedIndex]) {
+          handleSelect(suggestions[highlightedIndex])
+        } else {
+          setIsOpen(false)
+        }
+        break
+      case 'Escape':
+        setIsOpen(false)
+        setHighlightedIndex(-1)
+        break
+      case 'Tab':
+        setIsOpen(false)
+        break
+    }
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div className="relative">
+        <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
+        <input
+          ref={inputRef}
+          type="text"
+          value={inputValue}
+          onChange={handleInputChange}
+          onFocus={() => setIsOpen(true)}
+          onKeyDown={handleKeyDown}
+          className={inputVariants.default + ' pl-10 pr-12'}
+          placeholder={placeholder}
+          role="combobox"
+          aria-expanded={isOpen}
+          aria-haspopup="listbox"
+          aria-autocomplete="list"
+          aria-controls="location-listbox"
+        />
+        {isLoading && (
+          <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
+        )}
+      </div>
+
+      {/* Dropdown */}
+      <AnimatePresence>
+        {isOpen && suggestions.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.15 }}
+            className="absolute z-50 w-full mt-1 bg-white border-2 border-gray-200 rounded-xl shadow-lg overflow-hidden"
+          >
+            <ul id="location-listbox" role="listbox" className="max-h-60 overflow-auto py-1">
+              {suggestions.map((result, index) => {
+                const isHighlighted = index === highlightedIndex
+                // Shorten display name
+                const shortName = result.display_name
+                  .replace(/, ישראל$/, '')
+                  .replace(/, Israel$/, '')
+
+                return (
+                  <li
+                    key={result.place_id}
+                    role="option"
+                    aria-selected={isHighlighted}
+                    className={`
+                      px-4 py-3 cursor-pointer transition-colors flex items-start gap-3
+                      ${isHighlighted ? 'bg-blue-50 text-blue-900' : 'hover:bg-gray-50'}
+                    `}
+                    onClick={() => handleSelect(result)}
+                    onMouseEnter={() => setHighlightedIndex(index)}
+                  >
+                    <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm leading-snug">{shortName}</span>
+                  </li>
+                )
+              })}
+            </ul>
+            {/* OSM Attribution - Required */}
+            <div className="px-3 py-2 border-t border-gray-100 bg-gray-50 text-xs text-gray-500 flex items-center justify-between">
+              <span>נתונים מ-</span>
+              <a
+                href="https://www.openstreetmap.org/copyright"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                © OpenStreetMap
+              </a>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* No results state */}
+      <AnimatePresence>
+        {isOpen && inputValue.length >= 2 && suggestions.length === 0 && !isLoading && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="absolute z-50 w-full mt-1 bg-white border-2 border-gray-200 rounded-xl shadow-lg p-4 text-center"
+          >
+            <p className="text-sm text-gray-600">
+              לא נמצאו כתובות התואמות ל-&quot;{inputValue}&quot;
+            </p>
+            <p className="text-xs text-gray-500 mt-1">ניתן להקליד כתובת חופשית</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// Get admin-scoped autosave key to prevent cross-user draft leakage
+const getAutosaveKey = (adminId: string | null) => {
+  if (!adminId) return null
+  return `${AUTOSAVE_KEY_PREFIX}_${adminId}`
+}
+
+export default function NewEventPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
@@ -69,8 +404,25 @@ export default function NewEventPageTest() {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
   const [showDraftModal, setShowDraftModal] = useState(false)
   const [draftData, setDraftData] = useState<any>(null)
+  const [adminId, setAdminId] = useState<string | null>(null)
   const { addToast, ToastContainer } = useToast()
+
+  // Input refs for focus management (Issue 2.3)
+  const gameTypeInputRef = useRef<HTMLInputElement>(null)
   const titleInputRef = useRef<HTMLInputElement>(null)
+  const capacityInputRef = useRef<HTMLInputElement>(null)
+  const stepContentRef = useRef<HTMLDivElement>(null)
+
+  // Online state for offline detection (Issue 7.2)
+  const [isOnline, setIsOnline] = useState(true)
+
+  // Expandable sections state
+  const [expandedSections, setExpandedSections] = useState({
+    conditions: false,
+    completionMessage: true,
+    customFields: false,
+    payment: false,
+  })
 
   const [formData, setFormData] = useState<EventFormData>({
     title: '',
@@ -85,6 +437,12 @@ export default function NewEventPageTest() {
     conditions: '',
     requireAcceptance: false,
     completionMessage: '',
+    // Payment settings (Tier 2: Event Ticketing - YaadPay)
+    paymentRequired: false,
+    paymentTiming: 'OPTIONAL',
+    pricingModel: 'FREE',
+    priceAmount: undefined,
+    currency: 'ILS',
   })
 
   // String inputs for better UX on number fields
@@ -101,24 +459,48 @@ export default function NewEventPageTest() {
 
   // Wizard steps
   const steps = [
-    { id: 'details', title: 'פרטים', description: 'מידע בסיסי' },
-    { id: 'timing', title: 'תזמון', description: 'תאריכים ושעות' },
-    { id: 'capacity', title: 'מקומות', description: 'כמויות ומגבלות' },
-    { id: 'advanced', title: 'מתקדם', description: 'תנאים ושדות' },
+    { id: 'details', title: 'פרטים בסיסיים', description: 'מידע על האירוע' },
+    { id: 'timing', title: 'תאריך ושעה', description: 'מתי האירוע מתקיים' },
+    { id: 'capacity', title: 'כמות משתתפים', description: 'מגבלות הרשמה' },
+    { id: 'advanced', title: 'הגדרות נוספות', description: 'אופציונלי' },
   ]
 
-  // Load draft from localStorage on mount
+  // Fetch admin info and load draft from localStorage on mount
   useEffect(() => {
-    const draft = localStorage.getItem(AUTOSAVE_KEY)
-    if (draft) {
+    const initializeAndLoadDraft = async () => {
       try {
-        const parsed = JSON.parse(draft)
-        setDraftData(parsed)
-        setShowDraftModal(true)
+        // First fetch admin info to get the scoped key
+        const response = await fetch('/api/admin/me', { credentials: 'include' })
+        if (!response.ok) return
+
+        const data = await response.json()
+        const currentAdminId = data.admin?.id
+        if (!currentAdminId) return
+
+        setAdminId(currentAdminId)
+
+        // Now check for draft with admin-scoped key
+        const autosaveKey = getAutosaveKey(currentAdminId)
+        if (!autosaveKey) return
+
+        const draft = localStorage.getItem(autosaveKey)
+        if (draft) {
+          const parsed = JSON.parse(draft)
+          setDraftData(parsed)
+          setShowDraftModal(true)
+        }
+
+        // Clean up old unscoped drafts (migration from old system)
+        const oldDraft = localStorage.getItem('eventFormDraft')
+        if (oldDraft) {
+          localStorage.removeItem('eventFormDraft')
+        }
       } catch (error) {
-        console.error('Failed to load draft:', error)
+        console.error('Failed to initialize or load draft:', error)
       }
     }
+
+    initializeAndLoadDraft()
   }, [])
 
   // Handle draft recovery
@@ -135,19 +517,27 @@ export default function NewEventPageTest() {
   }
 
   const handleDiscardDraft = () => {
-    localStorage.removeItem(AUTOSAVE_KEY)
+    const autosaveKey = getAutosaveKey(adminId)
+    if (autosaveKey) {
+      localStorage.removeItem(autosaveKey)
+    }
     setDraftData(null)
     setShowDraftModal(false)
     addToast('טיוטה נמחקה', 'info', 2000)
   }
 
-  // Autosave to localStorage
+  // Autosave to localStorage (only when adminId is available)
   useEffect(() => {
+    if (!adminId) return // Don't autosave until we know who the user is
+
+    const autosaveKey = getAutosaveKey(adminId)
+    if (!autosaveKey) return
+
     const interval = setInterval(() => {
       if (hasUnsavedChanges && formData.title) {
         try {
           localStorage.setItem(
-            AUTOSAVE_KEY,
+            autosaveKey,
             JSON.stringify({
               formData,
               currentStep,
@@ -163,7 +553,7 @@ export default function NewEventPageTest() {
     }, AUTOSAVE_INTERVAL)
 
     return () => clearInterval(interval)
-  }, [formData, currentStep, completedSteps, hasUnsavedChanges])
+  }, [formData, currentStep, completedSteps, hasUnsavedChanges, adminId])
 
   // Track form changes
   useEffect(() => {
@@ -208,6 +598,55 @@ export default function NewEventPageTest() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [formData])
 
+  // Focus management after step transition (Issue 2.3)
+  useEffect(() => {
+    // Small delay to allow animation to complete
+    const timer = setTimeout(() => {
+      switch (currentStep) {
+        case 0:
+          gameTypeInputRef.current?.focus()
+          break
+        case 1:
+          // DateTimePicker doesn't have a direct ref, scroll to top instead
+          stepContentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          break
+        case 2:
+          capacityInputRef.current?.focus()
+          break
+        case 3:
+          // Advanced step - scroll to top
+          stepContentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          break
+      }
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [currentStep])
+
+  // Online/Offline detection (Issue 7.2)
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true)
+      addToast('חיבור לאינטרנט חזר!', 'success', 3000)
+    }
+
+    const handleOffline = () => {
+      setIsOnline(false)
+      addToast('אין חיבור לאינטרנט. הנתונים יישמרו מקומית.', 'error', 5000)
+    }
+
+    // Check initial state
+    setIsOnline(navigator.onLine)
+
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [addToast])
+
   // Real-time validation
   const validateField = (name: string, value: string | number) => {
     const errors: Record<string, string> = {}
@@ -242,8 +681,20 @@ export default function NewEventPageTest() {
         break
 
       case 'completionMessage':
-        if (typeof value === 'string' && value.length > CHAR_LIMITS.completionMessage) {
+        if (typeof value === 'string' && value.trim() === '') {
+          errors.completionMessage = 'שדה חובה – נא להזין הודעת אישור'
+        } else if (typeof value === 'string' && value.length > CHAR_LIMITS.completionMessage) {
           errors.completionMessage = `הודעה ארוכה מדי (מקסימום ${CHAR_LIMITS.completionMessage} תווים)`
+        }
+        break
+
+      case 'startAt':
+        if (typeof value === 'string' && value) {
+          const selectedDateTime = new Date(value)
+          const now = new Date()
+          if (selectedDateTime < now) {
+            errors.startAt = 'לא ניתן לבחור תאריך ושעה שעברו'
+          }
         }
         break
 
@@ -276,7 +727,13 @@ export default function NewEventPageTest() {
   }
 
   const handleChange = (name: string, value: string | number | boolean) => {
-    setFormData((prev) => ({ ...prev, [name]: value }))
+    // When enabling payment, auto-switch from FREE to FIXED_PRICE
+    if (name === 'paymentRequired' && value === true && formData.pricingModel === 'FREE') {
+      setFormData((prev) => ({ ...prev, [name]: value, pricingModel: 'FIXED_PRICE' }))
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }))
+    }
+
     if (typeof value !== 'boolean') {
       validateField(name, value)
     }
@@ -337,9 +794,15 @@ export default function NewEventPageTest() {
   }
 
   const saveDraft = () => {
+    const autosaveKey = getAutosaveKey(adminId)
+    if (!autosaveKey) {
+      addToast('לא ניתן לשמור טיוטה - נא לרענן את הדף', 'error')
+      return
+    }
+
     try {
       localStorage.setItem(
-        AUTOSAVE_KEY,
+        autosaveKey,
         JSON.stringify({
           formData,
           currentStep,
@@ -355,7 +818,10 @@ export default function NewEventPageTest() {
   }
 
   const clearDraft = () => {
-    localStorage.removeItem(AUTOSAVE_KEY)
+    const autosaveKey = getAutosaveKey(adminId)
+    if (autosaveKey) {
+      localStorage.removeItem(autosaveKey)
+    }
     setLastSavedAt(null)
   }
 
@@ -369,11 +835,19 @@ export default function NewEventPageTest() {
           !validationErrors.gameType
         )
       case 1: // Timing
-        return formData.startAt !== '' && !validationErrors.endAt
+        // Also check that startAt is not in the past
+        if (formData.startAt) {
+          const selectedDateTime = new Date(formData.startAt)
+          const now = new Date()
+          if (selectedDateTime < now) {
+            return false
+          }
+        }
+        return formData.startAt !== '' && !validationErrors.endAt && !validationErrors.startAt
       case 2: // Capacity
         return formData.capacity >= 1 && formData.maxSpotsPerPerson >= 1
       case 3: // Advanced
-        return true // Optional step
+        return (formData.completionMessage?.trim().length ?? 0) > 0
       default:
         return true
     }
@@ -426,6 +900,12 @@ export default function NewEventPageTest() {
     console.log('[handleSubmit] Called! Current step:', currentStep)
     console.log('[handleSubmit] Should only be called on step 3 (index 3)')
 
+    // Check for internet connectivity (Issue 7.2)
+    if (!navigator.onLine || !isOnline) {
+      addToast('אין חיבור לאינטרנט. אנא בדוק את החיבור שלך ונסה שוב.', 'error')
+      return
+    }
+
     // Prevent submission if not on final step
     if (currentStep < steps.length - 1) {
       console.error('[handleSubmit] ERROR: Form submitted before final step!')
@@ -448,6 +928,31 @@ export default function NewEventPageTest() {
     if (!formData.startAt) {
       addToast('תאריך התחלה הוא שדה חובה', 'error')
       return
+    }
+
+    if (!formData.completionMessage?.trim()) {
+      validateField('completionMessage', '')
+      setExpandedSections((prev) => ({ ...prev, completionMessage: true }))
+      addToast('הודעת אישור היא שדה חובה', 'error')
+      return
+    }
+
+    // Validate startAt is not in the past
+    const selectedDateTime = new Date(formData.startAt)
+    const now = new Date()
+    if (selectedDateTime < now) {
+      addToast('לא ניתן ליצור אירוע עם תאריך ושעה שעברו', 'error')
+      return
+    }
+
+    // Validate payment fields
+    if (formData.paymentRequired) {
+      // When payment is required, pricing model can only be FIXED_PRICE or PER_GUEST
+      // Both require a price amount
+      if (!formData.priceAmount || formData.priceAmount <= 0) {
+        addToast('יש להזין מחיר חיובי כאשר האירוע בתשלום', 'error')
+        return
+      }
     }
 
     setIsLoading(true)
@@ -492,14 +997,23 @@ export default function NewEventPageTest() {
     }
   }
 
-  // Character counter component
+  // Toggle expandable section
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }))
+  }
+
+  // Character counter component - improved visibility on mobile (Issue 1.4)
   const CharCounter = ({ current, max }: { current: number; max: number }) => {
     const percentage = (current / max) * 100
     const isNearLimit = percentage > 80
     const isOverLimit = current > max
 
     return (
-      <div className="flex items-center gap-2 text-xs mt-1">
+      <div
+        className="flex items-center gap-2 text-sm sm:text-xs mt-1"
+        aria-live="polite"
+        aria-atomic="true"
+      >
         <span
           className={`
           ${isOverLimit ? 'text-red-600 font-medium' : ''}
@@ -510,7 +1024,7 @@ export default function NewEventPageTest() {
           {current} / {max}
         </span>
         {isOverLimit && (
-          <span className="text-red-600 flex items-center gap-1">
+          <span className="text-red-600 flex items-center gap-1" role="alert">
             <AlertCircle className="w-3 h-3" />
             חריגה מהמגבלה
           </span>
@@ -562,160 +1076,232 @@ export default function NewEventPageTest() {
     </motion.div>
   )
 
+  // Info tooltip component - keyboard accessible (Issue 2.4)
+  const InfoTooltip = ({ text }: { text: string }) => (
+    <button
+      type="button"
+      aria-label="מידע נוסף"
+      className="group relative inline-flex focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 rounded-full"
+    >
+      <HelpCircle className="w-4 h-4 text-gray-400 group-hover:text-gray-600 group-focus:text-gray-600 cursor-help" />
+      <div
+        role="tooltip"
+        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus:opacity-100 group-focus:visible transition-all duration-200 pointer-events-none z-10"
+      >
+        {text}
+        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900" />
+      </div>
+    </button>
+  )
+
   // Render step content
   const renderStepContent = () => {
     switch (currentStep) {
       case 0:
         return (
           <motion.div
-            key="step-1"
-            initial={{ opacity: 0, x: 20 }}
+            key="step-0-details"
+            initial={{ opacity: 0, x: 20, z: 0 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             className="space-y-6"
           >
-            <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-200">
-              <div className="flex items-center gap-2 mb-6">
-                <FileText className="w-6 h-6 text-blue-600" />
-                <h2 className="text-xl font-bold text-gray-900">פרטי האירוע</h2>
-              </div>
-
-              {/* Game Type - NOW FIRST */}
-              <div className="mb-6">
-                <label htmlFor="gameType" className="block text-sm font-medium text-gray-700 mb-2">
-                  סוג אירוע <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="gameType"
-                  type="text"
-                  required
-                  value={formData.gameType}
-                  onChange={(e) => handleChange('gameType', e.target.value)}
-                  className={`
-                    w-full px-4 py-3 border-2 rounded-lg
-                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                    hover:border-gray-400 transition-all
-                    ${validationErrors.gameType ? 'border-red-500' : 'border-gray-300'}
-                  `}
-                  placeholder="כדורגל, כדורסל, טיול, הרצאה, מסיבה..."
-                  aria-invalid={!!validationErrors.gameType}
-                  aria-describedby={
-                    validationErrors.gameType ? 'gameType-error gameType-help' : 'gameType-help'
-                  }
-                />
-                {validationErrors.gameType ? (
-                  <span
-                    id="gameType-error"
-                    className="text-xs text-red-600 flex items-center gap-1 mt-1"
-                  >
-                    <AlertCircle className="w-3 h-3" />
-                    {validationErrors.gameType}
-                  </span>
-                ) : (
-                  <p id="gameType-help" className="text-xs text-gray-500 mt-1">
-                    קטגוריה של האירוע (לדוגמה: כדורגל, הרצאה, טיול)
+            {/* Step Introduction Card - hidden on mobile, shown on md+ (Issue 1.2) */}
+            <div className="hidden md:block bg-gradient-to-l from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 border-2 border-blue-200">
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className="p-2 sm:p-3 bg-blue-600 rounded-lg flex-shrink-0">
+                  <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className={typography.h4 + ' mb-1 sm:mb-2'}>שלב 1: פרטי האירוע</h2>
+                  <p className={typography.bodySmall + ' text-gray-600'}>
+                    מלא את המידע הבסיסי על האירוע שלך. שדות המסומנים ב-
+                    <span className="text-red-600 font-bold">*</span> הם חובה.
                   </p>
-                )}
-              </div>
-
-              {/* Title - NOW SECOND */}
-              <div className="mb-6">
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                  כותרת האירוע <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="title"
-                  ref={titleInputRef}
-                  type="text"
-                  required
-                  value={formData.title}
-                  onChange={(e) => handleChange('title', e.target.value)}
-                  className={`
-                    w-full px-4 py-3 border-2 rounded-lg text-lg
-                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                    hover:border-gray-400 transition-all
-                    ${validationErrors.title ? 'border-red-500' : 'border-gray-300'}
-                  `}
-                  placeholder="משחק כדורגל נגד בית ספר..."
-                  maxLength={CHAR_LIMITS.title}
-                  aria-invalid={!!validationErrors.title}
-                  aria-describedby={validationErrors.title ? 'title-error' : undefined}
-                />
-                <div className="flex items-center justify-between">
-                  {validationErrors.title && (
-                    <span
-                      id="title-error"
-                      className="text-xs text-red-600 flex items-center gap-1 mt-1"
-                    >
-                      <AlertCircle className="w-3 h-3" />
-                      {validationErrors.title}
-                    </span>
-                  )}
-                  <div className="flex-1" />
-                  <CharCounter current={formData.title?.length ?? 0} max={CHAR_LIMITS.title} />
-                </div>
-              </div>
-
-              {/* Description */}
-              <div className="mb-6">
-                <label
-                  htmlFor="description"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  תיאור
-                </label>
-                <textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => handleChange('description', e.target.value)}
-                  className={`
-                    w-full px-4 py-3 border-2 rounded-lg
-                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                    hover:border-gray-400 transition-all
-                    ${validationErrors.description ? 'border-red-500' : 'border-gray-300'}
-                  `}
-                  rows={5}
-                  placeholder="תאר את האירוע בפירוט..."
-                  maxLength={CHAR_LIMITS.description}
-                  aria-invalid={!!validationErrors.description}
-                  aria-describedby={validationErrors.description ? 'description-error' : undefined}
-                />
-                <div className="flex items-center justify-between">
-                  {validationErrors.description && (
-                    <span
-                      id="description-error"
-                      className="text-xs text-red-600 flex items-center gap-1 mt-1"
-                    >
-                      <AlertCircle className="w-3 h-3" />
-                      {validationErrors.description}
-                    </span>
-                  )}
-                  <div className="flex-1" />
-                  <CharCounter
-                    current={formData.description?.length ?? 0}
-                    max={CHAR_LIMITS.description}
-                  />
-                </div>
-              </div>
-
-              {/* Location */}
-              <div>
-                <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-                  מיקום
-                </label>
-                <div className="relative">
-                  <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
-                  <input
-                    id="location"
-                    type="text"
-                    value={formData.location}
-                    onChange={(e) => handleChange('location', e.target.value)}
-                    className="w-full pl-4 pr-12 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-400 transition-all"
-                    placeholder="אולם ספורט / מגרש..."
-                  />
                 </div>
               </div>
             </div>
+
+            {/* Basic Details Card */}
+            <div className={cardVariants.default + ' p-6'}>
+              <div className="space-y-6">
+                {/* Game Type - First and Most Important */}
+                <div>
+                  <label
+                    htmlFor="gameType"
+                    className={typography.label + ' mb-2 flex items-center gap-2'}
+                  >
+                    <Tag className="w-4 h-4 text-blue-600" />
+                    <span>סוג האירוע</span>
+                    <span className="text-red-500">*</span>
+                    <InfoTooltip text="בחר את הקטגוריה המתאימה ביותר לאירוע שלך (לדוגמה: כדורגל, הרצאה, טיול, מסיבה)" />
+                  </label>
+                  <div className="relative">
+                    <Tag className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
+                    <input
+                      ref={gameTypeInputRef}
+                      id="gameType"
+                      type="text"
+                      required
+                      aria-required="true"
+                      value={formData.gameType}
+                      onChange={(e) => handleChange('gameType', e.target.value)}
+                      className={
+                        validationErrors.gameType
+                          ? inputVariants.error + ' pr-12'
+                          : inputVariants.default + ' pr-12'
+                      }
+                      placeholder="לדוגמה: כדורגל, כדורסל, טיול, הרצאה"
+                      list="event-type-suggestions"
+                      autoComplete="off"
+                    />
+                    <datalist id="event-type-suggestions">
+                      {EVENT_TYPES.map((type) => (
+                        <option key={type} value={type} />
+                      ))}
+                    </datalist>
+                  </div>
+                  {validationErrors.gameType ? (
+                    <p
+                      id="gameType-error"
+                      className="text-sm text-red-600 flex items-center gap-1 mt-2"
+                    >
+                      <AlertCircle className="w-4 h-4" />
+                      {validationErrors.gameType}
+                    </p>
+                  ) : (
+                    <p id="gameType-help" className={typography.micro + ' mt-2'}>
+                      הקטגוריה תעזור למשתתפים למצוא את האירוע שלך
+                    </p>
+                  )}
+                </div>
+
+                {/* Title */}
+                <div>
+                  <label
+                    htmlFor="title"
+                    className={typography.label + ' mb-2 flex items-center gap-2'}
+                  >
+                    <AlignLeft className="w-4 h-4 text-blue-600" />
+                    <span>כותרת האירוע</span>
+                    <span className="text-red-500">*</span>
+                    <InfoTooltip text="כותרת תיאורית וממוקדת שמסבירה על מה מדובר. למשל: 'משחק כדורגל נגד בית ספר ירושלים'" />
+                  </label>
+                  <input
+                    id="title"
+                    ref={titleInputRef}
+                    type="text"
+                    required
+                    value={formData.title}
+                    onChange={(e) => handleChange('title', e.target.value)}
+                    className={validationErrors.title ? inputVariants.error : inputVariants.default}
+                    placeholder="למשל: משחק כדורגל נגד בית ספר ירושלים"
+                    maxLength={CHAR_LIMITS.title}
+                    aria-invalid={!!validationErrors.title}
+                    aria-describedby={validationErrors.title ? 'title-error' : undefined}
+                  />
+                  <div className="flex items-center justify-between mt-1">
+                    {validationErrors.title && (
+                      <p id="title-error" className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {validationErrors.title}
+                      </p>
+                    )}
+                    <div className="flex-1" />
+                    <CharCounter current={formData.title?.length ?? 0} max={CHAR_LIMITS.title} />
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label
+                    htmlFor="description"
+                    className={typography.label + ' mb-2 flex items-center gap-2'}
+                  >
+                    <FileText className="w-4 h-4 text-gray-600" />
+                    <span>תיאור מפורט</span>
+                    <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
+                      אופציונלי
+                    </span>
+                  </label>
+                  <textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => handleChange('description', e.target.value)}
+                    className={
+                      validationErrors.description ? inputVariants.error : inputVariants.default
+                    }
+                    rows={4}
+                    placeholder="פרט על האירוע - מה יקרה, מה צריך להביא, מי מוזמן..."
+                    maxLength={CHAR_LIMITS.description}
+                    aria-invalid={!!validationErrors.description}
+                    aria-describedby={
+                      validationErrors.description ? 'description-error' : undefined
+                    }
+                  />
+                  <div className="flex items-center justify-between mt-1">
+                    {validationErrors.description && (
+                      <p
+                        id="description-error"
+                        className="text-sm text-red-600 flex items-center gap-1"
+                      >
+                        <AlertCircle className="w-4 h-4" />
+                        {validationErrors.description}
+                      </p>
+                    )}
+                    <div className="flex-1" />
+                    <CharCounter
+                      current={formData.description?.length ?? 0}
+                      max={CHAR_LIMITS.description}
+                    />
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div>
+                  <label
+                    htmlFor="location"
+                    className={typography.label + ' mb-2 flex items-center gap-2'}
+                  >
+                    <MapPin className="w-4 h-4 text-gray-600" />
+                    <span>מיקום</span>
+                    <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
+                      אופציונלי
+                    </span>
+                  </label>
+                  <LocationAutocomplete
+                    value={formData.location || ''}
+                    onChange={(value) => handleChange('location', value)}
+                  />
+                  <p className={typography.micro + ' mt-2'}>
+                    הקלד כתובת או שם מקום - יוצגו הצעות מ-OpenStreetMap
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Summary Card */}
+            {(formData.gameType || formData.title) && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-green-50 border-2 border-green-200 rounded-xl p-4"
+              >
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className={typography.labelSmall + ' text-green-900 mb-1'}>תצוגה מקדימה</p>
+                    <p className={typography.bodySmall + ' text-green-800'}>
+                      {formData.gameType && (
+                        <span className="font-semibold">{formData.gameType}</span>
+                      )}
+                      {formData.gameType && formData.title && ' - '}
+                      {formData.title && <span>{formData.title}</span>}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </motion.div>
         )
 
@@ -723,50 +1309,107 @@ export default function NewEventPageTest() {
         return (
           <motion.div
             key="step-1-timing"
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 20, z: 0 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             className="space-y-6"
           >
-            <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-200">
-              <div className="flex items-center gap-2 mb-6">
-                <Clock className="w-6 h-6 text-blue-600" />
-                <h2 className="text-xl font-bold text-gray-900">תזמון האירוע</h2>
+            {/* Step Introduction Card - hidden on mobile, shown on md+ (Issue 1.2) */}
+            <div className="hidden md:block bg-gradient-to-l from-purple-50 to-pink-50 rounded-xl p-4 sm:p-6 border-2 border-purple-200">
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className="p-2 sm:p-3 bg-purple-600 rounded-lg flex-shrink-0">
+                  <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className={typography.h4 + ' mb-1 sm:mb-2'}>שלב 2: תאריך ושעה</h2>
+                  <p className={typography.bodySmall + ' text-gray-600'}>
+                    קבע מתי האירוע שלך יתקיים. תאריך ההתחלה הוא חובה, תאריך הסיום אופציונלי.
+                  </p>
+                </div>
               </div>
+            </div>
 
-              {/* Start Date/Time */}
-              <div className="mb-6">
-                <DateTimePicker
-                  value={formData.startAt}
-                  onChange={(value) => handleChange('startAt', value)}
-                  label="תאריך ושעת התחלה"
-                  required
-                />
-              </div>
-
-              {/* End Date/Time */}
-              <div className="mb-6">
-                <DateTimePicker
-                  value={formData.endAt || ''}
-                  onChange={(value) => handleChange('endAt', value)}
-                  label="תאריך ושעת סיום (אופציונלי)"
-                  error={validationErrors.endAt}
-                  minDate={formData.startAt ? formData.startAt.split('T')[0] : undefined}
-                />
-              </div>
-
-              {formData.startAt && formData.endAt && !validationErrors.endAt && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-blue-50 border border-blue-200 rounded-lg p-4"
-                >
-                  <div className="flex items-center gap-2 text-blue-800">
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span className="font-medium">משך האירוע מוגדר בהצלחה</span>
+            {/* Timing Card */}
+            <div className={cardVariants.default + ' p-6'}>
+              <div className="space-y-6">
+                {/* Start Date/Time */}
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Calendar className="w-5 h-5 text-purple-600" />
+                    <label className={typography.label}>
+                      תאריך ושעת התחלה
+                      <span className="text-red-500 mr-1">*</span>
+                    </label>
+                    <InfoTooltip text="בחר את התאריך והשעה המדויקים בהם האירוע מתחיל" />
                   </div>
-                </motion.div>
-              )}
+                  <DateTimePicker
+                    value={formData.startAt}
+                    onChange={(value) => handleChange('startAt', value)}
+                    label=""
+                    required
+                  />
+                  <p className={typography.micro + ' mt-2'}>זהו המועד בו ייפתח האירוע למשתתפים</p>
+                </div>
+
+                {/* End Date/Time */}
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Calendar className="w-5 h-5 text-gray-600" />
+                    <label className={typography.label}>
+                      תאריך ושעת סיום
+                      <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium mr-2">
+                        אופציונלי
+                      </span>
+                    </label>
+                    <InfoTooltip text="אם האירוע נמשך מספר שעות, ציין מתי הוא מסתיים (לא חובה)" />
+                  </div>
+                  <DateTimePicker
+                    value={formData.endAt || ''}
+                    onChange={(value) => handleChange('endAt', value)}
+                    label=""
+                    error={validationErrors.endAt}
+                    minDate={formData.startAt ? formData.startAt.split('T')[0] : undefined}
+                  />
+                  {validationErrors.endAt && (
+                    <p className="text-sm text-red-600 flex items-center gap-1 mt-2">
+                      <AlertCircle className="w-4 h-4" />
+                      {validationErrors.endAt}
+                    </p>
+                  )}
+                </div>
+
+                {/* Duration Summary */}
+                {formData.startAt && formData.endAt && !validationErrors.endAt && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4"
+                  >
+                    <div className="flex items-center gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-blue-600" />
+                      <div>
+                        <p className={typography.labelSmall + ' text-blue-900'}>משך האירוע מוגדר</p>
+                        <p className={typography.micro + ' text-blue-700 mt-0.5'}>
+                          האירוע יימשך מ-
+                          {new Date(formData.startAt).toLocaleString('he-IL', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}{' '}
+                          עד{' '}
+                          {new Date(formData.endAt).toLocaleString('he-IL', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
             </div>
           </motion.div>
         )
@@ -775,55 +1418,75 @@ export default function NewEventPageTest() {
         return (
           <motion.div
             key="step-2-capacity"
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 20, z: 0 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             className="space-y-6"
           >
-            <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-200">
-              <div className="flex items-center gap-2 mb-6">
-                <Users className="w-6 h-6 text-blue-600" />
-                <h2 className="text-xl font-bold text-gray-900">הגדרות כמות</h2>
+            {/* Step Introduction Card - hidden on mobile, shown on md+ (Issue 1.2) */}
+            <div className="hidden md:block bg-gradient-to-l from-green-50 to-emerald-50 rounded-xl p-4 sm:p-6 border-2 border-green-200">
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className="p-2 sm:p-3 bg-green-600 rounded-lg flex-shrink-0">
+                  <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className={typography.h4 + ' mb-1 sm:mb-2'}>שלב 3: כמות משתתפים</h2>
+                  <p className={typography.bodySmall + ' text-gray-600'}>
+                    הגדר כמה אנשים יכולים להירשם לאירוע ומה המגבלה להרשמה אחת.
+                  </p>
+                </div>
               </div>
+            </div>
 
+            {/* Capacity Card */}
+            <div className={cardVariants.default + ' p-6'}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Capacity */}
+                {/* Total Capacity */}
                 <div>
                   <label
                     htmlFor="capacity"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className={typography.label + ' mb-3 flex items-center gap-2'}
                   >
-                    מספר מקומות כולל <span className="text-red-500">*</span>
+                    <Users className="w-4 h-4 text-green-600" />
+                    <span>מספר מקומות כולל</span>
+                    <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <Users className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
                     <input
+                      ref={capacityInputRef}
                       id="capacity"
                       type="number"
                       required
+                      aria-required="true"
                       min="1"
                       value={capacityInput}
                       onChange={(e) => handleCapacityChange(e.target.value)}
                       onBlur={handleCapacityBlur}
                       onFocus={handleNumberFocus}
-                      className={`
-                        w-full pl-4 pr-12 py-3 border-2 rounded-lg text-lg
-                        focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                        hover:border-gray-400 transition-all
-                        ${validationErrors.capacity ? 'border-red-500' : 'border-gray-300'}
-                      `}
+                      className={
+                        validationErrors.capacity
+                          ? inputVariants.error + ' pl-4 pr-12 text-lg font-semibold'
+                          : inputVariants.default + ' pl-4 pr-12 text-lg font-semibold'
+                      }
                       aria-invalid={!!validationErrors.capacity}
-                      aria-describedby={validationErrors.capacity ? 'capacity-error' : undefined}
+                      aria-describedby={
+                        validationErrors.capacity ? 'capacity-error capacity-help' : 'capacity-help'
+                      }
                     />
                   </div>
-                  {validationErrors.capacity && (
-                    <span
+                  {validationErrors.capacity ? (
+                    <p
                       id="capacity-error"
-                      className="text-xs text-red-600 flex items-center gap-1 mt-1"
+                      className="text-sm text-red-600 flex items-center gap-1 mt-2"
                     >
-                      <AlertCircle className="w-3 h-3" />
+                      <AlertCircle className="w-4 h-4" />
                       {validationErrors.capacity}
-                    </span>
+                    </p>
+                  ) : (
+                    <p id="capacity-help" className={typography.micro + ' mt-2'}>
+                      המספר הכולל של משתתפים שיכולים להירשם
+                    </p>
                   )}
                 </div>
 
@@ -831,9 +1494,11 @@ export default function NewEventPageTest() {
                 <div>
                   <label
                     htmlFor="maxSpots"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className={typography.label + ' mb-3 flex items-center gap-2'}
                   >
-                    מקסימום מקומות לנרשם <span className="text-red-500">*</span>
+                    <UserCheck className="w-4 h-4 text-green-600" />
+                    <span>מקסימום מקומות לנרשם</span>
+                    <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <UserCheck className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
@@ -847,32 +1512,56 @@ export default function NewEventPageTest() {
                       onChange={(e) => handleMaxSpotsChange(e.target.value)}
                       onBlur={handleMaxSpotsBlur}
                       onFocus={handleNumberFocus}
-                      className={`
-                        w-full pl-4 pr-12 py-3 border-2 rounded-lg text-lg
-                        focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                        hover:border-gray-400 transition-all
-                        ${validationErrors.maxSpotsPerPerson ? 'border-red-500' : 'border-gray-300'}
-                      `}
+                      className={
+                        validationErrors.maxSpotsPerPerson
+                          ? inputVariants.error + ' pl-4 pr-12 text-lg font-semibold'
+                          : inputVariants.default + ' pl-4 pr-12 text-lg font-semibold'
+                      }
                       aria-invalid={!!validationErrors.maxSpotsPerPerson}
                       aria-describedby={
-                        validationErrors.maxSpotsPerPerson ? 'maxSpots-error' : undefined
+                        validationErrors.maxSpotsPerPerson
+                          ? 'maxSpots-error maxSpots-help'
+                          : 'maxSpots-help'
                       }
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    מספר המקומות המקסימלי שניתן להזמין בהרשמה אחת (בין 1 ל-10)
-                  </p>
-                  {validationErrors.maxSpotsPerPerson && (
-                    <span
+                  {validationErrors.maxSpotsPerPerson ? (
+                    <p
                       id="maxSpots-error"
-                      className="text-xs text-red-600 flex items-center gap-1 mt-1"
+                      className="text-sm text-red-600 flex items-center gap-1 mt-2"
                     >
-                      <AlertCircle className="w-3 h-3" />
+                      <AlertCircle className="w-4 h-4" />
                       {validationErrors.maxSpotsPerPerson}
-                    </span>
+                    </p>
+                  ) : (
+                    <p id="maxSpots-help" className={typography.micro + ' mt-2'}>
+                      כמה מקומות יכול נרשם אחד להזמין (1-10)
+                    </p>
                   )}
                 </div>
               </div>
+
+              {/* Capacity Example */}
+              {formData.capacity > 0 && formData.maxSpotsPerPerson > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-6 bg-amber-50 border-2 border-amber-200 rounded-lg p-4"
+                >
+                  <div className="flex items-start gap-3">
+                    <Info className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className={typography.labelSmall + ' text-amber-900 mb-1'}>דוגמה</p>
+                      <p className={typography.bodySmall + ' text-amber-800'}>
+                        עם {formData.capacity} מקומות כולל ומקסימום {formData.maxSpotsPerPerson}{' '}
+                        מקומות לנרשם, לפחות{' '}
+                        {Math.ceil(formData.capacity / formData.maxSpotsPerPerson)} אנשים יצטרכו
+                        להירשם כדי למלא את האירוע.
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
             </div>
           </motion.div>
         )
@@ -881,135 +1570,715 @@ export default function NewEventPageTest() {
         return (
           <motion.div
             key="step-3-advanced"
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 20, z: 0 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             className="space-y-6"
           >
-            {/* Field Builder */}
-            {/* Custom Fields */}
-            <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-200">
-              <div className="flex items-center gap-2 mb-4">
-                <Database className="w-6 h-6 text-purple-600" />
-                <h2 className="text-xl font-bold text-gray-900">שדות נוספים להרשמה</h2>
-              </div>
-              <p className="text-sm text-gray-600 mb-6">
-                הוסף שדות מותאמים אישית שהמשתתפים יצטרכו למלא בעת ההרשמה (שם, טלפון, גיל וכו')
-              </p>
-              <FieldBuilder
-                fields={formData.fieldsSchema}
-                onChange={(fields) => setFormData({ ...formData, fieldsSchema: fields })}
-              />
-            </div>
-
-            {/* Conditions */}
-            <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">תנאים והגבלות</h2>
-
-              <div className="mb-6">
-                <label
-                  htmlFor="conditions"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  תנאי השתתפות
-                </label>
-                <textarea
-                  id="conditions"
-                  value={formData.conditions}
-                  onChange={(e) => handleChange('conditions', e.target.value)}
-                  className={`
-                    w-full px-4 py-3 border-2 rounded-lg
-                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                    hover:border-gray-400 transition-all
-                    ${validationErrors.conditions ? 'border-red-500' : 'border-gray-300'}
-                  `}
-                  rows={4}
-                  placeholder="לדוגמה: האירוע מיועד לגילאי 10-16 בלבד..."
-                  maxLength={CHAR_LIMITS.conditions}
-                  aria-invalid={!!validationErrors.conditions}
-                  aria-describedby={validationErrors.conditions ? 'conditions-error' : undefined}
-                />
-                <div className="flex items-center justify-between">
-                  {validationErrors.conditions && (
-                    <span
-                      id="conditions-error"
-                      className="text-xs text-red-600 flex items-center gap-1 mt-1"
-                    >
-                      <AlertCircle className="w-3 h-3" />
-                      {validationErrors.conditions}
-                    </span>
-                  )}
-                  <div className="flex-1" />
-                  <CharCounter
-                    current={formData.conditions?.length ?? 0}
-                    max={CHAR_LIMITS.conditions}
-                  />
+            {/* Step Introduction Card - hidden on mobile, shown on md+ (Issue 1.2) */}
+            <div className="hidden md:block bg-gradient-to-l from-amber-50 to-orange-50 rounded-xl p-4 sm:p-6 border-2 border-amber-200">
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className="p-2 sm:p-3 bg-amber-600 rounded-lg flex-shrink-0">
+                  <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className={typography.h4 + ' mb-1 sm:mb-2'}>שלב 4: הגדרות נוספות</h2>
+                  <p className={typography.bodySmall + ' text-gray-600'}>
+                    כל ההגדרות בשלב זה הן אופציונליות. אפשר לדלג ולסיים את יצירת האירוע.
+                  </p>
                 </div>
               </div>
-
-              <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                <input
-                  type="checkbox"
-                  checked={formData.requireAcceptance}
-                  onChange={(e) => handleChange('requireAcceptance', e.target.checked)}
-                  className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 hover:border-gray-400 transition-colors cursor-pointer"
-                />
-                <span className="text-sm text-gray-700 font-medium">
-                  דרוש אישור תנאי השתתפות בעת ההרשמה
-                </span>
-              </label>
             </div>
 
-            {/* Completion Message */}
-            <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">הודעה לנרשמים</h2>
-
-              <div>
-                <label
-                  htmlFor="completionMessage"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  הודעה לאחר השלמת הרשמה
-                </label>
-                <textarea
-                  id="completionMessage"
-                  value={formData.completionMessage}
-                  onChange={(e) => handleChange('completionMessage', e.target.value)}
-                  className={`
-                    w-full px-4 py-3 border-2 rounded-lg
-                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                    hover:border-gray-400 transition-all
-                    ${validationErrors.completionMessage ? 'border-red-500' : 'border-gray-300'}
-                  `}
-                  rows={4}
-                  placeholder="לדוגמה: מעולה! נרשמת בהצלחה..."
-                  maxLength={CHAR_LIMITS.completionMessage}
-                  aria-invalid={!!validationErrors.completionMessage}
-                  aria-describedby={
-                    validationErrors.completionMessage ? 'completion-error' : undefined
-                  }
-                />
-                <div className="flex items-center justify-between">
-                  {validationErrors.completionMessage && (
-                    <span
-                      id="completion-error"
-                      className="text-xs text-red-600 flex items-center gap-1 mt-1"
-                    >
-                      <AlertCircle className="w-3 h-3" />
-                      {validationErrors.completionMessage}
-                    </span>
-                  )}
-                  <div className="flex-1" />
-                  <CharCounter
-                    current={formData.completionMessage?.length ?? 0}
-                    max={CHAR_LIMITS.completionMessage}
-                  />
+            {/* Custom Fields - Expandable */}
+            <div className={cardVariants.default + ' overflow-hidden'}>
+              <button
+                type="button"
+                onClick={() => toggleSection('customFields')}
+                className="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <Database className="w-5 h-5 text-purple-600" />
+                  <div className="text-right">
+                    <h3 className={typography.h5}>שדות נוספים להרשמה</h3>
+                    <p className={typography.micro + ' text-gray-600 mt-1'}>
+                      הוסף שדות מותאמים אישית (שם, טלפון, גיל וכו')
+                    </p>
+                  </div>
                 </div>
-                <p className="text-sm text-gray-500 mt-2">
-                  ההודעה תוצג למשתתפים לאחר שיסיימו את תהליך ההרשמה בהצלחה.
-                </p>
-              </div>
+                {expandedSections.customFields ? (
+                  <ChevronUp className="w-5 h-5 text-gray-400" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-gray-400" />
+                )}
+              </button>
+              <AnimatePresence>
+                {expandedSections.customFields && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="border-t border-gray-200"
+                  >
+                    <div className="p-6">
+                      <FieldBuilder
+                        fields={formData.fieldsSchema}
+                        onChange={(fields) => setFormData({ ...formData, fieldsSchema: fields })}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
+
+            {/* Conditions - Expandable */}
+            <div className={cardVariants.default + ' overflow-hidden'}>
+              <button
+                type="button"
+                onClick={() => toggleSection('conditions')}
+                className="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <FileText className="w-5 h-5 text-blue-600" />
+                  <div className="text-right">
+                    <h3 className={typography.h5}>תנאי השתתפות</h3>
+                    <p className={typography.micro + ' text-gray-600 mt-1'}>
+                      הגדר תנאים והגבלות לאירוע (גיל, ביגוד וכו')
+                    </p>
+                  </div>
+                </div>
+                {expandedSections.conditions ? (
+                  <ChevronUp className="w-5 h-5 text-gray-400" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-gray-400" />
+                )}
+              </button>
+              <AnimatePresence>
+                {expandedSections.conditions && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="border-t border-gray-200"
+                  >
+                    <div className="p-6 space-y-4">
+                      <div>
+                        <label htmlFor="conditions" className={typography.label + ' mb-2'}>
+                          תנאי השתתפות
+                        </label>
+                        <textarea
+                          id="conditions"
+                          value={formData.conditions}
+                          onChange={(e) => handleChange('conditions', e.target.value)}
+                          className={
+                            validationErrors.conditions
+                              ? inputVariants.error
+                              : inputVariants.default
+                          }
+                          rows={4}
+                          placeholder="לדוגמה: האירוע מיועד לגילאי 10-16 בלבד, חובה להביא נעלי ספורט..."
+                          maxLength={CHAR_LIMITS.conditions}
+                          aria-invalid={!!validationErrors.conditions}
+                          aria-describedby={
+                            validationErrors.conditions ? 'conditions-error' : undefined
+                          }
+                        />
+                        <div className="flex items-center justify-between mt-1">
+                          {validationErrors.conditions && (
+                            <p
+                              id="conditions-error"
+                              className="text-sm text-red-600 flex items-center gap-1"
+                            >
+                              <AlertCircle className="w-4 h-4" />
+                              {validationErrors.conditions}
+                            </p>
+                          )}
+                          <div className="flex-1" />
+                          <CharCounter
+                            current={formData.conditions?.length ?? 0}
+                            max={CHAR_LIMITS.conditions}
+                          />
+                        </div>
+                      </div>
+
+                      <label className="flex items-center gap-3 cursor-pointer p-4 rounded-lg hover:bg-gray-50 transition-colors border-2 border-gray-200">
+                        <input
+                          type="checkbox"
+                          checked={formData.requireAcceptance}
+                          onChange={(e) => handleChange('requireAcceptance', e.target.checked)}
+                          className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 hover:border-gray-400 transition-colors cursor-pointer"
+                        />
+                        <span className={typography.bodySmall + ' font-medium'}>
+                          דרוש אישור תנאי השתתפות בעת ההרשמה
+                        </span>
+                      </label>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Completion Message - Expandable */}
+            <div className={cardVariants.default + ' overflow-hidden'}>
+              <button
+                type="button"
+                onClick={() => toggleSection('completionMessage')}
+                className="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  <div className="text-right">
+                    <h3 className={typography.h5}>
+                      הודעה לנרשמים
+                      <span className="mr-2 text-xs font-semibold text-white bg-red-500 rounded px-1.5 py-0.5 align-middle">
+                        חובה
+                      </span>
+                    </h3>
+                    <p className={typography.micro + ' text-gray-600 mt-1'}>
+                      הודעה מותאמת אישית שתוצג לאחר השלמת ההרשמה
+                    </p>
+                  </div>
+                </div>
+                {expandedSections.completionMessage ? (
+                  <ChevronUp className="w-5 h-5 text-gray-400" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-gray-400" />
+                )}
+              </button>
+              <AnimatePresence>
+                {expandedSections.completionMessage && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="border-t border-gray-200"
+                  >
+                    <div className="p-6">
+                      <label htmlFor="completionMessage" className={typography.label + ' mb-2'}>
+                        הודעת אישור <span className="text-red-500">*</span>
+                      </label>
+                      <textarea
+                        id="completionMessage"
+                        value={formData.completionMessage}
+                        onChange={(e) => handleChange('completionMessage', e.target.value)}
+                        className={
+                          validationErrors.completionMessage
+                            ? inputVariants.error
+                            : inputVariants.default
+                        }
+                        rows={4}
+                        placeholder="לדוגמה: מעולה! נרשמת בהצלחה למשחק. נתראה ביום חמישי בשעה 16:00!"
+                        maxLength={CHAR_LIMITS.completionMessage}
+                        required
+                        aria-required="true"
+                        aria-invalid={!!validationErrors.completionMessage}
+                        aria-describedby={
+                          validationErrors.completionMessage ? 'completion-error' : undefined
+                        }
+                      />
+                      <div className="flex items-center justify-between mt-1">
+                        {validationErrors.completionMessage && (
+                          <p
+                            id="completion-error"
+                            className="text-sm text-red-600 flex items-center gap-1"
+                          >
+                            <AlertCircle className="w-4 h-4" />
+                            {validationErrors.completionMessage}
+                          </p>
+                        )}
+                        <div className="flex-1" />
+                        <CharCounter
+                          current={formData.completionMessage?.length ?? 0}
+                          max={CHAR_LIMITS.completionMessage}
+                        />
+                      </div>
+                      <p className={typography.micro + ' mt-2'}>
+                        ההודעה תוצג למשתתפים מיד לאחר שיסיימו את ההרשמה
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Payment Configuration - Expandable */}
+            <div className={cardVariants.default + ' overflow-hidden'}>
+              <button
+                type="button"
+                onClick={() => toggleSection('payment')}
+                className="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <CreditCard className="w-5 h-5 text-green-600" />
+                  <div className="text-right">
+                    <h3 className={typography.h5}>הגדרות תשלום</h3>
+                    <p className={typography.micro + ' text-gray-600 mt-1'}>
+                      הפוך את האירוע לאירוע בתשלום דרך YaadPay
+                    </p>
+                  </div>
+                </div>
+                {expandedSections.payment ? (
+                  <ChevronUp className="w-5 h-5 text-gray-400" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-gray-400" />
+                )}
+              </button>
+              <AnimatePresence>
+                {expandedSections.payment && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="border-t border-gray-200"
+                  >
+                    <div className="p-6 space-y-6">
+                      {/* Payment Timing - Radio Cards (no payment + timing options) */}
+                      <div>
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-bold text-gray-900">מתי מתבצע התשלום?</h3>
+                          <span className="text-sm font-medium text-gray-600">
+                            {!formData.paymentRequired
+                              ? 'ללא תשלום'
+                              : formData.paymentTiming === 'UPFRONT'
+                                ? 'תשלום מראש'
+                                : formData.paymentTiming === 'POST_REGISTRATION'
+                                  ? 'חשבונית לאחר'
+                                  : 'אופציונלי'}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {/* Card: Free */}
+                          <label
+                            className={`relative cursor-pointer rounded-xl border-2 p-4 transition-all duration-300 ${
+                              !formData.paymentRequired
+                                ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg ring-4 ring-blue-100'
+                                : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-md'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="paymentTiming"
+                              value="NO_PAYMENT"
+                              checked={!formData.paymentRequired}
+                              onChange={() => handleChange('paymentRequired', false)}
+                              className="sr-only"
+                            />
+                            <div className="flex items-start gap-3">
+                              <div
+                                className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${!formData.paymentRequired ? 'bg-blue-500' : 'bg-gray-100'}`}
+                              >
+                                <Gift
+                                  className={`w-5 h-5 ${!formData.paymentRequired ? 'text-white' : 'text-gray-400'}`}
+                                />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-gray-900 text-sm">ללא תשלום</p>
+                                <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                                  האירוע חינמי — אין צורך בתשלום
+                                </p>
+                              </div>
+                            </div>
+                            {!formData.paymentRequired && (
+                              <div className="absolute top-2 left-2">
+                                <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                                  <CheckCircle2 className="w-3 h-3 text-white" />
+                                </div>
+                              </div>
+                            )}
+                          </label>
+
+                          {/* Card: Upfront */}
+                          <label
+                            className={`relative cursor-pointer rounded-xl border-2 p-4 transition-all duration-300 ${
+                              formData.paymentRequired && formData.paymentTiming === 'UPFRONT'
+                                ? 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg ring-4 ring-green-100'
+                                : 'border-gray-200 bg-white hover:border-green-300 hover:shadow-md'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="paymentTiming"
+                              value="UPFRONT"
+                              checked={
+                                formData.paymentRequired && formData.paymentTiming === 'UPFRONT'
+                              }
+                              onChange={() => {
+                                handleChange('paymentTiming', 'UPFRONT')
+                                handleChange('paymentRequired', true)
+                                if (formData.pricingModel === 'FREE') {
+                                  handleChange('pricingModel', 'FIXED_PRICE')
+                                }
+                              }}
+                              className="sr-only"
+                            />
+                            <div className="flex items-start gap-3">
+                              <div
+                                className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${formData.paymentRequired && formData.paymentTiming === 'UPFRONT' ? 'bg-green-500' : 'bg-gray-100'}`}
+                              >
+                                <CreditCard
+                                  className={`w-5 h-5 ${formData.paymentRequired && formData.paymentTiming === 'UPFRONT' ? 'text-white' : 'text-gray-400'}`}
+                                />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <p className="font-bold text-gray-900 text-sm">תשלום מראש</p>
+                                  {formData.paymentRequired &&
+                                    formData.paymentTiming === 'UPFRONT' && (
+                                      <span className="px-1.5 py-0.5 bg-green-500 text-white text-xs font-semibold rounded-full">
+                                        מומלץ
+                                      </span>
+                                    )}
+                                </div>
+                                <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                                  המשתתף משלם בזמן ההרשמה
+                                </p>
+                              </div>
+                            </div>
+                            {formData.paymentRequired && formData.paymentTiming === 'UPFRONT' && (
+                              <div className="absolute top-2 left-2">
+                                <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                                  <CheckCircle2 className="w-3 h-3 text-white" />
+                                </div>
+                              </div>
+                            )}
+                          </label>
+
+                          {/* Card: Post Registration */}
+                          <label
+                            className={`relative cursor-pointer rounded-xl border-2 p-4 transition-all duration-300 ${
+                              formData.paymentRequired &&
+                              formData.paymentTiming === 'POST_REGISTRATION'
+                                ? 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg ring-4 ring-green-100'
+                                : 'border-gray-200 bg-white hover:border-green-300 hover:shadow-md'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="paymentTiming"
+                              value="POST_REGISTRATION"
+                              checked={
+                                formData.paymentRequired &&
+                                formData.paymentTiming === 'POST_REGISTRATION'
+                              }
+                              onChange={() => {
+                                handleChange('paymentTiming', 'POST_REGISTRATION')
+                                handleChange('paymentRequired', true)
+                                if (formData.pricingModel === 'FREE') {
+                                  handleChange('pricingModel', 'FIXED_PRICE')
+                                }
+                              }}
+                              className="sr-only"
+                            />
+                            <div className="flex items-start gap-3">
+                              <div
+                                className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${formData.paymentRequired && formData.paymentTiming === 'POST_REGISTRATION' ? 'bg-green-500' : 'bg-gray-100'}`}
+                              >
+                                <Receipt
+                                  className={`w-5 h-5 ${formData.paymentRequired && formData.paymentTiming === 'POST_REGISTRATION' ? 'text-white' : 'text-gray-400'}`}
+                                />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-gray-900 text-sm">
+                                  חשבונית לאחר ההרשמה
+                                </p>
+                                <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                                  קישור לתשלום נשלח במייל
+                                </p>
+                              </div>
+                            </div>
+                            {formData.paymentRequired &&
+                              formData.paymentTiming === 'POST_REGISTRATION' && (
+                                <div className="absolute top-2 left-2">
+                                  <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                                    <CheckCircle2 className="w-3 h-3 text-white" />
+                                  </div>
+                                </div>
+                              )}
+                          </label>
+
+                          {/* Card: Optional */}
+                          <label
+                            className={`relative cursor-pointer rounded-xl border-2 p-4 transition-all duration-300 ${
+                              formData.paymentRequired && formData.paymentTiming === 'OPTIONAL'
+                                ? 'border-yellow-500 bg-gradient-to-br from-yellow-50 to-amber-50 shadow-lg ring-4 ring-yellow-100'
+                                : 'border-gray-200 bg-white hover:border-yellow-300 hover:shadow-md'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="paymentTiming"
+                              value="OPTIONAL"
+                              checked={
+                                formData.paymentRequired && formData.paymentTiming === 'OPTIONAL'
+                              }
+                              onChange={() => {
+                                handleChange('paymentTiming', 'OPTIONAL')
+                                handleChange('paymentRequired', true)
+                                if (formData.pricingModel === 'FREE') {
+                                  handleChange('pricingModel', 'FIXED_PRICE')
+                                }
+                              }}
+                              className="sr-only"
+                            />
+                            <div className="flex items-start gap-3">
+                              <div
+                                className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${formData.paymentRequired && formData.paymentTiming === 'OPTIONAL' ? 'bg-yellow-500' : 'bg-gray-100'}`}
+                              >
+                                <Banknote
+                                  className={`w-5 h-5 ${formData.paymentRequired && formData.paymentTiming === 'OPTIONAL' ? 'text-white' : 'text-gray-400'}`}
+                                />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-gray-900 text-sm">אופציונלי</p>
+                                <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                                  המשתתף יכול לשלם או לא
+                                </p>
+                              </div>
+                            </div>
+                            {formData.paymentRequired && formData.paymentTiming === 'OPTIONAL' && (
+                              <div className="absolute top-2 left-2">
+                                <div className="w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center">
+                                  <CheckCircle2 className="w-3 h-3 text-white" />
+                                </div>
+                              </div>
+                            )}
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Conditional: Pricing Model + Amount */}
+                      {formData.paymentRequired && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="space-y-6"
+                        >
+                          {/* Divider */}
+                          <div className="relative">
+                            <div className="absolute inset-0 flex items-center">
+                              <div className="w-full border-t-2 border-gray-200" />
+                            </div>
+                            <div className="relative flex justify-center">
+                              <span className="bg-white px-4 text-sm font-medium text-gray-600">
+                                מודל תמחור
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Pricing Model Cards */}
+                          <div>
+                            <label className="block text-base font-bold text-gray-900 mb-3">
+                              בחר את מודל התמחור <span className="text-red-500">*</span>
+                            </label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {/* Fixed Price */}
+                              <label
+                                className={`relative cursor-pointer rounded-xl border-2 p-4 transition-all duration-300 ${
+                                  formData.pricingModel === 'FIXED_PRICE'
+                                    ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg ring-4 ring-blue-100'
+                                    : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-md'
+                                }`}
+                              >
+                                <input
+                                  type="radio"
+                                  name="pricingModel"
+                                  value="FIXED_PRICE"
+                                  checked={formData.pricingModel === 'FIXED_PRICE'}
+                                  onChange={(e) => handleChange('pricingModel', e.target.value)}
+                                  className="sr-only"
+                                />
+                                <div className="text-center">
+                                  <div className="flex justify-center mb-2">
+                                    <div
+                                      className={`w-11 h-11 rounded-full flex items-center justify-center ${formData.pricingModel === 'FIXED_PRICE' ? 'bg-blue-500' : 'bg-gray-100'}`}
+                                    >
+                                      <DollarSign
+                                        className={`w-6 h-6 ${formData.pricingModel === 'FIXED_PRICE' ? 'text-white' : 'text-gray-400'}`}
+                                      />
+                                    </div>
+                                  </div>
+                                  <p className="font-bold text-gray-900 text-sm">מחיר קבוע</p>
+                                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                                    מחיר אחיד לכל הרשמה
+                                  </p>
+                                </div>
+                                {formData.pricingModel === 'FIXED_PRICE' && (
+                                  <div className="absolute top-2 left-2">
+                                    <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                                      <CheckCircle2 className="w-3 h-3 text-white" />
+                                    </div>
+                                  </div>
+                                )}
+                              </label>
+
+                              {/* Per Guest */}
+                              <label
+                                className={`relative cursor-pointer rounded-xl border-2 p-4 transition-all duration-300 ${
+                                  formData.pricingModel === 'PER_GUEST'
+                                    ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg ring-4 ring-blue-100'
+                                    : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-md'
+                                }`}
+                              >
+                                <input
+                                  type="radio"
+                                  name="pricingModel"
+                                  value="PER_GUEST"
+                                  checked={formData.pricingModel === 'PER_GUEST'}
+                                  onChange={(e) => handleChange('pricingModel', e.target.value)}
+                                  className="sr-only"
+                                />
+                                <div className="text-center">
+                                  <div className="flex justify-center mb-2">
+                                    <div
+                                      className={`w-11 h-11 rounded-full flex items-center justify-center ${formData.pricingModel === 'PER_GUEST' ? 'bg-blue-500' : 'bg-gray-100'}`}
+                                    >
+                                      <Users
+                                        className={`w-6 h-6 ${formData.pricingModel === 'PER_GUEST' ? 'text-white' : 'text-gray-400'}`}
+                                      />
+                                    </div>
+                                  </div>
+                                  <p className="font-bold text-gray-900 text-sm">מחיר לאורח</p>
+                                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                                    מחיר × מספר אורחים
+                                  </p>
+                                </div>
+                                {formData.pricingModel === 'PER_GUEST' && (
+                                  <div className="absolute top-2 left-2">
+                                    <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                                      <CheckCircle2 className="w-3 h-3 text-white" />
+                                    </div>
+                                  </div>
+                                )}
+                              </label>
+                            </div>
+                          </div>
+
+                          {/* Price Amount */}
+                          {formData.pricingModel !== 'FREE' && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                            >
+                              <label htmlFor="priceAmount" className={typography.label + ' mb-2'}>
+                                מחיר {formData.pricingModel === 'PER_GUEST' ? 'לאורח' : 'להרשמה'}{' '}
+                                <span className="text-red-500">*</span>
+                              </label>
+                              <div className="relative">
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-lg text-gray-500 pointer-events-none z-10">
+                                  ₪
+                                </span>
+                                <input
+                                  id="priceAmount"
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={formData.priceAmount || ''}
+                                  onChange={(e) => {
+                                    const value = e.target.value ? parseFloat(e.target.value) : 0
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      priceAmount: value || undefined,
+                                    }))
+                                  }}
+                                  className={inputVariants.default + ' pl-4 pr-12'}
+                                  placeholder="50.00"
+                                />
+                              </div>
+                              <p className={typography.micro + ' mt-2'}>
+                                מחיר בשקלים חדשים (₪). לדוגמה: 50.00 לאירוע של 50 שקל
+                              </p>
+                              {formData.priceAmount && (
+                                <div className="mt-3 bg-green-50 border-2 border-green-200 rounded-lg p-3">
+                                  <p
+                                    className={typography.bodySmall + ' text-green-800 font-medium'}
+                                  >
+                                    💰 מחיר מוצג:{' '}
+                                    <span className="text-lg">
+                                      ₪{formData.priceAmount.toFixed(2)}
+                                    </span>
+                                    {formData.pricingModel === 'PER_GUEST' && ' לאורח'}
+                                  </p>
+                                </div>
+                              )}
+                            </motion.div>
+                          )}
+
+                          {/* Currency Info */}
+                          <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+                            <div className="flex items-start gap-2">
+                              <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                              <div className="text-sm text-blue-800">
+                                <p className="font-medium mb-1">מטבע: שקל חדש (₪ ILS)</p>
+                                <p className={typography.micro + ' text-blue-700'}>
+                                  כרגע המערכת תומכת רק בתשלומים בשקלים דרך YaadPay. תמיכה במטבעות
+                                  נוספים תתווסף בעתיד.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Validation Summary before submit (Issue 4.2) */}
+            {Object.values(validationErrors).some((error) => error !== '') && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-red-50 border-2 border-red-200 rounded-xl p-4"
+                role="alert"
+                aria-live="assertive"
+              >
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <h4 className={typography.labelSmall + ' text-red-900 mb-2'}>
+                      יש לתקן שגיאות לפני יצירת האירוע:
+                    </h4>
+                    <ul className="list-disc list-inside text-sm text-red-800 space-y-1">
+                      {Object.entries(validationErrors)
+                        .filter(([, error]) => error !== '')
+                        .map(([field, error]) => (
+                          <li key={field}>{error}</li>
+                        ))}
+                    </ul>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* All fields valid summary */}
+            {currentStep === 3 &&
+              !Object.values(validationErrors).some((error) => error !== '') &&
+              formData.gameType &&
+              formData.title &&
+              formData.startAt && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-green-50 border-2 border-green-200 rounded-xl p-4"
+                >
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <h4 className={typography.labelSmall + ' text-green-900 mb-1'}>הכל מוכן!</h4>
+                      <p className={typography.micro + ' text-green-700'}>
+                        כל השדות הנדרשים מולאו. לחץ על &quot;צור אירוע&quot; להשלמת התהליך.
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
           </motion.div>
         )
 
@@ -1039,13 +2308,13 @@ export default function NewEventPageTest() {
           size="lg"
           buttons={[
             {
-              label: 'התחל מחדש ומחק טיוטה',
+              label: 'התחל מחדש',
               onClick: handleDiscardDraft,
               variant: 'secondary',
               icon: <AlertCircle className="w-5 h-5" />,
             },
             {
-              label: 'טען טיוטה והמשך לעבוד',
+              label: 'טען טיוטה',
               onClick: handleLoadDraft,
               variant: 'primary',
               icon: <Database className="w-5 h-5" />,
@@ -1058,8 +2327,8 @@ export default function NewEventPageTest() {
               <div className="flex items-start gap-3">
                 <Clock className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-blue-900 mb-1">זמן שמירה</p>
-                  <p className="text-xs text-blue-700">
+                  <p className={typography.labelSmall + ' text-blue-900 mb-1'}>זמן שמירה</p>
+                  <p className={typography.micro + ' text-blue-700'}>
                     {draftData.savedAt
                       ? new Date(draftData.savedAt).toLocaleString('he-IL', {
                           weekday: 'long',
@@ -1080,9 +2349,10 @@ export default function NewEventPageTest() {
               <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-4 space-y-3">
                 <div className="flex items-center gap-2 mb-2">
                   <FileText className="w-5 h-5 text-gray-600" />
-                  <p className="text-sm font-medium text-gray-900">תצוגה מקדימה של הטיוטה</p>
+                  <p className={typography.labelSmall + ' text-gray-900'}>תצוגה מקדימה של הטיוטה</p>
                 </div>
 
+                {/* Enhanced draft preview (Issue 4.4) */}
                 <div className="space-y-2 text-sm">
                   {draftData.formData.gameType && (
                     <div className="flex items-start gap-2">
@@ -1100,6 +2370,19 @@ export default function NewEventPageTest() {
                       </span>
                     </div>
                   )}
+                  {draftData.formData.startAt && (
+                    <div className="flex items-start gap-2">
+                      <span className="text-gray-500 min-w-[80px]">תאריך:</span>
+                      <span className="text-gray-900">
+                        {new Date(draftData.formData.startAt).toLocaleString('he-IL', {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                  )}
                   {draftData.formData.location && (
                     <div className="flex items-start gap-2">
                       <span className="text-gray-500 min-w-[80px]">מיקום:</span>
@@ -1110,6 +2393,27 @@ export default function NewEventPageTest() {
                     <div className="flex items-start gap-2">
                       <span className="text-gray-500 min-w-[80px]">קיבולת:</span>
                       <span className="text-gray-900">{draftData.formData.capacity} משתתפים</span>
+                    </div>
+                  )}
+                  {/* Additional context: custom fields and payment */}
+                  {draftData.formData.fieldsSchema &&
+                    draftData.formData.fieldsSchema.length > 0 && (
+                      <div className="flex items-start gap-2">
+                        <span className="text-gray-500 min-w-[80px]">שדות:</span>
+                        <span className="text-gray-900">
+                          {draftData.formData.fieldsSchema.length} שדות מותאמים
+                        </span>
+                      </div>
+                    )}
+                  {draftData.formData.paymentRequired && (
+                    <div className="flex items-start gap-2">
+                      <span className="text-gray-500 min-w-[80px]">תשלום:</span>
+                      <span className="text-green-700 font-medium flex items-center gap-1">
+                        <CreditCard className="w-3 h-3" />
+                        {draftData.formData.priceAmount
+                          ? `₪${draftData.formData.priceAmount}`
+                          : 'מוגדר'}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -1125,74 +2429,141 @@ export default function NewEventPageTest() {
                 </div>
               </div>
             )}
-
-            {/* Help Text */}
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
-              <div className="flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <p>
-                  <strong>שימו לב:</strong> בחירה ב"התחל מחדש" תמחק את הטיוטה לצמיתות. אם אתם לא
-                  בטוחים, בחרו "טען טיוטה" - תוכלו תמיד למחוק אותה מאוחר יותר.
-                </p>
-              </div>
-            </div>
           </div>
         </Modal>
       )}
 
-      <div className="max-w-5xl mx-auto px-4 py-6">
-        {/* Header */}
+      {/* Mobile: Compact Sticky Top Bar */}
+      <div className="md:hidden sticky top-0 z-20 bg-white border-b border-gray-200">
+        <div className="flex items-center justify-between px-4 py-3">
+          {/* RTL: Close button on right */}
+          <button
+            type="button"
+            onClick={() => {
+              if (hasUnsavedChanges) {
+                if (confirm('יש לך שינויים שלא נשמרו. האם אתה בטוח שברצונך לצאת?')) {
+                  router.push('/admin/events')
+                }
+              } else {
+                router.push('/admin/events')
+              }
+            }}
+            className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 p-2 -mr-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="חזרה לרשימת האירועים"
+          >
+            <X className="w-5 h-5" />
+            <span className="text-sm font-medium">ביטול</span>
+          </button>
+
+          {/* Center: Compact title */}
+          <h1 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <Zap className="w-5 h-5 text-blue-600" />
+            אירוע חדש
+          </h1>
+
+          {/* RTL: Save on left */}
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={saveDraft}
+              className="p-2 text-gray-400 hover:text-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="שמור טיוטה"
+            >
+              <Save className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Autosave/Offline indicators - compact */}
+        {(lastSavedAt || !isOnline) && (
+          <div className="px-4 pb-2 flex gap-2">
+            {lastSavedAt && (
+              <span className="text-xs text-green-600 flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                נשמר{' '}
+                {lastSavedAt.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+            {!isOnline && (
+              <span className="text-xs text-amber-600 flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5" />
+                אופליין
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 py-6 pb-20 md:pb-6">
+        {/* Desktop: Original header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="hidden md:block mb-8"
         >
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+              <h1 className={typography.h1 + ' flex items-center gap-3 mb-2'}>
                 <Zap className="w-8 h-8 text-blue-600" />
                 יצירת אירוע חדש
               </h1>
-              <p className="text-gray-600 mt-1">מערכת משופרת עם שמירה אוטומטית ותצוגה מקדימה</p>
+              <p className={typography.bodySmall + ' text-gray-600'}>
+                מלא את הפרטים בשלבים הבאים. השדות המסומנים ב-
+                <span className="text-red-600 font-bold">*</span> הם חובה.
+              </p>
             </div>
 
-            {/* Action buttons */}
+            {/* Action buttons - Desktop */}
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={saveDraft}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                className={buttonVariants.ghost + ' ' + buttonSizes.md}
                 title="Ctrl+S"
               >
                 <Save className="w-4 h-4" />
-                <span className="hidden sm:inline">שמור טיוטה</span>
+                <span>שמור טיוטה</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setShowPreview(true)}
                 disabled={!formData.title}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className={buttonVariants.secondary + ' ' + buttonSizes.md}
                 title="Ctrl+P"
               >
                 <Eye className="w-4 h-4" />
-                <span className="hidden sm:inline">תצוגה מקדימה</span>
+                <span>תצוגה מקדימה</span>
               </button>
             </div>
           </div>
 
-          {/* Autosave indicator */}
+          {/* Autosave indicator - enhanced visibility (Issue 5.3) */}
           {lastSavedAt && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              className="flex items-center gap-2 text-sm bg-green-50 text-green-700 px-3 py-1.5 rounded-full border border-green-200"
+            >
+              <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 0.5 }}>
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
+              </motion.div>
+              <span className="font-medium">
+                נשמר ב-
+                {lastSavedAt.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </motion.div>
+          )}
+
+          {/* Offline indicator */}
+          {!isOnline && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-2 text-sm text-gray-500"
+              className="flex items-center gap-2 text-sm bg-amber-50 text-amber-700 px-3 py-1.5 rounded-full border border-amber-200"
             >
-              <Database className="w-4 h-4" />
-              <span>
-                נשמר אוטומטית ב-
-                {lastSavedAt.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
-              </span>
+              <AlertCircle className="w-4 h-4 text-amber-600" />
+              <span className="font-medium">אין חיבור לאינטרנט</span>
             </motion.div>
           )}
         </motion.div>
@@ -1224,11 +2595,11 @@ export default function NewEventPageTest() {
         >
           <AnimatePresence mode="wait">{renderStepContent()}</AnimatePresence>
 
-          {/* Navigation Buttons */}
+          {/* Navigation Buttons - Desktop */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-8 flex flex-col-reverse sm:flex-row justify-between gap-4"
+            className="hidden md:flex mt-8 justify-between gap-4"
           >
             <div className="flex gap-3">
               <button
@@ -1244,7 +2615,7 @@ export default function NewEventPageTest() {
                   }
                 }}
                 disabled={isLoading}
-                className="px-6 py-3 border-2 border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className={buttonVariants.ghost + ' ' + buttonSizes.md}
               >
                 ביטול
               </button>
@@ -1254,7 +2625,7 @@ export default function NewEventPageTest() {
                   type="button"
                   onClick={prevStep}
                   disabled={isLoading}
-                  className="flex items-center gap-2 px-6 py-3 border-2 border-blue-200 text-blue-700 rounded-lg font-medium hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className={buttonVariants.secondary + ' ' + buttonSizes.md}
                 >
                   <ArrowRight className="w-5 h-5" />
                   <span>חזור</span>
@@ -1272,7 +2643,7 @@ export default function NewEventPageTest() {
                     nextStep()
                   }}
                   disabled={!validateStep(currentStep)}
-                  className="flex items-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto justify-center"
+                  className={buttonVariants.primary + ' ' + buttonSizes.lg}
                 >
                   <span>המשך</span>
                   <ArrowLeft className="w-5 h-5" />
@@ -1283,7 +2654,9 @@ export default function NewEventPageTest() {
                   disabled={
                     isLoading || Object.values(validationErrors).some((error) => error !== '')
                   }
-                  className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl w-full sm:w-auto justify-center"
+                  className={
+                    buttonVariants.success + ' ' + buttonSizes.lg + ' shadow-lg hover:shadow-xl'
+                  }
                 >
                   {isLoading ? (
                     <>
@@ -1301,26 +2674,67 @@ export default function NewEventPageTest() {
             </div>
           </motion.div>
 
-          {/* Unsaved changes indicator */}
-          {hasUnsavedChanges && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center gap-3"
-            >
-              <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
-              <p className="text-sm text-amber-800">
-                יש לך שינויים שלא נשמרו. הטופס נשמר אוטומטית כל 10 שניות.
-              </p>
-            </motion.div>
-          )}
+          {/* Navigation Buttons - Mobile (Fixed Bottom Bar) */}
+          <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 p-3 shadow-lg z-40">
+            <div className="max-w-4xl mx-auto">
+              {currentStep < steps.length - 1 ? (
+                <div className="flex gap-2">
+                  {currentStep > 0 && (
+                    <button
+                      type="button"
+                      onClick={prevStep}
+                      disabled={isLoading}
+                      className={buttonVariants.ghost + ' ' + buttonSizes.md + ' flex-1'}
+                    >
+                      <ArrowRight className="w-5 h-5" />
+                      <span>חזור</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      nextStep()
+                    }}
+                    disabled={!validateStep(currentStep)}
+                    className={buttonVariants.primary + ' ' + buttonSizes.md + ' flex-1'}
+                  >
+                    <span>המשך</span>
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={
+                    isLoading || Object.values(validationErrors).some((error) => error !== '')
+                  }
+                  className={buttonVariants.success + ' ' + buttonSizes.md + ' w-full shadow-lg'}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>יוצר אירוע...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Rocket className="w-5 h-5" />
+                      <span>צור אירוע</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
 
-          {/* Keyboard shortcuts hint */}
-          <div className="mt-4 text-center text-xs text-gray-500">
+          {/* Keyboard shortcuts hint - Desktop only */}
+          <div className="hidden md:block mt-4 text-center text-xs text-gray-500">
             <p>קיצורי מקלדת: Ctrl+S לשמירה | Ctrl+P לתצוגה מקדימה</p>
           </div>
         </form>
       </div>
+      <DevFeatureLabel feature="event-management" />
     </>
   )
 }

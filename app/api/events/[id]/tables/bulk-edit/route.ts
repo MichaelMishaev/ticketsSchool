@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger-v2'
 
 // PATCH /api/events/[id]/tables/bulk-edit - Edit multiple tables at once
 export async function PATCH(
@@ -136,7 +137,7 @@ export async function PATCH(
       count: result.count
     })
   } catch (error) {
-    console.error('Failed to bulk edit tables:', error)
+    logger.error('Failed to bulk edit tables', { source: 'tables', error })
     return NextResponse.json(
       { error: 'Failed to bulk edit tables' },
       { status: 500 }

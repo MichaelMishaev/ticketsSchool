@@ -23,6 +23,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { OAuth2Client } from 'google-auth-library'
 import { prisma } from '@/lib/prisma'
 import { AuthSession, SESSION_COOKIE_NAME, encodeSession } from '@/lib/auth.server'
+import { randomUUID } from 'crypto'
+import { authLogger } from '@/lib/logger-v2'
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
@@ -39,12 +41,12 @@ export async function GET(request: NextRequest) {
 
     // Check for OAuth errors
     if (error) {
-      console.error('[Google OAuth Callback] OAuth error:', error)
+      authLogger.error('Google OAuth error', { error })
       return NextResponse.redirect(new URL('/admin/login?error=oauth_cancelled', BASE_URL))
     }
 
     if (!code || !state) {
-      console.error('[Google OAuth Callback] Missing code or state')
+      authLogger.error('Google OAuth missing code or state')
       return NextResponse.redirect(new URL('/admin/login?error=oauth_invalid', BASE_URL))
     }
 
@@ -54,38 +56,46 @@ export async function GET(request: NextRequest) {
     })
 
     if (!storedOAuthState) {
-      console.error('[Google OAuth Callback] State not found in database')
+      authLogger.error('Google OAuth state not found in database', { state })
       return NextResponse.redirect(new URL('/admin/login?error=oauth_state_mismatch', BASE_URL))
+    }
+
+    if (!storedOAuthState.codeVerifier) {
+      authLogger.error('Google OAuth code verifier not found in state', { stateId: storedOAuthState.id })
+      await prisma.oAuthState.delete({ where: { id: storedOAuthState.id } })
+      return NextResponse.redirect(new URL('/admin/login?error=oauth_invalid_state', BASE_URL))
     }
 
     // Check if state has expired
     if (storedOAuthState.expiresAt < new Date()) {
-      console.error('[Google OAuth Callback] State expired')
+      authLogger.error('Google OAuth state expired', { stateId: storedOAuthState.id })
       await prisma.oAuthState.delete({ where: { id: storedOAuthState.id } })
       return NextResponse.redirect(new URL('/admin/login?error=oauth_state_expired', BASE_URL))
     }
+
+    // Store code_verifier before deleting state
+    const codeVerifier = storedOAuthState.codeVerifier
 
     // Delete the state now that we've verified it (one-time use)
     await prisma.oAuthState.delete({ where: { id: storedOAuthState.id } })
 
     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
-      console.error('[Google OAuth Callback] Missing Google OAuth credentials')
+      authLogger.error('Missing Google OAuth credentials')
       return NextResponse.redirect(new URL('/admin/login?error=oauth_not_configured', BASE_URL))
     }
 
-    const oauth2Client = new OAuth2Client(
-      GOOGLE_CLIENT_ID,
-      GOOGLE_CLIENT_SECRET,
-      REDIRECT_URI
-    )
+    const oauth2Client = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, REDIRECT_URI)
 
-    // Exchange authorization code for tokens
-    console.log('[Google OAuth Callback] Exchanging code for tokens')
-    const { tokens } = await oauth2Client.getToken(code)
+    // Exchange authorization code for tokens WITH code_verifier (PKCE)
+    authLogger.debug('Exchanging code for tokens with PKCE verification')
+    const { tokens } = await oauth2Client.getToken({
+      code,
+      codeVerifier, // PKCE verification
+    })
     oauth2Client.setCredentials(tokens)
 
     // Get user info from Google
-    console.log('[Google OAuth Callback] Fetching user info')
+    authLogger.debug('Fetching user info from Google')
     const ticket = await oauth2Client.verifyIdToken({
       idToken: tokens.id_token!,
       audience: GOOGLE_CLIENT_ID,
@@ -93,7 +103,7 @@ export async function GET(request: NextRequest) {
     const payload = ticket.getPayload()
 
     if (!payload || !payload.email) {
-      console.error('[Google OAuth Callback] No email in payload')
+      authLogger.error('No email in Google OAuth payload')
       return NextResponse.redirect(new URL('/admin/login?error=oauth_no_email', BASE_URL))
     }
 
@@ -102,7 +112,7 @@ export async function GET(request: NextRequest) {
     const name = payload.name || email.split('@')[0]
     const emailVerified = payload.email_verified || false
 
-    console.log('[Google OAuth Callback] User info:', { googleId, email, name, emailVerified })
+    authLogger.debug('Google OAuth user info received', { googleId, email, name, emailVerified })
 
     // Check if user exists by googleId
     let admin = await prisma.admin.findUnique({
@@ -117,7 +127,7 @@ export async function GET(request: NextRequest) {
         data: { lastLoginAt: new Date() },
         include: { school: true },
       })
-      console.log('[Google OAuth Callback] Existing Google user logged in')
+      authLogger.info('Existing Google user logged in', { adminId: admin.id, email })
     } else {
       // Check if email already exists with password account
       const existingEmailUser = await prisma.admin.findUnique({
@@ -126,7 +136,10 @@ export async function GET(request: NextRequest) {
 
       if (existingEmailUser && existingEmailUser.passwordHash) {
         // Security: Email exists with password - don't auto-link
-        console.error('[Google OAuth Callback] Email exists with password account - blocking auto-link')
+        authLogger.warn('Email exists with password account - blocking auto-link', {
+          email,
+          existingAdminId: existingEmailUser.id,
+        })
         return NextResponse.redirect(
           new URL('/admin/login?error=email_exists_with_password', BASE_URL)
         )
@@ -135,7 +148,7 @@ export async function GET(request: NextRequest) {
       // Safe to create new user or link to OAuth-only account
       if (existingEmailUser && !existingEmailUser.passwordHash) {
         // OAuth-only account with same email - link Google ID
-        console.log('[Google OAuth Callback] Linking Google to OAuth-only account')
+        authLogger.info('Linking Google to OAuth-only account', { email, adminId: existingEmailUser.id })
         admin = await prisma.admin.update({
           where: { id: existingEmailUser.id },
           data: {
@@ -147,7 +160,7 @@ export async function GET(request: NextRequest) {
         })
       } else {
         // Create new user
-        console.log('[Google OAuth Callback] Creating new user')
+        authLogger.info('Creating new user via Google OAuth', { email, googleId })
         admin = await prisma.admin.create({
           data: {
             email,
@@ -162,7 +175,7 @@ export async function GET(request: NextRequest) {
           },
           include: { school: true },
         })
-        console.log('[Google OAuth Callback] New user created')
+        authLogger.info('New user created via Google OAuth', { adminId: admin.id, email })
       }
     }
 
@@ -177,11 +190,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Determine redirect URL based on onboarding status
-    const redirectUrl = (!admin.onboardingCompleted || !admin.schoolId)
-      ? new URL('/admin/onboarding', BASE_URL)
-      : new URL('/admin', BASE_URL)
+    const redirectUrl =
+      !admin.onboardingCompleted || !admin.schoolId
+        ? new URL('/admin/onboarding', BASE_URL)
+        : new URL('/admin', BASE_URL)
 
-    console.log('[Google OAuth Callback] Redirecting to:', redirectUrl.pathname)
+    authLogger.debug('Google OAuth redirecting', { path: redirectUrl.pathname, adminId: admin.id })
 
     // Create redirect response with cookies
     const response = NextResponse.redirect(redirectUrl)
@@ -206,15 +220,14 @@ export async function GET(request: NextRequest) {
 
     return response
   } catch (error) {
-    // Enhanced error logging for debugging
-    console.error('[Google OAuth Callback] Error:', error)
-    console.error('[Google OAuth Callback] Error type:', error instanceof Error ? error.constructor.name : typeof error)
-    console.error('[Google OAuth Callback] Error message:', error instanceof Error ? error.message : String(error))
-    console.error('[Google OAuth Callback] Error stack:', error instanceof Error ? error.stack : 'No stack trace')
+    // Log full error details server-side only
+    const requestId = randomUUID()
+    authLogger.error('Google OAuth callback failed', {
+      error,
+      requestId,
+    })
 
-    // Include error details in redirect for debugging (remove in production after fixing)
-    const errorMessage = error instanceof Error ? error.message : 'unknown_error'
-    const encodedError = encodeURIComponent(errorMessage.substring(0, 100))
-    return NextResponse.redirect(new URL(`/admin/login?error=oauth_failed&details=${encodedError}`, BASE_URL))
+    // Return generic error to client (no internal details exposed)
+    return NextResponse.redirect(new URL(`/admin/login?error=oauth_failed`, BASE_URL))
   }
 }

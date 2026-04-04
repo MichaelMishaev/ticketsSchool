@@ -3,6 +3,7 @@
 ## 📦 What's Included
 
 The Modal system includes:
+
 - **`Modal`** - Main customizable modal component
 - **`ConfirmModal`** - Quick confirmation dialogs
 - **`AlertModal`** - Simple alert messages
@@ -79,6 +80,7 @@ function MyComponent() {
 ```
 
 **Result:**
+
 - ❌ Red error-themed modal
 - 🔴 "מחק" button (danger variant)
 - ⚪ "ביטול" button (secondary variant)
@@ -257,31 +259,31 @@ function SettingsModal() {
 
 ### Modal Component
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `isOpen` | `boolean` | - | **Required.** Controls modal visibility |
-| `onClose` | `() => void` | - | **Required.** Called when modal closes |
-| `title` | `string` | - | **Required.** Modal title |
-| `description` | `string` | - | Optional subtitle |
-| `type` | `'info' \| 'success' \| 'warning' \| 'error' \| 'custom'` | `'custom'` | Preset styling |
-| `icon` | `React.ReactNode` | - | Custom icon (overrides type icon) |
-| `children` | `React.ReactNode` | - | Modal content |
-| `buttons` | `ModalButton[]` | `[]` | Array of action buttons |
-| `showCloseButton` | `boolean` | `true` | Show X button in header |
-| `closeOnBackdropClick` | `boolean` | `true` | Close when clicking outside |
-| `closeOnEsc` | `boolean` | `true` | Close on Escape key |
-| `size` | `'sm' \| 'md' \| 'lg' \| 'xl'` | `'md'` | Modal width |
-| `headerGradient` | `string` | - | Custom header gradient (Tailwind classes) |
+| Prop                   | Type                                                      | Default    | Description                               |
+| ---------------------- | --------------------------------------------------------- | ---------- | ----------------------------------------- |
+| `isOpen`               | `boolean`                                                 | -          | **Required.** Controls modal visibility   |
+| `onClose`              | `() => void`                                              | -          | **Required.** Called when modal closes    |
+| `title`                | `string`                                                  | -          | **Required.** Modal title                 |
+| `description`          | `string`                                                  | -          | Optional subtitle                         |
+| `type`                 | `'info' \| 'success' \| 'warning' \| 'error' \| 'custom'` | `'custom'` | Preset styling                            |
+| `icon`                 | `React.ReactNode`                                         | -          | Custom icon (overrides type icon)         |
+| `children`             | `React.ReactNode`                                         | -          | Modal content                             |
+| `buttons`              | `ModalButton[]`                                           | `[]`       | Array of action buttons                   |
+| `showCloseButton`      | `boolean`                                                 | `true`     | Show X button in header                   |
+| `closeOnBackdropClick` | `boolean`                                                 | `true`     | Close when clicking outside               |
+| `closeOnEsc`           | `boolean`                                                 | `true`     | Close on Escape key                       |
+| `size`                 | `'sm' \| 'md' \| 'lg' \| 'xl'`                            | `'md'`     | Modal width                               |
+| `headerGradient`       | `string`                                                  | -          | Custom header gradient (Tailwind classes) |
 
 ### ModalButton Interface
 
 ```typescript
 interface ModalButton {
-  label: string                  // Button text
-  onClick: () => void            // Click handler
+  label: string // Button text
+  onClick: () => void // Click handler
   variant?: 'primary' | 'secondary' | 'danger' | 'success'
-  icon?: React.ReactNode         // Optional icon
-  disabled?: boolean             // Disable button
+  icon?: React.ReactNode // Optional icon
+  disabled?: boolean // Disable button
 }
 ```
 
@@ -292,26 +294,31 @@ interface ModalButton {
 Each `type` comes with predefined styling:
 
 ### `info` (Blue)
+
 - 🔵 Blue gradient header
 - ℹ️ Info icon
 - Use for: General information, help messages
 
 ### `success` (Green)
+
 - 🟢 Green gradient header
 - ✅ Checkmark icon
 - Use for: Success confirmations, completed actions
 
 ### `warning` (Amber)
+
 - 🟡 Amber gradient header
 - ⚠️ Warning icon
 - Use for: Caution messages, important notices
 
 ### `error` (Red)
+
 - 🔴 Red gradient header
 - ❌ Error icon
 - Use for: Destructive actions, critical errors
 
 ### `custom` (Purple/Blue)
+
 - 🟣 Blue-purple gradient
 - No default icon
 - Use for: Custom scenarios with your own icon
@@ -362,6 +369,7 @@ The Modal component is **fully responsive**:
 ## 🎯 Common Use Cases
 
 ### 1. Delete Confirmation
+
 ```tsx
 <ConfirmModal
   isOpen={showDelete}
@@ -376,6 +384,7 @@ The Modal component is **fully responsive**:
 ```
 
 ### 2. Success Message
+
 ```tsx
 <AlertModal
   isOpen={showSuccess}
@@ -388,6 +397,7 @@ The Modal component is **fully responsive**:
 ```
 
 ### 3. Unsaved Changes Warning
+
 ```tsx
 <ConfirmModal
   isOpen={showUnsaved}
@@ -402,6 +412,7 @@ The Modal component is **fully responsive**:
 ```
 
 ### 4. Draft Recovery (Complex Example)
+
 See `/app/admin/events/new-test/page.tsx` lines 868-973 for full implementation.
 
 ---

@@ -57,6 +57,28 @@ if [ -n "$DATABASE_URL" ]; then
         # Use local Prisma binary (already installed in node_modules)
         echo "📥 Using Prisma from node_modules..."
 
+        # Check if _prisma_migrations table exists (required for migrate deploy)
+        echo "🔍 Checking for _prisma_migrations table..."
+        MIGRATIONS_TABLE_EXISTS=$(psql "$DATABASE_URL" -tAc "SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_name = '_prisma_migrations');" 2>/dev/null || echo "f")
+
+        if [ "$MIGRATIONS_TABLE_EXISTS" = "f" ]; then
+            echo "⚠️  No _prisma_migrations table found - creating baseline..."
+            if [ -f "scripts/baseline-migrations.sql" ]; then
+                echo "📋 Running baseline script to create migration history..."
+                if psql "$DATABASE_URL" -f scripts/baseline-migrations.sql 2>&1; then
+                    echo "✅ Baseline created successfully!"
+                    echo "   All existing migrations marked as applied."
+                    echo "   Only new migrations will run."
+                else
+                    echo "⚠️  Baseline script had warnings (continuing anyway)"
+                fi
+            else
+                echo "❌ Baseline script not found at scripts/baseline-migrations.sql"
+            fi
+        else
+            echo "✅ _prisma_migrations table exists"
+        fi
+
         # Try to run migrations (capture exit code properly)
         set +e  # Temporarily disable exit on error
         node_modules/.bin/prisma migrate deploy

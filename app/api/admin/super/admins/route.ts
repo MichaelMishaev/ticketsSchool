@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSuperAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
+import { randomUUID } from 'crypto'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * GET /api/admin/super/admins
@@ -40,7 +42,7 @@ export async function GET() {
 
     return NextResponse.json({ admins: formattedAdmins })
   } catch (error) {
-    console.error('Get admins error:', error)
+    logger.error('Get admins error', { source: 'super-admin', error })
 
     if (error instanceof Error && error.message.includes('Super admin required')) {
       return NextResponse.json({ error: 'Forbidden: Super admin access required' }, { status: 403 })
@@ -64,7 +66,7 @@ export async function DELETE(request: NextRequest) {
     try {
       body = await request.json()
     } catch (parseError) {
-      console.error('Failed to parse request body:', parseError)
+      logger.error('Failed to parse request body', { source: 'super-admin', error: parseError })
       return NextResponse.json({ error: 'Invalid request body. Expected JSON.' }, { status: 400 })
     }
 
@@ -153,19 +155,21 @@ export async function DELETE(request: NextRequest) {
       ...deletionResult,
     })
   } catch (error) {
-    console.error('Delete admin error:', error)
-
-    // Log more details for debugging
-    if (error instanceof Error) {
-      console.error('Error message:', error.message)
-      console.error('Error stack:', error.stack)
-    }
+    // Log full error details server-side only
+    const requestId = randomUUID()
+    logger.error('Delete admin error', {
+      source: 'super-admin',
+      requestId,
+      error,
+      errorMessage: error instanceof Error ? error.message : undefined,
+      errorStack: error instanceof Error ? error.stack : undefined,
+    })
 
     if (error instanceof Error && error.message.includes('Super admin required')) {
       return NextResponse.json({ error: 'Forbidden: Super admin access required' }, { status: 403 })
     }
 
-    // Handle Prisma errors
+    // Handle Prisma errors (return generic messages, log details server-side)
     if (error instanceof Error) {
       // Check for foreign key constraint errors
       if (
@@ -175,6 +179,8 @@ export async function DELETE(request: NextRequest) {
         return NextResponse.json(
           {
             error: 'Cannot delete admin: There are still references to this admin in the database',
+            requestId,
+            timestamp: new Date().toISOString(),
           },
           { status: 400 }
         )
@@ -182,14 +188,23 @@ export async function DELETE(request: NextRequest) {
 
       // Check for record not found errors
       if (error.message.includes('Record to delete does not exist')) {
-        return NextResponse.json({ error: 'Admin not found' }, { status: 404 })
+        return NextResponse.json(
+          {
+            error: 'Admin not found',
+            requestId,
+            timestamp: new Date().toISOString(),
+          },
+          { status: 404 }
+        )
       }
     }
 
+    // Return generic error to client (no internal details exposed)
     return NextResponse.json(
       {
         error: 'Failed to delete admin',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        requestId, // For support tracking only
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     )

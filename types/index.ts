@@ -23,6 +23,13 @@ export interface EventFormData {
   conditions?: string
   requireAcceptance: boolean
   completionMessage?: string
+  coverImage?: string | null
+  // Payment settings (Tier 2: Event Ticketing - YaadPay)
+  paymentRequired: boolean
+  paymentTiming: 'OPTIONAL' | 'UPFRONT' | 'POST_REGISTRATION'
+  pricingModel: 'FIXED_PRICE' | 'PER_GUEST' | 'FREE'
+  priceAmount?: number
+  currency: string
 }
 
 export interface RegistrationFormData {

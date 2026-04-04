@@ -7,6 +7,7 @@ Complete guide for implementing the remaining ~715 tests from the 780 scenario t
 ### ✅ What's Been Built
 
 **1. Complete Test Infrastructure** (100% DONE)
+
 - ✅ Data Builders (`fixtures/test-data.ts`)
   - SchoolBuilder, AdminBuilder, EventBuilder, RegistrationBuilder
   - Fluent API for creating test data
@@ -24,6 +25,7 @@ Complete guide for implementing the remaining ~715 tests from the 780 scenario t
   - Israeli format validators
 
 **2. Working P0 Critical Tests** (65 tests DONE)
+
 - ✅ Authentication & Authorization (20 tests)
 - ✅ Multi-Tenancy & Security (25 tests)
 - ✅ Public Registration Flow (20 tests)
@@ -31,6 +33,7 @@ Complete guide for implementing the remaining ~715 tests from the 780 scenario t
 ### 🚧 What Needs to Be Done
 
 **P0 Critical** (~180 tests remaining):
+
 - Event Management P0: ~28 tests
 - Admin Registration Management P0: ~32 tests
 - School Management P0: ~22 tests
@@ -39,6 +42,7 @@ Complete guide for implementing the remaining ~715 tests from the 780 scenario t
 - Performance P0: ~30 tests
 
 **P1-P3** (~535 tests):
+
 - P1 High Priority: 337 tests
 - P2 Medium Priority: 146 tests
 - P3 Low Priority: 22 tests
@@ -50,11 +54,13 @@ Complete guide for implementing the remaining ~715 tests from the 780 scenario t
 ### Phase 1: Complete P0 Critical Tests (Next 6 Files)
 
 #### Test File 1: Event Management P0
+
 **File**: `tests/suites/03-event-management-p0.spec.ts`
 **Reference**: `tests/scenarios/03-event-management.md` (sections marked P0)
 **Test Count**: ~28 tests
 
 **Key Scenarios to Implement**:
+
 1. [03.1.1] Create event with required fields
 2. [03.1.2] Event form validation - missing fields
 3. [03.1.5] Event slug uniqueness within school
@@ -68,6 +74,7 @@ Complete guide for implementing the remaining ~715 tests from the 780 scenario t
 11. [03.10.1-10.2] Multi-tenant event isolation
 
 **Template**:
+
 ```typescript
 import { test, expect } from '@playwright/test'
 import { createSchool, createAdmin, createEvent, cleanupTestData } from '../fixtures/test-data'
@@ -93,11 +100,13 @@ test.describe('Event Management P0', () => {
 ---
 
 #### Test File 2: Admin Registration Management P0
+
 **File**: `tests/suites/05-admin-registration-p0.spec.ts`
 **Reference**: `tests/scenarios/05-admin-registration-management.md` (P0 sections)
 **Test Count**: ~32 tests
 
 **Key Scenarios**:
+
 1. [05.1.1-1.2] View registrations list, count summary
 2. [05.3.1-3.2] Edit registration details, change spots
 3. [05.4.1-4.2] Cancel registration, free up capacity
@@ -107,14 +116,12 @@ test.describe('Event Management P0', () => {
 7. [05.12.1-12.3] Multi-tenant registration isolation
 
 **Pattern**:
+
 ```typescript
 import { RegistrationsPage } from '../page-objects/RegistrationsPage'
 
 test('view registrations for event', async ({ page }) => {
-  const event = await createEvent()
-    .withSchool(school.id)
-    .withCapacity(50)
-    .create()
+  const event = await createEvent().withSchool(school.id).withCapacity(50).create()
 
   const registration = await createRegistration()
     .withEvent(event.id)
@@ -132,11 +139,13 @@ test('view registrations for event', async ({ page }) => {
 ---
 
 #### Test File 3: School Management P0
+
 **File**: `tests/suites/02-school-management-p0.spec.ts`
 **Reference**: `tests/scenarios/02-school-management.md` (P0 sections)
 **Test Count**: ~22 tests
 
 **Key Scenarios**:
+
 1. [02.1.1] Complete onboarding flow
 2. [02.1.4] Skip onboarding redirects back
 3. [02.3.1] Send team invitation (OWNER)
@@ -147,11 +156,13 @@ test('view registrations for event', async ({ page }) => {
 ---
 
 #### Test File 4: Edge Cases P0
+
 **File**: `tests/suites/07-edge-cases-p0.spec.ts`
 **Reference**: `tests/scenarios/07-edge-cases-error-handling.md` (P0 sections)
 **Test Count**: ~35 tests
 
 **Key Scenarios**:
+
 1. [07.1.1-1.4] Database connection errors
 2. [07.2.1-2.3] Email sending failures
 3. [07.3.1-3.4] Concurrent operations (race conditions)
@@ -164,11 +175,13 @@ test('view registrations for event', async ({ page }) => {
 ---
 
 #### Test File 5: UI/UX & Accessibility P0
+
 **File**: `tests/suites/08-ui-ux-p0.spec.ts`
 **Reference**: `tests/scenarios/08-ui-ux-accessibility.md` (P0 sections)
 **Test Count**: ~28 tests
 
 **Key Scenarios**:
+
 1. [08.1.1] Mobile viewport 375px width
 2. [08.1.5] Form inputs on mobile (text visibility)
 3. [08.2.1-2.4] Hebrew RTL layout
@@ -180,13 +193,14 @@ test('view registrations for event', async ({ page }) => {
 9. [08.7.1-7.2] Keyboard navigation
 
 **Mobile Test Template**:
+
 ```typescript
 test('mobile form has visible input text', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 667 })
 
   // Navigate to form
   const nameInput = page.locator('input[name="name"]')
-  const styles = await nameInput.evaluate(el => {
+  const styles = await nameInput.evaluate((el) => {
     const computed = window.getComputedStyle(el)
     return {
       color: computed.color,
@@ -202,11 +216,13 @@ test('mobile form has visible input text', async ({ page }) => {
 ---
 
 #### Test File 6: Performance P0
+
 **File**: `tests/suites/09-performance-p0.spec.ts`
 **Reference**: `tests/scenarios/09-performance-scale.md` (P0 sections)
 **Test Count**: ~30 tests
 
 **Key Scenarios**:
+
 1. [09.1.1-1.3] Page load times (< 2 seconds)
 2. [09.2.1-2.7] Database query performance (with indexes)
 3. [09.3.1-9.3.3] Registration performance (single, 10 concurrent, 100 concurrent)
@@ -215,6 +231,7 @@ test('mobile form has visible input text', async ({ page }) => {
 6. [09.13.1-13.3] Load testing (10, 100, 500 concurrent users)
 
 **Performance Test Template**:
+
 ```typescript
 test('page loads within 2 seconds', async ({ page }) => {
   const startTime = Date.now()
@@ -229,19 +246,15 @@ test('page loads within 2 seconds', async ({ page }) => {
 test('concurrent registrations complete within acceptable time', async ({ browser }) => {
   const startTime = Date.now()
 
-  const contexts = await Promise.all(
-    Array.from({ length: 10 }, () => browser.newContext())
-  )
+  const contexts = await Promise.all(Array.from({ length: 10 }, () => browser.newContext()))
 
-  await Promise.all(
-    contexts.map((ctx, i) => registerConcurrently(ctx, i))
-  )
+  await Promise.all(contexts.map((ctx, i) => registerConcurrently(ctx, i)))
 
   const duration = Date.now() - startTime
 
   expect(duration).toBeLessThan(10000) // 10 seconds for 10 concurrent
 
-  await Promise.all(contexts.map(ctx => ctx.close()))
+  await Promise.all(contexts.map((ctx) => ctx.close()))
 })
 ```
 
@@ -252,11 +265,13 @@ test('concurrent registrations complete within acceptable time', async ({ browse
 After completing P0, implement P1 tests following the same pattern. Each scenario document has P1 sections marked.
 
 **Recommendation**: Create separate files for P1:
+
 - `tests/suites/01-auth-p1.spec.ts`
 - `tests/suites/02-school-management-p1.spec.ts`
 - etc.
 
 **P1 Test Count by Category**:
+
 - Authentication: 45 tests
 - School Management: 30 tests
 - Event Management: 32 tests
@@ -315,6 +330,7 @@ Update the test count in `tests/README.md` as you implement tests:
 
 ```markdown
 ### Current Coverage
+
 - **Implemented**: XXX tests (~XX% of total 780)
 - **P0 Critical**: XX% complete (XXX/275)
 - **Overall**: XX% complete (XXX/780)
@@ -351,6 +367,7 @@ Update the test count in `tests/README.md` as you implement tests:
 ### Common Patterns
 
 #### Pattern 1: Setup-Action-Assert
+
 ```typescript
 test('descriptive test name', async ({ page }) => {
   // Setup: Create test data
@@ -367,11 +384,11 @@ test('descriptive test name', async ({ page }) => {
 ```
 
 #### Pattern 2: Parallel Test Data
+
 ```typescript
 test('School A cannot see School B data', async ({ page }) => {
   // Create both schools
-  const { schoolA, schoolAAdmin, schoolB, schoolBEvent } =
-    await createCompleteTestScenario()
+  const { schoolA, schoolAAdmin, schoolB, schoolBEvent } = await createCompleteTestScenario()
 
   // Login as School A
   await loginPage.login(schoolAAdmin.email, 'TestPassword123!')
@@ -382,6 +399,7 @@ test('School A cannot see School B data', async ({ page }) => {
 ```
 
 #### Pattern 3: API + UI Verification
+
 ```typescript
 test('API returns correct data', async ({ page, request }) => {
   // Login via UI to get session
@@ -389,11 +407,11 @@ test('API returns correct data', async ({ page, request }) => {
 
   // Get session cookie
   const cookies = await page.context().cookies()
-  const sessionCookie = cookies.find(c => c.name === 'admin_session')
+  const sessionCookie = cookies.find((c) => c.name === 'admin_session')
 
   // Make API call
   const response = await request.get('/api/events', {
-    headers: { 'Cookie': `admin_session=${sessionCookie?.value}` }
+    headers: { Cookie: `admin_session=${sessionCookie?.value}` },
   })
 
   // Verify response
@@ -475,6 +493,7 @@ Before marking a test file as "complete":
 5. **Move to P1** once all P0 complete
 
 **Expected Timeline** (rough estimates):
+
 - Event Management P0: 2-3 days
 - Admin Registration P0: 2-3 days
 - School Management P0: 1-2 days
@@ -489,6 +508,7 @@ Before marking a test file as "complete":
 ## 📞 Questions & Support
 
 If you get stuck:
+
 1. Review existing test files for patterns
 2. Check `tests/README.md` for architecture
 3. Reference scenario documents in `tests/scenarios/`

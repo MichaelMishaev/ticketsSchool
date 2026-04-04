@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * GET /api/cancel/[token]
@@ -8,7 +9,7 @@ import { prisma } from '@/lib/prisma'
  * Public endpoint (no auth required - token-based)
  */
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
@@ -20,7 +21,10 @@ export async function GET(
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET!) as any
     } catch (error) {
-      return NextResponse.json({ error: 'Invalid or expired cancellation link' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Invalid or expired cancellation link' },
+        { status: 400 }
+      )
     }
 
     // Find registration
@@ -28,7 +32,7 @@ export async function GET(
       where: {
         eventId: decoded.eventId,
         phoneNumber: decoded.phone,
-        status: { in: ['CONFIRMED', 'WAITLIST'] },
+        status: { in: ['CONFIRMED', 'WAITLIST'] }
       },
       include: {
         event: {
@@ -40,17 +44,17 @@ export async function GET(
             allowCancellation: true,
             cancellationDeadlineHours: true,
             requireCancellationReason: true,
-            eventType: true,
-          },
-        },
-      },
+            eventType: true
+          }
+        }
+      }
     })
 
     if (!registration) {
       return NextResponse.json(
         {
           canCancel: false,
-          error: 'Registration not found or already cancelled',
+          error: 'Registration not found or already cancelled'
         },
         { status: 404 }
       )
@@ -61,7 +65,7 @@ export async function GET(
       return NextResponse.json(
         {
           canCancel: false,
-          error: 'Cancellation is not allowed for this event',
+          error: 'Cancellation is not allowed for this event'
         },
         { status: 403 }
       )
@@ -76,7 +80,7 @@ export async function GET(
         {
           canCancel: false,
           error: `Cannot cancel less than ${registration.event.cancellationDeadlineHours} hours before event`,
-          hoursUntilEvent: Math.round(hoursUntilEvent * 10) / 10,
+          hoursUntilEvent: Math.round(hoursUntilEvent * 10) / 10
         },
         { status: 403 }
       )
@@ -92,20 +96,23 @@ export async function GET(
         guestsCount: registration.guestsCount,
         spotsCount: registration.spotsCount,
         phoneNumber: registration.phoneNumber,
-        data: registration.data,
+        data: registration.data
       },
       event: {
         title: registration.event.title,
         startAt: registration.event.startAt,
         location: registration.event.location,
         eventType: registration.event.eventType,
-        requireCancellationReason: registration.event.requireCancellationReason,
+        requireCancellationReason: registration.event.requireCancellationReason
       },
-      hoursUntilEvent: Math.round(hoursUntilEvent * 10) / 10,
+      hoursUntilEvent: Math.round(hoursUntilEvent * 10) / 10
     })
   } catch (error) {
-    console.error('Cancellation preview error:', error)
-    return NextResponse.json({ error: 'Failed to load cancellation details' }, { status: 500 })
+    logger.error('Cancellation preview error', { source: 'registration', error })
+    return NextResponse.json(
+      { error: 'Failed to load cancellation details' },
+      { status: 500 }
+    )
   }
 }
 
@@ -127,14 +134,14 @@ export async function POST(
     const { cancelReservation } = await import('@/lib/cancellation')
 
     // Execute cancellation
-    await cancelReservation(token, reason)
+    const result = await cancelReservation(token, reason)
 
     return NextResponse.json({
       success: true,
-      message: 'Reservation cancelled successfully',
+      message: 'Reservation cancelled successfully'
     })
   } catch (error: any) {
-    console.error('Cancellation error:', error)
+    logger.error('Cancellation error', { source: 'registration', error })
 
     // Return user-friendly error message
     return NextResponse.json(

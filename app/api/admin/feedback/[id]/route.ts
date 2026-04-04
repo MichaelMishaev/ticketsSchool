@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireSuperAdmin } from '@/lib/auth'
+import { logger } from '@/lib/logger-v2'
 
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     // Only super admins can update feedback
     await requireSuperAdmin()
@@ -20,13 +24,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     return NextResponse.json(feedback)
   } catch (error) {
-    console.error('Error updating feedback:', error)
-    return NextResponse.json({ error: 'שגיאה בעדכון המשוב' }, { status: 500 })
+    logger.error('Error updating feedback', { source: 'admin', error })
+    return NextResponse.json(
+      { error: 'שגיאה בעדכון המשוב' },
+      { status: 500 }
+    )
   }
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -41,7 +48,10 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting feedback:', error)
-    return NextResponse.json({ error: 'שגיאה במחיקת המשוב' }, { status: 500 })
+    logger.error('Error deleting feedback', { source: 'admin', error })
+    return NextResponse.json(
+      { error: 'שגיאה במחיקת המשוב' },
+      { status: 500 }
+    )
   }
 }

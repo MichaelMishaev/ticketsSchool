@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireSuperAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
-    // Simple auth check via header
-    const authHeader = request.headers.get('x-admin-prod-auth')
-    if (authHeader !== 'authenticated-6262') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireSuperAdmin()
 
     const searchParams = request.nextUrl.searchParams
     const tableName = searchParams.get('table')
@@ -22,7 +19,7 @@ export async function GET(request: NextRequest) {
       case 'Event':
         data = await prisma.event.findMany({
           orderBy: { createdAt: 'desc' },
-          take: 100 // Limit to 100 records for performance
+          take: 100, // Limit to 100 records for performance
         })
         break
       case 'Registration':
@@ -33,23 +30,23 @@ export async function GET(request: NextRequest) {
             event: {
               select: {
                 title: true,
-                slug: true
-              }
-            }
-          }
+                slug: true,
+              },
+            },
+          },
         })
         // Flatten the event data for display
-        data = data.map(reg => ({
+        data = data.map((reg) => ({
           ...reg,
           eventTitle: reg.event.title,
           eventSlug: reg.event.slug,
-          event: undefined // Remove nested object
+          event: undefined, // Remove nested object
         }))
         break
       case 'Log':
         data = await prisma.log.findMany({
           orderBy: { createdAt: 'desc' },
-          take: 100
+          take: 100,
         })
         break
       default:
@@ -59,6 +56,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data)
   } catch (error) {
     console.error('Error fetching table data:', error)
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (error instanceof Error && error.message.includes('Super admin required')) {
+      return NextResponse.json({ error: 'Forbidden: Super admin access required' }, { status: 403 })
+    }
     return NextResponse.json({ error: 'Failed to fetch table data' }, { status: 500 })
   }
 }

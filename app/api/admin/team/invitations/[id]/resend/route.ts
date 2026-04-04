@@ -3,16 +3,23 @@ import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin } from '@/lib/auth.server'
 import { sendTeamInvitationEmail } from '@/lib/email'
 import crypto from 'crypto'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * POST /api/admin/team/invitations/[id]/resend
  * Resend a pending invitation
  */
-export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const admin = await getCurrentAdmin()
     if (!admin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
     }
 
     // Only OWNER and ADMIN can resend invitations
@@ -30,12 +37,15 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
       where: { id },
       include: {
         school: { select: { name: true } },
-        invitedBy: { select: { name: true } },
-      },
+        invitedBy: { select: { name: true } }
+      }
     })
 
     if (!invitation) {
-      return NextResponse.json({ error: 'Invitation not found' }, { status: 404 })
+      return NextResponse.json(
+        { error: 'Invitation not found' },
+        { status: 404 }
+      )
     }
 
     // Check if admin has access to this invitation's school
@@ -65,8 +75,8 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
       data: {
         token: newToken,
         expiresAt: newExpiresAt,
-        updatedAt: new Date(),
-      },
+        updatedAt: new Date()
+      }
     })
 
     // Resend invitation email
@@ -79,7 +89,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
         newToken
       )
     } catch (emailError) {
-      console.error('Failed to resend invitation email:', emailError)
+      logger.error('Failed to resend invitation email', { source: 'team', error: emailError })
       return NextResponse.json(
         { error: 'Failed to send email, but invitation was updated' },
         { status: 500 }
@@ -88,10 +98,13 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
 
     return NextResponse.json({
       success: true,
-      message: 'Invitation resent successfully',
+      message: 'Invitation resent successfully'
     })
   } catch (error) {
-    console.error('Error resending invitation:', error)
-    return NextResponse.json({ error: 'Failed to resend invitation' }, { status: 500 })
+    logger.error('Error resending invitation', { source: 'team', error })
+    return NextResponse.json(
+      { error: 'Failed to resend invitation' },
+      { status: 500 }
+    )
   }
 }

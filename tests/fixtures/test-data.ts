@@ -272,6 +272,26 @@ export class EventBuilder {
     return this
   }
 
+  withMaxSpotsPerPerson(max: number) {
+    this.data.maxSpotsPerPerson = max
+    return this
+  }
+
+  withPayment(
+    required: boolean,
+    timing: 'UPFRONT' | 'POST_REGISTRATION',
+    pricingModel: 'PER_GUEST' | 'FLAT_RATE',
+    priceAmount: number,
+    currency: string = 'ILS'
+  ) {
+    this.data.paymentRequired = required
+    this.data.paymentTiming = timing
+    this.data.pricingModel = pricingModel
+    this.data.priceAmount = priceAmount
+    this.data.currency = currency
+    return this
+  }
+
   async create(): Promise<TestEvent> {
     if (!this.data.title) {
       const uniqueId = generateUniqueId()

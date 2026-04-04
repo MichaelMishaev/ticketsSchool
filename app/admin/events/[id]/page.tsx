@@ -21,7 +21,7 @@ import { prisma } from '@/lib/prisma'
 import { notFound } from 'next/navigation'
 import { getCurrentAdmin } from '@/lib/auth.server'
 import TableBoardView from '@/components/admin/TableBoardView'
-import CapacityBasedView from './CapacityBasedView'
+import EventDetailsTabbed from './EventDetailsTabbed'
 
 export default async function EventDetailsPage({
   params,
@@ -60,6 +60,6 @@ export default async function EventDetailsPage({
     return <TableBoardView eventId={event.id} />
   }
 
-  // Default to capacity-based view
-  return <CapacityBasedView />
+  // Default to capacity-based view with new tab architecture
+  return <EventDetailsTabbed />
 }

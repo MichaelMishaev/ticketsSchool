@@ -64,11 +64,13 @@ export default function FeedbackInline() {
         </div>
         <button
           onClick={() => setIsOpen(true)}
-          className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+          className="w-full flex items-center justify-center gap-2 px-6 py-4 md:py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02] active:scale-[0.98]"
         >
           <span className="font-bold text-lg">💬 נשמח למשוב</span>
         </button>
-        <p className="text-xs text-center text-gray-500 mt-2">עוזר לנו להשתפר ולתת לך חוויה טובה יותר</p>
+        <p className="text-xs text-center text-gray-500 mt-2">
+          עוזר לנו להשתפר ולתת לך חוויה טובה יותר
+        </p>
       </div>
     )
   }

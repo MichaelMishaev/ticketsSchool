@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin } from '@/lib/auth.server'
+import { logger } from '@/lib/logger-v2'
 
 export async function GET(request: NextRequest) {
   try {
     // Get current admin session
     const admin = await getCurrentAdmin()
     if (!admin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
     }
 
     // Build where clause based on admin role
@@ -34,35 +38,33 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // CRITICAL: Filter out soft-deleted events
-    where.deletedAt = null
-
     const events = await prisma.event.findMany({
       where,
       include: {
         registrations: {
           select: {
             status: true,
-            spotsCount: true,
-          },
-        },
+            spotsCount: true
+          }
+        }
       },
       orderBy: {
-        startAt: 'asc',
-      },
+        startAt: 'asc'
+      }
     })
 
-    const eventOccupancy = events.map((event) => {
+    const eventOccupancy = events.map(event => {
       const confirmedCount = event.registrations
-        .filter((reg) => reg.status === 'CONFIRMED')
+        .filter(reg => reg.status === 'CONFIRMED')
         .reduce((sum, reg) => sum + reg.spotsCount, 0)
 
       const waitlistCount = event.registrations
-        .filter((reg) => reg.status === 'WAITLIST')
+        .filter(reg => reg.status === 'WAITLIST')
         .reduce((sum, reg) => sum + reg.spotsCount, 0)
 
-      const occupancyRate =
-        event.capacity > 0 ? Math.round((confirmedCount / event.capacity) * 100) : 0
+      const occupancyRate = event.capacity > 0
+        ? Math.round((confirmedCount / event.capacity) * 100)
+        : 0
 
       return {
         id: event.id,
@@ -74,19 +76,18 @@ export async function GET(request: NextRequest) {
         waitlistCount,
         occupancyRate,
         availableSpots: Math.max(0, event.capacity - confirmedCount),
-        status: event.status,
+        status: event.status
       }
     })
 
     const totalCapacity = events.reduce((sum, event) => sum + event.capacity, 0)
     const totalConfirmed = eventOccupancy.reduce((sum, event) => sum + event.confirmedCount, 0)
-    const overallOccupancyRate =
-      totalCapacity > 0 ? Math.round((totalConfirmed / totalCapacity) * 100) : 0
+    const overallOccupancyRate = totalCapacity > 0
+      ? Math.round((totalConfirmed / totalCapacity) * 100)
+      : 0
 
-    const highOccupancyEvents = eventOccupancy.filter((event) => event.occupancyRate >= 80)
-    const lowOccupancyEvents = eventOccupancy.filter(
-      (event) => event.occupancyRate < 50 && event.status === 'OPEN'
-    )
+    const highOccupancyEvents = eventOccupancy.filter(event => event.occupancyRate >= 80)
+    const lowOccupancyEvents = eventOccupancy.filter(event => event.occupancyRate < 50 && event.status === 'OPEN')
 
     return NextResponse.json({
       overallOccupancyRate,
@@ -97,16 +98,16 @@ export async function GET(request: NextRequest) {
       highOccupancyEvents,
       lowOccupancyEvents,
       statistics: {
-        averageOccupancy:
-          Math.round(
-            eventOccupancy.reduce((sum, event) => sum + event.occupancyRate, 0) / events.length
-          ) || 0,
-        fullEvents: eventOccupancy.filter((event) => event.occupancyRate >= 100).length,
-        emptyEvents: eventOccupancy.filter((event) => event.occupancyRate === 0).length,
-      },
+        averageOccupancy: Math.round(eventOccupancy.reduce((sum, event) => sum + event.occupancyRate, 0) / events.length) || 0,
+        fullEvents: eventOccupancy.filter(event => event.occupancyRate >= 100).length,
+        emptyEvents: eventOccupancy.filter(event => event.occupancyRate === 0).length
+      }
     })
   } catch (error) {
-    console.error('Error fetching occupancy data:', error)
-    return NextResponse.json({ error: 'Failed to fetch occupancy data' }, { status: 500 })
+    logger.error('Error fetching occupancy data', { source: 'dashboard', error })
+    return NextResponse.json(
+      { error: 'Failed to fetch occupancy data' },
+      { status: 500 }
+    )
   }
 }

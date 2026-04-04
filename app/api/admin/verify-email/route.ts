@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import * as jwt from 'jsonwebtoken'
 import { sendWelcomeEmail } from '@/lib/email'
+import { login } from '@/lib/auth.server'
+import { logger } from '@/lib/logger-v2'
+
+// Base URL for redirects - use environment variable to avoid Docker container hostname issues
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9000'
 
 // Lazy getter for JWT_SECRET - only validates when actually used (not at import time)
 function getJWTSecret(): string {
@@ -17,7 +22,10 @@ export async function POST(request: NextRequest) {
     const { token } = await request.json()
 
     if (!token) {
-      return NextResponse.json({ error: 'קוד האימות חסר' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'קוד האימות חסר' },
+        { status: 400 }
+      )
     }
 
     // Verify JWT token
@@ -26,9 +34,15 @@ export async function POST(request: NextRequest) {
       decoded = jwt.verify(token, getJWTSecret()) as { email: string }
     } catch (error) {
       if (error instanceof jwt.TokenExpiredError) {
-        return NextResponse.json({ error: 'קוד האימות פג תוקף. בקש קוד חדש.' }, { status: 400 })
+        return NextResponse.json(
+          { error: 'קוד האימות פג תוקף. בקש קוד חדש.' },
+          { status: 400 }
+        )
       }
-      return NextResponse.json({ error: 'קוד האימות לא תקין' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'קוד האימות לא תקין' },
+        { status: 400 }
+      )
     }
 
     // Find admin by email and verification token
@@ -43,11 +57,17 @@ export async function POST(request: NextRequest) {
     })
 
     if (!admin) {
-      return NextResponse.json({ error: 'קוד אימות לא תקין או כבר נעשה בו שימוש' }, { status: 404 })
+      return NextResponse.json(
+        { error: 'קוד אימות לא תקין או כבר נעשה בו שימוש' },
+        { status: 404 }
+      )
     }
 
     if (admin.emailVerified) {
-      return NextResponse.json({ error: 'המייל כבר אומת. אפשר להתחבר.' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'המייל כבר אומת. אפשר להתחבר.' },
+        { status: 400 }
+      )
     }
 
     // Mark email as verified and clear token
@@ -62,7 +82,11 @@ export async function POST(request: NextRequest) {
 
     // Send welcome email
     if (admin.school) {
-      await sendWelcomeEmail(admin.email, admin.name, admin.school.name)
+      await sendWelcomeEmail(
+        admin.email,
+        admin.name,
+        admin.school.name
+      )
     }
 
     // Auto-login the user by creating a session
@@ -80,8 +104,11 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Email verification error:', error)
-    return NextResponse.json({ error: 'שגיאה באימות המייל. נסה שוב.' }, { status: 500 })
+    logger.error('Email verification error', { source: 'auth', error })
+    return NextResponse.json(
+      { error: 'שגיאה באימות המייל. נסה שוב.' },
+      { status: 500 }
+    )
   }
 }
 
@@ -91,7 +118,9 @@ export async function GET(request: NextRequest) {
   const token = searchParams.get('token')
 
   if (!token) {
-    return NextResponse.redirect(new URL('/admin/login?error=missing_token', request.url))
+    return NextResponse.redirect(
+      new URL('/admin/login?error=missing_token', BASE_URL)
+    )
   }
 
   // Verify the token
@@ -110,11 +139,15 @@ export async function GET(request: NextRequest) {
     })
 
     if (!admin) {
-      return NextResponse.redirect(new URL('/admin/login?error=invalid_token', request.url))
+      return NextResponse.redirect(
+        new URL('/admin/login?error=invalid_token', BASE_URL)
+      )
     }
 
     if (admin.emailVerified) {
-      return NextResponse.redirect(new URL('/admin/login?message=already_verified', request.url))
+      return NextResponse.redirect(
+        new URL('/admin/login?message=already_verified', BASE_URL)
+      )
     }
 
     // Mark as verified
@@ -129,15 +162,25 @@ export async function GET(request: NextRequest) {
 
     // Send welcome email
     if (admin.school) {
-      await sendWelcomeEmail(admin.email, admin.name, admin.school.name)
+      await sendWelcomeEmail(
+        admin.email,
+        admin.name,
+        admin.school.name
+      )
     }
 
     // Redirect to login with success message
-    return NextResponse.redirect(new URL('/admin/login?message=verified', request.url))
+    return NextResponse.redirect(
+      new URL('/admin/login?message=verified', BASE_URL)
+    )
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
-      return NextResponse.redirect(new URL('/admin/login?error=token_expired', request.url))
+      return NextResponse.redirect(
+        new URL('/admin/login?error=token_expired', BASE_URL)
+      )
     }
-    return NextResponse.redirect(new URL('/admin/login?error=verification_failed', request.url))
+    return NextResponse.redirect(
+      new URL('/admin/login?error=verification_failed', BASE_URL)
+    )
   }
 }

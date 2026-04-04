@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger-v2'
 
 // Disable caching for this route to ensure fresh data
 export const dynamic = 'force-dynamic'
@@ -10,7 +11,7 @@ export const revalidate = 0
  * Fetch event by school slug + event slug
  */
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ schoolSlug: string; eventSlug: string }> }
 ) {
   try {
@@ -78,7 +79,7 @@ export async function GET(
     const totalSpotsTaken = confirmedRegistrations.reduce((sum, reg) => sum + reg.spotsCount, 0)
 
     // For TABLE_BASED events, get max table capacity
-    let maxTableCapacity = null
+    let maxTableCapacity: number | null = null
     if (event.eventType === 'TABLE_BASED') {
       const tables = await prisma.table.findMany({
         where: { eventId: event.id },
@@ -106,6 +107,13 @@ export async function GET(
       conditions: event.conditions,
       requireAcceptance: event.requireAcceptance,
       completionMessage: event.completionMessage,
+      // CRITICAL: Payment fields must be included for frontend payment flow
+      paymentRequired: event.paymentRequired,
+      paymentTiming: event.paymentTiming,
+      pricingModel: event.pricingModel,
+      priceAmount: event.priceAmount ? Number(event.priceAmount) : null,
+      currency: event.currency,
+      coverImage: event.coverImage,
       school: event.school,
       _count: event._count,
       totalSpotsTaken,
@@ -118,7 +126,7 @@ export async function GET(
 
     return response
   } catch (error) {
-    console.error('Error fetching event:', error)
+    logger.error('Error fetching event', { source: 'public-api', error })
     return NextResponse.json({ error: 'Failed to fetch event' }, { status: 500 })
   }
 }

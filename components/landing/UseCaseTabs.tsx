@@ -2,15 +2,7 @@
 
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import {
-  Target,
-  School,
-  Users,
-  Briefcase,
-  Star,
-  Globe,
-  Heart
-} from 'lucide-react'
+import { Target, School, Users, Briefcase, Star, Globe, Heart } from 'lucide-react'
 
 interface UseCase {
   title: string
@@ -40,7 +32,7 @@ const categories: Category[] = [
       { title: 'אימונים קבוצתיים עם מספר משתתפים מוגבל', examples: [] },
       { title: 'טורנירים וימי ספורט', examples: [] },
       { title: 'מבחני כושר או ימי מיון לשחקנים', examples: [] },
-    ]
+    ],
   },
   {
     id: 'schools',
@@ -54,7 +46,7 @@ const categories: Category[] = [
       { title: 'הצגות וסדנאות', examples: [] },
       { title: 'ימי הורים או מפגשי ועד כיתה', examples: [] },
       { title: 'תחרויות ותחרויות ספורט בית-ספריות', examples: [] },
-    ]
+    ],
   },
   {
     id: 'community',
@@ -68,7 +60,7 @@ const categories: Category[] = [
       { title: 'סדנאות קיץ ופעילויות חופשה', examples: [] },
       { title: 'מסיבות שכונה או ירידי קהילה', examples: [] },
       { title: 'שיעורים קבועים עם מגבלת משתתפים', examples: [] },
-    ]
+    ],
   },
   {
     id: 'business',
@@ -82,7 +74,7 @@ const categories: Category[] = [
       { title: 'מפגשי צוות וחברה', examples: [] },
       { title: 'ימי גיבוש לעובדים', examples: [] },
       { title: 'ימי ראיונות או מבחנים פנימיים', examples: [] },
-    ]
+    ],
   },
   {
     id: 'private',
@@ -96,7 +88,7 @@ const categories: Category[] = [
       { title: 'טיולים משפחתיים', examples: [] },
       { title: 'ארוחות חג, שבת או מפגש חברים', examples: [] },
       { title: 'מפגשי קבוצות תחביב (אופניים, ריצה, צילום)', examples: [] },
-    ]
+    ],
   },
   {
     id: 'online',
@@ -109,7 +101,7 @@ const categories: Category[] = [
       { title: 'וובינרים עם מספר משתתפים מוגבל', examples: [] },
       { title: 'שיעורים פרטיים או קבוצתיים בזום', examples: [] },
       { title: 'הרצאות אונליין וסדנאות למידה', examples: [] },
-    ]
+    ],
   },
   {
     id: 'health',
@@ -123,14 +115,14 @@ const categories: Category[] = [
       { title: 'ימי תרומות דם', examples: [] },
       { title: 'הרצאות בריאות ורווחה', examples: [] },
       { title: 'אירועי התנדבות', examples: [] },
-    ]
+    ],
   },
 ]
 
 export default function UseCaseTabs() {
   const [activeTab, setActiveTab] = useState('sport')
 
-  const activeCategory = categories.find(cat => cat.id === activeTab) || categories[0]
+  const activeCategory = categories.find((cat) => cat.id === activeTab) || categories[0]
 
   return (
     <div className="w-full">
@@ -142,10 +134,11 @@ export default function UseCaseTabs() {
             onClick={() => setActiveTab(category.id)}
             className={`
               flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base
-              transition-all duration-300 border-2
-              ${activeTab === category.id
-                ? `bg-gradient-to-r ${category.color} text-white border-transparent shadow-lg scale-105`
-                : `${category.bgColor} text-gray-700 border-gray-200 hover:border-gray-300 hover:shadow-md`
+              transition-all duration-300
+              ${
+                activeTab === category.id
+                  ? `bg-gradient-to-r ${category.color} text-white shadow-lg scale-105`
+                  : `${category.bgColor} text-gray-700 hover:shadow-ambient`
               }
             `}
           >
@@ -161,12 +154,14 @@ export default function UseCaseTabs() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className={`${activeCategory.bgColor} border-2 border-gray-200 rounded-3xl p-6 sm:p-10`}
+        className={`${activeCategory.bgColor} rounded-3xl shadow-ambient p-6 sm:p-10`}
       >
         {/* Category Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className={`w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br ${activeCategory.color} rounded-2xl flex items-center justify-center text-white shadow-xl`}>
+            <div
+              className={`w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br ${activeCategory.color} rounded-2xl flex items-center justify-center text-white shadow-xl`}
+            >
               {activeCategory.icon}
             </div>
             <h3 className="text-3xl sm:text-4xl font-black text-gray-900">
@@ -188,7 +183,9 @@ export default function UseCaseTabs() {
               transition={{ delay: idx * 0.1, duration: 0.3 }}
               className="flex items-start gap-3 bg-white/60 backdrop-blur-sm rounded-xl p-4 hover:bg-white hover:shadow-md transition-all"
             >
-              <div className={`w-2 h-2 rounded-full bg-gradient-to-br ${activeCategory.color} mt-2 flex-shrink-0`} />
+              <div
+                className={`w-2 h-2 rounded-full bg-gradient-to-br ${activeCategory.color} mt-2 flex-shrink-0`}
+              />
               <p className="text-gray-800 font-medium text-right leading-relaxed">
                 {useCase.title}
               </p>

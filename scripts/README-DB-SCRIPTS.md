@@ -5,10 +5,13 @@ Quick scripts to switch between Production and QA databases on Railway.
 ## Available Scripts
 
 ### 🟢 Switch to QA Database
+
 ```bash
 ./scripts/switch-to-qa-db.sh
 ```
+
 **What it does:**
+
 - Updates `DATABASE_URL` to point to `postgres-copy` (QA database)
 - Updates `PGHOST` to `postgres-copy.railway.internal`
 - Updates `PGPASSWORD` to QA database password
@@ -16,6 +19,7 @@ Quick scripts to switch between Production and QA databases on Railway.
 - Triggers automatic Railway redeployment
 
 **When to use:**
+
 - Testing new features in QA environment
 - Running migrations on QA before production
 - Validating changes without affecting production data
@@ -23,16 +27,20 @@ Quick scripts to switch between Production and QA databases on Railway.
 ---
 
 ### 🔴 Switch Back to Production Database
+
 ```bash
 ./scripts/switch-to-prod-db.sh
 ```
+
 **What it does:**
+
 - Restores `DATABASE_URL` to point to `postgres` (production)
 - Restores `PGHOST` to `postgres.railway.internal`
 - Restores `PGPASSWORD` to production password
 - Triggers automatic Railway redeployment
 
 **When to use:**
+
 - After QA testing is complete
 - When you need to revert to production database
 
@@ -41,15 +49,19 @@ Quick scripts to switch between Production and QA databases on Railway.
 ---
 
 ### 🔍 Verify Database Connection
+
 ```bash
 ./scripts/verify-db-connection.sh
 ```
+
 **What it does:**
+
 - Shows current `DATABASE_URL`, `PGHOST`, and `PGPASSWORD`
 - Indicates whether connected to QA or Production
 - Tests database connection
 
 **When to use:**
+
 - Before running migrations (to confirm target database)
 - After switching databases (to verify changes)
 - When debugging connection issues
@@ -58,10 +70,10 @@ Quick scripts to switch between Production and QA databases on Railway.
 
 ## Quick Reference
 
-| Database | Host | Password | Use Case |
-|----------|------|----------|----------|
-| **Production** | `postgres.railway.internal` | `fnkujY...` | Live data ⚠️ |
-| **QA** | `postgres-copy.railway.internal` | `bgK0ch...` | Testing ✅ |
+| Database       | Host                             | Password    | Use Case     |
+| -------------- | -------------------------------- | ----------- | ------------ |
+| **Production** | `postgres.railway.internal`      | `fnkujY...` | Live data ⚠️ |
+| **QA**         | `postgres-copy.railway.internal` | `bgK0ch...` | Testing ✅   |
 
 ---
 
@@ -104,17 +116,20 @@ railway run npm run db:migrate
 ## Troubleshooting
 
 **Script permission denied:**
+
 ```bash
 chmod +x scripts/*.sh
 ```
 
 **Railway CLI not found:**
+
 ```bash
 npm install -g @railway/cli
 railway login
 ```
 
 **Variables not updating:**
+
 ```bash
 # Ensure you're in the correct project/environment
 railway status
@@ -126,6 +141,7 @@ railway link  # Re-link if needed
 ## Safety Checklist
 
 Before running migrations:
+
 - [ ] Run `verify-db-connection.sh` to confirm target database
 - [ ] Check Railway deployment logs for errors
 - [ ] Ensure you're not accidentally on production when testing

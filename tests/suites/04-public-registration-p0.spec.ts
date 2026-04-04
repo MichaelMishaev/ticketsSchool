@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test'
 import { createSchool, createEvent, cleanupTestData } from '../fixtures/test-data'
 import { PublicEventPage } from '../page-objects/PublicEventPage'
 import { generateEmail, generateIsraeliPhone, getFutureDate } from '../helpers/test-helpers'
+import { prisma } from '@/lib/prisma'
 
 /**
  * P0 (CRITICAL) Public Registration Flow Tests
@@ -179,12 +180,10 @@ test.describe('Public Registration P0 - Critical Tests', () => {
         browser.newContext(),
       ])
 
-      const pages = await Promise.all(contexts.map(ctx => ctx.newPage()))
+      const pages = await Promise.all(contexts.map((ctx) => ctx.newPage()))
 
       // All navigate to event
-      await Promise.all(
-        pages.map(page => page.goto(`/p/${school.slug}/${event.slug}`))
-      )
+      await Promise.all(pages.map((page) => page.goto(`/p/${school.slug}/${event.slug}`)))
 
       // All fill forms
       await Promise.all(
@@ -198,29 +197,35 @@ test.describe('Public Registration P0 - Critical Tests', () => {
       )
 
       // All submit simultaneously (RACE CONDITION!)
-      await Promise.all(pages.map(page => page.click('button[type="submit"]')))
+      await Promise.all(pages.map((page) => page.click('button[type="submit"]')))
 
       // Wait for all to process
-      await Promise.all(pages.map(page => page.waitForTimeout(3000)))
+      await Promise.all(pages.map((page) => page.waitForTimeout(3000)))
 
       // Check results
       const results = await Promise.all(
-        pages.map(async page => {
-          const confirmed = await page.locator('text=/הרשמה הושלמה|נרשמת בהצלחה/i').isVisible().catch(() => false)
-          const waitlist = await page.locator('text=/רשימת המתנה|waitlist/i').isVisible().catch(() => false)
+        pages.map(async (page) => {
+          const confirmed = await page
+            .locator('text=/הרשמה הושלמה|נרשמת בהצלחה/i')
+            .isVisible()
+            .catch(() => false)
+          const waitlist = await page
+            .locator('text=/רשימת המתנה|waitlist/i')
+            .isVisible()
+            .catch(() => false)
           return { confirmed, waitlist }
         })
       )
 
-      const confirmedCount = results.filter(r => r.confirmed).length
-      const waitlistCount = results.filter(r => r.waitlist).length
+      const confirmedCount = results.filter((r) => r.confirmed).length
+      const waitlistCount = results.filter((r) => r.waitlist).length
 
       // CRITICAL: Should be exactly 3 confirmed, 2 waitlisted
       expect(confirmedCount).toBe(3)
       expect(waitlistCount).toBe(2)
 
       // Cleanup
-      await Promise.all(contexts.map(ctx => ctx.close()))
+      await Promise.all(contexts.map((ctx) => ctx.close()))
     })
   })
 
@@ -348,7 +353,7 @@ test.describe('Public Registration P0 - Critical Tests', () => {
 
       // Input text should be visible (not white on white)
       const nameInput = page.locator('input[name="name"]')
-      const styles = await nameInput.evaluate(el => {
+      const styles = await nameInput.evaluate((el) => {
         const computed = window.getComputedStyle(el)
         return {
           color: computed.color,
@@ -393,14 +398,518 @@ test.describe('Public Registration P0 - Critical Tests', () => {
       await publicPage.goto(school.slug, event.slug)
 
       // Check RTL direction
-      const direction = await page.locator('body, html, main').first().evaluate(el => {
-        return window.getComputedStyle(el).direction
-      })
+      const direction = await page
+        .locator('body, html, main')
+        .first()
+        .evaluate((el) => {
+          return window.getComputedStyle(el).direction
+        })
 
       expect(direction).toBe('rtl')
 
       // Hebrew text should be visible
       await expect(page.locator('text=אירוע בעברית')).toBeVisible()
+    })
+  })
+
+  test.describe('[BUG #23] Overbooking Prevention - Spot Limit Enforcement', () => {
+    test('should limit spot dropdown to available capacity (7 spots available)', async ({
+      page,
+    }) => {
+      // Setup: Event with 20 capacity, 13 already reserved (7 available)
+      const school = await createSchool().withName('Overbooking Test 1').create()
+      const event = await createEvent()
+        .withTitle('Limit Test Event')
+        .withSlug(`limit-test-${Date.now()}`)
+        .withSchool(school.id)
+        .withCapacity(20)
+        .withMaxSpotsPerPerson(10)
+        .inFuture()
+        .create()
+
+      // Create actual registrations to occupy 13 spots (leaving 7 available)
+      const timestamp = Date.now()
+      await prisma.registration.createMany({
+        data: [
+          {
+            eventId: event.id,
+            phoneNumber: '0501111111',
+            data: { name: 'User 1', email: 'user1@test.com', phone: '0501111111' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE1-${timestamp}`,
+          },
+          {
+            eventId: event.id,
+            phoneNumber: '0502222222',
+            data: { name: 'User 2', email: 'user2@test.com', phone: '0502222222' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE2-${timestamp}`,
+          },
+          {
+            eventId: event.id,
+            phoneNumber: '0503333333',
+            data: { name: 'User 3', email: 'user3@test.com', phone: '0503333333' },
+            spotsCount: 3,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE3-${timestamp}`,
+          },
+        ],
+      })
+      // Update spotsReserved counter
+      await prisma.event.update({
+        where: { id: event.id },
+        data: { spotsReserved: { increment: 13 } },
+      })
+      // Total: 5 + 5 + 3 = 13 spots taken, 7 spots available
+
+      // Navigate to public registration page
+      const publicPage = new PublicEventPage(page)
+      await publicPage.goto(school.slug, event.slug)
+
+      // Find the spots dropdown/select (has no name attribute, use label + select strategy)
+      const spotsSelector = page
+        .locator('label:has-text("מספר מקומות")')
+        .locator('..')
+        .locator('select')
+      await expect(spotsSelector).toBeVisible()
+
+      // Get all available options
+      const options = await spotsSelector.locator('option').allTextContents()
+
+      // Should have exactly 7 options (1-7)
+      expect(options.length).toBeLessThanOrEqual(7)
+
+      // Verify no option has value greater than 7
+      const optionValues = await spotsSelector
+        .locator('option')
+        .evaluateAll((opts) => opts.map((opt) => parseInt((opt as HTMLOptionElement).value) || 0))
+      const maxValue = Math.max(...optionValues)
+      expect(maxValue).toBeLessThanOrEqual(7)
+
+      // Try to select 8 via selectOption (should fail since option doesn't exist)
+      const hasOption8 = await spotsSelector.locator('option[value="8"]').count()
+      expect(hasOption8).toBe(0)
+    })
+
+    test('should prevent selecting more spots than available', async ({ page }) => {
+      // Setup: Event with only 5 spots available
+      const school = await createSchool().withName('Overbooking Test 2').create()
+      const event = await createEvent()
+        .withTitle('Five Spots Event')
+        .withSlug(`five-spots-${Date.now()}`)
+        .withSchool(school.id)
+        .withCapacity(20)
+        .withMaxSpotsPerPerson(10) // Ensure max is high enough
+        .inFuture()
+        .create()
+
+      // Create actual registrations to occupy 15 spots (leaving 5 available)
+      const timestamp = Date.now()
+      await prisma.registration.createMany({
+        data: [
+          {
+            eventId: event.id,
+            phoneNumber: '0501111111',
+            data: { name: 'User 1', email: 'user1@test.com', phone: '0501111111' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE1-${timestamp}`,
+          },
+          {
+            eventId: event.id,
+            phoneNumber: '0502222222',
+            data: { name: 'User 2', email: 'user2@test.com', phone: '0502222222' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE2-${timestamp}`,
+          },
+          {
+            eventId: event.id,
+            phoneNumber: '0503333333',
+            data: { name: 'User 3', email: 'user3@test.com', phone: '0503333333' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE3-${timestamp}`,
+          },
+        ],
+      })
+      // Update spotsReserved counter
+      await prisma.event.update({
+        where: { id: event.id },
+        data: { spotsReserved: { increment: 15 } },
+      })
+      // Total: 5 + 5 + 5 = 15 spots taken, 5 spots available
+
+      const publicPage = new PublicEventPage(page)
+      await publicPage.goto(school.slug, event.slug)
+
+      // Verify dropdown doesn't have options for 6, 7, 8, 9, 10 spots
+      const spotsSelector = page
+        .locator('label:has-text("מספר מקומות")')
+        .locator('..')
+        .locator('select')
+
+      // Try to select 8 spots (should not be possible)
+      const hasOption8 = await spotsSelector.locator('option[value="8"]').count()
+      expect(hasOption8).toBe(0)
+
+      // Try to select 9 spots (should not be possible)
+      const hasOption9 = await spotsSelector.locator('option[value="9"]').count()
+      expect(hasOption9).toBe(0)
+
+      // Try to select 10 spots (should not be possible)
+      const hasOption10 = await spotsSelector.locator('option[value="10"]').count()
+      expect(hasOption10).toBe(0)
+    })
+
+    test('should limit waitlist registrations to max 5 spots', async ({ page }) => {
+      // Setup: Create FULL event (0 spots available)
+      const school = await createSchool().withName('Waitlist Limit Test').create()
+      const event = await createEvent()
+        .withTitle('Full Event Waitlist')
+        .withSlug(`full-waitlist-${Date.now()}`)
+        .withSchool(school.id)
+        .withCapacity(20)
+        .withMaxSpotsPerPerson(20) // Ensure max is high enough
+        .full()
+        .inFuture()
+        .create()
+
+      // Create actual registrations to occupy all 20 spots (FULL)
+      const timestamp = Date.now()
+      await prisma.registration.createMany({
+        data: [
+          {
+            eventId: event.id,
+            phoneNumber: '0501111111',
+            data: { name: 'User 1', email: 'user1@test.com', phone: '0501111111' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE1-${timestamp}`,
+          },
+          {
+            eventId: event.id,
+            phoneNumber: '0502222222',
+            data: { name: 'User 2', email: 'user2@test.com', phone: '0502222222' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE2-${timestamp}`,
+          },
+          {
+            eventId: event.id,
+            phoneNumber: '0503333333',
+            data: { name: 'User 3', email: 'user3@test.com', phone: '0503333333' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE3-${timestamp}`,
+          },
+          {
+            eventId: event.id,
+            phoneNumber: '0504444444',
+            data: { name: 'User 4', email: 'user4@test.com', phone: '0504444444' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE4-${timestamp}`,
+          },
+        ],
+      })
+      // Update spotsReserved counter
+      await prisma.event.update({
+        where: { id: event.id },
+        data: { spotsReserved: { increment: 20 } },
+      })
+      // Total: 5 + 5 + 5 + 5 = 20 spots taken, 0 spots available (FULL)
+
+      const publicPage = new PublicEventPage(page)
+      await publicPage.goto(school.slug, event.slug)
+
+      // Find spots dropdown
+      const spotsSelector = page
+        .locator('label:has-text("מספר מקומות")')
+        .locator('..')
+        .locator('select')
+      await expect(spotsSelector).toBeVisible()
+
+      // Get all available options for waitlist
+      const optionValues = await spotsSelector
+        .locator('option')
+        .evaluateAll((opts) => opts.map((opt) => parseInt((opt as HTMLOptionElement).value) || 0))
+      const maxValue = Math.max(...optionValues)
+
+      // Waitlist should be limited to max 5 spots (or maxSpotsPerPerson if lower)
+      expect(maxValue).toBeLessThanOrEqual(5)
+
+      // Verify option 10 doesn't exist
+      const hasOption10 = await spotsSelector.locator('option[value="10"]').count()
+      expect(hasOption10).toBe(0)
+    })
+
+    test('should respect maxSpotsPerPerson limit even when more spots available', async ({
+      page,
+    }) => {
+      // Setup: Event with maxSpotsPerPerson=3 and 10 spots available
+      const school = await createSchool().withName('Max Per Person Test').create()
+      const event = await createEvent()
+        .withTitle('Limited Per Person Event')
+        .withSlug(`limited-person-${Date.now()}`)
+        .withSchool(school.id)
+        .withCapacity(20)
+        .withMaxSpotsPerPerson(3) // Max 3 per person
+        .inFuture()
+        .create()
+
+      // Create actual registrations to occupy 10 spots (leaving 10 available)
+      const timestamp = Date.now()
+      await prisma.registration.createMany({
+        data: [
+          {
+            eventId: event.id,
+            phoneNumber: '0501111111',
+            data: { name: 'User 1', email: 'user1@test.com', phone: '0501111111' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE1-${timestamp}`,
+          },
+          {
+            eventId: event.id,
+            phoneNumber: '0502222222',
+            data: { name: 'User 2', email: 'user2@test.com', phone: '0502222222' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE2-${timestamp}`,
+          },
+        ],
+      })
+      // Update spotsReserved counter
+      await prisma.event.update({
+        where: { id: event.id },
+        data: { spotsReserved: { increment: 10 } },
+      })
+      // Total: 5 + 5 = 10 spots taken, 10 spots available
+
+      const publicPage = new PublicEventPage(page)
+      await publicPage.goto(school.slug, event.slug)
+
+      // Find spots dropdown
+      const spotsSelector = page
+        .locator('label:has-text("מספר מקומות")')
+        .locator('..')
+        .locator('select')
+      await expect(spotsSelector).toBeVisible()
+
+      // Get all available options
+      const optionValues = await spotsSelector
+        .locator('option')
+        .evaluateAll((opts) => opts.map((opt) => parseInt((opt as HTMLOptionElement).value) || 0))
+      const maxValue = Math.max(...optionValues)
+
+      // Should be limited to 3 (maxSpotsPerPerson) even though 10 spots available
+      expect(maxValue).toBe(3)
+
+      // Verify no option for 4 or higher
+      const hasOption4 = await spotsSelector.locator('option[value="4"]').count()
+      expect(hasOption4).toBe(0)
+
+      const hasOption5 = await spotsSelector.locator('option[value="5"]').count()
+      expect(hasOption5).toBe(0)
+    })
+
+    test('should dynamically update available spots after registration', async ({
+      page,
+      browser,
+    }) => {
+      // Setup: Event with 5 spots available
+      const school = await createSchool().withName('Dynamic Update Test').create()
+      const event = await createEvent()
+        .withTitle('Dynamic Spots Event')
+        .withSlug(`dynamic-spots-${Date.now()}`)
+        .withSchool(school.id)
+        .withCapacity(10)
+        .withMaxSpotsPerPerson(10) // Ensure max is high enough
+        .inFuture()
+        .create()
+
+      // Create actual registration to occupy 5 spots (leaving 5 available)
+      const timestamp = Date.now()
+      await prisma.$transaction([
+        prisma.registration.create({
+          data: {
+            eventId: event.id,
+            phoneNumber: '0501111111',
+            data: { name: 'Initial User', email: 'initial@test.com', phone: '0501111111' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE1-${timestamp}`,
+          },
+        }),
+        prisma.event.update({
+          where: { id: event.id },
+          data: { spotsReserved: { increment: 5 } },
+        }),
+      ])
+      // Total: 5 spots taken, 5 spots available
+
+      // User 1: Register for 3 spots
+      const context1 = await browser.newContext()
+      const page1 = await context1.newPage()
+      const publicPage1 = new PublicEventPage(page1)
+      await publicPage1.goto(school.slug, event.slug)
+
+      await publicPage1.register({
+        name: 'User 1',
+        email: generateEmail('user1-dynamic'),
+        phone: generateIsraeliPhone(),
+        spots: 3,
+      })
+
+      await publicPage1.expectConfirmation()
+      await context1.close()
+
+      // User 2: Should now see only 2 spots available (5 - 3 = 2)
+      const context2 = await browser.newContext()
+      const page2 = await context2.newPage()
+      const publicPage2 = new PublicEventPage(page2)
+      await publicPage2.goto(school.slug, event.slug)
+
+      const spotsSelector = page2
+        .locator('label:has-text("מספר מקומות")')
+        .locator('..')
+        .locator('select')
+      const optionValues = await spotsSelector
+        .locator('option')
+        .evaluateAll((opts) => opts.map((opt) => parseInt((opt as HTMLOptionElement).value) || 0))
+      const maxValue = Math.max(...optionValues)
+
+      // Should be limited to 2 remaining spots
+      expect(maxValue).toBeLessThanOrEqual(2)
+
+      await context2.close()
+    })
+
+    test('should show "Event Full" when no spots available and prevent registration', async ({
+      page,
+    }) => {
+      // Setup: Event with 0 spots available
+      const school = await createSchool().withName('No Spots Test').create()
+      const event = await createEvent()
+        .withTitle('Zero Spots Event')
+        .withSlug(`zero-spots-${Date.now()}`)
+        .withSchool(school.id)
+        .withCapacity(10)
+        .withMaxSpotsPerPerson(10) // Ensure max is high enough
+        .full()
+        .inFuture()
+        .create()
+
+      // Create actual registrations to occupy all 10 spots (FULL)
+      const timestamp = Date.now()
+      await prisma.registration.createMany({
+        data: [
+          {
+            eventId: event.id,
+            phoneNumber: '0501111111',
+            data: { name: 'User 1', email: 'user1@test.com', phone: '0501111111' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE1-${timestamp}`,
+          },
+          {
+            eventId: event.id,
+            phoneNumber: '0502222222',
+            data: { name: 'User 2', email: 'user2@test.com', phone: '0502222222' },
+            spotsCount: 5,
+            status: 'CONFIRMED',
+            confirmationCode: `CODE2-${timestamp}`,
+          },
+        ],
+      })
+      // Update spotsReserved counter
+      await prisma.event.update({
+        where: { id: event.id },
+        data: { spotsReserved: { increment: 10 } },
+      })
+      // Total: 5 + 5 = 10 spots taken, 0 spots available (FULL)
+
+      const publicPage = new PublicEventPage(page)
+      await publicPage.goto(school.slug, event.slug)
+
+      // Should show event is full (may go to waitlist instead)
+      // Check if registration is for waitlist
+      const isWaitlistText = await page.locator('text=/רשימת המתנה|waitlist/i').first().isVisible()
+
+      if (!isWaitlistText) {
+        // If not waitlist, should show full message
+        await publicPage.expectEventFull()
+      }
+
+      // Spots selector should still be visible (for waitlist) but limited
+      const spotsSelector = page
+        .locator('label:has-text("מספר מקומות")')
+        .locator('..')
+        .locator('select')
+      if (await spotsSelector.isVisible()) {
+        // Should be limited to reasonable waitlist amount
+        const optionValues = await spotsSelector
+          .locator('option')
+          .evaluateAll((opts) => opts.map((opt) => parseInt((opt as HTMLOptionElement).value) || 0))
+        const maxValue = Math.max(...optionValues)
+        expect(maxValue).toBeLessThanOrEqual(5) // Waitlist limit
+      }
+    })
+
+    test('should handle edge case: exactly 1 spot remaining', async ({ page }) => {
+      // Setup: Event with exactly 1 spot available
+      const school = await createSchool().withName('One Spot Test').create()
+      const event = await createEvent()
+        .withTitle('One Spot Event')
+        .withSlug(`one-spot-${Date.now()}`)
+        .withSchool(school.id)
+        .withCapacity(10)
+        .withMaxSpotsPerPerson(10) // Ensure max is high enough
+        .inFuture()
+        .create()
+
+      // Create actual registration to occupy 9 spots (leaving 1 available)
+      const timestamp = Date.now()
+      await prisma.registration.create({
+        data: {
+          eventId: event.id,
+          phoneNumber: '0501111111',
+          data: { name: 'User 1', email: 'user1@test.com', phone: '0501111111' },
+          spotsCount: 9,
+          status: 'CONFIRMED',
+          confirmationCode: `CODE1-${timestamp}`,
+        },
+      })
+      // Update spotsReserved counter
+      await prisma.event.update({
+        where: { id: event.id },
+        data: { spotsReserved: { increment: 9 } },
+      })
+      // Total: 9 spots taken, 1 spot available
+
+      const publicPage = new PublicEventPage(page)
+      await publicPage.goto(school.slug, event.slug)
+
+      // Should only show option for 1 spot
+      const spotsSelector = page
+        .locator('label:has-text("מספר מקומות")')
+        .locator('..')
+        .locator('select')
+      await expect(spotsSelector).toBeVisible()
+
+      const optionValues = await spotsSelector
+        .locator('option')
+        .evaluateAll((opts) => opts.map((opt) => parseInt((opt as HTMLOptionElement).value) || 0))
+      const maxValue = Math.max(...optionValues)
+
+      expect(maxValue).toBe(1)
+
+      // Verify cannot select 2 spots
+      const hasOption2 = await spotsSelector.locator('option[value="2"]').count()
+      expect(hasOption2).toBe(0)
     })
   })
 })

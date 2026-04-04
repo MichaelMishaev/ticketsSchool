@@ -229,7 +229,7 @@ export default function EventPreviewModal({ isOpen, onClose, eventData }: EventP
                   <div className="pt-4 border-t border-gray-200">
                     <button
                       disabled
-                      className="w-full bg-blue-600 text-white font-semibold py-4 rounded-lg opacity-50 cursor-not-allowed"
+                      className="w-full bg-blue-600 text-white font-semibold py-4 md:py-2.5 text-base md:text-sm rounded-lg opacity-50 cursor-not-allowed"
                     >
                       הרשמה לאירוע (תצוגה בלבד)
                     </button>

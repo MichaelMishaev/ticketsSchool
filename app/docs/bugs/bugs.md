@@ -1,12 +1,323 @@
 # Bug Report - Authentication & Onboarding Flow
+
 **Date:** 2025-11-10
-**Last Updated:** 2025-12-09
-**Severity Levels:** =4 CRITICAL | =� MODERATE | =� LOW
+**Last Updated:** 2026-01-11
+**Severity Levels:** 🔴 CRITICAL | 🟠 MODERATE | 🟡 LOW
+
+---
+
+### Bug #1: Payment Required UX - "Free" Option Shown When Payment Required ✅ FIXED
+
+**Files:**
+
+- `/app/admin/events/new/page.tsx:278-289` (handleChange function)
+- `/app/admin/events/new/page.tsx:1271-1289` (Pricing model dropdown)
+- `/app/admin/events/new/page.tsx:459-467` (Payment validation)
+
+**Severity:** 🟡 LOW (UX confusion, no data loss)
+**Status:** ✅ FIXED (2026-01-11)
+
+**Description:**
+When creating a paid event, the "הגדרות תשלום" (Payment Settings) section showed contradictory UX:
+
+- User checks "דרוש תשלום לאירוע זה" (Require payment for this event)
+- The "מודל תמחור" (Pricing Model) dropdown still displays "חינם (ללא תשלום)" (Free - no payment) as an option
+- This creates confusion: if payment is required, why is "free" an option?
+
+**User Report:**
+"on http://localhost:9000/admin/events/new set payment requre: and the third dropdown suggest free, i think its ux cinfuse bug,?"
+
+**Impact:**
+
+- 🟡 **LOW:** UX confusion (contradictory options)
+- 🟡 **LOW:** User might question if payment is actually required
+- 🟡 **LOW:** Looks like a bug even though technically payment settings would override pricing model
+
+**Root Cause:**
+The pricing model dropdown always showed all three options (FIXED_PRICE, PER_GUEST, FREE) regardless of whether payment was required. The default `pricingModel` value was 'FREE', so when checking "payment required", the dropdown still showed "Free" as selected.
+
+**Before:**
+
+```typescript
+<select id="pricingModel" value={formData.pricingModel} onChange={...}>
+  <option value="FIXED_PRICE">מחיר קבוע להרשמה</option>
+  <option value="PER_GUEST">מחיר לכל אורח (טבלאות)</option>
+  <option value="FREE">חינם (ללא תשלום)</option>  {/* ❌ Confusing when payment required */}
+</select>
+```
+
+**Fix Applied:**
+
+1. **Auto-switch pricing model** (lines 278-289): When `paymentRequired` is toggled to `true` and `pricingModel` is `FREE`, automatically change `pricingModel` to `FIXED_PRICE`
+2. **Remove FREE option** (lines 1271-1289): Removed the `FREE` option from the pricing model dropdown entirely (only show FIXED_PRICE and PER_GUEST when payment is required)
+3. **Simplified validation** (lines 459-467): Updated validation to always require a price amount when payment is required (since FREE is no longer an option)
+
+**After:**
+
+```typescript
+// 1. Auto-switch when enabling payment
+const handleChange = (name: string, value: string | number | boolean) => {
+  if (name === 'paymentRequired' && value === true && formData.pricingModel === 'FREE') {
+    setFormData((prev) => ({ ...prev, [name]: value, pricingModel: 'FIXED_PRICE' }))
+  } else {
+    setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+  // ...
+}
+
+// 2. Dropdown without FREE option
+<select id="pricingModel" value={formData.pricingModel} onChange={...}>
+  <option value="FIXED_PRICE">מחיר קבוע להרשמה</option>
+  <option value="PER_GUEST">מחיר לכל אורח (טבלאות)</option>
+  {/* FREE option removed - only shown when payment is NOT required */}
+</select>
+
+// 3. Simplified validation
+if (formData.paymentRequired) {
+  if (!formData.priceAmount || formData.priceAmount <= 0) {
+    addToast('יש להזין מחיר חיובי כאשר האירוע בתשלום', 'error')
+    return
+  }
+}
+```
+
+**Regression Prevention:**
+
+- ✅ Created test: `/tests/suites/03-event-management-p0.spec.ts:1057-1156`
+- ✅ Test verifies FREE option is NOT shown when payment required
+- ✅ Test verifies only FIXED_PRICE and PER_GUEST options are available
+- ✅ Test verifies pricing model is hidden when payment NOT required
+
+**User Experience Improvement:**
+
+- ✅ Clear UX: when payment is required, only paid pricing models are shown
+- ✅ Auto-correction: system automatically switches from FREE to FIXED_PRICE
+- ✅ Better validation: clearer error message when price is missing
+- ✅ No confusion: contradictory options eliminated
+
+---
+
+### Bug #0: Event Creation API Ignores Payment Fields ✅ FIXED
+
+**Files:**
+
+- `/app/api/events/route.ts:294-325` (CREATE endpoint - FIXED)
+- `/app/api/events/[id]/route.ts:152-157` (UPDATE endpoint - already correct)
+
+**Severity:** 🔴 CRITICAL (data loss, payment system broken)
+**Status:** ✅ FIXED (2026-01-11)
+
+**Description:**
+When creating a paid event through the admin dashboard, the event creation API completely ignored all payment-related fields (`paymentRequired`, `paymentTiming`, `pricingModel`, `priceAmount`, `currency`), causing events to be saved as FREE even when configured as PAID.
+
+**User Report:**
+Admin created event with "payment required for each user" but event was saved with:
+
+- `paymentRequired: false` (should be `true`)
+- `paymentTiming: OPTIONAL` (should be `UPFRONT`)
+- `priceAmount: null` (should be configured amount)
+
+This caused registrations to have inconsistent `paymentStatus: PENDING` on a free event.
+
+**Impact:**
+
+- 🔴 **CRITICAL:** Payment configuration lost on event creation
+- 🔴 **CRITICAL:** Revenue loss - paid events became free
+- 🟠 **MODERATE:** Data inconsistency (pending payments on free events)
+- 🟠 **MODERATE:** Admin confusion about event status
+
+**Root Cause:**
+In `/app/api/events/route.ts:294-319`, the `prisma.event.create()` call only saved basic event fields but completely omitted the payment fields that were sent by the frontend form.
+
+**Before (Lines 294-319):**
+
+```typescript
+const event = await prisma.event.create({
+  data: {
+    slug,
+    schoolId,
+    title: data.title,
+    // ... other fields ...
+    // ❌ Payment fields completely missing!
+  },
+})
+```
+
+**Fix Applied:**
+Added payment fields to event creation (lines 315-320):
+
+```typescript
+const event = await prisma.event.create({
+  data: {
+    // ... existing fields ...
+    // Payment fields (Tier 2: Event Ticketing - YaadPay)
+    paymentRequired: (data as any).paymentRequired ?? false,
+    paymentTiming: (data as any).paymentTiming ?? 'OPTIONAL',
+    pricingModel: (data as any).pricingModel ?? 'FREE',
+    priceAmount: (data as any).priceAmount ? Number((data as any).priceAmount) : null,
+    currency: (data as any).currency || 'ILS',
+  },
+})
+```
+
+**Note:** The UPDATE endpoint (`/app/api/events/[id]/route.ts:152-157`) was already correctly handling payment fields, so this bug only affected event creation, not updates.
+
+**Regression Prevention:**
+
+- ✅ Created test: `/__tests__/payment-event-creation.test.ts`
+- ✅ Tests both paid and free event creation
+- ✅ Tests verify payment fields are saved correctly
+- ⚠️ **TODO:** Add E2E Playwright test for full event creation flow with payment
+
+**Future Improvement:**
+Add `NOT_REQUIRED` value to `PaymentStatus` enum for better data semantics on free events (currently defaults to `PENDING` which is misleading).
+
+---
+
+### Bug #-1: Payment Error Messages in English Instead of Hebrew ✅ FIXED
+
+**Files:**
+
+- `/app/api/payment/create/route.ts` (17 error messages translated)
+
+**Severity:** 🟠 MODERATE (poor UX, language inconsistency)
+**Status:** ✅ FIXED (2026-01-11)
+
+**Description:**
+Payment creation API returned error messages in English while the entire application is Hebrew RTL. User screenshot showed error modal with:
+
+- Hebrew title: "שגיאה בתשלום" (Payment error)
+- English message: "Phone number already registered for this event"
+
+This created a confusing mixed-language experience.
+
+**Impact:**
+
+- Inconsistent user experience (Hebrew UI with English errors)
+- Reduced comprehension for Hebrew-only speakers
+- Unprofessional appearance (language mismatch)
+- Confusion between error source (payment vs registration)
+
+**Root Cause:**
+All error messages in `/app/api/payment/create/route.ts` were hardcoded in English, while the registration API (`/app/api/p/[schoolSlug]/[eventSlug]/register/route.ts`) had proper Hebrew translations.
+
+**Fix Applied:**
+Translated all 17 error messages in payment creation API from English to Hebrew:
+
+1. ✅ "Missing required parameters" → "חסרים פרמטרים נדרשים"
+2. ✅ "Invalid registration data" → "נתוני הרשמה לא תקינים"
+3. ✅ "Missing required fields: name and phone" → "חסרים שדות חובה: שם וטלפון"
+4. ✅ "Email is required for payment events" → "אימייל נדרש לאירועים עם תשלום"
+5. ✅ "School not found" → "בית הספר לא נמצא"
+6. ✅ "Event not found" → "האירוע לא נמצא"
+7. ✅ "Event does not require upfront payment" → "האירוע לא דורש תשלום מראש"
+8. ✅ "Event registration is closed" → "ההרשמה לאירוע נסגרה"
+9. ✅ "Event registration is paused" → "ההרשמה לאירוע מושהית"
+10. ✅ "Event pricing not configured" → "התמחור לא הוגדר לאירוע זה"
+11. ✅ "Invalid participant count for per-guest pricing" → "מספר משתתפים לא תקין"
+12. ✅ "Event is free, payment not required" → "האירוע חינמי, תשלום לא נדרש"
+13. ✅ "Invalid pricing model" → "מודל תמחור לא תקין"
+14. ✅ "Invalid phone number format" → "פורמט מספר טלפון לא תקין"
+15. ✅ "Phone number already registered for this event" → "מספר הטלפון כבר רשום לאירוע זה"
+16. ✅ "Payment already initiated for this request" → "תשלום כבר יזם עבור בקשה זו"
+17. ✅ "Payment system not configured. Please contact support." → "מערכת התשלומים לא מוגדרת. אנא פנה לתמיכה."
+18. ✅ "Failed to create payment session" → "נכשל ביצירת הפעלת תשלום"
+
+**Prevention Strategies:**
+
+1. **Code Review Checklist:** Add "All error messages in Hebrew" to PR checklist
+2. **ESLint Plugin:** Create custom rule to detect English strings in error responses
+3. **i18n System:** Consider implementing react-i18n for centralized translation management
+4. **Developer Guidelines:** Document requirement: "All user-facing text must be in Hebrew"
+5. **Test Coverage:** Add E2E tests that verify error messages are in Hebrew
+
+**Files Changed:**
+
+- ✅ `/app/api/payment/create/route.ts` (lines 23, 30, 38, 45, 58, 88, 96, 104, 111, 119, 138, 147, 153, 164, 180, 301, 351, 358)
+
+---
+
+### Bug #0: Unprofessional Browser Alerts in Public Registration Flow ✅ FIXED
+
+**Files:**
+
+- `/app/p/[schoolSlug]/[eventSlug]/page.tsx` (6 alerts removed)
+- `/app/cancel/[token]/page.tsx` (3 alerts removed)
+- `/components/ui/Modal.tsx` (NEW - 306 lines)
+- `/components/ui/Toast.tsx` (NEW - 244 lines)
+
+**Severity:** 🔴 CRITICAL (poor UX, unprofessional appearance, mobile UX issues)
+**Status:** ✅ FIXED (2026-01-11)
+
+**Description:**
+Public-facing registration pages used browser `alert()`, `window.confirm()` dialogs that blocked user interaction and created an unprofessional appearance. Screenshot from user showed alert "Email is required for payment events" interrupting registration flow.
+
+**Impact:**
+
+- Unprofessional user experience (browser default styling)
+- Blocked all page interaction during alerts
+- No Hebrew RTL support
+- Poor mobile UX (alerts too small on mobile)
+- Not accessible (no WCAG compliance)
+- Didn't match Design System 2026 aesthetics
+
+**Root Causes:**
+
+1. No centralized modal/notification component system
+2. Missing client-side email validation for payment events
+3. No ESLint rules preventing browser alerts
+4. No code review checklist for UX patterns
+
+**Fix Applied:**
+Created professional Modal and Toast notification systems:
+
+**Modal Component** (`/components/ui/Modal.tsx`):
+
+- 5 types: info, error, success, warning, confirmation
+- Hebrew RTL support (`dir="rtl"`)
+- WCAG AAA accessible (keyboard nav, focus trap, ARIA labels)
+- Mobile-responsive (375px minimum, 44px touch targets)
+- Smooth animations with `prefers-reduced-motion` support
+- Portal rendering for proper z-index stacking
+
+**Toast Component** (`/components/ui/Toast.tsx`):
+
+- 4 types: success, error, info, warning
+- Auto-dismiss with configurable duration (default 5s)
+- Global state management (no props drilling)
+- Stackable notifications
+- Slide-in animations
+
+**Also Fixed:**
+
+- Added automatic email field injection for payment events
+- Improved all error messages (user-friendly Hebrew)
+- Replaced all 6 alerts in registration page
+- Replaced all 3 alerts in cancellation page
+
+**Prevention Strategies:**
+
+1. **ESLint Rule:** Add `no-restricted-globals` to prohibit alert/confirm/prompt
+2. **Pre-commit Hook:** Detect browser alerts in staged files
+3. **PR Checklist:** Verify Modal/Toast usage for all notifications
+4. **Documentation:** Created comprehensive guide at `/app/docs/bugs/ALERT_REPLACEMENT_SUMMARY.md`
+5. **Developer Training:** Onboarding includes notification pattern training
+
+**Files Changed:**
+
+- ✅ `/components/ui/Modal.tsx` (NEW - complete modal system)
+- ✅ `/components/ui/Toast.tsx` (NEW - toast notifications)
+- ✅ `/app/p/[schoolSlug]/[eventSlug]/page.tsx` (replaced 6 alerts)
+- ✅ `/app/cancel/[token]/page.tsx` (replaced 3 alerts)
+
+**Full Documentation:** `/app/docs/bugs/ALERT_REPLACEMENT_SUMMARY.md`
 
 ---
 
 ### Bug #1: User Session Isolation - Previous User's Menu Shows After Logout/Login ✅ FIXED
+
 **Files:**
+
 - `/app/admin/layout.tsx` (lines 35-70)
 - `/lib/auth.server.ts` (line 183)
 
@@ -15,6 +326,7 @@
 
 **Description:**
 When switching users (logout → login with different account), the new user saw the previous user's menu, navigation items, and school name. This is a **severe multi-tenancy security vulnerability** that could expose:
+
 - School names from other tenants
 - Navigation items the user shouldn't see
 - Role information from previous user
@@ -22,16 +334,17 @@ When switching users (logout → login with different account), the new user saw
 
 **Root Cause:**
 The AdminLayout component fetched admin info **only once on mount** using `useEffect` with empty dependency array `[]`. When a user logged out and another logged in:
+
 ```typescript
 // BEFORE (BROKEN):
 useEffect(() => {
   // Fetch admin info
-  fetch('/api/admin/me')
-    .then(data => setAdminInfo(data.admin))
+  fetch('/api/admin/me').then((data) => setAdminInfo(data.admin))
 }, []) // ❌ Only runs once - never updates!
 ```
 
 **What Happened:**
+
 1. User A logs in → `adminInfo` state set to User A's data
 2. User A logs out → redirects to `/admin/login` (but layout stays mounted!)
 3. User B logs in → redirects to `/admin`
@@ -39,6 +352,7 @@ useEffect(() => {
 5. User B sees User A's school name and menu 🚨
 
 **Fix Applied:**
+
 ```typescript
 // AFTER (FIXED):
 useEffect(() => {
@@ -52,12 +366,13 @@ useEffect(() => {
   // Fetch admin info from server
   setIsChecking(true)
   fetch('/api/admin/me')
-    .then(data => setAdminInfo(data.admin))
+    .then((data) => setAdminInfo(data.admin))
     .finally(() => setIsChecking(false))
 }, [pathname]) // ✅ Refetch when pathname changes!
 ```
 
 **Additional Fix - Logout Cookie Cleanup:**
+
 ```typescript
 // lib/auth.server.ts
 export async function logout(): Promise<void> {
@@ -68,10 +383,12 @@ export async function logout(): Promise<void> {
 ```
 
 **Impact:**
+
 - **BEFORE:** Multi-tenant data leakage - users could see other schools' data
 - **AFTER:** Proper session isolation - each login fetches fresh user data
 
 **Testing Checklist:**
+
 - ✅ Logout as User A
 - ✅ Login as User B
 - ✅ Verify menu shows User B's school name
@@ -80,6 +397,7 @@ export async function logout(): Promise<void> {
 - ✅ Test on mobile and desktop
 
 **Files Modified:**
+
 - `/app/admin/layout.tsx:35-70` - Clear state on public pages, refetch on protected pages
 - `/lib/auth.server.ts:183` - Delete both session and hint cookies on logout
 
@@ -88,6 +406,7 @@ export async function logout(): Promise<void> {
 ## =4 CRITICAL BUGS
 
 ### Bug #0: TABLE_BASED Events Show "No Spots Available" on Public Page ✅ FIXED
+
 **File:** `/app/p/[schoolSlug]/[eventSlug]/page.tsx` (lines 244-248)
 **Severity:** =4 CRITICAL (blocks all table-based event registrations)
 **Status:** ✅ FIXED (2025-12-06)
@@ -97,41 +416,51 @@ When users try to register for TABLE_BASED (restaurant) events, the public regis
 
 **Root Cause:**
 The page calculates availability by checking `event.capacity` field, which is **0** for TABLE_BASED events (capacity is managed through individual tables, not a global counter). This causes:
+
 ```typescript
-spotsLeft = event.capacity - event.totalSpotsTaken  // 0 - 0 = 0
-isFull = spotsLeft <= 0  // true ❌
+spotsLeft = event.capacity - event.totalSpotsTaken // 0 - 0 = 0
+isFull = spotsLeft <= 0 // true ❌
 ```
 
 **Impact:**
+
 - Users cannot register for any TABLE_BASED event
 - Restaurants cannot accept bookings
 - System shows misleading "no spots" message when 4+ tables are available
 
 **Fix Applied:**
+
 ```typescript
 // Before (BROKEN):
 const spotsLeft = event.capacity - event.totalSpotsTaken
 const isFull = spotsLeft <= 0
 
 // After (FIXED):
-const spotsLeft = event.eventType === 'TABLE_BASED' ? Infinity : (event.capacity - event.totalSpotsTaken)
-const isFull = event.eventType === 'TABLE_BASED' ? false : (spotsLeft <= 0)
-const percentage = event.eventType === 'TABLE_BASED' ? 0 : Math.min(100, (event.totalSpotsTaken / event.capacity) * 100)
+const spotsLeft =
+  event.eventType === 'TABLE_BASED' ? Infinity : event.capacity - event.totalSpotsTaken
+const isFull = event.eventType === 'TABLE_BASED' ? false : spotsLeft <= 0
+const percentage =
+  event.eventType === 'TABLE_BASED'
+    ? 0
+    : Math.min(100, (event.totalSpotsTaken / event.capacity) * 100)
 ```
 
 **UI Changes:**
+
 - TABLE_BASED events now show "סטטוס: ✓ פתוח" instead of capacity bar
 - Form title: "הרשמה לאירוע" instead of "הרשמה לרשימת המתנה"
 - Submit button: "אשר הזמנה" instead of "הרשמה לרשימת המתנה"
 - Backend `reserveTableForGuests()` handles actual table availability
 
 **Files Modified:**
+
 - `/app/p/[schoolSlug]/[eventSlug]/page.tsx:244-248` - Capacity check logic
 - `/app/p/[schoolSlug]/[eventSlug]/page.tsx:447-476` - Capacity indicator UI
 - `/app/p/[schoolSlug]/[eventSlug]/page.tsx:483-485` - Form title
 - `/app/p/[schoolSlug]/[eventSlug]/page.tsx:668-672` - Submit button text
 
 **Verification:**
+
 - Event ID: `cmiu88wvi0003itshqi3m12mi`
 - Type: `TABLE_BASED`
 - Tables: 4 available (capacity 4-8 guests each)
@@ -139,6 +468,7 @@ const percentage = event.eventType === 'TABLE_BASED' ? 0 : Math.min(100, (event.
 - After fix: Shows "✓ פתוח" with registration form ✅
 
 **Additional Fix - Dynamic Max Guest Count:**
+
 - **Issue:** Guest selector showed "1-12 אורחים" regardless of actual table capacity
 - **Root Cause:** Hardcoded max value in GuestCountSelector component
 - **Fix:** API now returns `maxTableCapacity` (max from all tables = 8 guests)
@@ -152,6 +482,7 @@ const percentage = event.eventType === 'TABLE_BASED' ? 0 : Math.min(100, (event.
 ---
 
 ### Bug #1: Account Takeover via OAuth Auto-Linking
+
 **File:** `/app/api/auth/google/callback/route.ts` (lines 84-92)
 **Severity:** =4 CRITICAL
 
@@ -159,6 +490,7 @@ const percentage = event.eventType === 'TABLE_BASED' ? 0 : Math.min(100, (event.
 When a user authenticates via Google OAuth, the system automatically links their Google account to any existing account with the same email address, without requiring password verification. This allows an attacker to take over accounts.
 
 **Attack Scenario:**
+
 1. Victim has account: `victim@example.com` (password: `MySecurePass123`)
 2. Attacker creates Google account: `victim@example.com`
 3. Attacker clicks "Sign in with Google" on our app
@@ -166,27 +498,29 @@ When a user authenticates via Google OAuth, the system automatically links their
 5. Attacker now has full access to victim's account without knowing the password
 
 **Current Code:**
+
 ```typescript
 let admin = await prisma.admin.findFirst({
   where: {
     OR: [
       { googleId },
-      { email },  // � DANGEROUS: No password check
+      { email }, // � DANGEROUS: No password check
     ],
   },
 })
 ```
 
 **Fix:**
+
 ```typescript
 // Safe approach: Only link if password is not set (OAuth-only account)
 let admin = await prisma.admin.findUnique({
-  where: { googleId }
+  where: { googleId },
 })
 
 if (!admin) {
   const existingByEmail = await prisma.admin.findUnique({
-    where: { email }
+    where: { email },
   })
 
   if (existingByEmail && existingByEmail.passwordHash) {
@@ -197,18 +531,20 @@ if (!admin) {
   }
 
   // Only auto-link if no password is set (OAuth-only account)
-  admin = existingByEmail || await prisma.admin.create({
-    data: {
-      email,
-      name,
-      googleId,
-      emailVerified: true,
-      passwordHash: null,
-      role: 'OWNER',
-      onboardingCompleted: false,
-      lastLoginAt: new Date(),
-    },
-  })
+  admin =
+    existingByEmail ||
+    (await prisma.admin.create({
+      data: {
+        email,
+        name,
+        googleId,
+        emailVerified: true,
+        passwordHash: null,
+        role: 'OWNER',
+        onboardingCompleted: false,
+        lastLoginAt: new Date(),
+      },
+    }))
 }
 ```
 
@@ -217,6 +553,7 @@ if (!admin) {
 ---
 
 ### Bug #2: Session Tampering via Unsigned Cookies
+
 **File:** `/lib/auth.server.ts` (lines 20-30)
 **Severity:** =4 CRITICAL
 
@@ -224,6 +561,7 @@ if (!admin) {
 User sessions are stored in cookies as base64-encoded JSON without signing or encryption. This allows attackers to decode, modify, and re-encode sessions to escalate privileges or impersonate other users.
 
 **Attack Scenario:**
+
 1. Attacker logs in as normal user
 2. Gets session cookie: `eyJhZG1pbklkIjoiY2x4eXo...` (base64)
 3. Decodes: `{"adminId":"clxyz123","email":"attacker@evil.com","role":"SCHOOL_ADMIN",...}`
@@ -232,6 +570,7 @@ User sessions are stored in cookies as base64-encoded JSON without signing or en
 6. Now has super admin access
 
 **Current Code:**
+
 ```typescript
 function encodeSession(session: AuthSession): string {
   return Buffer.from(JSON.stringify(session)).toString('base64')
@@ -248,6 +587,7 @@ function decodeSession(token: string): AuthSession | null {
 ```
 
 **Fix:**
+
 ```typescript
 import * as jwt from 'jsonwebtoken'
 
@@ -274,6 +614,7 @@ function decodeSession(token: string): AuthSession | null {
 ---
 
 ### Bug #3: No Server-Side Route Protection
+
 **File:** Missing `/middleware.ts`
 **Severity:** =4 CRITICAL
 
@@ -281,6 +622,7 @@ function decodeSession(token: string): AuthSession | null {
 Admin routes are only protected client-side via React useEffect. Attackers can bypass this by directly calling admin API endpoints.
 
 **Attack Scenario:**
+
 ```bash
 # No authentication required for these:
 curl http://localhost:9000/api/events
@@ -290,6 +632,7 @@ curl http://localhost:9000/api/admin/feedback
 
 **Fix:**
 Create `/middleware.ts` in project root:
+
 ```typescript
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
@@ -331,7 +674,7 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/:path*']
+  matcher: ['/admin/:path*', '/api/:path*'],
 }
 ```
 
@@ -340,6 +683,7 @@ export const config = {
 ---
 
 ### Bug #4: Weak JWT Secret Fallback
+
 **File:** `/app/api/admin/signup/route.ts` (line 7)
 **Severity:** =4 CRITICAL (if deployed without JWT_SECRET)
 
@@ -347,17 +691,20 @@ export const config = {
 If `JWT_SECRET` environment variable is not set, a hardcoded fallback secret is used for email verification tokens.
 
 **Current Code:**
+
 ```typescript
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-for-dev'
 ```
 
 **Attack Scenario:**
+
 1. App deployed to production without setting `JWT_SECRET`
 2. Attacker knows fallback secret (from public GitHub repo)
 3. Attacker generates verification tokens for any email
 4. Takes over any account by "verifying" their email
 
 **Fix:**
+
 ```typescript
 const JWT_SECRET = process.env.JWT_SECRET
 if (!JWT_SECRET) {
@@ -372,6 +719,7 @@ if (!JWT_SECRET) {
 ## =� MODERATE BUGS
 
 ### Bug #5: Cookie Operations Not Awaited
+
 **File:** `/app/api/auth/google/callback/route.ts` (lines 36, 45, 145)
 **Severity:** =� MODERATE
 
@@ -380,6 +728,7 @@ In Next.js 15, the `cookies()` function returns a Promise, but cookie operations
 
 **Fix:**
 Check Next.js 15 documentation and add `await` if necessary:
+
 ```typescript
 await cookieStore.delete('oauth_state')
 await cookieStore.set(SESSION_COOKIE_NAME, encodeSession(session), {...})
@@ -390,6 +739,7 @@ await cookieStore.set(SESSION_COOKIE_NAME, encodeSession(session), {...})
 ---
 
 ### Bug #6: Email Case Inconsistency
+
 **File:** `/app/api/admin/signup/route.ts` (lines 51, 78)
 **Severity:** =� MODERATE
 
@@ -397,6 +747,7 @@ await cookieStore.set(SESSION_COOKIE_NAME, encodeSession(session), {...})
 Email is lowercased when checking for duplicates but not when creating the admin record. This could lead to database containing both `User@Example.com` and `user@example.com`.
 
 **Current Code:**
+
 ```typescript
 // Line 51 - Query with lowercase
 const existingAdmin = await prisma.admin.findUnique({
@@ -408,11 +759,12 @@ email: email.toLowerCase(),  // This is correct but missing!
 ```
 
 **Fix:**
+
 ```typescript
 // Line 78
 const admin = await prisma.admin.create({
   data: {
-    email: email.toLowerCase(),  // Add this
+    email: email.toLowerCase(), // Add this
     passwordHash,
     name,
     // ...
@@ -425,6 +777,7 @@ const admin = await prisma.admin.create({
 ---
 
 ### Bug #7: School Name Uniqueness May Cause UX Issues
+
 **File:** `/app/api/admin/onboarding/route.ts` (lines 44-58)
 **Severity:** =� MODERATE
 
@@ -432,12 +785,14 @@ const admin = await prisma.admin.create({
 School names must be globally unique (case-insensitive). This may cause issues for legitimate organizations with common names like "High School" or "Community Center".
 
 **Error Message:**
+
 ```
 "�� ������ ��� ��� ���� ������, ��� �� ���"
 ```
 
 **Recommendation:**
 Consider one of:
+
 1. Remove school name uniqueness constraint (only enforce slug uniqueness)
 2. Suggest alternative names with numbers ("High School 2")
 3. Use namespace/region-based uniqueness
@@ -447,6 +802,7 @@ Consider one of:
 ---
 
 ### Bug #8: Email Send Failure Ignored During Signup
+
 **File:** `/app/api/admin/signup/route.ts` (lines 92-102)
 **Severity:** =� MODERATE
 
@@ -454,12 +810,9 @@ Consider one of:
 If email verification fails to send (Resend API down, invalid API key, etc.), the account is still created but user cannot verify their email. User is stuck in unverified state.
 
 **Current Code:**
+
 ```typescript
-const emailSent = await sendVerificationEmail(
-  email.toLowerCase(),
-  verificationToken,
-  name
-)
+const emailSent = await sendVerificationEmail(email.toLowerCase(), verificationToken, name)
 
 if (!emailSent) {
   console.warn('[Signup] Verification email failed to send, but account was created')
@@ -468,7 +821,9 @@ if (!emailSent) {
 ```
 
 **Fix Options:**
+
 1. **Fail signup if email can't be sent:**
+
 ```typescript
 if (!emailSent) {
   await prisma.admin.delete({ where: { id: admin.id } })
@@ -486,6 +841,7 @@ if (!emailSent) {
 ---
 
 ### Bug #9: Create Event Dropdown Clipped on Desktop (Empty State)
+
 **File:** `/app/admin/page.tsx` (line 211)
 **Severity:** =� MODERATE
 **Status:** ✅ FIXED (2025-12-08)
@@ -495,6 +851,7 @@ When the admin dashboard has no events (empty state), clicking the "צור אי�
 
 **Root Cause:**
 The parent container has `overflow-hidden` class which clips the absolutely-positioned dropdown menu:
+
 ```tsx
 // /app/admin/page.tsx:211
 <div className="bg-white shadow overflow-hidden sm:rounded-md">
@@ -506,12 +863,14 @@ The parent container has `overflow-hidden` class which clips the absolutely-posi
 The dropdown uses `sm:absolute` positioning on desktop, which positions it relative to the parent. When the parent has `overflow-hidden`, any content extending beyond the container boundaries is clipped.
 
 **Impact:**
+
 - Users cannot see the full dropdown content on desktop
 - Restaurant event option is partially or fully hidden
 - Poor UX - appears broken or buggy
 - Mobile is unaffected (uses `fixed` positioning)
 
 **Fix Applied:**
+
 ```tsx
 // Before:
 <div className="bg-white shadow overflow-hidden sm:rounded-md">
@@ -523,9 +882,11 @@ The dropdown uses `sm:absolute` positioning on desktop, which positions it relat
 Removed `overflow-hidden` from the parent container since it's not necessary for the rounded corners styling.
 
 **Files Modified:**
+
 - `/app/admin/page.tsx:211` - Removed `overflow-hidden` class
 
 **Test Added:**
+
 - `/tests/create-event-dropdown.spec.ts` - New test "dropdown is fully visible when opened on desktop (no clipping)"
 - Verifies all dropdown options are visible and not cut off by parent overflow
 
@@ -537,6 +898,7 @@ The existing test at line 251-273 checked if the dropdown was "visible" but didn
 ## =� LOW PRIORITY / ENHANCEMENTS
 
 ### Enhancement #1: No Auto-Login After Email Verification
+
 **File:** `/app/api/admin/verify-email/route.ts` (lines 82-85)
 **Severity:** =� LOW (UX enhancement)
 
@@ -544,6 +906,7 @@ The existing test at line 251-273 checked if the dropdown was "visible" but didn
 After verifying email, user must manually log in again. Could be improved by auto-creating session.
 
 **Comment in Code:**
+
 ```typescript
 // Note: We can't use the login() function directly here because
 // it sets cookies and we're in an API route
@@ -558,6 +921,7 @@ Implement one-time login token or auto-redirect to login with credentials pre-fi
 ---
 
 ### Enhancement #2: Missing Composite Unique Index
+
 **File:** `/prisma/schema.prisma`
 **Severity:** =� LOW (performance)
 
@@ -565,6 +929,7 @@ Implement one-time login token or auto-redirect to login with credentials pre-fi
 No composite unique index on `[email, schoolId]` to prevent duplicate school memberships (though business logic may allow this).
 
 **Recommendation:**
+
 ```prisma
 model Admin {
   // ...
@@ -578,13 +943,14 @@ model Admin {
 
 ## Summary
 
-| Severity | Count | Status |
-|----------|-------|--------|
-| =4 CRITICAL | 4 | All OPEN |
-| =� MODERATE | 4 | All OPEN |
-| =� LOW | 2 | Enhancement backlog |
+| Severity    | Count | Status              |
+| ----------- | ----- | ------------------- |
+| =4 CRITICAL | 4     | All OPEN            |
+| =� MODERATE | 4     | All OPEN            |
+| =� LOW      | 2     | Enhancement backlog |
 
 **Priority Fix Order:**
+
 1. Bug #2 (Session Tampering) - Most exploitable
 2. Bug #3 (Missing Middleware) - Most exposed
 3. Bug #1 (Account Takeover) - Requires specific attack
@@ -597,6 +963,7 @@ model Admin {
 ## FIXED BUGS
 
 ### Bug #9: Google OAuth Session Using Base64 Instead of JWT + Edge Runtime Compatibility + Cookie Persistence + Layout Redirect
+
 **Files:** `/app/api/auth/google/callback/route.ts`, `/middleware.ts`, `/app/admin/layout.tsx`
 **Severity:** =4 CRITICAL
 **Fixed Date:** 2025-11-10
@@ -608,6 +975,7 @@ After successful Google OAuth authentication, users were redirected back to logi
 The Google OAuth callback was using a different `encodeSession()` function that created base64-encoded JSON strings instead of proper JWT tokens.
 
 **Error Log:**
+
 ```
 [Middleware] Invalid session token: JsonWebTokenError: jwt malformed
     at middleware (middleware.ts:70:21)
@@ -617,6 +985,7 @@ The Google OAuth callback was using a different `encodeSession()` function that 
 After fixing Issue 1, middleware failed because `jsonwebtoken` library uses Node.js `crypto` module, which is not available in Edge Runtime.
 
 **Error Log:**
+
 ```
 [Middleware] Invalid session token: Error: The edge runtime does not support Node.js 'crypto' module.
 Learn More: https://nextjs.org/docs/messages/node-module-in-edge-runtime
@@ -627,6 +996,7 @@ Learn More: https://nextjs.org/docs/messages/node-module-in-edge-runtime
 After fixing Issues 1 & 2, OAuth callback was setting cookies using `cookies().set()` then immediately redirecting. In Next.js 15, cookies set via the `cookies()` API are not automatically included in redirect responses. Result: Session cookie was lost during redirect, causing authentication to fail.
 
 **Playwright Test Result:**
+
 ```
 === Navigating to /admin/onboarding ===
 ← RESPONSE: 307 http://localhost:9000/admin/onboarding
@@ -644,6 +1014,7 @@ After fixing Issues 1 & 2, OAuth callback was setting cookies using `cookies().s
 After fixing Issues 1-3, cookies were being set correctly and middleware was allowing the onboarding page, BUT the admin layout (`/app/admin/layout.tsx`) was checking `localStorage.getItem('admin_logged_in')` which was empty after OAuth login. The layout's `useEffect` ran before the page's `useEffect`, causing an immediate redirect to login.
 
 **Terminal Logs Showing the Problem:**
+
 ```
 [Middleware] ✅ Session valid, allowing: /admin/onboarding
 GET /admin/onboarding 200 in 240ms
@@ -651,12 +1022,14 @@ GET /admin/login 200 in 20ms  ← Only 20ms later, no /api/admin/me call!
 ```
 
 **Root Cause:**
+
 - OAuth callback sets HTTP-only cookies ✅
 - BUT doesn't set `localStorage.setItem('admin_logged_in', 'true')` ❌
 - Layout checks `isAuthenticatedSync()` which reads localStorage ❌
 - Returns `false` → redirects to login ❌
 
 **Root Cause:**
+
 1. `lib/auth.server.ts` uses `jwt.sign()` to create proper JWT tokens (Node.js runtime)
 2. `app/api/auth/google/callback/route.ts` defined its own `encodeSession()` that used base64
 3. `middleware.ts` runs in Edge Runtime but used `jsonwebtoken` library (requires Node.js `crypto`)
@@ -665,6 +1038,7 @@ GET /admin/login 200 in 20ms  ← Only 20ms later, no /api/admin/me call!
 6. Result: Session cookie was lost, authentication failed after redirect
 
 **Fix Applied:**
+
 1. **Phase 1 - JWT Token Creation:**
    - Exported `encodeSession()` function from `/lib/auth.server.ts:26`
    - Updated `/app/api/auth/google/callback/route.ts` to import and use JWT-based `encodeSession()`
@@ -689,6 +1063,7 @@ GET /admin/login 200 in 20ms  ← Only 20ms later, no /api/admin/me call!
    - Also added `credentials: 'include'` to fetch calls in onboarding page
 
 **Files Changed:**
+
 - `/lib/auth.server.ts:26` - Exported `encodeSession` function (uses `jsonwebtoken` for Node.js runtime)
 - `/app/api/auth/google/callback/route.ts:4` - Import `encodeSession` from auth.server (removed `cookies` import)
 - `/app/api/auth/google/callback/route.ts:33` - Read OAuth state from `request.cookies.get()` instead of `await cookies()`
@@ -702,6 +1077,7 @@ GET /admin/login 200 in 20ms  ← Only 20ms later, no /api/admin/me call!
 - `/package.json` - Added `jose` dependency
 
 **Testing:**
+
 ```bash
 # 1. Install dependencies
 npm install jose
@@ -726,6 +1102,7 @@ npx playwright test debug-oauth-cookies --headed
 ---
 
 ### Bug #10: Session Not Updated After Onboarding - Users See Wrong School Events
+
 **File:** `/app/api/admin/onboarding/route.ts`
 **Severity:** 🔴 CRITICAL
 **Fixed Date:** 2025-11-10
@@ -734,12 +1111,14 @@ npx playwright test debug-oauth-cookies --headed
 After a user completes the onboarding process and creates their school, the database was correctly updated with the new `schoolId`, but the JWT session cookie was NOT updated. This caused all subsequent API calls to use the old session (with `schoolId: undefined`), resulting in users seeing events from wrong schools or the "Default School".
 
 **User Report:**
+
 ```
 "created new: 345287info@gmail.com, why i see the default school??"
 User created school "tempppp" but dashboard showed 3 events from "Default School" instead of 0 events (correct for new school).
 ```
 
 **Investigation:**
+
 1. ✅ Database correctly showed: User linked to school "tempppp" (schoolId: cmhtby6uq0008mt01718tlxup)
 2. ✅ Events API correctly filters by schoolId from JWT session
 3. ❌ **JWT session cookie still had `schoolId: undefined` from initial OAuth login**
@@ -749,6 +1128,7 @@ User created school "tempppp" but dashboard showed 3 events from "Default School
 The onboarding API route updated the database with `schoolId` but did not create and set a new JWT session cookie with the updated school information. The old session cookie persisted across requests, causing data isolation to break.
 
 **Code Before Fix:**
+
 ```typescript
 // app/api/admin/onboarding/route.ts
 export async function POST(request: NextRequest) {
@@ -777,6 +1157,7 @@ export async function POST(request: NextRequest) {
 ```
 
 **Fix Applied:**
+
 ```typescript
 // app/api/admin/onboarding/route.ts
 import { getCurrentAdmin, encodeSession, SESSION_COOKIE_NAME, AuthSession } from '@/lib/auth.server'
@@ -828,17 +1209,20 @@ export async function POST(request: NextRequest) {
 ```
 
 **Files Changed:**
+
 - `/app/api/admin/onboarding/route.ts:3` - Added imports: `encodeSession`, `SESSION_COOKIE_NAME`, `AuthSession`
 - `/app/api/admin/onboarding/route.ts:92` - Added `include: { school: true }` to admin update query
 - `/app/api/admin/onboarding/route.ts:101-108` - Created `updatedSession` object with new school information
 - `/app/api/admin/onboarding/route.ts:127-133` - Set session cookie with updated JWT before returning response
 
 **Impact:**
+
 - Multi-tenant data isolation now works correctly immediately after onboarding
 - Users see only their own school's events without needing to logout/login
 - Session state matches database state throughout the onboarding flow
 
 **Testing:**
+
 ```bash
 # 1. Build succeeds
 npm run build
@@ -856,6 +1240,7 @@ npm run build
 ---
 
 ### Bug #11: Data Isolation Bypass - Users Without schoolId See All Events
+
 **Files:** Multiple API routes (`/api/events/route.ts`, `/api/dashboard/*/route.ts`)
 **Severity:** 🔴 CRITICAL - Data Breach
 **Fixed Date:** 2025-11-10
@@ -864,6 +1249,7 @@ npm run build
 All dashboard and event API routes had weak validation that allowed users with `schoolId: undefined` in their JWT session to bypass multi-tenant data isolation and see events from ALL schools, including private data from other organizations.
 
 **User Report:**
+
 ```
 "why 345287info@gmail.com see Default School events???"
 User with their own school seeing 3 events from "Default School" that belonged to a different organization.
@@ -871,6 +1257,7 @@ User with their own school seeing 3 events from "Default School" that belonged t
 
 **Root Cause:**
 The filtering logic in API routes used this pattern:
+
 ```typescript
 if (admin.role !== 'SUPER_ADMIN' && admin.schoolId) {
   where.schoolId = admin.schoolId
@@ -880,6 +1267,7 @@ if (admin.role !== 'SUPER_ADMIN' && admin.schoolId) {
 The problem: `&& admin.schoolId` means if `schoolId` is `undefined`, the entire condition is FALSE, and NO filter is applied. Result: User sees ALL events from ALL schools.
 
 **Attack Scenario:**
+
 1. Attacker creates account via OAuth
 2. JWT session has `schoolId: undefined` (before onboarding or from old session)
 3. Attacker calls `/api/events` or `/api/dashboard/stats`
@@ -888,11 +1276,13 @@ The problem: `&& admin.schoolId` means if `schoolId` is `undefined`, the entire 
 6. **Attacker sees all events from all schools** (data breach)
 
 **Security Impact:**
+
 - ⚠️ **Data Breach**: Unauthorized access to other schools' events, registrations, and statistics
 - ⚠️ **Privacy Violation**: User emails, registration data exposed across tenant boundaries
 - ⚠️ **Compliance Risk**: GDPR/privacy violations for exposing user data to wrong organizations
 
 **Affected Endpoints:**
+
 1. `/api/events` - List all events
 2. `/api/dashboard/stats` - Dashboard statistics
 3. `/api/dashboard/active-events` - Active events list
@@ -901,6 +1291,7 @@ The problem: `&& admin.schoolId` means if `schoolId` is `undefined`, the entire 
 6. `/api/dashboard/occupancy` - Occupancy statistics
 
 **Code Before Fix:**
+
 ```typescript
 // app/api/events/route.ts:25
 // Regular admins can only see their school's events
@@ -911,6 +1302,7 @@ if (admin.role !== 'SUPER_ADMIN' && admin.schoolId) {
 ```
 
 **Fix Applied:**
+
 ```typescript
 // Regular admins MUST have a schoolId
 if (admin.role !== 'SUPER_ADMIN') {
@@ -927,6 +1319,7 @@ if (admin.role !== 'SUPER_ADMIN') {
 ```
 
 **Files Changed:**
+
 - `/app/api/events/route.ts:25-34` - Added strict schoolId validation
 - `/app/api/dashboard/stats/route.ts:20-29` - Added strict schoolId validation
 - `/app/api/dashboard/active-events/route.ts:22-31` - Added strict schoolId validation
@@ -935,11 +1328,13 @@ if (admin.role !== 'SUPER_ADMIN') {
 - `/app/api/dashboard/occupancy/route.ts:20-29` - Added strict schoolId validation
 
 **How Users Are Affected:**
+
 - Users with old session cookies (created before Bug #10 fix) will get a 403 error
 - Error message: "Admin must have a school assigned. Please logout and login again."
 - After logout/login, new session will have correct schoolId from database
 
 **Testing:**
+
 ```bash
 # 1. Test that users without schoolId are rejected
 # Simulate by temporarily setting JWT session with schoolId: undefined
@@ -956,11 +1351,13 @@ if (admin.role !== 'SUPER_ADMIN') {
 
 **Prevention:**
 This bug highlights the importance of:
+
 1. **Fail-secure validation**: Always reject invalid states, don't silently skip filters
 2. **Explicit checks**: Use `if (!value)` instead of relying on truthy/falsy in complex conditions
 3. **Session integrity**: Ensure JWT sessions are always updated when database state changes (see Bug #10)
 
 **Related Bugs:**
+
 - Bug #10: Session not updated after onboarding (root cause of undefined schoolId)
 
 **Status:** ✅ FIXED
@@ -968,6 +1365,7 @@ This bug highlights the importance of:
 ---
 
 ### Bug #12: AdminProd Button Visible to All Users - Missing Super Admin Check
+
 **File:** `/app/admin/page.tsx`
 **Severity:** 🟡 MODERATE - Security/Access Control
 **Fixed Date:** 2025-11-10
@@ -976,11 +1374,13 @@ This bug highlights the importance of:
 The "AdminProd" button in the admin dashboard header was visible to all authenticated users, not just super admins. This button provides access to production admin tools and should only be visible to users with `SUPER_ADMIN` role.
 
 **Security Impact:**
+
 - ⚠️ **Unauthorized Access**: Regular admins and managers could see and potentially access super admin production tools
 - ⚠️ **Information Disclosure**: Button visibility reveals existence of admin production features
 - ⚠️ **Principle of Least Privilege**: Users seeing controls they shouldn't have access to
 
 **Code Before Fix:**
+
 ```typescript
 // app/admin/page.tsx:91-98
 return (
@@ -998,6 +1398,7 @@ return (
 ```
 
 **Fix Applied:**
+
 ```typescript
 // app/admin/page.tsx:9-13
 interface AdminInfo {
@@ -1043,6 +1444,7 @@ export default function AdminDashboard() {
 ```
 
 **Files Changed:**
+
 - `/app/admin/page.tsx:9-13` - Added `AdminInfo` interface with role types
 - `/app/admin/page.tsx:24` - Added `adminInfo` state to track user role
 - `/app/admin/page.tsx:34` - Added call to `fetchAdminInfo()` in useEffect
@@ -1050,6 +1452,7 @@ export default function AdminDashboard() {
 - `/app/admin/page.tsx:113-120` - Added conditional rendering `{adminInfo?.role === 'SUPER_ADMIN' && (...)}`
 
 **How This Works:**
+
 1. Component fetches current admin info from `/api/admin/me` on mount
 2. Response includes `role` field from JWT session
 3. Button only renders if `role === 'SUPER_ADMIN'`
@@ -1059,6 +1462,7 @@ export default function AdminDashboard() {
 Note: This is a UI-level restriction. The actual `/admin-prod` routes should also have server-side middleware protection using `requireSuperAdmin()` from `/lib/auth.server.ts:149-155`.
 
 **Testing:**
+
 ```bash
 # 1. Test as regular admin (OWNER/ADMIN/MANAGER)
 # Login with regular credentials
@@ -1074,6 +1478,7 @@ Note: This is a UI-level restriction. The actual `/admin-prod` routes should als
 ---
 
 ### Bug #13: Signup Form Missing Organization Fields - Requires Separate Onboarding Step
+
 **Files:** `/app/admin/signup/page.tsx`, `/app/api/admin/signup/route.ts`
 **Severity:** 🟡 MODERATE - UX/Onboarding
 **Fixed Date:** 2025-11-10
@@ -1082,17 +1487,20 @@ Note: This is a UI-level restriction. The actual `/admin-prod` routes should als
 The signup form only collected personal information (name, email, password) but not organization details (school name and slug). Users had to complete a separate onboarding step after signup to provide organization information. This created a disjointed user experience with an extra step in the registration flow.
 
 **User Report:**
+
 ```
 "when create mail manual: there is no organization name and slug"
 User showing signup form missing organization fields that appeared in the onboarding step.
 ```
 
 **UX Impact:**
+
 - ⚠️ **Extra Steps**: Users must fill out two separate forms (signup + onboarding)
 - ⚠️ **Confusion**: Users not understanding why they need another form after signup
 - ⚠️ **Drop-off Risk**: Some users might abandon registration during the onboarding step
 
 **Previous Flow:**
+
 1. User fills signup form (name, email, password)
 2. Account created with `schoolId: null`, `onboardingCompleted: false`
 3. User verifies email
@@ -1111,8 +1519,8 @@ const [formData, setFormData] = useState({
   password: '',
   confirmPassword: '',
   name: '',
-  schoolName: '',      // ✅ NEW
-  schoolSlug: '',      // ✅ NEW
+  schoolName: '', // ✅ NEW
+  schoolSlug: '', // ✅ NEW
 })
 
 // Auto-generate slug from school name
@@ -1129,12 +1537,13 @@ const handleSchoolNameChange = (name: string) => {
   setFormData({
     ...formData,
     schoolName: name,
-    schoolSlug: generateSlug(name),  // ✅ Auto-generate URL-friendly slug
+    schoolSlug: generateSlug(name), // ✅ Auto-generate URL-friendly slug
   })
 }
 ```
 
 **UI Structure:**
+
 ```jsx
 <form>
   {/* NEW: Organization Info Section */}
@@ -1149,11 +1558,7 @@ const handleSchoolNameChange = (name: string) => {
     />
 
     {/* School Slug Field (auto-generated, editable) */}
-    <input
-      name="schoolSlug"
-      placeholder="my-organization"
-      value={formData.schoolSlug}
-    />
+    <input name="schoolSlug" placeholder="my-organization" value={formData.schoolSlug} />
     <p>הקישור שלך: ticketcap.com/p/{formData.schoolSlug}</p>
   </div>
 
@@ -1173,8 +1578,8 @@ interface SignupRequest {
   email: string
   password: string
   name: string
-  schoolName?: string     // ✅ NEW - Optional for backward compatibility
-  schoolSlug?: string     // ✅ NEW - Optional for backward compatibility
+  schoolName?: string // ✅ NEW - Optional for backward compatibility
+  schoolSlug?: string // ✅ NEW - Optional for backward compatibility
 }
 
 export async function POST(request: NextRequest) {
@@ -1187,7 +1592,7 @@ export async function POST(request: NextRequest) {
   if (schoolName && schoolSlug) {
     // ✅ Check if slug already taken
     const existingSchool = await prisma.school.findUnique({
-      where: { slug: schoolSlug }
+      where: { slug: schoolSlug },
     })
 
     if (existingSchool) {
@@ -1202,10 +1607,10 @@ export async function POST(request: NextRequest) {
       data: {
         name: schoolName,
         slug: schoolSlug,
-      }
+      },
     })
     createdSchoolId = school.id
-    requiresOnboarding = false  // ✅ Onboarding complete!
+    requiresOnboarding = false // ✅ Onboarding complete!
   }
 
   // Create admin with schoolId if school was created
@@ -1215,8 +1620,8 @@ export async function POST(request: NextRequest) {
       passwordHash,
       name,
       role: 'OWNER',
-      schoolId: createdSchoolId,           // ✅ Set immediately if provided
-      onboardingCompleted: !requiresOnboarding,  // ✅ True if school created
+      schoolId: createdSchoolId, // ✅ Set immediately if provided
+      onboardingCompleted: !requiresOnboarding, // ✅ True if school created
       emailVerified: false,
       verificationToken,
     },
@@ -1224,23 +1629,26 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     success: true,
-    requiresOnboarding,  // ✅ False if school info was provided
+    requiresOnboarding, // ✅ False if school info was provided
   })
 }
 ```
 
 **New Flow:**
+
 1. User fills ONE form (name, email, password, school name, slug)
 2. Account + School created in same request
 3. User verifies email
 4. User redirected directly to `/admin` dashboard (no onboarding needed)
 
 **Backward Compatibility:**
+
 - Fields are optional (`schoolName?: string`)
 - If not provided, old onboarding flow still works
 - Existing onboarding page remains functional for edge cases
 
 **Files Changed:**
+
 - `/app/admin/signup/page.tsx:3` - Added imports: `Building2`, `Link as LinkIcon`
 - `/app/admin/signup/page.tsx:9-16` - Added `schoolName` and `schoolSlug` to form state
 - `/app/admin/signup/page.tsx:22-37` - Added `generateSlug()` and `handleSchoolNameChange()` functions
@@ -1255,6 +1663,7 @@ export async function POST(request: NextRequest) {
 - `/app/api/admin/signup/route.ts:154` - Return `requiresOnboarding` in response
 
 **User Experience Improvements:**
+
 - ✅ One form instead of two
 - ✅ Real-time slug generation from school name
 - ✅ Visual preview of final URL: `ticketcap.com/p/my-school`
@@ -1262,6 +1671,7 @@ export async function POST(request: NextRequest) {
 - ✅ No extra page navigation needed
 
 **Testing:**
+
 ```bash
 # 1. Test new signup flow with school info
 # Navigate to /admin/signup
@@ -1283,6 +1693,7 @@ export async function POST(request: NextRequest) {
 ---
 
 ### Bug #14: Verification Emails Not Sending - Resend API Test Mode Restrictions
+
 **Files:** `/lib/email.ts`, `.env.local`
 **Severity:** 🔴 CRITICAL - User Onboarding Blocker
 **Fixed Date:** 2025-11-10
@@ -1291,17 +1702,20 @@ export async function POST(request: NextRequest) {
 Users were not receiving verification emails after signup. Investigation revealed that the Resend API was in test mode with strict limitations that prevented emails from being sent to most recipients.
 
 **User Report:**
+
 ```
 "when sign in, no mail sent, resend problem?"
 ```
 
 **Root Cause:**
 The Resend API key is in **test/free tier mode** with these restrictions:
+
 1. ❌ Can only send to the verified account owner email (`345287@gmail.com`)
 2. ✅ FROM address `noreply@kartis.info` is now verified (domain verified in Resend)
 3. ✅ Domain verification complete - emails can now be sent to all recipients
 
 **API Error Response:**
+
 ```json
 {
   "error": {
@@ -1315,6 +1729,7 @@ The Resend API key is in **test/free tier mode** with these restrictions:
 ```
 
 **Testing Results:**
+
 ```bash
 $ node test-resend-api.js
 ✓ Resend API is working
@@ -1345,6 +1760,7 @@ EMAIL_FROM="onboarding@resend.dev"  # ✅ Works in test mode
    - Helps users who checked spam, waited too long, etc.
 
 **Files Changed:**
+
 - `.env.local:6` - Changed `EMAIL_FROM` from `noreply@kartis.info` to `onboarding@resend.dev`
 - `/app/api/admin/resend-verification/route.ts` - New endpoint for resending verification emails
 - `/app/admin/signup/page.tsx:20-21` - Added `isResending` and `resendMessage` state
@@ -1356,6 +1772,7 @@ EMAIL_FROM="onboarding@resend.dev"  # ✅ Works in test mode
 To send emails to all users in production:
 
 1. **Verify Your Domain at Resend:**
+
    ```
    1. Go to https://resend.com/domains
    2. Click "Add Domain"
@@ -1367,6 +1784,7 @@ To send emails to all users in production:
    ```
 
 2. **Update Environment Variable:**
+
    ```env
    EMAIL_FROM="noreply@kartis.info"  # Now will work!
    ```
@@ -1377,12 +1795,14 @@ To send emails to all users in production:
    - https://resend.com/pricing
 
 **Current Limitations (Test Mode):**
+
 - ⚠️ Can only send to: `345287@gmail.com`
 - ⚠️ Other emails will fail silently or return 403
 - ⚠️ Suitable for development/testing only
 - ⚠️ Must verify domain before production launch
 
 **Testing After Fix:**
+
 ```bash
 # Test with account owner email (should work)
 curl -X POST http://localhost:9000/api/admin/signup \
@@ -1411,6 +1831,7 @@ curl -X POST http://localhost:9000/api/admin/resend-verification \
 ---
 
 ### Bug #15: Feedback Section Accessible to All Admins - Missing Super Admin Authorization
+
 **Files:** `/app/admin/layout.tsx`, `/app/admin/feedback/page.tsx`, `/app/api/admin/feedback/route.ts`, `/app/api/admin/feedback/[id]/route.ts`
 **Severity:** 🟡 MODERATE - Access Control
 **Fixed Date:** 2025-11-11
@@ -1419,11 +1840,13 @@ curl -X POST http://localhost:9000/api/admin/resend-verification \
 The feedback (משובים) section was accessible to all authenticated admins, not just super admins. This section contains sensitive user feedback and should only be accessible to users with the `SUPER_ADMIN` role.
 
 **Security Impact:**
+
 - ⚠️ **Unauthorized Access**: Regular admins could view all user feedback
 - ⚠️ **Information Disclosure**: Feedback may contain sensitive information about bugs, feature requests, or user complaints
 - ⚠️ **Principle of Least Privilege**: Regular admins don't need access to system-wide feedback
 
 **Code Before Fix:**
+
 ```typescript
 // app/admin/layout.tsx - Navigation showed feedback link to all admins
 <Link href="/admin/feedback">משובים</Link>
@@ -1444,6 +1867,7 @@ export async function GET(request: NextRequest) {
 **Fix Applied:**
 
 **1. Client-Side Navigation Hiding:**
+
 ```typescript
 // app/admin/layout.tsx:102-155
 {adminInfo?.role === 'SUPER_ADMIN' ? (
@@ -1463,6 +1887,7 @@ export async function GET(request: NextRequest) {
 ```
 
 **2. Client-Side Page Protection:**
+
 ```typescript
 // app/admin/feedback/page.tsx:19-43
 const [isAuthorized, setIsAuthorized] = useState(false)
@@ -1491,6 +1916,7 @@ if (!isAuthorized) {
 ```
 
 **3. Server-Side API Protection:**
+
 ```typescript
 // app/api/admin/feedback/route.ts:3-8
 import { requireSuperAdmin } from '@/lib/auth'
@@ -1516,6 +1942,7 @@ export async function DELETE(...) {
 ```
 
 **Files Changed:**
+
 - `/app/admin/layout.tsx:141-146` - Removed feedback navigation link for non-super admins
 - `/app/admin/layout.tsx:247-254` - Removed feedback mobile menu link for non-super admins
 - `/app/admin/feedback/page.tsx:1-6` - Added imports: `Shield`, `useRouter`
@@ -1530,11 +1957,13 @@ export async function DELETE(...) {
 - `/app/api/admin/feedback/[id]/route.ts:39-40` - Added super admin check to DELETE
 
 **Visual Improvements:**
+
 - Added "Super Admin Only" purple badge to feedback page header
 - Shield icon during authorization check
 - Smooth redirect for unauthorized access
 
 **Testing:**
+
 ```bash
 # 1. Test as regular admin (OWNER/ADMIN)
 # Expected: No "משובים" link in navigation
@@ -1551,6 +1980,7 @@ export async function DELETE(...) {
 ---
 
 ### Bug #16: Admin Events Page Mobile UI Not Optimized - Poor Touch Targets and Layout
+
 **File:** `/app/admin/events/page.tsx`
 **Severity:** 🟡 MODERATE - UX/Mobile
 **Fixed Date:** 2025-11-11
@@ -1559,12 +1989,14 @@ export async function DELETE(...) {
 The admin events list page had poor mobile UI/UX with cramped buttons, horizontal overflow risks, and content that didn't stack well on small screens. Touch targets were too small and important information was hard to read.
 
 **UX Impact:**
+
 - ⚠️ **Touch Targets**: Buttons smaller than 44px (iOS accessibility minimum)
 - ⚠️ **Horizontal Overflow**: Long event names and URLs could cause scrolling
 - ⚠️ **Cramped Layout**: Too much horizontal content on mobile
 - ⚠️ **Poor Readability**: Small fonts and inconsistent spacing
 
 **Code Before Fix:**
+
 ```typescript
 // Cramped layout with poor mobile support
 <div className="flex items-center justify-between">
@@ -1585,6 +2017,7 @@ The admin events list page had poor mobile UI/UX with cramped buttons, horizonta
 **Fix Applied:**
 
 **1. Proper Touch Targets (44px minimum):**
+
 ```typescript
 // All interactive elements >= 44px height
 <select className="min-h-[44px] min-w-[100px]" />
@@ -1595,6 +2028,7 @@ The admin events list page had poor mobile UI/UX with cramped buttons, horizonta
 ```
 
 **2. Responsive Layout Stacking:**
+
 ```typescript
 // Header - stack title and status vertically on mobile
 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
@@ -1618,6 +2052,7 @@ The admin events list page had poor mobile UI/UX with cramped buttons, horizonta
 ```
 
 **3. Prevent Horizontal Overflow:**
+
 ```typescript
 // Hide full URL on mobile, show only slug
 <div className="text-xs text-gray-500 space-y-1">
@@ -1629,6 +2064,7 @@ The admin events list page had poor mobile UI/UX with cramped buttons, horizonta
 ```
 
 **4. Improved Visual Hierarchy:**
+
 ```typescript
 // Larger text, better spacing, clearer badges
 <h3 className="text-lg sm:text-xl font-medium">  {/* Responsive sizing */}
@@ -1637,6 +2073,7 @@ The admin events list page had poor mobile UI/UX with cramped buttons, horizonta
 ```
 
 **5. Better Button Labels:**
+
 ```typescript
 // Before: Icon-only buttons (unclear)
 <Link>
@@ -1651,6 +2088,7 @@ The admin events list page had poor mobile UI/UX with cramped buttons, horizonta
 ```
 
 **Files Changed:**
+
 - `/app/admin/events/page.tsx:114-218` - Complete mobile-first redesign of event card
 - `/app/admin/events/page.tsx:116-135` - Responsive header with stacking
 - `/app/admin/events/page.tsx:137-167` - Vertical event details layout
@@ -1658,6 +2096,7 @@ The admin events list page had poor mobile UI/UX with cramped buttons, horizonta
 - `/app/admin/events/page.tsx:203-213` - Overflow-safe event code section
 
 **Mobile Improvements:**
+
 - ✅ All buttons >= 44px height (iOS accessibility standard)
 - ✅ Content stacks vertically on small screens
 - ✅ No horizontal overflow
@@ -1667,6 +2106,7 @@ The admin events list page had poor mobile UI/UX with cramped buttons, horizonta
 - ✅ Status badge hidden on mobile (redundant with dropdown)
 
 **Testing:**
+
 ```bash
 # 1. Test on mobile viewport (375px width)
 # Expected: All content readable, no horizontal scroll
@@ -1685,6 +2125,7 @@ The admin events list page had poor mobile UI/UX with cramped buttons, horizonta
 ---
 
 ### Bug #17: Help Page Not Soccer-Focused - Generic Examples and No Real-World Context
+
 **File:** `/app/admin/help/page.tsx`
 **Severity:** 🟢 LOW - UX/Content
 **Fixed Date:** 2025-11-11
@@ -1693,11 +2134,13 @@ The admin events list page had poor mobile UI/UX with cramped buttons, horizonta
 The help page had generic examples (parties, birthdays, trips) instead of soccer-specific examples. Since the system is built for sports events (especially soccer), the documentation should reflect this with practical, realistic examples that users can relate to.
 
 **UX Impact:**
+
 - ⚠️ **Confusing Examples**: Users managing soccer games seeing party examples
 - ⚠️ **Missing Context**: No explanation of why soccer-specific features exist
 - ⚠️ **Poor Onboarding**: New users don't understand the system was built for sports
 
 **Content Before Fix:**
+
 - Generic title: "המדריך המלא ליצירת אירועים"
 - Party examples: "מסיבת פיצה וחברים", "יום הולדת"
 - General capacity: "15-25 ילדים (תלוי בגודל הבית)"
@@ -1706,14 +2149,16 @@ The help page had generic examples (parties, birthdays, trips) instead of soccer
 **Fix Applied:**
 
 **1. Soccer-Focused Header:**
+
 ```markdown
 Before: 🎉 המדריך המלא ליצירת אירועים 🎉
-After:  ⚽ המדריך המלא לניהול משחקי כדורגל ⚽
+After: ⚽ המדריך המלא לניהול משחקי כדורגל ⚽
 
 Subtitle: "המערכת שלנו נבנתה במיוחד למשחקי כדורגל, אבל אפשר להשתמש בה לכל סוג אירוע!"
 ```
 
 **2. Soccer Examples Throughout:**
+
 ```typescript
 // Event title examples
 ⚽ משחק ידידות - נוער נגד מבוגרים
@@ -1740,6 +2185,7 @@ Subtitle: "המערכת שלנו נבנתה במיוחד למשחקי כדורג
 ```
 
 **3. Practical Tips for Soccer:**
+
 ```typescript
 💡 טיפים חשובים למשחק כדורגל מושלם
 
@@ -1751,6 +2197,7 @@ Subtitle: "המערכת שלנו נבנתה במיוחד למשחקי כדורג
 ```
 
 **4. Completion Messages:**
+
 ```typescript
 // Before: Generic party messages
 // After: Soccer-specific
@@ -1760,6 +2207,7 @@ Subtitle: "המערכת שלנו נבנתה במיוחד למשחקי כדורג
 ```
 
 **5. Clear System Flexibility:**
+
 ```typescript
 // Added prominent reminder at end
 💡 זכרו: המערכת נבנתה במיוחד למשחקי כדורגל,
@@ -1768,11 +2216,13 @@ Subtitle: "המערכת שלנו נבנתה במיוחד למשחקי כדורג
 ```
 
 **Color Scheme Changes:**
+
 - Changed from purple/pink to green/blue (soccer colors)
 - Updated gradients to match sports theme
 - Green accent color for soccer elements
 
 **Files Changed:**
+
 - `/app/admin/help/page.tsx:9-22` - Soccer-focused header and subtitle
 - `/app/admin/help/page.tsx:24-51` - Added use case explanations with soccer examples
 - `/app/admin/help/page.tsx:61-80` - Soccer title examples with tips
@@ -1785,6 +2235,7 @@ Subtitle: "המערכת שלנו נבנתה במיוחד למשחקי כדורג
 - `/app/admin/help/page.tsx:493-515` - Soccer call-to-action with reminder
 
 **Content Improvements:**
+
 - ✅ Soccer examples in every section
 - ✅ Clear explanation of system purpose
 - ✅ Practical venue and capacity examples
@@ -1794,6 +2245,7 @@ Subtitle: "המערכת שלנו נבנתה במיוחד למשחקי כדורג
 - ✅ Visual hierarchy with soccer-themed colors
 
 **Testing:**
+
 ```bash
 # 1. Test readability
 # Expected: Soccer coaches/organizers understand examples
@@ -1809,6 +2261,7 @@ Subtitle: "המערכת שלנו נבנתה במיוחד למשחקי כדורג
 ---
 
 ### Bug #18: White Text on White Background in Mobile Registration Form - Invisible Input Fields
+
 **File:** `/app/p/[schoolSlug]/[eventSlug]/page.tsx`
 **Severity:** 🔴 CRITICAL - User Registration Blocker
 **Fixed Date:** 2025-11-11
@@ -1817,6 +2270,7 @@ Subtitle: "המערכת שלנו נבנתה במיוחד למשחקי כדורג
 On mobile devices, users filling out the event registration form could not see what they were typing because the input text color was white on a white background. This made the form completely unusable on mobile devices, blocking all new registrations from mobile users.
 
 **User Report:**
+
 ```
 "on prod, after admin created url, users get in and fill data, the font is white n white background:
 [screenshot showing Hebrew form with invisible text in input fields]
@@ -1824,6 +2278,7 @@ and people do not see what they type. problem ONLY on mobile"
 ```
 
 **Visual Issue:**
+
 - Form fields: "שם מלא" (Full Name), "טלפון" (Phone), "שם הילד" (Child's Name)
 - Input text appeared invisible when typing
 - Only affected mobile browsers (likely iOS Safari, Chrome Mobile)
@@ -1833,6 +2288,7 @@ and people do not see what they type. problem ONLY on mobile"
 The input fields in the registration form were missing explicit `text-gray-900` and `bg-white` CSS classes. On mobile browsers, especially with certain accessibility or dark mode settings, the default text color can be white. Without explicit styling, this resulted in white text on white background.
 
 **Code Before Fix:**
+
 ```typescript
 // Line 372 - Dropdown select
 <select
@@ -1881,17 +2337,20 @@ Added explicit `text-gray-900` (dark text) and `bg-white` (white background) to 
 ```
 
 **Files Changed:**
+
 - `/app/p/[schoolSlug]/[eventSlug]/page.tsx:372` - Added `text-gray-900 bg-white` to dropdown select
 - `/app/p/[schoolSlug]/[eventSlug]/page.tsx:393` - Added `text-gray-900 bg-white` to text/number input
 - `/app/p/[schoolSlug]/[eventSlug]/page.tsx:416` - Added `text-gray-900 bg-white` to spots count input
 
 **Impact:**
+
 - ✅ Mobile users can now see what they're typing
 - ✅ Consistent styling across all browsers and devices
 - ✅ Proper contrast meets accessibility standards
 - ✅ Registration form fully functional on mobile
 
 **Testing:**
+
 ```bash
 # 1. Manual test on mobile device
 # Navigate to any event registration page on iPhone/Android
@@ -1907,6 +2366,7 @@ Added explicit `text-gray-900` (dark text) and `bg-white` (white background) to 
 ```
 
 **Why This Was Critical:**
+
 - 🚫 **Complete Registration Failure**: Mobile users (majority of traffic) couldn't complete registration
 - 🚫 **Revenue Loss**: Events couldn't accept registrations from mobile users
 - 🚫 **Poor User Experience**: Users had to type blindly or give up
@@ -1914,9 +2374,10 @@ Added explicit `text-gray-900` (dark text) and `bg-white` (white background) to 
 
 **Prevention:**
 Always specify explicit text colors and backgrounds for form inputs, especially for mobile:
+
 ```typescript
 // Good pattern for all inputs
-className="... text-gray-900 bg-white ..."
+className = '... text-gray-900 bg-white ...'
 
 // Never rely on browser defaults for production forms
 ```
@@ -1926,6 +2387,7 @@ className="... text-gray-900 bg-white ..."
 ---
 
 ### Bug #19: Missing Form Validation - Submit Button Active Without Required Fields
+
 **File:** `/app/p/[schoolSlug]/[eventSlug]/page.tsx`
 **Severity:** 🟡 MODERATE - UX/Validation
 **Fixed Date:** 2025-11-11
@@ -1934,18 +2396,21 @@ className="... text-gray-900 bg-white ..."
 Users could submit event registration forms without filling in all mandatory fields. The submit button was enabled even when required fields were empty, leading to failed submissions and poor user experience. There was no clear feedback about which fields needed to be completed.
 
 **UX Impact:**
+
 - ⚠️ **Poor User Feedback**: Users clicking submit without knowing what was missing
 - ⚠️ **Wasted Time**: Users had to guess which fields were required
 - ⚠️ **Frustration**: Form submission failing without clear guidance
 - ⚠️ **Higher Bounce Rate**: Users potentially abandoning registration
 
 **User Request:**
+
 ```
 "on the event: http://localhost:9000/p/schooltest/asd-2 when not all mandatory fields filled,
 the submit button must be disabled and near it the missing fields that missing, as text. follow ui ux"
 ```
 
 **Code Before Fix:**
+
 ```typescript
 // app/p/[schoolSlug]/[eventSlug]/page.tsx:442-455
 <button
@@ -1962,6 +2427,7 @@ the submit button must be disabled and near it the missing fields that missing, 
 **Fix Applied:**
 
 **1. Validation Logic (lines 77-102):**
+
 ```typescript
 // Get missing required fields for validation
 const getMissingFields = () => {
@@ -1974,7 +2440,7 @@ const getMissingFields = () => {
     if (field.required) {
       const value = formData[field.name]
       if (!value || (typeof value === 'string' && value.trim() === '')) {
-        missing.push(field.label)  // ✅ Collect missing field labels
+        missing.push(field.label) // ✅ Collect missing field labels
       }
     }
   })
@@ -1992,6 +2458,7 @@ const isFormValid = missingFields.length === 0
 ```
 
 **2. Missing Fields Indicator (lines 469-489):**
+
 ```typescript
 {/* Missing Fields Indicator */}
 {!isFormValid && (
@@ -2017,6 +2484,7 @@ const isFormValid = missingFields.length === 0
 ```
 
 **3. Submit Button Updates (lines 491-506):**
+
 ```typescript
 <button
   type="submit"
@@ -2037,6 +2505,7 @@ const isFormValid = missingFields.length === 0
 ```
 
 **Files Changed:**
+
 - `/app/p/[schoolSlug]/[eventSlug]/page.tsx:77-102` - Added `getMissingFields()` validation function
 - `/app/p/[schoolSlug]/[eventSlug]/page.tsx:101-102` - Added `missingFields` and `isFormValid` computed values
 - `/app/p/[schoolSlug]/[eventSlug]/page.tsx:469-489` - Added missing fields indicator UI
@@ -2044,6 +2513,7 @@ const isFormValid = missingFields.length === 0
 - `/app/p/[schoolSlug]/[eventSlug]/page.tsx:501-502` - Added disabled state button text
 
 **Features:**
+
 - ✅ **Real-time Validation**: Form validity updates as user fills fields
 - ✅ **Clear Feedback**: Red notification box lists all missing fields
 - ✅ **Visual Indicators**: AlertCircle icon and bullet points for each missing field
@@ -2053,6 +2523,7 @@ const isFormValid = missingFields.length === 0
 - ✅ **RTL Support**: Hebrew text with proper right-to-left layout
 
 **UI/UX Best Practices:**
+
 1. **Progressive Disclosure**: Error message only appears when needed
 2. **Specific Feedback**: Lists exact field names, not generic "fill all fields"
 3. **Visual Hierarchy**: Red color (error), icon (attention), list (clarity)
@@ -2060,6 +2531,7 @@ const isFormValid = missingFields.length === 0
 5. **Helpful Text**: Button text explains why it's disabled
 
 **Testing:**
+
 ```bash
 # 1. Test empty form
 # Navigate to event registration page
@@ -2083,6 +2555,7 @@ const isFormValid = missingFields.length === 0
 ```
 
 **Impact:**
+
 - ✅ Reduced form abandonment (users know what to fill)
 - ✅ Fewer failed submissions (validation before submit)
 - ✅ Better user experience (clear, actionable feedback)
@@ -2094,6 +2567,7 @@ const isFormValid = missingFields.length === 0
 ---
 
 ### Bug #20: Admin Panel Displaying Field IDs Instead of Field Labels in Registration Data
+
 **File:** `/app/admin/events/[id]/page.tsx`
 **Severity:** 🟡 MODERATE - UX/Data Display
 **Fixed Date:** 2025-11-11
@@ -2102,6 +2576,7 @@ const isFormValid = missingFields.length === 0
 When viewing registration details in the admin panel, custom field names were displaying as technical IDs (e.g., `field_1762863496708`) instead of the human-readable labels that admins set up when creating the event. This made it difficult for admins to understand what information users had submitted.
 
 **User Report:**
+
 ```
 "work, but admin see: [screenshots showing field IDs]
 Registration data:
@@ -2114,6 +2589,7 @@ Registration data:
 ```
 
 **Visual Issue:**
+
 - User registration worked correctly ✅
 - User received confirmation code ✅
 - BUT admin panel showed field IDs instead of field labels ❌
@@ -2123,6 +2599,7 @@ Registration data:
 The admin panel's expanded registration view was directly displaying keys from `registration.data` object without mapping them to their corresponding labels from the event's `fieldsSchema`.
 
 **How Custom Fields Work:**
+
 1. Admin creates event with custom fields via FieldBuilder
 2. Each field gets a unique ID: `field_1762863496708`
 3. Field has a `label` (human-readable, e.g., "שם הילד")
@@ -2130,6 +2607,7 @@ The admin panel's expanded registration view was directly displaying keys from `
 5. Admin views registration → needs to map field ID back to label
 
 **Code Before Fix:**
+
 ```typescript
 // app/admin/events/[id]/page.tsx:435-440
 {expandedRow === registration.id && (
@@ -2151,6 +2629,7 @@ The admin panel's expanded registration view was directly displaying keys from `
 **Fix Applied:**
 
 **1. Created Helper Function (lines 200-221):**
+
 ```typescript
 // Helper function to get field label from fieldsSchema
 const getFieldLabel = (fieldKey: string): string => {
@@ -2159,7 +2638,7 @@ const getFieldLabel = (fieldKey: string): string => {
   // Check if this is a custom field (starts with "field_")
   if (fieldKey.startsWith('field_')) {
     const field = event.fieldsSchema.find((f: any) => f.id === fieldKey)
-    return field?.label || fieldKey  // ✅ Return human-readable label
+    return field?.label || fieldKey // ✅ Return human-readable label
   }
 
   // Return common field labels in Hebrew
@@ -2169,7 +2648,7 @@ const getFieldLabel = (fieldKey: string): string => {
     email: 'אימייל',
     spotsCount: 'מספר מקומות',
     message: 'הודעה',
-    notes: 'הערות'
+    notes: 'הערות',
   }
 
   return commonFields[fieldKey] || fieldKey
@@ -2177,6 +2656,7 @@ const getFieldLabel = (fieldKey: string): string => {
 ```
 
 **2. Updated Registration Data Display (line 460):**
+
 ```typescript
 {Object.entries(registration.data).map(([key, value]) => (
   <div key={key} className="flex gap-2">
@@ -2187,6 +2667,7 @@ const getFieldLabel = (fieldKey: string): string => {
 ```
 
 **How It Works:**
+
 1. Admin clicks row to expand registration details
 2. System iterates through `registration.data` object
 3. For each field key:
@@ -2196,6 +2677,7 @@ const getFieldLabel = (fieldKey: string): string => {
 4. Displays human-readable label instead of technical ID
 
 **Before/After Comparison:**
+
 ```
 BEFORE:
 - field_1762863496708: asdads
@@ -2211,10 +2693,12 @@ AFTER:
 ```
 
 **Files Changed:**
+
 - `/app/admin/events/[id]/page.tsx:200-221` - Added `getFieldLabel()` helper function
 - `/app/admin/events/[id]/page.tsx:460` - Updated registration data display to use `getFieldLabel(key)`
 
 **Features:**
+
 - ✅ **Custom Field Mapping**: Maps `field_*` IDs to their labels from fieldsSchema
 - ✅ **Common Field Translation**: Translates standard fields to Hebrew (שם, טלפון, etc.)
 - ✅ **Fallback Safety**: Returns original key if no label found
@@ -2222,6 +2706,7 @@ AFTER:
 - ✅ **Schema Validation**: Handles missing or malformed fieldsSchema gracefully
 
 **Testing:**
+
 ```bash
 # 1. Test with custom fields
 # Create event with custom fields (via FieldBuilder)
@@ -2244,6 +2729,7 @@ AFTER:
 ```
 
 **Impact:**
+
 - ✅ Admins can now understand registration data at a glance
 - ✅ No need to cross-reference field IDs with event schema
 - ✅ More professional admin experience
@@ -2253,7 +2739,807 @@ AFTER:
 
 ---
 
+### Bug #21: Missing Payment Configuration UI in Event Creation Form
+
+**File:** `/app/admin/events/new/page.tsx`
+**Severity:** 🔴 CRITICAL - Missing Feature
+**Fixed Date:** 2026-01-10
+
+**Description:**
+The event creation form is completely missing payment configuration options, even though the database schema fully supports payment settings for event ticketing via YaadPay. Users cannot configure paid events during creation, limiting the platform to free events only.
+
+**User Report:**
+
+```
+"when create event, there is no add payment options! its a bug"
+```
+
+**Technical Context:**
+The Prisma schema includes comprehensive payment support (Event model, lines 201-206):
+
+- `paymentRequired` (Boolean) - Whether payment is required
+- `paymentTiming` (Enum: OPTIONAL, UPFRONT, POST_REGISTRATION)
+- `pricingModel` (Enum: FIXED_PRICE, PER_GUEST, FREE)
+- `priceAmount` (Decimal) - Price in ILS
+- `currency` (String) - Currency code
+
+These fields exist in:
+
+- ✅ Database schema (`/prisma/schema.prisma:201-206`)
+- ✅ FormData state (`/app/admin/events/new/page.tsx:66-70`)
+- ✅ API endpoint (accepts payment fields)
+- ❌ **UI Form** - COMPLETELY MISSING
+
+**Impact:**
+
+- 🚫 **Revenue Loss**: Schools cannot create paid events
+- 🚫 **Feature Gap**: YaadPay integration exists but unusable
+- 🚫 **Manual Workaround Required**: Admins must edit events after creation via database
+- 🚫 **Poor UX**: Users expect payment options but can't find them
+
+**Code Before Fix:**
+
+```typescript
+// app/admin/events/new/page.tsx:52-70
+const [formData, setFormData] = useState<EventFormData>({
+  title: '',
+  description: '',
+  // ... other fields ...
+
+  // Payment settings (Tier 2: Event Ticketing - YaadPay)
+  paymentRequired: false, // ✅ Exists in state
+  paymentTiming: 'OPTIONAL', // ✅ Exists in state
+  pricingModel: 'FREE', // ✅ Exists in state
+  currency: 'ILS', // ✅ Exists in state
+  // priceAmount: missing from formData
+})
+
+// ❌ NO UI FOR THESE FIELDS IN ANY OF THE 4 STEPS
+```
+
+**Fix Applied:**
+
+**1. Added Payment Configuration Section to Step 3 (Advanced):**
+
+Added comprehensive payment UI after the "Field Builder" section with:
+
+- Payment requirement toggle
+- Payment timing selector (conditional - only if payment required)
+- Pricing model selector (conditional)
+- Price amount input (conditional - only if not FREE)
+- Visual indicators and help text
+
+**2. Updated FormData State:**
+
+```typescript
+// Added priceAmount to initial state
+const [formData, setFormData] = useState<EventFormData>({
+  // ... existing fields ...
+  paymentRequired: false,
+  paymentTiming: 'OPTIONAL',
+  pricingModel: 'FREE',
+  priceAmount: undefined, // ✅ NEW
+  currency: 'ILS',
+})
+```
+
+**3. UI Components Added (Step 3, Advanced Tab):**
+
+```typescript
+{/* Payment Configuration - NEW SECTION */}
+<div className="bg-white shadow-lg rounded-xl p-6 border border-gray-200">
+  <div className="flex items-center gap-2 mb-4">
+    <CreditCard className="w-6 h-6 text-green-600" />
+    <h2 className="text-xl font-bold text-gray-900">הגדרות תשלום</h2>
+  </div>
+
+  {/* Payment Required Toggle */}
+  <label className="flex items-center gap-3 cursor-pointer">
+    <input type="checkbox" checked={formData.paymentRequired} />
+    <span>דרוש תשלום לאירוע זה</span>
+  </label>
+
+  {/* Conditional: Payment Timing */}
+  {formData.paymentRequired && (
+    <select value={formData.paymentTiming}>
+      <option value="UPFRONT">תשלום מראש (לפני ההרשמה)</option>
+      <option value="POST_REGISTRATION">תשלום לאחר ההרשמה</option>
+      <option value="OPTIONAL">אופציונלי</option>
+    </select>
+  )}
+
+  {/* Conditional: Pricing Model */}
+  {formData.paymentRequired && (
+    <select value={formData.pricingModel}>
+      <option value="FIXED_PRICE">מחיר קבוע להרשמה</option>
+      <option value="PER_GUEST">מחיר לכל אורח</option>
+      <option value="FREE">חינם</option>
+    </select>
+  )}
+
+  {/* Conditional: Price Amount */}
+  {formData.paymentRequired && formData.pricingModel !== 'FREE' && (
+    <input
+      type="number"
+      step="0.01"
+      min="0"
+      value={formData.priceAmount || ''}
+      placeholder="מחיר באגורות (לדוגמה: 50.00)"
+    />
+  )}
+</div>
+```
+
+**4. Validation Logic:**
+
+```typescript
+// Added validation for payment fields
+const validatePaymentFields = () => {
+  if (formData.paymentRequired) {
+    if (formData.pricingModel !== 'FREE' && !formData.priceAmount) {
+      return 'יש להזין מחיר כאשר האירוע בתשלום'
+    }
+    if (formData.priceAmount && formData.priceAmount < 0) {
+      return 'המחיר חייב להיות חיובי'
+    }
+  }
+  return null
+}
+```
+
+**Files Changed:**
+
+- `/app/admin/events/new/page.tsx:52-70` - Added `priceAmount` to formData state
+- `/app/admin/events/new/page.tsx:849-960` - Added payment configuration section in step 3
+- `/app/admin/events/new/page.tsx:344-362` - Updated validation to include payment fields
+- `/app/docs/bugs/bugs.md` - Documented bug
+
+**Features Added:**
+
+- ✅ **Payment Required Toggle**: Enable/disable payment for event
+- ✅ **Payment Timing Selector**: Choose when users pay (upfront, post-registration, optional)
+- ✅ **Pricing Model Selector**: Fixed price vs per-guest pricing
+- ✅ **Price Amount Input**: Enter price in ILS with validation
+- ✅ **Conditional Rendering**: Only show relevant fields based on selections
+- ✅ **Visual Feedback**: Icons, help text, and validation messages
+- ✅ **Hebrew RTL Support**: Proper right-to-left layout
+- ✅ **Validation**: Ensures price is set when payment required
+
+**UI/UX Improvements:**
+
+1. **Logical Grouping**: Payment settings in Advanced step with other optional features
+2. **Progressive Disclosure**: Only show payment options when "Payment Required" is checked
+3. **Clear Labels**: Hebrew labels with descriptive text
+4. **Validation Feedback**: Real-time validation for price fields
+5. **Icons**: CreditCard icon for visual clarity
+6. **Help Text**: Explains each option and when to use it
+
+**Testing:**
+
+```bash
+# 1. Test free event (default)
+# Navigate to /admin/events/new
+# Expected: Payment section collapsed, paymentRequired unchecked
+
+# 2. Test enabling payment
+# Check "דרוש תשלום לאירוע זה"
+# Expected: Payment timing and pricing model selectors appear
+
+# 3. Test fixed price
+# Select "מחיר קבוע להרשמה"
+# Enter price: 50.00
+# Expected: Price input visible, accepts decimal values
+
+# 4. Test per-guest pricing (table-based)
+# Select "מחיר לכל אורח"
+# Enter price: 100.00
+# Expected: Price per guest calculated at registration time
+
+# 5. Test validation
+# Enable payment, select FIXED_PRICE, leave price empty
+# Expected: Validation error when trying to create event
+
+# 6. Test event creation
+# Fill all fields including payment settings
+# Submit form
+# Expected: Event created with payment configuration saved
+```
+
+**Why This Was Critical:**
+
+- 🚫 **Missing Core Feature**: Payment is Tier 2 feature but completely unusable
+- 🚫 **Revenue Impact**: Schools cannot monetize events
+- 🚫 **Platform Limitation**: Forced all events to be free
+- 🚫 **Poor Developer Experience**: Payment fields in schema but no UI
+
+**Prevention:**
+When adding database schema fields, always ensure corresponding UI exists:
+
+1. Check all forms that create/edit the model
+2. Add UI components for new fields
+3. Update validation logic
+4. Test full create/edit flow
+5. Document new features in help pages
+
+**Related Features:**
+
+- YaadPay Integration (payment gateway)
+- Registration payment flow (existing backend logic)
+- Payment status tracking (exists in schema, needs admin UI)
+
+**Status:** ✅ FIXED
+
+---
+
 **Report Generated:** 2025-11-10
-**Last Updated:** 2025-11-11
+**Last Updated:** 2026-01-10
 **Tested By:** Claude Code QA
 **Next Review:** After critical fixes implemented
+
+---
+
+### Bug #18: Payment API Field Mismatch - CAPACITY_BASED Events Cannot Process Payment ✅ FIXED
+
+**Files:**
+
+- `/app/api/payment/create/route.ts` (lines 131-143)
+
+**Severity:** 🔴 CRITICAL (revenue loss - prevents payment processing)
+**Status:** ✅ FIXED (2026-01-10)
+
+**Description:**
+Events configured with PER_GUEST pricing model and CAPACITY_BASED event type cannot process upfront payments because the payment API expects `guestsCount` but CAPACITY_BASED events send `spotsCount`. This causes payment creation to fail with "Invalid guest count" error.
+
+**Root Cause:**
+The payment API was written with TABLE_BASED events in mind, which use `guestsCount` to represent the number of participants. However, CAPACITY_BASED events use `spotsCount` for the same purpose.
+
+```typescript
+// BEFORE (BROKEN):
+} else if (event.pricingModel === 'PER_GUEST') {
+  const guestsCount = Number(registrationData.guestsCount)  // ❌ Expects guestsCount
+
+  if (!guestsCount || guestsCount < 1) {
+    return NextResponse.json(
+      { error: 'Invalid guest count for per-guest pricing' },
+      { status: 400 }
+    )
+  }
+
+  amountDue = event.priceAmount.mul(guestsCount)
+}
+```
+
+**What Happened:**
+
+1. User configures event: CAPACITY_BASED + PER_GUEST pricing + UPFRONT payment
+2. User tries to register through public page
+3. Frontend sends `{ spotsCount: 2 }` to payment API
+4. Payment API looks for `guestsCount` → finds `undefined`
+5. Validation fails → Returns 400 error
+6. Payment creation fails
+7. User cannot complete registration
+
+**Fix Applied:**
+
+```typescript
+// AFTER (FIXED):
+} else if (event.pricingModel === 'PER_GUEST') {
+  // Price per guest/spot (works for both TABLE_BASED and CAPACITY_BASED events)
+  // TABLE_BASED events send 'guestsCount', CAPACITY_BASED events send 'spotsCount'
+  const participantCount = Number(registrationData.guestsCount || registrationData.spotsCount)  // ✅ Accept both
+
+  if (!participantCount || participantCount < 1) {
+    return NextResponse.json(
+      { error: 'Invalid participant count for per-guest pricing' },
+      { status: 400 }
+    )
+  }
+
+  amountDue = event.priceAmount.mul(participantCount)
+}
+```
+
+**Verification:**
+
+- ✅ TABLE_BASED events: Still works with `guestsCount`
+- ✅ CAPACITY_BASED events: Now works with `spotsCount`
+- ✅ Error message updated to "participant count" (generic)
+- ✅ Payment calculation correct for both event types
+
+**Testing:**
+
+```bash
+# Test CAPACITY_BASED event with payment
+curl -X POST http://localhost:9000/api/payment/create \
+  -H "Content-Type: application/json" \
+  -d '{
+    "schoolSlug": "tests",
+    "eventSlug": "paid-event",
+    "registrationData": {
+      "name": "Test User",
+      "phone": "0501234567",
+      "email": "test@test.com",
+      "spotsCount": 2
+    }
+  }'
+
+# Should return HTML redirect form (success)
+```
+
+---
+
+### Bug #19: Registration API Security Hole - UPFRONT Payment Events Allow Free Registration 🔴 CRITICAL ✅ FIXED
+
+**Files:**
+
+- `/app/api/p/[schoolSlug]/[eventSlug]/register/route.ts` (lines 275-276)
+
+**Severity:** 🔴🔴🔴 CRITICAL (revenue loss + security vulnerability)
+**Status:** ✅ FIXED (2026-01-10)
+
+**Description:**
+Events configured with `paymentRequired: true` and `paymentTiming: UPFRONT` allow users to register for free by directly calling the registration API, bypassing payment entirely. This is a critical security vulnerability that results in direct revenue loss.
+
+**Root Cause:**
+The registration API only validates POST_REGISTRATION payment events. It does NOT reject UPFRONT payment events, treating them as free events instead.
+
+```typescript
+// BEFORE (BROKEN):
+// Detect POST_REGISTRATION payment mode
+const requiresPostPayment = event.paymentRequired && event.paymentTiming === 'POST_REGISTRATION'
+
+// ❌ UPFRONT events: requiresPostPayment = false
+// ❌ Proceeds as FREE event - no payment validation!
+// ❌ Creates registration with status='CONFIRMED'
+// ❌ Generates QR code
+// ❌ Sends confirmation email
+// ❌ User gets full access WITHOUT PAYMENT!
+```
+
+**What Happened:**
+
+1. Admin configures event: paymentRequired=true, paymentTiming=UPFRONT, priceAmount=10
+2. User loads public registration page
+3. User clicks "המשך לתשלום" button
+4. Frontend calls `/api/payment/create` → Fails (due to Bug #18)
+5. **User manually calls `/api/p/{school}/{event}/register` endpoint**
+6. Registration API checks: `requiresPostPayment = false` (UPFRONT !== POST_REGISTRATION)
+7. API treats it as FREE event → Creates confirmed registration
+8. QR code generated, email sent, user gets in for free!
+
+**Impact:**
+
+- **Revenue loss:** Users attend paid events without paying
+- **Data integrity:** Confirmed registrations without payment records
+- **Audit trail broken:** No way to track who paid vs who bypassed
+- **Business logic:** Payment timing (UPFRONT) completely ignored
+- **Security:** API endpoint can be called directly by anyone
+
+**Fix Applied:**
+
+```typescript
+// AFTER (FIXED):
+// Check event status
+if (event.status === 'CLOSED') {
+  throw new Error('Event registration is closed')
+}
+
+if (event.status === 'PAUSED') {
+  throw new Error('Event registration is paused')
+}
+
+// CRITICAL SECURITY CHECK: Reject UPFRONT payment events
+// UPFRONT payment events must go through the payment API first (/api/payment/create)
+// This prevents users from bypassing payment by calling the registration API directly
+if (event.paymentRequired && event.paymentTiming === 'UPFRONT') {
+  throw new Error('This event requires upfront payment. Please complete payment first.')
+}
+```
+
+**Verification:**
+
+- ✅ UPFRONT events: Registration API returns 400 error
+- ✅ FREE events: Registration API works normally
+- ✅ POST_REGISTRATION events: Registration API works normally
+- ✅ Security: Users cannot bypass payment by calling API directly
+
+**Testing:**
+
+```bash
+# Test UPFRONT payment event - Should REJECT
+curl -X POST http://localhost:9000/api/p/tests/paid-event/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Test User",
+    "phone": "0501234567",
+    "email": "test@test.com",
+    "spotsCount": 2
+  }'
+
+# Expected: 400 error "This event requires upfront payment. Please complete payment first."
+
+# Test FREE event - Should ACCEPT
+curl -X POST http://localhost:9000/api/p/tests/free-event/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Test User",
+    "phone": "0501234567",
+    "spotsCount": 1
+  }'
+
+# Expected: 200 success with confirmationCode and QR code
+```
+
+**Related Bugs:**
+
+- Bug #18: Payment API field mismatch (fixed together)
+- These two bugs worked together to create the payment bypass
+
+**Lessons Learned:**
+
+1. **Always validate payment requirements** in ALL registration endpoints
+2. **Defense in depth:** Multiple layers of validation needed
+3. **API security:** Don't trust frontend to enforce business logic
+4. **Test negative cases:** What happens if user bypasses frontend?
+5. **Audit critical paths:** Payment flows need extra scrutiny
+
+---
+
+### Bug #20: Public Event API Missing Payment Fields - Frontend Payment Flow Broken 🔴 CRITICAL ✅ FIXED
+
+**Files:**
+
+- `/app/api/p/[schoolSlug]/[eventSlug]/route.ts` (lines 101-129)
+
+**Severity:** 🔴 CRITICAL (payment flow completely broken)
+**Status:** ✅ FIXED (2026-01-10)
+
+**Description:**
+The public event API endpoint was not returning payment-related fields (paymentRequired, paymentTiming, pricingModel, priceAmount, currency). This caused the frontend to think ALL events were free, bypassing the payment flow entirely.
+
+**Root Cause:**
+When the public event API was built, payment fields were not included in the response object. The API only returned basic event info, capacity, and registration fields.
+
+```typescript
+// BEFORE (BROKEN):
+const response = NextResponse.json({
+  type: 'event',
+  id: event.id,
+  title: event.title,
+  // ... other fields ...
+  school: event.school,
+  _count: event._count,
+  totalSpotsTaken,
+  // ❌ Missing: paymentRequired, paymentTiming, pricingModel, priceAmount, currency
+})
+```
+
+**What Happened:**
+
+1. Admin configures event: paymentRequired=true, paymentTiming=UPFRONT, priceAmount=10
+2. Database stores: ✅ All payment fields saved correctly
+3. User loads public page: `GET /api/p/tests/ntnyh-tl-abyb`
+4. API returns: `{ paymentRequired: null, paymentTiming: null, ... }` ❌
+5. Frontend checks: `if (event?.paymentRequired && event?.paymentTiming === 'UPFRONT')`
+6. Evaluates to: `if (null && null)` → FALSE
+7. Frontend skips payment flow → Calls registration API directly
+8. Registration API blocks it (Bug #19 fix) → User sees error
+
+**Chain Reaction with Other Bugs:**
+
+- Bug #18: Payment API field mismatch
+- Bug #19: Registration API security hole
+- **Bug #20: API missing payment fields** (THIS BUG - root cause!)
+
+All three bugs working together prevented payment flow from working.
+
+**Fix Applied:**
+
+```typescript
+// AFTER (FIXED):
+const response = NextResponse.json({
+  type: 'event',
+  id: event.id,
+  title: event.title,
+  // ... other fields ...
+  // CRITICAL: Payment fields must be included for frontend payment flow
+  paymentRequired: event.paymentRequired,
+  paymentTiming: event.paymentTiming,
+  pricingModel: event.pricingModel,
+  priceAmount: event.priceAmount ? Number(event.priceAmount) : null,
+  currency: event.currency,
+  school: event.school,
+  _count: event._count,
+  totalSpotsTaken,
+})
+```
+
+**Verification:**
+
+```bash
+# Test public API returns payment fields
+curl -s http://localhost:9000/api/p/tests/ntnyh-tl-abyb | jq '{paymentRequired, paymentTiming, pricingModel, priceAmount}'
+
+# Expected:
+{
+  "paymentRequired": true,
+  "paymentTiming": "UPFRONT",
+  "pricingModel": "PER_GUEST",
+  "priceAmount": 10
+}
+```
+
+**Testing:**
+
+```bash
+# 1. Configure event with payment
+# Admin dashboard → Events → Edit → Payment step
+# - Payment Required: Yes
+# - Payment Timing: UPFRONT
+# - Pricing Model: PER_GUEST
+# - Price: 10 ILS
+
+# 2. Load public registration page
+http://localhost:9000/p/tests/ntnyh-tl-abyb
+
+# 3. Verify payment info displayed:
+# - Should show: "₪10 למשתתף"
+# - Should show: "💳 תשלום מראש נדרש"
+# - Button should say: "המשך לתשלום (₪20)" (for 2 participants)
+
+# 4. Fill form and submit
+# - Should call: POST /api/payment/create (NOT /api/p/.../register)
+# - Should redirect to YaadPay (or show "Payment system not configured" in dev)
+```
+
+**Impact:**
+
+- **Before:** ALL events treated as free (payment fields missing)
+- **After:** Payment flow works correctly
+
+**Lessons Learned:**
+
+1. **Always include all relevant fields in API responses**
+2. **Test the full user flow, not just individual endpoints**
+3. **API contracts should be documented and validated**
+4. **TypeScript interfaces should match API responses**
+
+---
+
+### Bug #22: Event Overview Page Shows Incorrect "No Participants" Message Despite Active Registrations ✅ FIXED
+
+**File:** `/components/admin/event-details/tabs/OverviewTab.tsx` (lines 507-581)
+**Severity:** 🟡 MODERATE (UI inconsistency, confuses admins)
+**Status:** ✅ FIXED (2026-01-11)
+
+**Description:**
+The Event Overview page displayed contradictory information:
+
+- **Top stats** correctly show: "1 מאושרים" (1 confirmed), "1/10 תפוסה" (1/10 capacity)
+- **Recent Activity section** incorrectly shows: "טרם נרשמו משתתפים" (no participants registered yet)
+
+This created confusion for event administrators who saw registrations in the stats but got a "no activity" message below.
+
+**Root Cause:**
+The Recent Activity section displayed a hardcoded empty state regardless of actual registrations. The component had access to `event.registrations` and calculated stats correctly, but the Recent Activity section didn't use this data.
+
+**Fix Applied:**
+Updated the Recent Activity section to:
+
+1. ✅ Check if there are any registrations
+2. ✅ Display latest 5 registrations (excluding cancelled) with:
+   - Participant name (extracted from registration data)
+   - Number of spots
+   - Status badge (confirmed = green, waitlist = amber)
+   - Relative timestamp ("לפני 2 שעות", "לפני 3 ימים")
+3. ✅ Show "View all X registrations" link if more than 5
+4. ✅ Only show empty state when truly empty
+
+**Code Changes:**
+
+```typescript
+// AFTER (FIXED):
+// Added Registration interface
+interface Registration {
+  id: string
+  data: Record<string, unknown>
+  phoneNumber: string
+  spotsCount: number
+  status: 'CONFIRMED' | 'WAITLIST' | 'CANCELLED'
+  confirmationCode: string
+  createdAt: string | Date
+}
+
+// Added helper functions
+const formatRelativeTime = (date: Date | string) => { /* ... */ }
+const getParticipantName = (registration: Registration) => { /* ... */ }
+const recentRegistrations = registrations.filter(r => r.status !== 'CANCELLED').slice(0, 5)
+
+// Updated rendering logic
+{recentRegistrations.length === 0 ? (
+  /* Empty state */
+  <div className="text-center py-8">
+    <Clock className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+    <p className="text-sm text-gray-500">טרם נרשמו משתתפים</p>
+    <p className="text-xs text-gray-400 mt-1">פעילות אחרונה תוצג כאן</p>
+  </div>
+) : (
+  /* Show recent registrations */
+  recentRegistrations.map(registration => (
+    <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+      {/* User icon with status color */}
+      <div className={registration.status === 'CONFIRMED' ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}>
+        <User className="w-5 h-5" />
+      </div>
+      {/* Participant name, spots, status, timestamp */}
+      <div>{getParticipantName(registration)}</div>
+      <span>{formatRelativeTime(registration.createdAt)}</span>
+    </div>
+  ))
+)}
+```
+
+**User Impact:**
+
+- **Before:** Admins saw conflicting information and might doubt the system's accuracy
+- **After:**
+  - ✅ Consistent messaging throughout the page
+  - ✅ Recent Activity shows actual registrations with names and timestamps
+  - ✅ Status indicators match top stats
+  - ✅ Builds trust in the platform
+
+**Files Modified:**
+
+- `/components/admin/event-details/tabs/OverviewTab.tsx:21-195,507-581` - Added Registration interface, helper functions, and conditional rendering
+
+---
+
+### Bug #23: Public Registration Page Allows Overbooking - Users Can Select More Spots Than Available 🔴 CRITICAL
+
+**File:** `/app/p/[schoolSlug]/[eventSlug]/page.tsx` (lines 760-834)
+**Severity:** 🔴 CRITICAL (allows capacity violations, breaks core business logic)
+**Status:** ✅ FIXED (2026-01-12)
+**Fixed By:** Claude (green-bug-fixer agent)
+
+**Description:**
+The public registration form allows users to select more spots than are actually available, causing overbooking. For example:
+
+- Event capacity: 20
+- Spots taken: 13
+- Spots available: 7
+- **BUG:** User can select 9 spots in the dropdown (should be max 7)
+
+This violates atomic capacity enforcement and could lead to event overbooking, breaking the core promise of the system.
+
+**Root Cause:**
+The dropdown selector logic has two issues:
+
+1. **When event is full (`isFull`), it uses `maxSpotsPerPerson` directly:**
+
+   ```typescript
+   // Line 791 - WRONG
+   {
+     length: isFull ? event.maxSpotsPerPerson : Math.min(event.maxSpotsPerPerson, spotsLeft)
+   }
+   ```
+
+   This allows waitlist users to select more spots than available.
+
+2. **The logic doesn't correctly calculate available spots:**
+   When `spotsLeft = 7` and `maxSpotsPerPerson = 10`, it should cap at 7, but in some edge cases it allows selecting up to 10.
+
+**Expected Behavior:**
+
+- If 7 spots are available, dropdown should show options: 1, 2, 3, 4, 5, 6, 7 (max 7)
+- If event is full, waitlist users should have a reasonable limit (e.g., max 5 or maxSpotsPerPerson, whichever is smaller)
+- Increment/decrement buttons should also respect this limit
+
+**Fix Applied:**
+Refactored the spots selector component to use an IIFE (Immediately Invoked Function Expression) that calculates `maxSelectable` once and uses it throughout all UI elements:
+
+```typescript
+// BEFORE (WRONG - Lines 790-827):
+// Dropdown
+{ length: isFull ? event.maxSpotsPerPerson : Math.min(event.maxSpotsPerPerson, spotsLeft) }
+
+// Increment button max check
+const max = isFull ? event.maxSpotsPerPerson : Math.min(event.maxSpotsPerPerson, spotsLeft)
+
+// Info text
+{isFull
+  ? `ניתן לבחור עד ${event.maxSpotsPerPerson} מקומות`
+  : `זמינים ${spotsLeft} מקומות • מקסימום ${event.maxSpotsPerPerson} לאדם`
+}
+
+// AFTER (FIXED - Lines 760-834):
+{event.eventType === 'CAPACITY_BASED' && event.maxSpotsPerPerson > 1 && (() => {
+  // Calculate max selectable spots ONCE
+  const maxSelectable = isFull
+    ? Math.min(5, event.maxSpotsPerPerson) // Waitlist: reasonable limit (max 5)
+    : Math.min(event.maxSpotsPerPerson, spotsLeft) // Normal: available spots only
+
+  return (
+    <div>
+      {/* Dropdown uses maxSelectable */}
+      <select>
+        {Array.from({ length: maxSelectable }, (_, i) => i + 1).map(...)}
+      </select>
+
+      {/* Increment button uses maxSelectable */}
+      <button
+        onClick={() => { if (spotsCount < maxSelectable) { ... } }}
+        disabled={spotsCount >= maxSelectable}
+      >
+
+      {/* Info text uses maxSelectable */}
+      <p>
+        {isFull
+          ? `ניתן לבחור עד ${maxSelectable} מקומות לרשימת המתנה`
+          : `זמינים ${spotsLeft} מקומות • מקסימום ${maxSelectable} לאדם`
+        }
+      </p>
+    </div>
+  )
+})()}
+```
+
+**Key Changes:**
+
+1. **Lines 760-764:** Added IIFE wrapper with `maxSelectable` calculation
+2. **Line 797:** Dropdown length now uses `maxSelectable` (was complex inline expression)
+3. **Lines 809-814:** Increment button logic simplified to use `maxSelectable`
+4. **Lines 825-827:** Info text now shows `maxSelectable` for consistency
+
+**Testing:**
+
+1. Create event with capacity 20
+2. Register 13 spots
+3. Try to register as new user
+4. ✅ Dropdown should show max 7 options (1-7)
+5. ✅ Cannot select 8, 9, or 10
+6. ✅ Fill event to capacity (20/20)
+7. ✅ Waitlist users can select up to 5 spots (or maxSpotsPerPerson if lower)
+
+**User Impact:**
+
+- **Before:** Users could register for more spots than available, causing overbooking
+- **After:**
+  - ✅ Dropdown strictly enforces available spots
+  - ✅ Cannot select more spots than the event can accommodate
+  - ✅ Atomic capacity enforcement preserved
+  - ✅ Waitlist users have reasonable limits
+
+**Files Modified:**
+
+- `/app/p/[schoolSlug]/[eventSlug]/page.tsx:760-834` - Fixed dropdown generation, increment/decrement buttons, and info text to properly enforce available spot limits
+
+**Code Quality Improvements:**
+
+- DRY principle: Calculated `maxSelectable` once instead of repeating logic in 3 places
+- Cleaner code: IIFE pattern allows scoped variable for the component
+- Consistency: All UI elements (dropdown, buttons, text) now use the same calculated value
+
+**Related Issues:**
+
+- Atomic capacity enforcement (core feature)
+- Race condition prevention
+- Waitlist management
+
+**E2E Test Coverage:**
+
+- ✅ 21/21 tests passing (100%)
+- **Test Suite:** `/tests/suites/04-public-registration-p0.spec.ts` (lines 411-920)
+- **Scenarios tested:**
+  1. Limit dropdown to 7 spots when 7 available
+  2. Prevent selecting more than available spots
+  3. Limit waitlist registrations to max 5 spots
+  4. Respect maxSpotsPerPerson even when more spots available
+  5. Dynamically update available spots after registration
+  6. Show "Event Full" when no spots available
+  7. Handle edge case: exactly 1 spot remaining
+- **Browsers:** Desktop Chrome, Mobile Chrome (Pixel 5), Mobile Safari (iPhone 12)
+- **Test Pattern:** Creates actual database registrations to occupy spots (not `.withSpotsReserved()`)
+- **Date Fixed:** 2026-01-12
+- **Tests Added By:** Claude (green-test-writer agent)
+
+---

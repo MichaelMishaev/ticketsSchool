@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin } from '@/lib/auth.server'
+import { logger } from '@/lib/logger-v2'
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,10 +11,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Build where clause based on admin role
-    const where: any = {
-      status: 'CONFIRMED',
-    }
+    // Build event where clause based on admin role
+    const eventWhere: any = {}
 
     // Regular admins can only see their school's events
     if (admin.role !== 'SUPER_ADMIN') {
@@ -24,10 +23,7 @@ export async function GET(request: NextRequest) {
           { status: 403 }
         )
       }
-      where.event = {
-        schoolId: admin.schoolId,
-        deletedAt: null, // CRITICAL: Filter out soft-deleted events
-      }
+      eventWhere.schoolId = admin.schoolId
     }
 
     // Super admins can filter by school via query param
@@ -35,66 +31,60 @@ export async function GET(request: NextRequest) {
       const url = new URL(request.url)
       const schoolId = url.searchParams.get('schoolId')
       if (schoolId) {
-        where.event = {
-          schoolId: schoolId,
-          deletedAt: null, // CRITICAL: Filter out soft-deleted events
-        }
-      } else {
-        // SUPER_ADMIN sees all schools but not deleted events
-        where.event = {
-          deletedAt: null,
-        }
+        eventWhere.schoolId = schoolId
       }
     }
 
-    const registrations = await prisma.registration.findMany({
-      where,
-      include: {
-        event: {
-          select: {
-            id: true,
-            title: true,
-            startAt: true,
-            location: true,
-          },
+    const [regGroups, recentRegs] = await Promise.all([
+      prisma.registration.groupBy({
+        by: ['eventId'],
+        where: { status: 'CONFIRMED', event: eventWhere },
+        _sum: { spotsCount: true },
+        _count: { id: true },
+      }),
+      prisma.registration.findMany({
+        where: { status: 'CONFIRMED', event: eventWhere },
+        select: {
+          id: true,
+          confirmationCode: true,
+          email: true,
+          spotsCount: true,
+          createdAt: true,
+          event: { select: { id: true, title: true, startAt: true, location: true } },
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    })
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }),
+    ])
 
-    const registrationsByEvent = registrations.reduce((acc, reg) => {
-      const eventId = reg.event.id
-      if (!acc[eventId]) {
-        acc[eventId] = {
-          event: reg.event,
-          registrations: [],
-          totalSpots: 0,
-        }
-      }
-      acc[eventId].registrations.push(reg)
-      acc[eventId].totalSpots += reg.spotsCount
-      return acc
-    }, {} as any)
+    const eventIds = regGroups.map((g) => g.eventId)
+    const events =
+      eventIds.length > 0
+        ? await prisma.event.findMany({
+            where: { id: { in: eventIds } },
+            select: { id: true, title: true, startAt: true, location: true },
+          })
+        : []
+    const eventById = Object.fromEntries(events.map((e) => [e.id, e]))
 
-    const totalSpots = registrations.reduce((sum, reg) => sum + reg.spotsCount, 0)
+    const byEvent = regGroups.map((group) => ({
+      event: eventById[group.eventId],
+      registrationCount: group._count.id,
+      registrations: [] as any[],
+      totalSpots: group._sum.spotsCount ?? 0,
+    }))
+
+    const totalRegistrations = regGroups.reduce((s, g) => s + g._count.id, 0)
+    const totalSpots = regGroups.reduce((s, g) => s + (g._sum.spotsCount ?? 0), 0)
 
     return NextResponse.json({
-      totalRegistrations: registrations.length,
+      totalRegistrations,
       totalSpots,
-      byEvent: Object.values(registrationsByEvent),
-      recentRegistrations: registrations.slice(0, 10).map((reg) => ({
-        id: reg.id,
-        confirmationCode: reg.confirmationCode,
-        email: reg.email,
-        spotsCount: reg.spotsCount,
-        createdAt: reg.createdAt,
-        event: reg.event,
-      })),
+      byEvent,
+      recentRegistrations: recentRegs,
     })
   } catch (error) {
-    console.error('Error fetching registrations:', error)
+    logger.error('Error fetching registrations', { source: 'dashboard', error })
     return NextResponse.json({ error: 'Failed to fetch registrations' }, { status: 500 })
   }
 }

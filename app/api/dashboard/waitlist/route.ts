@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin } from '@/lib/auth.server'
+import { logger } from '@/lib/logger-v2'
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,10 +11,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Build where clause based on admin role
-    const where: any = {
-      status: 'WAITLIST',
-    }
+    // Build event where clause based on admin role
+    const eventWhere: any = {}
 
     // Regular admins can only see their school's events
     if (admin.role !== 'SUPER_ADMIN') {
@@ -24,10 +23,7 @@ export async function GET(request: NextRequest) {
           { status: 403 }
         )
       }
-      where.event = {
-        schoolId: admin.schoolId,
-        deletedAt: null, // CRITICAL: Filter out soft-deleted events
-      }
+      eventWhere.schoolId = admin.schoolId
     }
 
     // Super admins can filter by school via query param
@@ -35,68 +31,67 @@ export async function GET(request: NextRequest) {
       const url = new URL(request.url)
       const schoolId = url.searchParams.get('schoolId')
       if (schoolId) {
-        where.event = {
-          schoolId: schoolId,
-          deletedAt: null, // CRITICAL: Filter out soft-deleted events
-        }
-      } else {
-        // SUPER_ADMIN sees all schools but not deleted events
-        where.event = {
-          deletedAt: null,
-        }
+        eventWhere.schoolId = schoolId
       }
     }
 
-    const waitlistRegistrations = await prisma.registration.findMany({
-      where,
-      include: {
-        event: {
-          select: {
-            id: true,
-            title: true,
-            startAt: true,
-            location: true,
-            capacity: true,
+    const [regGroups, recentWaitlist] = await Promise.all([
+      prisma.registration.groupBy({
+        by: ['eventId'],
+        where: { status: 'WAITLIST', event: eventWhere },
+        _sum: { spotsCount: true },
+        _count: { id: true },
+      }),
+      prisma.registration.findMany({
+        where: { status: 'WAITLIST', event: eventWhere },
+        select: {
+          id: true,
+          confirmationCode: true,
+          email: true,
+          spotsCount: true,
+          createdAt: true,
+          event: {
+            select: { id: true, title: true, startAt: true, location: true, capacity: true },
           },
         },
-      },
-      orderBy: {
-        createdAt: 'asc', // First come, first served for waitlist
-      },
-    })
+        orderBy: { createdAt: 'asc' }, // First come, first served for waitlist
+        take: 10,
+      }),
+    ])
 
-    const waitlistByEvent = waitlistRegistrations.reduce((acc, reg) => {
-      const eventId = reg.event.id
-      if (!acc[eventId]) {
-        acc[eventId] = {
-          event: reg.event,
-          registrations: [],
-          totalSpots: 0,
-        }
-      }
-      acc[eventId].registrations.push(reg)
-      acc[eventId].totalSpots += reg.spotsCount
-      return acc
-    }, {} as any)
+    const eventIds = regGroups.map((g) => g.eventId)
+    const events =
+      eventIds.length > 0
+        ? await prisma.event.findMany({
+            where: { id: { in: eventIds } },
+            select: { id: true, title: true, startAt: true, location: true, capacity: true },
+          })
+        : []
+    const eventById = Object.fromEntries(events.map((e) => [e.id, e]))
 
-    const totalSpots = waitlistRegistrations.reduce((sum, reg) => sum + reg.spotsCount, 0)
+    const byEvent = regGroups.map((group) => ({
+      event: eventById[group.eventId],
+      registrationCount: group._count.id,
+      registrations: [] as any[],
+      totalSpots: group._sum.spotsCount ?? 0,
+    }))
 
     return NextResponse.json({
-      totalWaitlist: waitlistRegistrations.length,
-      totalSpots,
-      byEvent: Object.values(waitlistByEvent),
-      recentWaitlist: waitlistRegistrations.slice(0, 10).map((reg) => ({
+      totalWaitlist: regGroups.reduce((s, g) => s + g._count.id, 0),
+      totalSpots: regGroups.reduce((s, g) => s + (g._sum.spotsCount ?? 0), 0),
+      byEvent,
+      recentWaitlist: recentWaitlist.map((reg, idx) => ({
         id: reg.id,
         confirmationCode: reg.confirmationCode,
         email: reg.email,
         spotsCount: reg.spotsCount,
         createdAt: reg.createdAt,
         event: reg.event,
-        position: waitlistRegistrations.findIndex((r) => r.id === reg.id) + 1,
+        position: idx + 1,
       })),
     })
   } catch (error) {
-    console.error('Error fetching waitlist:', error)
+    logger.error('Error fetching waitlist', { source: 'dashboard', error })
     return NextResponse.json({ error: 'Failed to fetch waitlist' }, { status: 500 })
   }
 }

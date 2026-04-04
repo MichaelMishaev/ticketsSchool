@@ -69,7 +69,7 @@ export async function waitForAPIResponse(
   page: Page,
   urlPattern: string | RegExp,
   timeout = 10000
-): Promise<any> {
+): Promise<unknown> {
   const response = await page.waitForResponse(
     (response) => {
       const url = response.url()
@@ -222,4 +222,11 @@ export async function clearInput(page: Page, selector: string): Promise<void> {
  */
 export async function typeSlowly(page: Page, selector: string, text: string, delay = 50): Promise<void> {
   await page.locator(selector).type(text, { delay })
+}
+
+/**
+ * Generate unique school name with timestamp
+ */
+export function generateSchoolName(prefix = 'Test School'): string {
+  return `${prefix} ${Date.now()}-${Math.random().toString(36).substring(7)}`
 }

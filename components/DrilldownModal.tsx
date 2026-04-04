@@ -1,6 +1,6 @@
 'use client'
 
-import { X, Calendar, MapPin } from 'lucide-react'
+import { X, Calendar, Users, Clock, TrendingUp, MapPin } from 'lucide-react'
 import { format } from 'date-fns'
 import { he } from 'date-fns/locale'
 
@@ -132,7 +132,9 @@ export default function DrilldownModal({
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-sm font-semibold">{eventData.registrations.length} הרשמות</div>
+                <div className="text-sm font-semibold">
+                  {eventData.registrationCount ?? eventData.registrations?.length ?? 0} הרשמות
+                </div>
                 <div className="text-xs text-gray-500">{eventData.totalSpots} מקומות</div>
               </div>
             </div>
@@ -200,7 +202,7 @@ export default function DrilldownModal({
               </div>
               <div className="text-right">
                 <div className="text-sm font-semibold">
-                  {eventData.registrations.length} ממתינים
+                  {eventData.registrationCount ?? eventData.registrations?.length ?? 0} ממתינים
                 </div>
                 <div className="text-xs text-gray-500">{eventData.totalSpots} מקומות</div>
               </div>
@@ -325,15 +327,31 @@ export default function DrilldownModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-        <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">{title}</h3>
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="drilldown-modal-title"
+      onClick={(e) => {
+        // Close when clicking backdrop
+        if (e.target === e.currentTarget) onClose()
+      }}
+      onKeyDown={(e) => {
+        // Close on Escape key
+        if (e.key === 'Escape') onClose()
+      }}
+    >
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+        <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-200 bg-gray-50">
+          <h3 id="drilldown-modal-title" className="text-lg font-semibold text-gray-900">
+            {title}
+          </h3>
           <button
             onClick={onClose}
-            className="p-2 sm:p-2 hover:bg-gray-100 rounded-full transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+            aria-label="סגור חלון"
+            className="p-2 sm:p-2 hover:bg-gray-200 rounded-full transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
-            <X className="h-5 w-5 sm:h-5 sm:w-5 text-gray-400" />
+            <X className="h-5 w-5 sm:h-5 sm:w-5 text-gray-500" />
           </button>
         </div>
 

@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Clock, Calendar, MapPin, Users, Ticket, AlertCircle, CheckCircle } from 'lucide-react'
+import Modal from '@/components/ui/Modal'
+import { ToastContainer, toast } from '@/components/ui/Toast'
 
 interface CancellationData {
   canCancel: boolean
@@ -37,6 +39,14 @@ export default function CancellationPage() {
   const [submitting, setSubmitting] = useState(false)
   const [cancelled, setCancelled] = useState(false)
 
+  // Modal state
+  const [confirmModal, setConfirmModal] = useState(false)
+  const [errorModal, setErrorModal] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+  }>({ isOpen: false, title: '', message: '' })
+
   // Load cancellation preview
   useEffect(() => {
     async function loadCancellationData() {
@@ -57,19 +67,16 @@ export default function CancellationPage() {
     loadCancellationData()
   }, [token])
 
-  // Handle cancellation
-  const handleCancel = async (e: React.FormEvent) => {
+  // Open confirmation modal
+  const handleCancel = (e: React.FormEvent) => {
     e.preventDefault()
-
     if (!data?.canCancel) return
+    setConfirmModal(true)
+  }
 
-    // Confirm with user
-    const confirmed = window.confirm(
-      'האם אתה בטוח שברצונך לבטל את ההזמנה? פעולה זו אינה ניתנת לביטול.'
-    )
-
-    if (!confirmed) return
-
+  // Actually perform cancellation
+  const performCancellation = async () => {
+    setConfirmModal(false)
     setSubmitting(true)
 
     try {
@@ -83,12 +90,21 @@ export default function CancellationPage() {
 
       if (response.ok) {
         setCancelled(true)
+        toast.success('ההזמנה בוטלה בהצלחה')
       } else {
-        alert(result.error || 'Failed to cancel reservation')
+        setErrorModal({
+          isOpen: true,
+          title: 'שגיאה בביטול',
+          message: result.error || 'לא ניתן לבטל את ההזמנה. אנא נסה שוב.'
+        })
         setSubmitting(false)
       }
     } catch (error) {
-      alert('שגיאה בביטול ההזמנה. אנא נסה שוב.')
+      setErrorModal({
+        isOpen: true,
+        title: 'שגיאת חיבור',
+        message: 'שגיאה בביטול ההזמנה. אנא בדוק את החיבור לאינטרנט ונסה שוב.'
+      })
       setSubmitting(false)
     }
   }
@@ -296,6 +312,32 @@ export default function CancellationPage() {
           </form>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      <Modal
+        isOpen={confirmModal}
+        onClose={() => setConfirmModal(false)}
+        onConfirm={performCancellation}
+        type="confirmation"
+        title="אישור ביטול"
+        message="האם אתה בטוח שברצונך לבטל את ההזמנה? פעולה זו אינה ניתנת לביטול."
+        confirmText="כן, בטל הזמנה"
+        cancelText="לא, חזור"
+        dir="rtl"
+      />
+
+      {/* Error Modal */}
+      <Modal
+        isOpen={errorModal.isOpen}
+        onClose={() => setErrorModal({ ...errorModal, isOpen: false })}
+        type="error"
+        title={errorModal.title}
+        message={errorModal.message}
+        dir="rtl"
+      />
+
+      {/* Toast notifications */}
+      <ToastContainer position="top-center" dir="rtl" />
     </div>
   )
 }

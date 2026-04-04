@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin, encodeSession, SESSION_COOKIE_NAME, AuthSession } from '@/lib/auth.server'
+import { randomUUID } from 'crypto'
+import { logger } from '@/lib/logger-v2'
 
 interface OnboardingRequest {
   schoolName: string
@@ -12,23 +14,17 @@ export async function POST(request: NextRequest) {
     // Check authentication
     const currentAdmin = await getCurrentAdmin()
     if (!currentAdmin) {
-      return NextResponse.json(
-        { error: 'לא מחובר' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'לא מחובר' }, { status: 401 })
     }
 
-    console.log('[Onboarding] Starting onboarding for admin:', currentAdmin.adminId)
+    logger.info('Starting onboarding for admin', { source: 'auth', adminId: currentAdmin.adminId })
 
     const body: OnboardingRequest = await request.json()
     const { schoolName, schoolSlug } = body
 
     // Validation
     if (!schoolName || !schoolSlug) {
-      return NextResponse.json(
-        { error: 'חסרים שדות חובה' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'חסרים שדות חובה' }, { status: 400 })
     }
 
     // Validate school slug (alphanumeric, hyphens only)
@@ -45,8 +41,8 @@ export async function POST(request: NextRequest) {
       where: {
         name: {
           equals: schoolName,
-          mode: 'insensitive'
-        }
+          mode: 'insensitive',
+        },
       },
     })
 
@@ -63,10 +59,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (existingSchool) {
-      return NextResponse.json(
-        { error: 'הקישור הזה כבר תפוס, בחר קישור אחר' },
-        { status: 409 }
-      )
+      return NextResponse.json({ error: 'הקישור הזה כבר תפוס, בחר קישור אחר' }, { status: 409 })
     }
 
     // Create school and update admin in a transaction
@@ -95,7 +88,7 @@ export async function POST(request: NextRequest) {
       return { school, admin }
     })
 
-    console.log('[Onboarding] Onboarding completed successfully')
+    logger.info('Onboarding completed successfully', { source: 'auth' })
 
     // Create updated session with new school information
     const updatedSession: AuthSession = {
@@ -134,11 +127,24 @@ export async function POST(request: NextRequest) {
 
     return response
   } catch (error) {
-    console.error('[Onboarding] Error:', error)
+    // Log full error details server-side only
+    const requestId = randomUUID()
+    logger.error('Onboarding error', {
+      source: 'auth',
+      requestId,
+      error,
+      errorDetails: {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+    })
+
+    // Return generic error to client (no internal details exposed)
     return NextResponse.json(
       {
-        error: 'שגיאה ביצירת הארגון. נסה שוב.',
-        details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined
+        error: 'שגיאה ביצירת הארגון. נסה שוב מאוחר יותר.',
+        requestId, // For support tracking only
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     )

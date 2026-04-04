@@ -82,7 +82,7 @@ export default function DuplicateTableModal({
   const baseNumber = tableNumberMatch ? parseInt(tableNumberMatch[0], 10) : 1
 
   // Generate preview of new table names
-  const previewNames = []
+  const previewNames: string[] = []
   for (let i = 1; i <= Math.min(count, 3); i++) {
     const newNumber = baseNumber + i
     const newName = table.tableNumber.replace(/\d+/, String(newNumber)) || `שולחן ${newNumber}`

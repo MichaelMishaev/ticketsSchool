@@ -1,33 +1,8 @@
-/**
- * @LOCKED
- * Reason: Business-critical event creation and listing API
- * Scope:
- *   - Multi-tenant isolation pattern (CRITICAL)
- *   - Event creation with schoolId enforcement
- *   - Slug generation and uniqueness validation
- *   - Hebrew text transliteration logic
- *   - Required field validation
- * See: /docs/infrastructure/GOLDEN_PATHS.md#EVENT_CREATE_V1
- *
- * Multi-Tenant Enforcement Pattern (NON-NEGOTIABLE):
- *   GET /api/events:
- *     - Regular admins: MUST filter by admin.schoolId
- *     - SUPER_ADMIN: Can filter by query param or see all
- *     - If admin.schoolId is null for non-SUPER_ADMIN → return 403
- *
- *   POST /api/events:
- *     - Regular admins: MUST use admin.schoolId (cannot specify other schools)
- *     - SUPER_ADMIN: Can specify schoolId or use admin.schoolId
- *     - If no valid schoolId → return 400
- *
- * Invariants Protected:
- *   - INVARIANT_MT_001: Multi-tenant isolation
- *   - INVARIANT_CAP_002: Valid capacity initialization
- */
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { EventFormData } from '@/types'
 import { getCurrentAdmin } from '@/lib/auth.server'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * Hebrew to English transliteration map
@@ -105,7 +80,7 @@ function createSlugFromText(text: string): string {
  * Generate a unique slug for an event
  * If slug exists, append a number (e.g., "basketball-game-2")
  */
-async function generateUniqueSlug(title: string, _schoolId: string): Promise<string> {
+async function generateUniqueSlug(title: string, schoolId: string): Promise<string> {
   const baseSlug = createSlugFromText(title)
 
   // Check if slug already exists for this school
@@ -135,6 +110,53 @@ async function generateUniqueSlug(title: string, _schoolId: string): Promise<str
   return uniqueSlug
 }
 
+const ALLOWED_FIELD_TYPES = [
+  'text',
+  'select',
+  'number',
+  'phone',
+  'email',
+  'checkbox',
+  'textarea',
+  'date',
+] as const
+
+/**
+ * Validate fieldsSchema before storing in the database.
+ * Returns true if valid, false otherwise.
+ */
+function validateFieldsSchema(schema: unknown): boolean {
+  if (schema === null || schema === undefined) return true
+  if (!Array.isArray(schema)) return false
+
+  for (const field of schema) {
+    if (typeof field !== 'object' || field === null) return false
+
+    const f = field as Record<string, unknown>
+
+    // id: non-empty string, alphanumeric + underscores only
+    if (typeof f.id !== 'string' || !/^[a-zA-Z0-9_]+$/.test(f.id)) return false
+
+    // type: must be one of the allowed values
+    if (typeof f.type !== 'string' || !(ALLOWED_FIELD_TYPES as readonly string[]).includes(f.type))
+      return false
+
+    // label: non-empty string
+    if (typeof f.label !== 'string' || f.label.trim() === '') return false
+
+    // required: must be boolean
+    if (typeof f.required !== 'boolean') return false
+
+    // options: required for select fields, must be non-empty array of strings
+    if (f.type === 'select') {
+      if (!Array.isArray(f.options) || f.options.length === 0) return false
+      if (!f.options.every((o: unknown) => typeof o === 'string')) return false
+    }
+  }
+
+  return true
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Get current admin session
@@ -144,7 +166,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Build where clause based on admin role
-    const where: any = {}
+    // Always exclude soft-deleted events
+    const where: any = {
+      deletedAt: null, // Only show active (non-deleted) events
+    }
 
     // Regular admins can only see their school's events (all roles except SUPER_ADMIN)
     if (admin.role !== 'SUPER_ADMIN') {
@@ -168,77 +193,100 @@ export async function GET(request: NextRequest) {
       // If no schoolId param, SUPER_ADMIN sees all schools
     }
 
-    // CRITICAL: Filter out soft-deleted events
-    where.deletedAt = null
-
+    // Step 1: Slim event select (no registration/table includes)
     const events = await prisma.event.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      include: {
-        school: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-        _count: {
-          select: { registrations: true },
-        },
-        registrations: {
-          where: {
-            status: 'CONFIRMED',
-          },
-          select: {
-            spotsCount: true,
-          },
-        },
-        tables: {
-          select: {
-            capacity: true,
-            status: true,
-            reservation: {
-              select: {
-                guestsCount: true,
-                spotsCount: true,
-              },
-            },
-          },
-        },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        description: true,
+        gameType: true,
+        location: true,
+        startAt: true,
+        endAt: true,
+        capacity: true,
+        maxSpotsPerPerson: true,
+        status: true,
+        deletedAt: true,
+        eventType: true,
+        spotsReserved: true,
+        fieldsSchema: true,
+        paymentRequired: true,
+        paymentTiming: true,
+        pricingModel: true,
+        priceAmount: true,
+        currency: true,
+        allowCancellation: true,
+        cancellationDeadlineHours: true,
+        requireCancellationReason: true,
+        schoolId: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: { select: { registrations: true } },
+        school: { select: { id: true, name: true, slug: true } },
       },
     })
 
-    // Calculate total spots taken and table capacity for each event
+    const eventIds = events.map((e) => e.id)
+
+    // Step 2: Parallel aggregations (only if there are events)
+    const [regGroups, tableRows] =
+      eventIds.length > 0
+        ? await Promise.all([
+            prisma.registration.groupBy({
+              by: ['eventId'],
+              where: { eventId: { in: eventIds }, status: 'CONFIRMED' },
+              _sum: { spotsCount: true },
+            }),
+            prisma.table.findMany({
+              where: { eventId: { in: eventIds } },
+              select: {
+                eventId: true,
+                capacity: true,
+                status: true,
+                reservation: { select: { guestsCount: true, spotsCount: true } },
+              },
+            }),
+          ])
+        : [[], []]
+
+    // Build lookups
+    const confirmedSpotsByEvent: Record<string, number> = {}
+    for (const g of regGroups) confirmedSpotsByEvent[g.eventId] = g._sum.spotsCount ?? 0
+
+    const tableDataByEvent: Record<string, { totalCapacity: number; totalSpotsTaken: number }> = {}
+    for (const table of tableRows) {
+      if (!tableDataByEvent[table.eventId])
+        tableDataByEvent[table.eventId] = { totalCapacity: 0, totalSpotsTaken: 0 }
+      tableDataByEvent[table.eventId].totalCapacity += table.capacity
+      if (table.reservation) {
+        tableDataByEvent[table.eventId].totalSpotsTaken +=
+          table.reservation.guestsCount ?? table.reservation.spotsCount ?? 0
+      }
+    }
+
+    // Step 3: Map response — same shape as before
     const eventsWithSpots = events.map((event) => {
-      let totalSpotsTaken = 0
-      let totalCapacity = event.capacity
+      let totalSpotsTaken: number
+      let totalCapacity: number
 
-      // For TABLE_BASED events, count guests from reserved tables
       if (event.eventType === 'TABLE_BASED') {
-        totalCapacity = event.tables.reduce((sum, table) => sum + table.capacity, 0)
-        totalSpotsTaken = event.tables.reduce((sum, table) => {
-          if (table.reservation) {
-            return sum + (table.reservation.guestsCount || table.reservation.spotsCount || 0)
-          }
-          return sum
-        }, 0)
+        const td = tableDataByEvent[event.id] ?? { totalCapacity: 0, totalSpotsTaken: 0 }
+        totalCapacity = td.totalCapacity
+        totalSpotsTaken = td.totalSpotsTaken
       } else {
-        // For CAPACITY_BASED events, count confirmed registrations
-        totalSpotsTaken = event.registrations.reduce((sum, reg) => sum + reg.spotsCount, 0)
+        totalCapacity = event.capacity
+        totalSpotsTaken = confirmedSpotsByEvent[event.id] ?? 0
       }
 
-      // Remove registrations and tables arrays from response and add calculated values
-      const { registrations, tables, ...eventData } = event
-      return {
-        ...eventData,
-        totalSpotsTaken,
-        totalCapacity,
-      }
+      return { ...event, totalSpotsTaken, totalCapacity }
     })
 
     return NextResponse.json(eventsWithSpots)
   } catch (error) {
-    console.error('Error fetching events:', error)
+    logger.error('Error fetching events', { source: 'events', error })
     return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 })
   }
 }
@@ -285,7 +333,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid start date' }, { status: 400 })
     }
 
-    let endAt = null
+    // Prevent creating events with past dates
+    const now = new Date()
+    if (startAt < now) {
+      return NextResponse.json(
+        { error: 'לא ניתן ליצור אירוע עם תאריך ושעה שעברו' },
+        { status: 400 }
+      )
+    }
+
+    let endAt: Date | null = null
     if (data.endAt) {
       endAt = new Date(data.endAt)
       if (isNaN(endAt.getTime())) {
@@ -313,6 +370,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Validate fieldsSchema structure before storing
+    if (!validateFieldsSchema(data.fieldsSchema)) {
+      return NextResponse.json({ error: 'Invalid fields schema structure' }, { status: 400 })
+    }
+
     // Generate unique slug from event title
     const slug = await generateUniqueSlug(data.title, schoolId)
 
@@ -337,6 +399,12 @@ export async function POST(request: NextRequest) {
         allowCancellation: (data as any).allowCancellation ?? true,
         cancellationDeadlineHours: (data as any).cancellationDeadlineHours ?? 2,
         requireCancellationReason: (data as any).requireCancellationReason ?? false,
+        // Payment fields (Tier 2: Event Ticketing - YaadPay)
+        paymentRequired: (data as any).paymentRequired ?? false,
+        paymentTiming: (data as any).paymentTiming ?? 'OPTIONAL',
+        pricingModel: (data as any).pricingModel ?? 'FREE',
+        priceAmount: (data as any).priceAmount ? Number((data as any).priceAmount) : null,
+        currency: (data as any).currency || 'ILS',
       },
       include: {
         school: true,
@@ -345,7 +413,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(event)
   } catch (error) {
-    console.error('Error creating event:', error)
+    logger.error('Error creating event', { source: 'events', error })
     return NextResponse.json({ error: 'Failed to create event' }, { status: 500 })
   }
 }

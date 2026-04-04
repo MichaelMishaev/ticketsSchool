@@ -1,12 +1,13 @@
 import { prisma, Prisma } from '@/lib/prisma'
 import jwt from 'jsonwebtoken'
+import { generateQRCodeData } from '@/lib/qr-code'
 
 export async function reserveTableForGuests(
   eventId: string,
   guestsCount: number,
   registrationData: {
     phoneNumber: string
-    data: Record<string, any>
+    data: Prisma.InputJsonValue
   }
 ) {
   // Validate required fields
@@ -46,6 +47,13 @@ export async function reserveTableForGuests(
           }
         })
 
+        // Generate QR code
+        const qrCodeData = generateQRCodeData(registration.id, eventId)
+        await tx.registration.update({
+          where: { id: registration.id },
+          data: { qrCode: qrCodeData }
+        })
+
         return { status: 'WAITLIST', registration }
       }
 
@@ -60,6 +68,13 @@ export async function reserveTableForGuests(
           phoneNumber: registrationData.phoneNumber,
           data: registrationData.data
         }
+      })
+
+      // Generate QR code
+      const qrCodeData = generateQRCodeData(registration.id, eventId)
+      await tx.registration.update({
+        where: { id: registration.id },
+        data: { qrCode: qrCodeData }
       })
 
       await tx.table.update({

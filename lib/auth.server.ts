@@ -46,6 +46,9 @@ function getJWTSecret(): string {
   if (!secret) {
     throw new Error('JWT_SECRET environment variable is not set')
   }
+  if (secret.length < 32) {
+    throw new Error('JWT_SECRET must be at least 32 characters long')
+  }
   return secret
 }
 
@@ -53,14 +56,14 @@ function getJWTSecret(): string {
 export function encodeSession(session: AuthSession): string {
   return jwt.sign(session, getJWTSecret(), {
     expiresIn: '7d',
-    algorithm: 'HS256'
+    algorithm: 'HS256',
   })
 }
 
 function decodeSession(token: string): AuthSession | null {
   try {
     const decoded = jwt.verify(token, getJWTSecret(), {
-      algorithms: ['HS256']
+      algorithms: ['HS256'],
     }) as AuthSession
     return decoded
   } catch (error) {
@@ -76,7 +79,7 @@ export async function login(email: string, password: string): Promise<AuthSessio
   try {
     const admin = await prisma.admin.findUnique({
       where: { email },
-      include: { school: true }
+      include: { school: true },
     })
 
     if (!admin) {
@@ -93,6 +96,11 @@ export async function login(email: string, password: string): Promise<AuthSessio
       return null
     }
 
+    // Check if email is verified (Bug #5 fix)
+    if (!admin.emailVerified) {
+      throw new Error('EMAIL_NOT_VERIFIED')
+    }
+
     const session: AuthSession = {
       adminId: admin.id,
       email: admin.email,
@@ -102,11 +110,15 @@ export async function login(email: string, password: string): Promise<AuthSessio
       schoolName: admin.school?.name || undefined,
     }
 
-    // Set cookie
+    // Regenerate session to prevent session fixation attacks
     const cookieStore = await cookies()
+    cookieStore.delete(SESSION_COOKIE_NAME)
+    cookieStore.delete('admin_logged_in')
     cookieStore.set(SESSION_COOKIE_NAME, encodeSession(session), {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure:
+        process.env.NODE_ENV === 'production' ||
+        (process.env.NEXT_PUBLIC_BASE_URL?.startsWith('https://') ?? false),
       sameSite: 'lax',
       maxAge: SESSION_DURATION / 1000,
       path: '/',
@@ -139,7 +151,7 @@ export async function getCurrentAdmin(): Promise<AuthSession | null> {
     // Optionally: Verify admin still exists in database
     const admin = await prisma.admin.findUnique({
       where: { id: session.adminId },
-      include: { school: true }
+      include: { school: true },
     })
 
     if (!admin) {
@@ -196,7 +208,8 @@ export async function requireSchoolAccess(schoolId: string): Promise<AuthSession
 
   // RUNTIME GUARD: Non-SuperAdmin MUST have schoolId
   if (!admin.schoolId) {
-    const message = 'Data isolation violation: Admin missing schoolId (non-SuperAdmin must belong to a school)'
+    const message =
+      'Data isolation violation: Admin missing schoolId (non-SuperAdmin must belong to a school)'
     console.error('INVARIANT VIOLATION:', message, {
       adminId: admin.adminId,
       email: admin.email,

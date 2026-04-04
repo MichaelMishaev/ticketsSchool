@@ -3,7 +3,7 @@ import TableBoardClient from './TableBoardClient'
 import TableBoardTabs from './TableBoardTabs'
 import WaitlistManager from './WaitlistManager'
 import ShareLinkCard from './ShareLinkCard'
-import DeleteEventButton from './DeleteEventButton'
+import TableBoardStats from './TableBoardStats'
 import { Users, Clock, UtensilsCrossed, ListOrdered } from 'lucide-react'
 
 interface TableBoardViewProps {
@@ -257,46 +257,11 @@ export default async function TableBoardView({ eventId }: TableBoardViewProps) {
               </span>
             </div>
           </div>
-
-          {/* Delete Event Button */}
-          <div className="mt-4">
-            <DeleteEventButton
-              eventId={event.id}
-              eventTitle={event.title}
-              confirmedCount={stats.reserved}
-              waitlistCount={stats.waitlistCount}
-            />
-          </div>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard
-          label="סה״כ שולחנות"
-          value={stats.total}
-          icon={<UtensilsCrossed className="w-5 h-5" />}
-          color="blue"
-        />
-        <StatCard
-          label="פנויים"
-          value={stats.available}
-          icon={<Users className="w-5 h-5" />}
-          color="green"
-        />
-        <StatCard
-          label="תפוסים"
-          value={stats.reserved}
-          icon={<Users className="w-5 h-5" />}
-          color="red"
-        />
-        <StatCard
-          label="רשימת המתנה"
-          value={stats.waitlistCount}
-          icon={<ListOrdered className="w-5 h-5" />}
-          color="amber"
-        />
-      </div>
+      <TableBoardStats tables={tables} waitlist={waitlistWithMatches} stats={stats} />
 
       {/* Share Link */}
       {event?.school?.slug && event?.slug && (
@@ -309,62 +274,6 @@ export default async function TableBoardView({ eventId }: TableBoardViewProps) {
         waitlistView={waitlistView}
         waitlistCount={stats.waitlistCount}
       />
-    </div>
-  )
-}
-
-function StatCard({
-  label,
-  value,
-  icon,
-  color,
-}: {
-  label: string
-  value: number
-  icon: React.ReactNode
-  color: 'blue' | 'green' | 'red' | 'amber'
-}) {
-  const colorClasses = {
-    blue: {
-      bg: 'bg-blue-50',
-      icon: 'text-blue-600',
-      gradient: 'from-blue-500/10 to-blue-600/5',
-    },
-    green: {
-      bg: 'bg-green-50',
-      icon: 'text-green-600',
-      gradient: 'from-green-500/10 to-green-600/5',
-    },
-    red: {
-      bg: 'bg-red-50',
-      icon: 'text-red-600',
-      gradient: 'from-red-500/10 to-red-600/5',
-    },
-    amber: {
-      bg: 'bg-amber-50',
-      icon: 'text-amber-600',
-      gradient: 'from-amber-500/10 to-amber-600/5',
-    },
-  }
-
-  const colors = colorClasses[color]
-
-  return (
-    <div className="relative overflow-hidden bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all">
-      {/* Subtle gradient background */}
-      <div
-        className={`absolute inset-0 bg-gradient-to-br ${colors.gradient} pointer-events-none`}
-      />
-
-      <div className="relative p-4">
-        <div className="flex items-start gap-3">
-          <div className={`p-2 rounded-lg ${colors.bg} ${colors.icon} flex-shrink-0`}>{icon}</div>
-          <div className="flex-1">
-            <div className="text-2xl font-bold text-gray-900 leading-none mb-1">{value}</div>
-            <div className="text-xs text-gray-600 font-medium">{label}</div>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }

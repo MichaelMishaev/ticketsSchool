@@ -6,9 +6,9 @@ services:
     ports:
       - "6000:5432"
     environment:
-      POSTGRES_USER: ticketcap_user
-      POSTGRES_PASSWORD: ticketcap_password
-      POSTGRES_DB: ticketcap
+      POSTGRES_USER: tickets_user
+      POSTGRES_PASSWORD: tickets_password
+      POSTGRES_DB: tickets_school
     volumes:
       - postgres_data:/var/lib/postgresql/data
 

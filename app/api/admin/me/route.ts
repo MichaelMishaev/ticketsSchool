@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * GET /api/admin/me
  * Returns current admin session info
  * Used by client to check if authenticated
  */
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     const admin = await getCurrentAdmin()
 
@@ -30,7 +31,6 @@ export async function GET(_request: NextRequest) {
             id: true,
             name: true,
             slug: true,
-            logo: true,
           },
         },
       },
@@ -43,6 +43,7 @@ export async function GET(_request: NextRequest) {
     const response = NextResponse.json({
       authenticated: true,
       admin: {
+        id: adminData.id,
         email: adminData.email,
         name: adminData.name,
         role: adminData.role,
@@ -55,7 +56,6 @@ export async function GET(_request: NextRequest) {
             id: adminData.school.id,
             name: adminData.school.name,
             slug: adminData.school.slug,
-            logo: adminData.school.logo,
           }
         : null,
     })
@@ -66,7 +66,7 @@ export async function GET(_request: NextRequest) {
 
     return response
   } catch (error) {
-    console.error('Get current admin error:', error)
+    logger.error('Get current admin error', { source: 'auth', error })
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }
