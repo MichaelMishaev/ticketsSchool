@@ -605,6 +605,14 @@ export default function EventPage() {
             form.appendChild(input)
           }
           document.body.appendChild(form)
+          console.log(
+            '[Payment] Submitting to:',
+            form.action,
+            '| PassP length:',
+            (paymentData.formParams as Record<string, string>).PassP?.length,
+            '| Masof:',
+            (paymentData.formParams as Record<string, string>).Masof
+          )
           form.submit()
         }
 
