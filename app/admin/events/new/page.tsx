@@ -45,6 +45,10 @@ import {
   Tag,
   AlignLeft,
   X,
+  DollarSign,
+  Gift,
+  Receipt,
+  Banknote,
 } from 'lucide-react'
 
 const AUTOSAVE_KEY_PREFIX = 'eventFormDraft'
@@ -1832,20 +1836,222 @@ export default function NewEventPage() {
                     className="border-t border-gray-200"
                   >
                     <div className="p-6 space-y-6">
-                      {/* Payment Required Toggle */}
-                      <label className="flex items-center gap-3 cursor-pointer p-4 rounded-lg hover:bg-gray-50 transition-colors border-2 border-gray-200">
-                        <input
-                          type="checkbox"
-                          checked={formData.paymentRequired}
-                          onChange={(e) => handleChange('paymentRequired', e.target.checked)}
-                          className="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 hover:border-gray-400 transition-colors cursor-pointer"
-                        />
-                        <span className={typography.bodySmall + ' font-medium'}>
-                          דרוש תשלום לאירוע זה
-                        </span>
-                      </label>
+                      {/* Payment Timing - Radio Cards (no payment + timing options) */}
+                      <div>
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-bold text-gray-900">מתי מתבצע התשלום?</h3>
+                          <span className="text-sm font-medium text-gray-600">
+                            {!formData.paymentRequired
+                              ? 'ללא תשלום'
+                              : formData.paymentTiming === 'UPFRONT'
+                                ? 'תשלום מראש'
+                                : formData.paymentTiming === 'POST_REGISTRATION'
+                                  ? 'חשבונית לאחר'
+                                  : 'אופציונלי'}
+                          </span>
+                        </div>
 
-                      {/* Conditional: Payment Settings */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {/* Card: Free */}
+                          <label
+                            className={`relative cursor-pointer rounded-xl border-2 p-4 transition-all duration-300 ${
+                              !formData.paymentRequired
+                                ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg ring-4 ring-blue-100'
+                                : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-md'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="paymentTiming"
+                              value="NO_PAYMENT"
+                              checked={!formData.paymentRequired}
+                              onChange={() => handleChange('paymentRequired', false)}
+                              className="sr-only"
+                            />
+                            <div className="flex items-start gap-3">
+                              <div
+                                className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${!formData.paymentRequired ? 'bg-blue-500' : 'bg-gray-100'}`}
+                              >
+                                <Gift
+                                  className={`w-5 h-5 ${!formData.paymentRequired ? 'text-white' : 'text-gray-400'}`}
+                                />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-gray-900 text-sm">ללא תשלום</p>
+                                <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                                  האירוע חינמי — אין צורך בתשלום
+                                </p>
+                              </div>
+                            </div>
+                            {!formData.paymentRequired && (
+                              <div className="absolute top-2 left-2">
+                                <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                                  <CheckCircle2 className="w-3 h-3 text-white" />
+                                </div>
+                              </div>
+                            )}
+                          </label>
+
+                          {/* Card: Upfront */}
+                          <label
+                            className={`relative cursor-pointer rounded-xl border-2 p-4 transition-all duration-300 ${
+                              formData.paymentRequired && formData.paymentTiming === 'UPFRONT'
+                                ? 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg ring-4 ring-green-100'
+                                : 'border-gray-200 bg-white hover:border-green-300 hover:shadow-md'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="paymentTiming"
+                              value="UPFRONT"
+                              checked={
+                                formData.paymentRequired && formData.paymentTiming === 'UPFRONT'
+                              }
+                              onChange={() => {
+                                handleChange('paymentTiming', 'UPFRONT')
+                                handleChange('paymentRequired', true)
+                                if (formData.pricingModel === 'FREE') {
+                                  handleChange('pricingModel', 'FIXED_PRICE')
+                                }
+                              }}
+                              className="sr-only"
+                            />
+                            <div className="flex items-start gap-3">
+                              <div
+                                className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${formData.paymentRequired && formData.paymentTiming === 'UPFRONT' ? 'bg-green-500' : 'bg-gray-100'}`}
+                              >
+                                <CreditCard
+                                  className={`w-5 h-5 ${formData.paymentRequired && formData.paymentTiming === 'UPFRONT' ? 'text-white' : 'text-gray-400'}`}
+                                />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <p className="font-bold text-gray-900 text-sm">תשלום מראש</p>
+                                  {formData.paymentRequired &&
+                                    formData.paymentTiming === 'UPFRONT' && (
+                                      <span className="px-1.5 py-0.5 bg-green-500 text-white text-xs font-semibold rounded-full">
+                                        מומלץ
+                                      </span>
+                                    )}
+                                </div>
+                                <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                                  המשתתף משלם בזמן ההרשמה
+                                </p>
+                              </div>
+                            </div>
+                            {formData.paymentRequired && formData.paymentTiming === 'UPFRONT' && (
+                              <div className="absolute top-2 left-2">
+                                <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                                  <CheckCircle2 className="w-3 h-3 text-white" />
+                                </div>
+                              </div>
+                            )}
+                          </label>
+
+                          {/* Card: Post Registration */}
+                          <label
+                            className={`relative cursor-pointer rounded-xl border-2 p-4 transition-all duration-300 ${
+                              formData.paymentRequired &&
+                              formData.paymentTiming === 'POST_REGISTRATION'
+                                ? 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg ring-4 ring-green-100'
+                                : 'border-gray-200 bg-white hover:border-green-300 hover:shadow-md'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="paymentTiming"
+                              value="POST_REGISTRATION"
+                              checked={
+                                formData.paymentRequired &&
+                                formData.paymentTiming === 'POST_REGISTRATION'
+                              }
+                              onChange={() => {
+                                handleChange('paymentTiming', 'POST_REGISTRATION')
+                                handleChange('paymentRequired', true)
+                                if (formData.pricingModel === 'FREE') {
+                                  handleChange('pricingModel', 'FIXED_PRICE')
+                                }
+                              }}
+                              className="sr-only"
+                            />
+                            <div className="flex items-start gap-3">
+                              <div
+                                className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${formData.paymentRequired && formData.paymentTiming === 'POST_REGISTRATION' ? 'bg-green-500' : 'bg-gray-100'}`}
+                              >
+                                <Receipt
+                                  className={`w-5 h-5 ${formData.paymentRequired && formData.paymentTiming === 'POST_REGISTRATION' ? 'text-white' : 'text-gray-400'}`}
+                                />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-gray-900 text-sm">
+                                  חשבונית לאחר ההרשמה
+                                </p>
+                                <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                                  קישור לתשלום נשלח במייל
+                                </p>
+                              </div>
+                            </div>
+                            {formData.paymentRequired &&
+                              formData.paymentTiming === 'POST_REGISTRATION' && (
+                                <div className="absolute top-2 left-2">
+                                  <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                                    <CheckCircle2 className="w-3 h-3 text-white" />
+                                  </div>
+                                </div>
+                              )}
+                          </label>
+
+                          {/* Card: Optional */}
+                          <label
+                            className={`relative cursor-pointer rounded-xl border-2 p-4 transition-all duration-300 ${
+                              formData.paymentRequired && formData.paymentTiming === 'OPTIONAL'
+                                ? 'border-yellow-500 bg-gradient-to-br from-yellow-50 to-amber-50 shadow-lg ring-4 ring-yellow-100'
+                                : 'border-gray-200 bg-white hover:border-yellow-300 hover:shadow-md'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="paymentTiming"
+                              value="OPTIONAL"
+                              checked={
+                                formData.paymentRequired && formData.paymentTiming === 'OPTIONAL'
+                              }
+                              onChange={() => {
+                                handleChange('paymentTiming', 'OPTIONAL')
+                                handleChange('paymentRequired', true)
+                                if (formData.pricingModel === 'FREE') {
+                                  handleChange('pricingModel', 'FIXED_PRICE')
+                                }
+                              }}
+                              className="sr-only"
+                            />
+                            <div className="flex items-start gap-3">
+                              <div
+                                className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${formData.paymentRequired && formData.paymentTiming === 'OPTIONAL' ? 'bg-yellow-500' : 'bg-gray-100'}`}
+                              >
+                                <Banknote
+                                  className={`w-5 h-5 ${formData.paymentRequired && formData.paymentTiming === 'OPTIONAL' ? 'text-white' : 'text-gray-400'}`}
+                                />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-gray-900 text-sm">אופציונלי</p>
+                                <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                                  המשתתף יכול לשלם או לא
+                                </p>
+                              </div>
+                            </div>
+                            {formData.paymentRequired && formData.paymentTiming === 'OPTIONAL' && (
+                              <div className="absolute top-2 left-2">
+                                <div className="w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center">
+                                  <CheckCircle2 className="w-3 h-3 text-white" />
+                                </div>
+                              </div>
+                            )}
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Conditional: Pricing Model + Amount */}
                       {formData.paymentRequired && (
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
@@ -1853,56 +2059,107 @@ export default function NewEventPage() {
                           exit={{ opacity: 0, height: 0 }}
                           className="space-y-6"
                         >
-                          {/* Payment Timing */}
-                          <div>
-                            <label htmlFor="paymentTiming" className={typography.label + ' mb-2'}>
-                              מועד התשלום <span className="text-red-500">*</span>
-                            </label>
-                            <select
-                              id="paymentTiming"
-                              value={formData.paymentTiming}
-                              onChange={(e) => handleChange('paymentTiming', e.target.value)}
-                              className={inputVariants.default}
-                            >
-                              <option value="UPFRONT">תשלום מראש (לפני ההרשמה) - מומלץ</option>
-                              <option value="POST_REGISTRATION">
-                                תשלום לאחר ההרשמה (קבלת חשבונית במייל)
-                              </option>
-                              <option value="OPTIONAL">אופציונלי (ניתן לשלם או לא)</option>
-                            </select>
-                            <p className={typography.micro + ' mt-2'}>
-                              {formData.paymentTiming === 'UPFRONT' &&
-                                'המשתתף ישלם לפני השלמת ההרשמה דרך YaadPay'}
-                              {formData.paymentTiming === 'POST_REGISTRATION' &&
-                                'המשתתף יקבל קישור לתשלום במייל לאחר ההרשמה'}
-                              {formData.paymentTiming === 'OPTIONAL' &&
-                                'המשתתף יוכל לבחור האם לשלם או לא'}
-                            </p>
+                          {/* Divider */}
+                          <div className="relative">
+                            <div className="absolute inset-0 flex items-center">
+                              <div className="w-full border-t-2 border-gray-200" />
+                            </div>
+                            <div className="relative flex justify-center">
+                              <span className="bg-white px-4 text-sm font-medium text-gray-600">
+                                מודל תמחור
+                              </span>
+                            </div>
                           </div>
 
-                          {/* Pricing Model */}
+                          {/* Pricing Model Cards */}
                           <div>
-                            <label htmlFor="pricingModel" className={typography.label + ' mb-2'}>
-                              מודל תמחור <span className="text-red-500">*</span>
+                            <label className="block text-base font-bold text-gray-900 mb-3">
+                              בחר את מודל התמחור <span className="text-red-500">*</span>
                             </label>
-                            <select
-                              id="pricingModel"
-                              value={formData.pricingModel}
-                              onChange={(e) => handleChange('pricingModel', e.target.value)}
-                              className={inputVariants.default}
-                            >
-                              <option value="FIXED_PRICE">מחיר קבוע להרשמה</option>
-                              <option value="PER_GUEST">מחיר לכל אורח (טבלאות)</option>
-                            </select>
-                            <p className={typography.micro + ' mt-2'}>
-                              {formData.pricingModel === 'FIXED_PRICE' &&
-                                'מחיר קבוע לכל הרשמה, ללא קשר למספר אורחים'}
-                              {formData.pricingModel === 'PER_GUEST' &&
-                                'המחיר מחושב לפי מספר האורחים (מחיר × מספר אורחים)'}
-                            </p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {/* Fixed Price */}
+                              <label
+                                className={`relative cursor-pointer rounded-xl border-2 p-4 transition-all duration-300 ${
+                                  formData.pricingModel === 'FIXED_PRICE'
+                                    ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg ring-4 ring-blue-100'
+                                    : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-md'
+                                }`}
+                              >
+                                <input
+                                  type="radio"
+                                  name="pricingModel"
+                                  value="FIXED_PRICE"
+                                  checked={formData.pricingModel === 'FIXED_PRICE'}
+                                  onChange={(e) => handleChange('pricingModel', e.target.value)}
+                                  className="sr-only"
+                                />
+                                <div className="text-center">
+                                  <div className="flex justify-center mb-2">
+                                    <div
+                                      className={`w-11 h-11 rounded-full flex items-center justify-center ${formData.pricingModel === 'FIXED_PRICE' ? 'bg-blue-500' : 'bg-gray-100'}`}
+                                    >
+                                      <DollarSign
+                                        className={`w-6 h-6 ${formData.pricingModel === 'FIXED_PRICE' ? 'text-white' : 'text-gray-400'}`}
+                                      />
+                                    </div>
+                                  </div>
+                                  <p className="font-bold text-gray-900 text-sm">מחיר קבוע</p>
+                                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                                    מחיר אחיד לכל הרשמה
+                                  </p>
+                                </div>
+                                {formData.pricingModel === 'FIXED_PRICE' && (
+                                  <div className="absolute top-2 left-2">
+                                    <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                                      <CheckCircle2 className="w-3 h-3 text-white" />
+                                    </div>
+                                  </div>
+                                )}
+                              </label>
+
+                              {/* Per Guest */}
+                              <label
+                                className={`relative cursor-pointer rounded-xl border-2 p-4 transition-all duration-300 ${
+                                  formData.pricingModel === 'PER_GUEST'
+                                    ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg ring-4 ring-blue-100'
+                                    : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-md'
+                                }`}
+                              >
+                                <input
+                                  type="radio"
+                                  name="pricingModel"
+                                  value="PER_GUEST"
+                                  checked={formData.pricingModel === 'PER_GUEST'}
+                                  onChange={(e) => handleChange('pricingModel', e.target.value)}
+                                  className="sr-only"
+                                />
+                                <div className="text-center">
+                                  <div className="flex justify-center mb-2">
+                                    <div
+                                      className={`w-11 h-11 rounded-full flex items-center justify-center ${formData.pricingModel === 'PER_GUEST' ? 'bg-blue-500' : 'bg-gray-100'}`}
+                                    >
+                                      <Users
+                                        className={`w-6 h-6 ${formData.pricingModel === 'PER_GUEST' ? 'text-white' : 'text-gray-400'}`}
+                                      />
+                                    </div>
+                                  </div>
+                                  <p className="font-bold text-gray-900 text-sm">מחיר לאורח</p>
+                                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                                    מחיר × מספר אורחים
+                                  </p>
+                                </div>
+                                {formData.pricingModel === 'PER_GUEST' && (
+                                  <div className="absolute top-2 left-2">
+                                    <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                                      <CheckCircle2 className="w-3 h-3 text-white" />
+                                    </div>
+                                  </div>
+                                )}
+                              </label>
+                            </div>
                           </div>
 
-                          {/* Price Amount (only if not FREE) */}
+                          {/* Price Amount */}
                           {formData.pricingModel !== 'FREE' && (
                             <motion.div
                               initial={{ opacity: 0, y: -10 }}
