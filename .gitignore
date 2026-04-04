@@ -67,10 +67,12 @@ dist
 
 # Gatsby files
 .cache/
-public
+public/*
 !public/images/
-!public/images/landing/
+!public/images/**
 !public/restaurants/
+!public/restaurants/**
+!public/file.svg
 
 # Storybook build outputs
 .out
