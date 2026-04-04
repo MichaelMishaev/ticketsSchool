@@ -1167,11 +1167,8 @@ export default function EventPage() {
                       )}
                       {event.pricingModel === 'PER_GUEST' && event.priceAmount && (
                         <div>
-                          <div className="text-xl font-bold text-gray-600 line-through">
-                            ₪{event.priceAmount} למשתתף
-                          </div>
-                          {(event.eventType === 'TABLE_BASED' ? guestsCount : spotsCount) > 1 && (
-                            <div className="mt-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
+                          {(event.eventType === 'TABLE_BASED' ? guestsCount : spotsCount) > 1 ? (
+                            <div className="p-2 bg-gray-50 rounded-lg border border-gray-200">
                               <div className="text-sm text-gray-600">
                                 {event.eventType === 'TABLE_BASED' ? guestsCount : spotsCount}{' '}
                                 משתתפים × ₪{event.priceAmount}
@@ -1179,6 +1176,11 @@ export default function EventPage() {
                               <div className="text-2xl font-black text-gray-900 mt-1">
                                 ₪{totalPrice}
                               </div>
+                            </div>
+                          ) : (
+                            <div className="text-3xl font-black text-gray-900">
+                              ₪{event.priceAmount}
+                              <span className="text-sm font-normal text-gray-500 mr-1">למשתתף</span>
                             </div>
                           )}
                         </div>
