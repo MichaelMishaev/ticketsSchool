@@ -26,8 +26,8 @@ export async function GET(
         id: true,
         checkInToken: true,
         title: true,
-        startAt: true
-      }
+        startAt: true,
+      },
     })
 
     if (!event) {
@@ -42,18 +42,18 @@ export async function GET(
     const totalRegistrations = await prisma.registration.count({
       where: {
         eventId,
-        status: { in: ['CONFIRMED', 'WAITLIST'] } // Exclude cancelled
-      }
+        status: 'CONFIRMED', // Only confirmed users are expected to arrive
+      },
     })
 
     // Get checked-in count (not undone)
     const checkedInCount = await prisma.checkIn.count({
       where: {
         registration: {
-          eventId
+          eventId,
         },
-        undoneAt: null // Only count active check-ins
-      }
+        undoneAt: null, // Only count active check-ins
+      },
     })
 
     // Get status breakdown
@@ -61,11 +61,11 @@ export async function GET(
       by: ['status'],
       where: {
         eventId,
-        status: { in: ['CONFIRMED', 'WAITLIST'] }
+        status: { in: ['CONFIRMED', 'WAITLIST'] },
       },
       _count: {
-        status: true
-      }
+        status: true,
+      },
     })
 
     const stats = {
@@ -73,25 +73,20 @@ export async function GET(
       checkedIn: checkedInCount,
       notCheckedIn: totalRegistrations - checkedInCount,
       percentageCheckedIn:
-        totalRegistrations > 0
-          ? Math.round((checkedInCount / totalRegistrations) * 100)
-          : 0,
+        totalRegistrations > 0 ? Math.round((checkedInCount / totalRegistrations) * 100) : 0,
       breakdown: {
-        confirmed: statusBreakdown.find(s => s.status === 'CONFIRMED')?._count.status || 0,
-        waitlist: statusBreakdown.find(s => s.status === 'WAITLIST')?._count.status || 0
+        confirmed: statusBreakdown.find((s) => s.status === 'CONFIRMED')?._count.status || 0,
+        waitlist: statusBreakdown.find((s) => s.status === 'WAITLIST')?._count.status || 0,
       },
       event: {
         title: event.title,
-        startAt: event.startAt
-      }
+        startAt: event.startAt,
+      },
     }
 
     return NextResponse.json(stats)
   } catch (error) {
     logger.error('Error fetching check-in stats', { source: 'check-in', error })
-    return NextResponse.json(
-      { error: 'Failed to load statistics' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to load statistics' }, { status: 500 })
   }
 }

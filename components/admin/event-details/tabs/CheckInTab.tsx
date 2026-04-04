@@ -1,7 +1,19 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Calendar, Clock, Copy, Check, QrCode, Search, UserCheck, RefreshCw, Users, ListChecks, UserX } from 'lucide-react'
+import {
+  Calendar,
+  Clock,
+  Copy,
+  Check,
+  QrCode,
+  Search,
+  UserCheck,
+  RefreshCw,
+  Users,
+  ListChecks,
+  UserX,
+} from 'lucide-react'
 
 interface CheckInTabProps {
   eventId: string
@@ -42,8 +54,18 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
   const now = new Date()
   const eventDateObj = new Date(eventDate)
   const isEventDay = now.toDateString() === eventDateObj.toDateString()
-  const isPastEvent = now > eventDateObj
-  const daysUntilEvent = Math.ceil((eventDateObj.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+
+  const nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const targetDate = new Date(
+    eventDateObj.getFullYear(),
+    eventDateObj.getMonth(),
+    eventDateObj.getDate()
+  )
+
+  const isPastEvent = !isEventDay && now > eventDateObj
+  const daysUntilEvent = Math.ceil(
+    (targetDate.getTime() - nowDate.getTime()) / (1000 * 60 * 60 * 24)
+  )
 
   const [checkInLink, setCheckInLink] = useState<string | null>(null)
   const [checkInToken, setCheckInToken] = useState<string | null>(null)
@@ -302,7 +324,10 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
     stats.confirmed > 0 ? Math.round((stats.checkedIn / stats.confirmed) * 100) : 0
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-44 md:pb-6 overflow-x-hidden" dir="rtl">
+    <div
+      className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-44 md:pb-6 overflow-x-hidden"
+      dir="rtl"
+    >
       {/* Success Toast */}
       {showSuccessToast && (
         <div className="fixed bottom-40 md:bottom-6 left-1/2 -translate-x-1/2 z-50 animate-[slideUp_300ms_ease-out]">
@@ -430,7 +455,9 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
               </div>
               <div className="text-center p-3 sm:p-4 bg-amber-50 border border-amber-200 rounded-lg min-w-0 overflow-hidden">
                 <p className="text-xs sm:text-sm text-amber-700 mb-1 truncate">ממתינים</p>
-                <p className="text-2xl sm:text-3xl font-bold text-amber-600">{stats.notCheckedIn}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-amber-600">
+                  {stats.notCheckedIn}
+                </p>
               </div>
               <div className="text-center p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg min-w-0 overflow-hidden">
                 <p className="text-xs sm:text-sm text-blue-700 mb-1 truncate">המתנה</p>
@@ -621,9 +648,7 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
                     ימים
                   </h1>
 
-                  <p className="text-blue-100 text-sm mb-3">
-                    עמוד הכניסה יפתח ביום האירוע
-                  </p>
+                  <p className="text-blue-100 text-sm mb-3">עמוד הכניסה יפתח ביום האירוע</p>
 
                   {/* Event Date Badge */}
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 backdrop-blur-md text-white rounded-lg border border-white/20 text-sm">
@@ -668,9 +693,7 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
                   <p id="stat-waitlist" className="text-xs font-medium text-amber-700 mb-1">
                     המתנה
                   </p>
-                  <p className="text-2xl font-bold text-amber-600 tabular-nums">
-                    {stats.waitlist}
-                  </p>
+                  <p className="text-2xl font-bold text-amber-600 tabular-nums">{stats.waitlist}</p>
                 </article>
 
                 {/* Cancelled Card */}
@@ -684,19 +707,21 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
                   <p id="stat-cancelled" className="text-xs font-medium text-gray-600 mb-1">
                     ביטולים
                   </p>
-                  <p className="text-2xl font-bold text-gray-500 tabular-nums">
-                    {stats.cancelled}
-                  </p>
+                  <p className="text-2xl font-bold text-gray-500 tabular-nums">{stats.cancelled}</p>
                 </article>
               </div>
 
               {/* Info Card - Compact */}
-              <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center gap-3" role="note">
+              <div
+                className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center gap-3"
+                role="note"
+              >
                 <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
                   <QrCode className="w-4 h-4 text-white" aria-hidden="true" />
                 </div>
                 <p className="text-sm text-blue-700">
-                  <span className="font-medium">מערכת הכניסה תפעל ביום האירוע</span> - סריקת QR ורישום נוכחות
+                  <span className="font-medium">מערכת הכניסה תפעל ביום האירוע</span> - סריקת QR
+                  ורישום נוכחות
                 </p>
               </div>
             </>

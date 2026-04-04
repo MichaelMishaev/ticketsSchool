@@ -8,6 +8,7 @@ interface GuestCountSelectorProps {
   min?: number
   max?: number
   label?: string
+  colorScheme?: 'blue' | 'amber'
 }
 
 export default function GuestCountSelector({
@@ -15,8 +16,21 @@ export default function GuestCountSelector({
   onChange,
   min = 1,
   max = 12,
-  label = 'כמה אורחים?'
+  label = 'כמה אורחים?',
+  colorScheme = 'blue',
 }: GuestCountSelectorProps) {
+  const activeClass =
+    colorScheme === 'amber'
+      ? 'bg-white border-amber-500 text-amber-700 hover:bg-amber-50 active:bg-amber-100'
+      : 'bg-white border-blue-500 text-blue-600 hover:bg-blue-50 active:bg-blue-100'
+
+  const labelClass = colorScheme === 'amber' ? 'text-gray-700' : 'text-gray-900'
+
+  const countClass = colorScheme === 'amber' ? 'text-gray-900' : 'text-gray-900'
+
+  const subClass = colorScheme === 'amber' ? 'text-gray-600' : 'text-gray-600'
+
+  const rangeClass = colorScheme === 'amber' ? 'text-gray-500' : 'text-gray-500'
   const increment = () => {
     if (value < max) {
       onChange(value + 1)
@@ -31,11 +45,7 @@ export default function GuestCountSelector({
 
   return (
     <div className="space-y-3" dir="rtl">
-      {label && (
-        <label className="block text-sm font-medium text-gray-900">
-          {label}
-        </label>
-      )}
+      {label && <label className={`block text-sm font-medium ${labelClass}`}>{label}</label>}
 
       <div className="flex items-center justify-center gap-4">
         {/* Decrement Button */}
@@ -51,7 +61,7 @@ export default function GuestCountSelector({
             ${
               value <= min
                 ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed'
-                : 'bg-white border-blue-500 text-blue-600 hover:bg-blue-50 active:bg-blue-100'
+                : activeClass
             }
           `}
           aria-label="הפחת מספר אורחים"
@@ -61,12 +71,8 @@ export default function GuestCountSelector({
 
         {/* Count Display */}
         <div className="flex flex-col items-center justify-center min-w-[100px]">
-          <div className="text-4xl sm:text-5xl font-bold text-gray-900">
-            {value}
-          </div>
-          <div className="text-sm text-gray-600 mt-1">
-            {value === 1 ? 'אורח' : 'אורחים'}
-          </div>
+          <div className={`text-4xl sm:text-5xl font-bold ${countClass}`}>{value}</div>
+          <div className={`text-sm mt-1 ${subClass}`}>{value === 1 ? 'אורח' : 'אורחים'}</div>
         </div>
 
         {/* Increment Button */}
@@ -82,7 +88,7 @@ export default function GuestCountSelector({
             ${
               value >= max
                 ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed'
-                : 'bg-white border-blue-500 text-blue-600 hover:bg-blue-50 active:bg-100'
+                : activeClass
             }
           `}
           aria-label="הוסף אורח"
@@ -92,7 +98,7 @@ export default function GuestCountSelector({
       </div>
 
       {/* Range Info */}
-      <div className="text-center text-xs text-gray-500">
+      <div className={`text-center text-xs ${rangeClass}`}>
         {min} - {max} אורחים
       </div>
     </div>

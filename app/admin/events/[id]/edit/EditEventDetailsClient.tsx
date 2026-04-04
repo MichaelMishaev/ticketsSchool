@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import FieldBuilder, { defaultFields } from '@/components/field-builder'
+import CoverImagePicker from '@/components/CoverImagePicker'
 import { EventFormData } from '@/types'
 import { useToast } from '@/components/Toast'
 import StepWizard from '@/components/StepWizard'
@@ -236,7 +237,9 @@ export default function EditEventDetailsClient({
         if (formData.paymentRequired) {
           const hasValidPrice =
             formData.pricingModel === 'FREE' ||
-            (formData.priceAmount !== undefined && formData.priceAmount > 0 && !validationErrors.priceAmount)
+            (formData.priceAmount !== undefined &&
+              formData.priceAmount > 0 &&
+              !validationErrors.priceAmount)
           return hasValidPrice
         }
         return true // Optional step
@@ -389,7 +392,9 @@ export default function EditEventDetailsClient({
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">הגדרות תשלום</h2>
-                  <p className="text-sm text-gray-600">הגדר אם האירוע דורש תשלום, מתי התשלום מתבצע, ומה המחיר</p>
+                  <p className="text-sm text-gray-600">
+                    הגדר אם האירוע דורש תשלום, מתי התשלום מתבצע, ומה המחיר
+                  </p>
                 </div>
               </div>
 
@@ -400,7 +405,9 @@ export default function EditEventDetailsClient({
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <span className="font-medium">
                       {formData.paymentRequired
-                        ? (formData.paymentTiming === 'UPFRONT' ? 'תשלום מראש' : 'חשבונית לאחר')
+                        ? formData.paymentTiming === 'UPFRONT'
+                          ? 'תשלום מראש'
+                          : 'חשבונית לאחר'
                         : 'ללא תשלום'}
                     </span>
                   </div>
@@ -476,7 +483,9 @@ export default function EditEventDetailsClient({
                       />
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-base font-bold text-gray-900">תשלום מראש בעת ההרשמה</span>
+                          <span className="text-base font-bold text-gray-900">
+                            תשלום מראש בעת ההרשמה
+                          </span>
                           {formData.paymentTiming === 'UPFRONT' && formData.paymentRequired && (
                             <span className="px-2 py-0.5 bg-green-500 text-white text-xs font-semibold rounded-full">
                               מומלץ
@@ -526,7 +535,9 @@ export default function EditEventDetailsClient({
                       />
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-base font-bold text-gray-900">חשבונית לאחר האירוע</span>
+                          <span className="text-base font-bold text-gray-900">
+                            חשבונית לאחר האירוע
+                          </span>
                         </div>
                         <p className="text-sm text-gray-600 leading-relaxed">
                           שליחת חשבונית לאחר סיום האירוע - תשלום מאוחר יותר
@@ -562,7 +573,9 @@ export default function EditEventDetailsClient({
                         <div className="w-full border-t-2 border-gray-200"></div>
                       </div>
                       <div className="relative flex justify-center">
-                        <span className="bg-white px-4 text-sm font-medium text-gray-600">מודל תמחור</span>
+                        <span className="bg-white px-4 text-sm font-medium text-gray-600">
+                          מודל תמחור
+                        </span>
                       </div>
                     </div>
 
@@ -593,12 +606,20 @@ export default function EditEventDetailsClient({
                           />
                           <div className="text-center">
                             <div className="flex justify-center mb-3">
-                              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                                formData.pricingModel === 'FIXED_PRICE' ? 'bg-blue-500' : 'bg-gray-200'
-                              }`}>
-                                <DollarSign className={`w-6 h-6 ${
-                                  formData.pricingModel === 'FIXED_PRICE' ? 'text-white' : 'text-gray-500'
-                                }`} />
+                              <div
+                                className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                                  formData.pricingModel === 'FIXED_PRICE'
+                                    ? 'bg-blue-500'
+                                    : 'bg-gray-200'
+                                }`}
+                              >
+                                <DollarSign
+                                  className={`w-6 h-6 ${
+                                    formData.pricingModel === 'FIXED_PRICE'
+                                      ? 'text-white'
+                                      : 'text-gray-500'
+                                  }`}
+                                />
                               </div>
                             </div>
                             <h4 className="font-bold text-gray-900 mb-1">מחיר קבוע</h4>
@@ -634,12 +655,20 @@ export default function EditEventDetailsClient({
                           />
                           <div className="text-center">
                             <div className="flex justify-center mb-3">
-                              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                                formData.pricingModel === 'PER_GUEST' ? 'bg-blue-500' : 'bg-gray-200'
-                              }`}>
-                                <Users className={`w-6 h-6 ${
-                                  formData.pricingModel === 'PER_GUEST' ? 'text-white' : 'text-gray-500'
-                                }`} />
+                              <div
+                                className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                                  formData.pricingModel === 'PER_GUEST'
+                                    ? 'bg-blue-500'
+                                    : 'bg-gray-200'
+                                }`}
+                              >
+                                <Users
+                                  className={`w-6 h-6 ${
+                                    formData.pricingModel === 'PER_GUEST'
+                                      ? 'text-white'
+                                      : 'text-gray-500'
+                                  }`}
+                                />
                               </div>
                             </div>
                             <h4 className="font-bold text-gray-900 mb-1">מחיר למשתתף</h4>
@@ -675,12 +704,18 @@ export default function EditEventDetailsClient({
                           />
                           <div className="text-center">
                             <div className="flex justify-center mb-3">
-                              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                                formData.pricingModel === 'FREE' ? 'bg-blue-500' : 'bg-gray-200'
-                              }`}>
-                                <CheckCircle2 className={`w-6 h-6 ${
-                                  formData.pricingModel === 'FREE' ? 'text-white' : 'text-gray-500'
-                                }`} />
+                              <div
+                                className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                                  formData.pricingModel === 'FREE' ? 'bg-blue-500' : 'bg-gray-200'
+                                }`}
+                              >
+                                <CheckCircle2
+                                  className={`w-6 h-6 ${
+                                    formData.pricingModel === 'FREE'
+                                      ? 'text-white'
+                                      : 'text-gray-500'
+                                  }`}
+                                />
                               </div>
                             </div>
                             <h4 className="font-bold text-gray-900 mb-1">חינמי</h4>
@@ -710,8 +745,13 @@ export default function EditEventDetailsClient({
                         >
                           {/* Price Input - Compact & Mobile-Friendly */}
                           <div className="bg-white rounded-xl p-6 border-2 border-gray-200 shadow-sm hover:border-blue-300 hover:shadow-md transition-all">
-                            <label htmlFor="priceAmount" className="block text-base font-bold text-gray-900 mb-4">
-                              {formData.pricingModel === 'PER_GUEST' ? 'מחיר לכל משתתף' : 'מחיר קבוע'}
+                            <label
+                              htmlFor="priceAmount"
+                              className="block text-base font-bold text-gray-900 mb-4"
+                            >
+                              {formData.pricingModel === 'PER_GUEST'
+                                ? 'מחיר לכל משתתף'
+                                : 'מחיר קבוע'}
                               <span className="text-red-500 mr-1">*</span>
                             </label>
 
@@ -740,31 +780,40 @@ export default function EditEventDetailsClient({
                                     ${validationErrors.priceAmount ? 'border-red-500 bg-red-50' : 'border-gray-300 bg-white'}
                                   `}
                                   placeholder="0.00"
-                                  aria-label={formData.pricingModel === 'PER_GUEST' ? 'מחיר לכל משתתף' : 'מחיר קבוע'}
+                                  aria-label={
+                                    formData.pricingModel === 'PER_GUEST'
+                                      ? 'מחיר לכל משתתף'
+                                      : 'מחיר קבוע'
+                                  }
                                   aria-invalid={!!validationErrors.priceAmount}
                                   aria-describedby="price-help price-error"
                                 />
                               </div>
 
                               {/* Live Preview Indicator */}
-                              {formData.priceAmount !== undefined && formData.priceAmount > 0 && !validationErrors.priceAmount && (
-                                <motion.div
-                                  initial={{ scale: 0, opacity: 0 }}
-                                  animate={{ scale: 1, opacity: 1 }}
-                                  className="flex items-center gap-2 px-4 py-2 bg-green-50 border-2 border-green-300 rounded-lg"
-                                >
-                                  <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
-                                  <span className="text-sm font-bold text-green-900 whitespace-nowrap">
-                                    ₪{formData.priceAmount.toFixed(2)}
-                                  </span>
-                                </motion.div>
-                              )}
+                              {formData.priceAmount !== undefined &&
+                                formData.priceAmount > 0 &&
+                                !validationErrors.priceAmount && (
+                                  <motion.div
+                                    initial={{ scale: 0, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    className="flex items-center gap-2 px-4 py-2 bg-green-50 border-2 border-green-300 rounded-lg"
+                                  >
+                                    <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+                                    <span className="text-sm font-bold text-green-900 whitespace-nowrap">
+                                      ₪{formData.priceAmount.toFixed(2)}
+                                    </span>
+                                  </motion.div>
+                                )}
                             </div>
 
                             {/* Help Text & Validation */}
                             <div className="space-y-2">
                               {!validationErrors.priceAmount && (
-                                <p id="price-help" className="text-sm text-gray-600 flex items-center gap-2">
+                                <p
+                                  id="price-help"
+                                  className="text-sm text-gray-600 flex items-center gap-2"
+                                >
                                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                                   <span>
                                     {formData.pricingModel === 'PER_GUEST'
@@ -775,51 +824,68 @@ export default function EditEventDetailsClient({
                               )}
 
                               {validationErrors.priceAmount && (
-                                <div id="price-error" role="alert" className="flex items-center gap-2 text-red-600 bg-red-50 border-2 border-red-300 rounded-lg p-3">
+                                <div
+                                  id="price-error"
+                                  role="alert"
+                                  className="flex items-center gap-2 text-red-600 bg-red-50 border-2 border-red-300 rounded-lg p-3"
+                                >
                                   <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                                  <span className="text-sm font-medium">{validationErrors.priceAmount}</span>
+                                  <span className="text-sm font-medium">
+                                    {validationErrors.priceAmount}
+                                  </span>
                                 </div>
                               )}
                             </div>
                           </div>
 
                           {/* Inline Summary - Replaces Large Preview Card */}
-                          {formData.priceAmount !== undefined && formData.priceAmount > 0 && !validationErrors.priceAmount && (
-                            <motion.div
-                              initial={{ opacity: 0, y: -10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border-2 border-blue-200"
-                            >
-                              <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-sm">
-                                {/* Payment Timing */}
-                                <div className="flex items-center gap-2 flex-1">
-                                  <Clock className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                                  <span className="text-gray-700">
-                                    תשלום{' '}
-                                    <strong className="text-blue-900">
-                                      {formData.paymentTiming === 'UPFRONT'
-                                        ? 'בעת ההרשמה'
-                                        : 'לאחר האירוע'}
-                                    </strong>
-                                  </span>
-                                </div>
+                          {formData.priceAmount !== undefined &&
+                            formData.priceAmount > 0 &&
+                            !validationErrors.priceAmount && (
+                              <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border-2 border-blue-200"
+                              >
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-sm">
+                                  {/* Payment Timing */}
+                                  <div className="flex items-center gap-2 flex-1">
+                                    <Clock className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                                    <span className="text-gray-700">
+                                      תשלום{' '}
+                                      <strong className="text-blue-900">
+                                        {formData.paymentTiming === 'UPFRONT'
+                                          ? 'בעת ההרשמה'
+                                          : 'לאחר האירוע'}
+                                      </strong>
+                                    </span>
+                                  </div>
 
-                                {/* Example Calculation - Only for PER_GUEST */}
-                                {formData.pricingModel === 'PER_GUEST' && formData.maxSpotsPerPerson > 1 && (
-                                  <>
-                                    <div className="hidden sm:block w-px h-6 bg-blue-300" aria-hidden="true" />
-                                    <div className="flex items-center gap-2 text-blue-900">
-                                      <Users className="w-4 h-4 flex-shrink-0" />
-                                      <span className="font-medium">
-                                        דוגמה: {formData.maxSpotsPerPerson} מקומות =
-                                        <strong className="mr-1 text-lg">₪{(formData.priceAmount * formData.maxSpotsPerPerson).toFixed(2)}</strong>
-                                      </span>
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            </motion.div>
-                          )}
+                                  {/* Example Calculation - Only for PER_GUEST */}
+                                  {formData.pricingModel === 'PER_GUEST' &&
+                                    formData.maxSpotsPerPerson > 1 && (
+                                      <>
+                                        <div
+                                          className="hidden sm:block w-px h-6 bg-blue-300"
+                                          aria-hidden="true"
+                                        />
+                                        <div className="flex items-center gap-2 text-blue-900">
+                                          <Users className="w-4 h-4 flex-shrink-0" />
+                                          <span className="font-medium">
+                                            דוגמה: {formData.maxSpotsPerPerson} מקומות =
+                                            <strong className="mr-1 text-lg">
+                                              ₪
+                                              {(
+                                                formData.priceAmount * formData.maxSpotsPerPerson
+                                              ).toFixed(2)}
+                                            </strong>
+                                          </span>
+                                        </div>
+                                      </>
+                                    )}
+                                </div>
+                              </motion.div>
+                            )}
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -833,7 +899,9 @@ export default function EditEventDetailsClient({
                       >
                         <div className="flex items-center gap-3 justify-center">
                           <CheckCircle2 className="w-8 h-8 text-blue-600" />
-                          <span className="text-lg font-bold text-blue-900">האירוע הוגדר כחינמי - אין צורך בתשלום</span>
+                          <span className="text-lg font-bold text-blue-900">
+                            האירוע הוגדר כחינמי - אין צורך בתשלום
+                          </span>
                         </div>
                       </motion.div>
                     )}
@@ -850,7 +918,9 @@ export default function EditEventDetailsClient({
                 >
                   <div className="flex items-center gap-3 justify-center">
                     <CheckCircle2 className="w-8 h-8 text-gray-600" />
-                    <span className="text-lg font-bold text-gray-800">האירוע לא דורש תשלום - הרשמה חינמית</span>
+                    <span className="text-lg font-bold text-gray-800">
+                      האירוע לא דורש תשלום - הרשמה חינמית
+                    </span>
                   </div>
                 </motion.div>
               )}
@@ -934,7 +1004,10 @@ export default function EditEventDetailsClient({
 
               {/* Description */}
               <div className="mb-6">
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="description"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   תיאור
                 </label>
                 <textarea
@@ -959,7 +1032,10 @@ export default function EditEventDetailsClient({
                     </span>
                   )}
                   <div className="flex-1" />
-                  <CharCounter current={formData.description?.length ?? 0} max={CHAR_LIMITS.description} />
+                  <CharCounter
+                    current={formData.description?.length ?? 0}
+                    max={CHAR_LIMITS.description}
+                  />
                 </div>
               </div>
 
@@ -979,6 +1055,15 @@ export default function EditEventDetailsClient({
                     placeholder="אולם ספורט / מגרש..."
                   />
                 </div>
+              </div>
+
+              {/* Cover Image */}
+              <div className="pt-2">
+                <CoverImagePicker
+                  value={formData.coverImage ?? null}
+                  onChange={(url) => setFormData((prev) => ({ ...prev, coverImage: url }))}
+                  eventGameType={formData.gameType}
+                />
               </div>
             </div>
           </motion.div>
@@ -1054,7 +1139,10 @@ export default function EditEventDetailsClient({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Capacity */}
                 <div>
-                  <label htmlFor="capacity" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="capacity"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     מספר מקומות כולל <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
@@ -1086,7 +1174,10 @@ export default function EditEventDetailsClient({
 
                 {/* Max Spots Per Person */}
                 <div>
-                  <label htmlFor="maxSpots" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="maxSpots"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     מקסימום מקומות לנרשם <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
@@ -1142,7 +1233,10 @@ export default function EditEventDetailsClient({
               <p className="text-sm text-gray-600 mb-6">
                 הוסף שדות מותאמים אישית שהמשתתפים יצטרכו למלא בעת ההרשמה (שם, טלפון, גיל וכו')
               </p>
-              <FieldBuilder fields={formData.fieldsSchema} onChange={(fields) => setFormData({ ...formData, fieldsSchema: fields })} />
+              <FieldBuilder
+                fields={formData.fieldsSchema}
+                onChange={(fields) => setFormData({ ...formData, fieldsSchema: fields })}
+              />
             </div>
 
             {/* Conditions */}
@@ -1150,7 +1244,10 @@ export default function EditEventDetailsClient({
               <h2 className="text-xl font-bold text-gray-900 mb-4">תנאים והגבלות</h2>
 
               <div className="mb-6">
-                <label htmlFor="conditions" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="conditions"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   תנאי השתתפות
                 </label>
                 <textarea
@@ -1175,7 +1272,10 @@ export default function EditEventDetailsClient({
                     </span>
                   )}
                   <div className="flex-1" />
-                  <CharCounter current={formData.conditions?.length ?? 0} max={CHAR_LIMITS.conditions} />
+                  <CharCounter
+                    current={formData.conditions?.length ?? 0}
+                    max={CHAR_LIMITS.conditions}
+                  />
                 </div>
               </div>
 
@@ -1186,7 +1286,9 @@ export default function EditEventDetailsClient({
                   onChange={(e) => handleChange('requireAcceptance', e.target.checked)}
                   className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 hover:border-gray-400 transition-colors cursor-pointer"
                 />
-                <span className="text-sm text-gray-700 font-medium">דרוש אישור תנאי השתתפות בעת ההרשמה</span>
+                <span className="text-sm text-gray-700 font-medium">
+                  דרוש אישור תנאי השתתפות בעת ההרשמה
+                </span>
               </label>
             </div>
 
@@ -1195,7 +1297,10 @@ export default function EditEventDetailsClient({
               <h2 className="text-xl font-bold text-gray-900 mb-4">הודעה לנרשמים</h2>
 
               <div>
-                <label htmlFor="completionMessage" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="completionMessage"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   הודעה לאחר השלמת הרשמה
                 </label>
                 <textarea
@@ -1220,9 +1325,14 @@ export default function EditEventDetailsClient({
                     </span>
                   )}
                   <div className="flex-1" />
-                  <CharCounter current={formData.completionMessage?.length ?? 0} max={CHAR_LIMITS.completionMessage} />
+                  <CharCounter
+                    current={formData.completionMessage?.length ?? 0}
+                    max={CHAR_LIMITS.completionMessage}
+                  />
                 </div>
-                <p className="text-sm text-gray-500 mt-2">ההודעה תוצג למשתתפים לאחר שיסיימו את תהליך ההרשמה בהצלחה.</p>
+                <p className="text-sm text-gray-500 mt-2">
+                  ההודעה תוצג למשתתפים לאחר שיסיימו את תהליך ההרשמה בהצלחה.
+                </p>
               </div>
             </div>
           </motion.div>
@@ -1239,7 +1349,11 @@ export default function EditEventDetailsClient({
 
       <div className="max-w-5xl mx-auto px-4 py-6">
         {/* Header */}
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
@@ -1253,7 +1367,12 @@ export default function EditEventDetailsClient({
 
         {/* Step Wizard */}
         <div className="mb-8">
-          <StepWizard steps={steps} currentStep={currentStep} onStepClick={goToStep} completedSteps={completedSteps} />
+          <StepWizard
+            steps={steps}
+            currentStep={currentStep}
+            onStepClick={goToStep}
+            completedSteps={completedSteps}
+          />
         </div>
 
         {/* Form */}
@@ -1261,7 +1380,11 @@ export default function EditEventDetailsClient({
           <AnimatePresence mode="wait">{renderStepContent()}</AnimatePresence>
 
           {/* Navigation Buttons */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-8 flex flex-col-reverse sm:flex-row justify-between gap-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-8 flex flex-col-reverse sm:flex-row justify-between gap-4"
+          >
             <div className="flex gap-3">
               <button
                 type="button"
@@ -1303,7 +1426,9 @@ export default function EditEventDetailsClient({
               ) : (
                 <button
                   type="submit"
-                  disabled={isLoading || Object.values(validationErrors).some((error) => error !== '')}
+                  disabled={
+                    isLoading || Object.values(validationErrors).some((error) => error !== '')
+                  }
                   className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl w-full sm:w-auto justify-center"
                 >
                   {isLoading ? (

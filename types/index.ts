@@ -23,6 +23,7 @@ export interface EventFormData {
   conditions?: string
   requireAcceptance: boolean
   completionMessage?: string
+  coverImage?: string | null
   // Payment settings (Tier 2: Event Ticketing - YaadPay)
   paymentRequired: boolean
   paymentTiming: 'OPTIONAL' | 'UPFRONT' | 'POST_REGISTRATION'

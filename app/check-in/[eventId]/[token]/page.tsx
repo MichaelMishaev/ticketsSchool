@@ -75,21 +75,32 @@ export default function CheckInPage({
   const getCheckInStatusMessage = () => {
     if (!event) return null
 
+    if (isCheckInAllowed()) {
+      return null
+    }
+
     const now = new Date()
     const eventDate = new Date(event.startAt)
 
     if (now < eventDate) {
+      const nowStartOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      const eventStartOfDay = new Date(
+        eventDate.getFullYear(),
+        eventDate.getMonth(),
+        eventDate.getDate()
+      )
+
       const daysUntil = Math.ceil(
-        (eventDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+        (eventStartOfDay.getTime() - nowStartOfDay.getTime()) / (1000 * 60 * 60 * 24)
       )
       return {
         message: `האירוע מתחיל בעוד ${daysUntil} ${daysUntil === 1 ? 'יום' : 'ימים'}. עמוד הנוכחות יפתח ביום האירוע.`,
-        type: 'info' as const
+        type: 'info' as const,
       }
     } else if (!isCheckInAllowed()) {
       return {
         message: 'האירוע הסתיים. לא ניתן לרשום נוכחות.',
-        type: 'warning' as const
+        type: 'warning' as const,
       }
     }
 
@@ -141,7 +152,7 @@ export default function CheckInPage({
       setRegistrations(data.registrations)
     } catch (err: unknown) {
       console.error('Error fetching check-in data:', err)
-      setError((err instanceof Error ? err.message : "שגיאה") || 'שגיאה בטעינת הנתונים')
+      setError((err instanceof Error ? err.message : 'שגיאה') || 'שגיאה בטעינת הנתונים')
     } finally {
       setLoading(false)
     }
@@ -202,13 +213,13 @@ export default function CheckInPage({
       showToast('נוכחות נרשמה בהצלחה!', 'success')
     } catch (err: unknown) {
       console.error('Error checking in:', err)
-      const errorMessage = (err instanceof Error ? err.message : "שגיאה") || 'שגיאה ברישום נוכחות'
+      const errorMessage = (err instanceof Error ? err.message : 'שגיאה') || 'שגיאה ברישום נוכחות'
 
       // Special handling for "Already checked in" - refresh silently without error toast
       if (errorMessage.includes('Already checked in') || errorMessage.includes('כבר נכח')) {
         // Just refresh to sync UI - don't show error since user is already checked in
         // Add small delay to ensure DB is consistent
-        await new Promise(resolve => setTimeout(resolve, 100))
+        await new Promise((resolve) => setTimeout(resolve, 100))
         await fetchData()
       } else {
         // Show error for other types of errors
@@ -262,7 +273,7 @@ export default function CheckInPage({
       showToast('נוכחות בוטלה בהצלחה', 'success')
     } catch (err: unknown) {
       console.error('Error undoing check-in:', err)
-      showToast((err instanceof Error ? err.message : "שגיאה") || 'שגיאה בביטול נוכחות', 'error')
+      showToast((err instanceof Error ? err.message : 'שגיאה') || 'שגיאה בביטול נוכחות', 'error')
 
       // Refresh data from server to sync UI with database state
       await fetchData()
@@ -298,7 +309,7 @@ export default function CheckInPage({
       showToast('נוכחות נרשמה בהצלחה מקוד QR!', 'success')
     } catch (err: unknown) {
       console.error('Error processing QR code:', err)
-      showToast((err instanceof Error ? err.message : "שגיאה") || 'קוד QR לא תקין', 'error')
+      showToast((err instanceof Error ? err.message : 'שגיאה') || 'קוד QR לא תקין', 'error')
     }
   }
 
@@ -315,9 +326,13 @@ export default function CheckInPage({
     // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
-      const dataName = reg.data && typeof reg.data === 'object' && 'name' in reg.data ? reg.data.name : ''
+      const dataName =
+        reg.data && typeof reg.data === 'object' && 'name' in reg.data ? reg.data.name : ''
       const name = typeof dataName === 'string' ? dataName.toLowerCase() : ''
-      const dataChildName = reg.data && typeof reg.data === 'object' && 'childName' in reg.data ? reg.data.childName : ''
+      const dataChildName =
+        reg.data && typeof reg.data === 'object' && 'childName' in reg.data
+          ? reg.data.childName
+          : ''
       const childName = typeof dataChildName === 'string' ? dataChildName.toLowerCase() : ''
       const phone = reg.phoneNumber || ''
       const code = reg.confirmationCode?.toLowerCase() || ''
@@ -366,7 +381,10 @@ export default function CheckInPage({
   if (error || !event) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="bg-red-50 border-2 border-red-200 rounded-lg p-6 max-w-md text-center" dir="rtl">
+        <div
+          className="bg-red-50 border-2 border-red-200 rounded-lg p-6 max-w-md text-center"
+          dir="rtl"
+        >
           <div className="text-4xl mb-3">⚠️</div>
           <div className="text-red-800 font-medium mb-2">שגיאה</div>
           <div className="text-red-700 text-sm">{error || 'אירוע לא נמצא'}</div>
@@ -444,11 +462,15 @@ export default function CheckInPage({
           eventId={resolvedParams.eventId}
           token={resolvedParams.token}
           initialStats={{
-            total: registrations.filter(r => r.status === 'CONFIRMED').length,
-            checkedIn: registrations.filter((r) => r.status === 'CONFIRMED' && r.checkIn && !r.checkIn.undoneAt).length,
+            total: registrations.filter((r) => r.status === 'CONFIRMED').length,
+            checkedIn: registrations.filter(
+              (r) => r.status === 'CONFIRMED' && r.checkIn && !r.checkIn.undoneAt
+            ).length,
             percentageCheckedIn: Math.round(
-              (registrations.filter((r) => r.status === 'CONFIRMED' && r.checkIn && !r.checkIn.undoneAt).length /
-                (registrations.filter(r => r.status === 'CONFIRMED').length || 1)) *
+              (registrations.filter(
+                (r) => r.status === 'CONFIRMED' && r.checkIn && !r.checkIn.undoneAt
+              ).length /
+                (registrations.filter((r) => r.status === 'CONFIRMED').length || 1)) *
                 100
             ),
           }}
@@ -480,7 +502,7 @@ export default function CheckInPage({
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              ✅ מאושרים ({registrations.filter(r => r.status === 'CONFIRMED').length})
+              ✅ מאושרים ({registrations.filter((r) => r.status === 'CONFIRMED').length})
             </button>
             <button
               onClick={() => setStatusFilter('waitlist')}
@@ -490,7 +512,7 @@ export default function CheckInPage({
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              ⏳ רשימת המתנה ({registrations.filter(r => r.status === 'WAITLIST').length})
+              ⏳ רשימת המתנה ({registrations.filter((r) => r.status === 'WAITLIST').length})
             </button>
             <button
               onClick={() => setStatusFilter('all')}

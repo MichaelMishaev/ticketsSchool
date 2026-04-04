@@ -25,6 +25,7 @@ import {
 } from '@/lib/analytics'
 import Modal from '@/components/ui/Modal'
 import { ToastContainer, toast } from '@/components/ui/Toast'
+import { DEFAULT_COVER_IMAGE } from '@/components/CoverImagePicker'
 
 interface School {
   id: string
@@ -50,6 +51,7 @@ interface Event {
   conditions?: string
   requireAcceptance: boolean
   completionMessage?: string
+  coverImage?: string | null
   allowCancellation?: boolean
   paymentRequired: boolean
   paymentTiming?: 'UPFRONT' | 'POST_REGISTRATION'
@@ -956,17 +958,54 @@ export default function EventPage() {
   const gradientFrom = `${schoolColor}20`
   const gradientTo = `${schoolColor}10`
 
+  // Visual mode: warm amber-light for TABLE_BASED, bright blue for CAPACITY_BASED
+  const isTableBased = event.eventType === 'TABLE_BASED'
+
+  const theme = isTableBased
+    ? {
+        page: 'bg-amber-50',
+        headerBg: 'bg-white',
+        overlayClass: 'from-gray-900/50 to-gray-900/75',
+        formCard: 'bg-white border border-amber-100',
+        inputBorder: 'border-amber-300 focus:border-amber-500',
+        inputText: 'text-gray-900 bg-white',
+        label: 'text-gray-700',
+        submitBtn: 'from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600',
+        chip: 'bg-amber-50 text-amber-800 border border-amber-200',
+        cardText: 'text-gray-900',
+        mutedText: 'text-gray-500',
+        sectionCard: 'bg-white border border-amber-100 rounded-2xl shadow-xl',
+        checkboxColor: 'text-amber-600',
+        missingBg: 'bg-red-50 border-2 border-red-200',
+        missingText: 'text-red-700',
+      }
+    : {
+        page: 'bg-gray-50',
+        headerBg: '',
+        overlayClass: 'from-blue-900/40 to-blue-900/70',
+        formCard: 'bg-white',
+        inputBorder: 'border-gray-300 focus:border-blue-500',
+        inputText: 'text-gray-900 bg-white',
+        label: 'text-gray-700',
+        submitBtn: 'from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700',
+        chip: 'bg-gray-100 text-gray-700',
+        cardText: 'text-gray-900',
+        mutedText: 'text-gray-600',
+        sectionCard: 'bg-white rounded-2xl shadow-xl',
+        checkboxColor: 'text-blue-600',
+        missingBg: 'bg-red-50 border-2 border-red-200',
+        missingText: 'text-red-700',
+      }
+
   return (
     <div
-      className="min-h-screen py-6 sm:py-12 pb-32 md:pb-12"
-      style={{
-        background: `linear-gradient(to bottom right, ${gradientFrom}, ${gradientTo})`,
-      }}
+      className={`min-h-screen py-6 sm:py-12 pb-32 md:pb-12 ${theme.page}`}
+      style={{ background: `linear-gradient(to bottom right, ${gradientFrom}, ${gradientTo})` }}
     >
       <div className="max-w-2xl mx-auto px-4">
         {/* School Branding Header */}
         {event.school && (
-          <div className="mb-6 flex items-center gap-3 p-4 bg-white rounded-xl shadow-md">
+          <div className="mb-6 flex items-center gap-3 p-4 rounded-xl shadow-md bg-white">
             {event.school.logo ? (
               <img
                 src={event.school.logo}
@@ -990,52 +1029,83 @@ export default function EventPage() {
           </div>
         )}
 
-        {/* Event Header */}
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-6">
-          <div
-            className="p-6 sm:p-8 text-white"
-            style={{
-              background: `linear-gradient(to right, ${schoolColor}, ${schoolColor}dd)`,
-            }}
-          >
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2">{event.title}</h1>
-            {event.gameType && (
-              <span className="inline-block bg-white/20 text-white px-3 py-1 rounded-full text-sm">
-                {event.gameType}
-              </span>
-            )}
-          </div>
-
-          <div className="p-6 space-y-4">
-            {event.description && <p className="text-gray-700">{event.description}</p>}
-
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <Calendar className="w-5 h-5 text-gray-400" />
-                <div className="flex-1">
-                  <span className="text-gray-700 block">
-                    {format(new Date(event.startAt), 'EEEE, dd בMMMM yyyy בשעה HH:mm', {
-                      locale: he,
-                    })}
-                  </span>
-                  {event.endAt && (
-                    <span className="text-gray-600 text-sm block mt-1">
-                      עד:{' '}
-                      {format(new Date(event.endAt), 'EEEE, dd בMMMM yyyy בשעה HH:mm', {
-                        locale: he,
-                      })}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {event.location && (
-                <div className="flex items-center gap-3">
-                  <MapPin className="w-5 h-5 text-gray-400" />
-                  <span className="text-gray-700">{event.location}</span>
-                </div>
+        {/* Event Header — Hero */}
+        <div className={`${theme.sectionCard} overflow-hidden mb-6`}>
+          {/* Hero: cover image (custom or default) */}
+          <div className="relative h-60 sm:h-80">
+            <img
+              src={event.coverImage ?? DEFAULT_COVER_IMAGE}
+              alt={event.title}
+              loading="lazy"
+              className="w-full h-full object-cover"
+            />
+            {/* Dark overlay for text legibility */}
+            <div className={`absolute inset-0 bg-gradient-to-t ${theme.overlayClass}`} />
+            {/* Title on hero */}
+            <div className="absolute bottom-0 inset-x-0 p-6" dir="rtl">
+              <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 drop-shadow-lg">
+                {event.title}
+              </h1>
+              {event.gameType && (
+                <span
+                  className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${theme.chip}`}
+                >
+                  {event.gameType}
+                </span>
               )}
             </div>
+          </div>
+
+          {/* Info chips row */}
+          {(() => {
+            const infoChipClass =
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium'
+            const infoChipStyle = { backgroundColor: `${schoolColor}15`, color: schoolColor }
+            return (
+              <div className="px-5 py-4 flex flex-wrap gap-2 border-b border-gray-100" dir="rtl">
+                {/* Date chip */}
+                <span className={infoChipClass} style={infoChipStyle}>
+                  <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+                  {format(new Date(event.startAt), 'EEEE, d בMMMM בשעה HH:mm', { locale: he })}
+                </span>
+                {/* Location chip */}
+                {event.location && (
+                  <span className={infoChipClass} style={infoChipStyle}>
+                    <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                    {event.location}
+                  </span>
+                )}
+                {/* Spots chip */}
+                {event.eventType === 'CAPACITY_BASED' && (
+                  <span
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${
+                      isFull
+                        ? 'bg-red-100 text-red-700'
+                        : spotsLeft <= 5
+                          ? 'bg-orange-100 text-orange-700'
+                          : 'bg-green-100 text-green-700'
+                    }`}
+                  >
+                    {isFull
+                      ? '⚠️ רשימת המתנה'
+                      : spotsLeft <= 5
+                        ? `🔥 נותרו ${spotsLeft} מקומות!`
+                        : `✓ ${spotsLeft} מקומות פנויים`}
+                  </span>
+                )}
+                {event.eventType === 'TABLE_BASED' && (
+                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-green-100 text-green-700">
+                    ✓ פתוח להזמנות
+                  </span>
+                )}
+              </div>
+            )
+          })()}
+
+          <div className="p-6 space-y-4">
+            {event.description && (
+              <p className={`text-sm leading-relaxed ${theme.mutedText}`}>{event.description}</p>
+            )}
 
             {/* 2026 UX: Improved Pricing Display */}
             {event.paymentRequired && (
@@ -1102,47 +1172,28 @@ export default function EventPage() {
               </div>
             )}
 
-            {/* Capacity Indicator */}
-            <div className="pt-4">
-              {event.eventType === 'TABLE_BASED' ? (
-                // Table-based event: Show table availability status
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">סטטוס</span>
-                  <span className="text-sm font-bold text-green-600">✓ פתוח</span>
+            {/* Capacity progress bar (CAPACITY_BASED only) */}
+            {event.eventType === 'CAPACITY_BASED' && (
+              <div className="pt-2">
+                <div className="w-full rounded-full h-2 overflow-hidden bg-gray-100">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      isFull ? 'bg-red-500' : percentage > 80 ? 'bg-orange-400' : 'bg-green-400'
+                    }`}
+                    style={{ width: `${Math.max(percentage, 3)}%` }}
+                  />
                 </div>
-              ) : (
-                // Capacity-based event: Show capacity bar
-                <>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">מקומות פנויים</span>
-                    <span
-                      className={`text-sm font-bold ${isFull ? 'text-red-600' : spotsLeft < 10 ? 'text-yellow-600' : 'text-green-600'}`}
-                    >
-                      {isFull ? 'אין מקומות פנויים' : `${spotsLeft} מתוך ${event.capacity}`}
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-500 ${
-                        isFull ? 'bg-red-500' : percentage > 80 ? 'bg-yellow-500' : 'bg-green-500'
-                      }`}
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
-                  {isFull && (
-                    <p className="text-sm text-yellow-600 mt-2 font-medium">
-                      ⚠️ תתבצע הרשמה לרשימת המתנה
-                    </p>
-                  )}
-                </>
-              )}
-            </div>
+                <p className="text-xs mt-1.5 text-left text-gray-400">
+                  {event.totalSpotsTaken} / {event.capacity} מקומות נתפסו
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Registration Form - 2026 UX Enhanced */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">
+        <div className={`${theme.sectionCard} p-6 sm:p-8 mb-6`}>
+          <h2 className={`text-xl font-bold mb-6 ${theme.cardText}`}>
             {event.eventType === 'TABLE_BASED'
               ? 'הרשמה לאירוע'
               : isFull
@@ -1154,7 +1205,7 @@ export default function EventPage() {
             {/* 2026 UX: Enhanced field spacing from 16px to 24px */}
             {event.fieldsSchema.map((field: any) => (
               <div key={field.id}>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className={`block text-sm font-medium mb-2 ${theme.label}`}>
                   {field.label}
                   {field.required && <span className="text-red-500 mr-1">*</span>}
                 </label>
@@ -1168,7 +1219,7 @@ export default function EventPage() {
                       const validation = validateField(field.name, formData[field.name], field)
                       setFieldValidation((prev) => ({ ...prev, [field.name]: validation }))
                     }}
-                    className={`w-full px-4 py-4 border-2 rounded-lg transition-all duration-200 text-gray-900 bg-white
+                    className={`w-full px-4 py-4 border-2 rounded-lg transition-all duration-200 ${theme.inputText}
                       ${
                         fieldValidation[field.name]?.touched &&
                         !fieldValidation[field.name]?.isValid
@@ -1176,7 +1227,7 @@ export default function EventPage() {
                           : fieldValidation[field.name]?.isValid &&
                               fieldValidation[field.name]?.touched
                             ? 'border-green-500 focus:border-green-500 focus:ring-4 focus:ring-green-500/20'
-                            : 'border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20'
+                            : `${theme.inputBorder} focus:ring-4 focus:ring-blue-500/20`
                       }`}
                   >
                     <option value="">בחר...</option>
@@ -1193,9 +1244,9 @@ export default function EventPage() {
                       type="checkbox"
                       checked={formData[field.name] || false}
                       onChange={(e) => handleFieldChange(field.name, e.target.checked, field)}
-                      className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-4 focus:ring-blue-500/20"
+                      className={`w-5 h-5 rounded border-gray-300 ${theme.checkboxColor} focus:ring-4 focus:ring-blue-500/20`}
                     />
-                    <span className="text-sm text-gray-700">
+                    <span className={`text-sm ${theme.label}`}>
                       {field.placeholder || field.label}
                     </span>
                   </div>
@@ -1218,7 +1269,7 @@ export default function EventPage() {
                         setFieldValidation((prev) => ({ ...prev, [field.name]: validation }))
                       }}
                       placeholder={field.placeholder}
-                      className={`w-full px-4 py-4 pr-12 border-2 rounded-lg transition-all duration-200 text-gray-900 bg-white text-base
+                      className={`w-full px-4 py-4 pr-12 border-2 rounded-lg transition-all duration-200 ${theme.inputText} text-base
                         ${
                           fieldValidation[field.name]?.touched &&
                           !fieldValidation[field.name]?.isValid
@@ -1226,7 +1277,7 @@ export default function EventPage() {
                             : fieldValidation[field.name]?.isValid &&
                                 fieldValidation[field.name]?.touched
                               ? 'border-green-500 focus:border-green-500 focus:ring-4 focus:ring-green-500/20'
-                              : 'border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20'
+                              : `${theme.inputBorder} focus:ring-4 focus:ring-blue-500/20`
                         }`}
                     />
                     {/* 2026 UX: Real-time validation icon */}
@@ -1253,15 +1304,16 @@ export default function EventPage() {
 
             {/* Table-based events: Guest count selector */}
             {event.eventType === 'TABLE_BASED' && (
-              <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-200">
+              <div className="rounded-xl p-6 border-2 bg-amber-50 border-amber-200">
                 <GuestCountSelector
                   value={guestsCount}
                   onChange={setGuestsCount}
                   min={1}
                   max={event.maxTableCapacity || 12}
                   label="כמה אורחים?"
+                  colorScheme="amber"
                 />
-                <p className="text-center text-xs text-gray-600 mt-4">
+                <p className="text-center text-xs mt-4 text-gray-600">
                   נמצא עבורך את השולחן המתאים ביותר
                 </p>
               </div>
@@ -1277,7 +1329,7 @@ export default function EventPage() {
 
                 return (
                   <div>
-                    <label className="block text-base font-semibold text-gray-800 mb-3">
+                    <label className={`block text-base font-semibold mb-3 ${theme.cardText}`}>
                       מספר מקומות <span className="text-red-500 mr-1">*</span>
                     </label>
                     <div className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200">
@@ -1364,14 +1416,14 @@ export default function EventPage() {
 
             {/* Missing Fields Indicator */}
             {!isFormValid && (
-              <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
+              <div className={`${theme.missingBg} rounded-xl p-4`}>
                 <div className="flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-red-800 mb-2">
+                    <p className={`text-sm font-semibold mb-2 ${theme.missingText}`}>
                       יש למלא את השדות הבאים כדי להמשיך:
                     </p>
-                    <ul className="text-sm text-red-700 space-y-1">
+                    <ul className={`text-sm space-y-1 ${theme.missingText}`}>
                       {missingFields.map((field, index) => (
                         <li key={index} className="flex items-center gap-2">
                           <span className="w-1.5 h-1.5 bg-red-600 rounded-full"></span>
@@ -1388,7 +1440,7 @@ export default function EventPage() {
             <button
               type="submit"
               disabled={submitting || event.status !== 'OPEN' || !isFormValid}
-              className="hidden md:flex w-full h-14 items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-4 focus:ring-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg active:scale-[0.98]"
+              className={`hidden md:flex w-full h-14 items-center justify-center bg-gradient-to-r ${theme.submitBtn} text-white font-bold rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg active:scale-[0.98]`}
             >
               {submitting ? (
                 <span className="flex items-center justify-center">
@@ -1418,13 +1470,13 @@ export default function EventPage() {
       </div>
 
       {/* 2026 UX: Sticky CTA Button (Mobile Only) */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t-2 border-gray-200 shadow-2xl z-50">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 shadow-2xl z-50 border-t-2 bg-white border-gray-200">
         <button
           type="submit"
           form="registration-form"
           onClick={handleSubmit}
           disabled={submitting || event.status !== 'OPEN' || !isFormValid}
-          className="w-full h-14 flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-4 focus:ring-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg active:scale-[0.98]"
+          className={`w-full h-14 flex items-center justify-center bg-gradient-to-r ${theme.submitBtn} text-white font-bold rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg active:scale-[0.98]`}
         >
           {submitting ? (
             <span className="flex items-center justify-center">

@@ -25,22 +25,19 @@ export async function GET(
         name: true,
         slug: true,
         logo: true,
-        primaryColor: true
-      }
+        primaryColor: true,
+      },
     })
 
     if (!school) {
-      return NextResponse.json(
-        { error: 'School not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'School not found' }, { status: 404 })
     }
 
     // Find the event by slug AND schoolId (for security/isolation)
     const event = await prisma.event.findFirst({
       where: {
         slug: eventSlug,
-        schoolId: school.id
+        schoolId: school.id,
       },
       include: {
         school: {
@@ -49,54 +46,46 @@ export async function GET(
             name: true,
             slug: true,
             logo: true,
-            primaryColor: true
-          }
+            primaryColor: true,
+          },
         },
         _count: {
           select: {
             registrations: {
               where: {
-                status: 'CONFIRMED'
-              }
-            }
-          }
-        }
-      }
+                status: 'CONFIRMED',
+              },
+            },
+          },
+        },
+      },
     })
 
     if (!event) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
     // Calculate total spots taken
     const confirmedRegistrations = await prisma.registration.findMany({
       where: {
         eventId: event.id,
-        status: 'CONFIRMED'
+        status: 'CONFIRMED',
       },
       select: {
-        spotsCount: true
-      }
+        spotsCount: true,
+      },
     })
 
-    const totalSpotsTaken = confirmedRegistrations.reduce(
-      (sum, reg) => sum + reg.spotsCount,
-      0
-    )
+    const totalSpotsTaken = confirmedRegistrations.reduce((sum, reg) => sum + reg.spotsCount, 0)
 
     // For TABLE_BASED events, get max table capacity
     let maxTableCapacity = null
     if (event.eventType === 'TABLE_BASED') {
       const tables = await prisma.table.findMany({
         where: { eventId: event.id },
-        select: { capacity: true }
+        select: { capacity: true },
       })
-      maxTableCapacity = tables.length > 0
-        ? Math.max(...tables.map(t => t.capacity))
-        : 12 // fallback
+      maxTableCapacity = tables.length > 0 ? Math.max(...tables.map((t) => t.capacity)) : 12 // fallback
     }
 
     const response = NextResponse.json({
@@ -124,9 +113,10 @@ export async function GET(
       pricingModel: event.pricingModel,
       priceAmount: event.priceAmount ? Number(event.priceAmount) : null,
       currency: event.currency,
+      coverImage: event.coverImage,
       school: event.school,
       _count: event._count,
-      totalSpotsTaken
+      totalSpotsTaken,
     })
 
     // Add cache control headers to prevent caching
@@ -137,9 +127,6 @@ export async function GET(
     return response
   } catch (error) {
     logger.error('Error fetching event', { source: 'public-api', error })
-    return NextResponse.json(
-      { error: 'Failed to fetch event' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch event' }, { status: 500 })
   }
 }

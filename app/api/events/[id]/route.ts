@@ -182,6 +182,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (data.conditions !== undefined) updateData.conditions = data.conditions
     if (data.requireAcceptance !== undefined) updateData.requireAcceptance = data.requireAcceptance
     if (data.completionMessage !== undefined) updateData.completionMessage = data.completionMessage
+    if (data.coverImage !== undefined) updateData.coverImage = data.coverImage
     if (data.status !== undefined) updateData.status = data.status
 
     // Payment settings (Tier 2: Event Ticketing - YaadPay)

@@ -188,6 +188,7 @@ model Event {
   conditions        String?
   requireAcceptance Boolean     @default(false)
   completionMessage String?
+  coverImage        String? // Curated Unsplash cover photo URL
 
   // Table-based events
   eventType                 EventType @default(CAPACITY_BASED)

@@ -4,11 +4,7 @@ import { getCurrentAdmin } from '@/lib/auth.server'
 import EditEventClient from './EditEventClient'
 import EditEventDetailsClient from './EditEventDetailsClient'
 
-export default async function EditEventPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
+export default async function EditEventPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
   // Get current admin for permission check
@@ -50,21 +46,17 @@ export default async function EditEventPage({
   // Route to appropriate edit component based on event type
   if (event.eventType === 'TABLE_BASED') {
     // Type-cast tables to match EditEventClient's expected type
-    const tables = event.tables.map(table => ({
+    const tables = event.tables.map((table) => ({
       ...table,
-      reservation: table.reservation ? {
-        ...table.reservation,
-        data: table.reservation.data as Record<string, unknown>
-      } : null
+      reservation: table.reservation
+        ? {
+            ...table.reservation,
+            data: table.reservation.data as Record<string, unknown>,
+          }
+        : null,
     }))
 
-    return (
-      <EditEventClient
-        eventId={event.id}
-        eventTitle={event.title}
-        initialTables={tables}
-      />
-    )
+    return <EditEventClient eventId={event.id} eventTitle={event.title} initialTables={tables} />
   } else {
     // CAPACITY_BASED event - edit event details
     // Convert dates to datetime-local format for form inputs
@@ -72,7 +64,7 @@ export default async function EditEventPage({
       if (!date) return ''
       const d = new Date(date)
       const offset = d.getTimezoneOffset()
-      const localDate = new Date(d.getTime() - (offset * 60 * 1000))
+      const localDate = new Date(d.getTime() - offset * 60 * 1000)
       return localDate.toISOString().slice(0, 16)
     }
 
@@ -85,10 +77,11 @@ export default async function EditEventPage({
       endAt: event.endAt ? formatDateTimeLocal(event.endAt) : '',
       capacity: event.capacity,
       maxSpotsPerPerson: event.maxSpotsPerPerson,
-      fieldsSchema: event.fieldsSchema as any || [],
+      fieldsSchema: (event.fieldsSchema as any) || [],
       conditions: event.conditions || '',
       requireAcceptance: event.requireAcceptance,
       completionMessage: event.completionMessage || '',
+      coverImage: event.coverImage || null,
       status: event.status,
       // Payment settings (Tier 2: Event Ticketing - YaadPay)
       paymentRequired: event.paymentRequired,

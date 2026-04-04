@@ -45,7 +45,7 @@ export async function GET(
     const totalRegistrations = await prisma.registration.count({
       where: {
         eventId,
-        status: { in: ['CONFIRMED', 'WAITLIST'] }, // Exclude cancelled
+        status: 'CONFIRMED', // Only confirmed users are expected to arrive
       },
     })
 

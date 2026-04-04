@@ -101,20 +101,33 @@ export default function CheckInHeroCard({
 
           {/* Stats Preview - Clean Design */}
           {stats && stats.totalRegistrations > 0 && (
-            <div className="grid grid-cols-3 gap-3 mb-5">
-              <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
-                <div className="text-2xl font-black text-gray-900">{stats.totalRegistrations}</div>
-                <div className="text-xs text-gray-700 font-bold">נרשמו</div>
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-5">
+              <div className="flex flex-col items-center justify-center p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200 text-center min-w-0">
+                <div className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
+                  {stats.totalRegistrations}
+                </div>
+                <div className="text-[11px] sm:text-xs text-gray-700 font-bold leading-tight mt-0.5">
+                  נרשמו
+                </div>
               </div>
-              <div className="p-3 bg-green-50 rounded-lg border border-green-200 text-center">
-                <div className="text-2xl font-black text-green-600">{stats.checkedInCount}</div>
-                <div className="text-xs text-gray-700 font-bold">הגיעו</div>
+              <div className="flex flex-col items-center justify-center p-2 sm:p-3 bg-green-50 rounded-lg border border-green-200 text-center min-w-0">
+                <div className="text-xl sm:text-2xl font-black text-green-600 tracking-tight">
+                  {stats.checkedInCount}
+                </div>
+                <div className="text-[11px] sm:text-xs text-gray-700 font-bold leading-tight mt-0.5">
+                  הגיעו
+                </div>
               </div>
-              <div className="p-3 bg-purple-50 rounded-lg border border-purple-200 text-center">
-                <div className="text-2xl font-black text-purple-600">
+              <div className="flex flex-col items-center justify-center p-2 sm:p-3 bg-purple-50 rounded-lg border border-purple-200 text-center min-w-0">
+                <div
+                  className="text-xl sm:text-2xl font-black text-purple-600 tracking-tight scale-100"
+                  dir="ltr"
+                >
                   {stats.checkInPercentage}%
                 </div>
-                <div className="text-xs text-gray-700 font-bold">אחוז הגעה</div>
+                <div className="text-[11px] sm:text-xs text-gray-700 font-bold leading-tight mt-0.5">
+                  אחוז הגעה
+                </div>
               </div>
             </div>
           )}
@@ -158,18 +171,33 @@ export default function CheckInHeroCard({
 
         {/* Stats Preview - Clean Design */}
         {stats && stats.totalRegistrations > 0 && (
-          <div className="grid grid-cols-3 gap-3 mb-5">
-            <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
-              <div className="text-2xl font-black text-gray-900">{stats.totalRegistrations}</div>
-              <div className="text-xs text-gray-700 font-bold">נרשמו</div>
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-5">
+            <div className="flex flex-col items-center justify-center p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200 text-center min-w-0">
+              <div className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
+                {stats.totalRegistrations}
+              </div>
+              <div className="text-[11px] sm:text-xs text-gray-700 font-bold leading-tight mt-0.5">
+                נרשמו
+              </div>
             </div>
-            <div className="p-3 bg-green-50 rounded-lg border border-green-200 text-center">
-              <div className="text-2xl font-black text-green-600">{stats.checkedInCount}</div>
-              <div className="text-xs text-gray-700 font-bold">הגיעו</div>
+            <div className="flex flex-col items-center justify-center p-2 sm:p-3 bg-green-50 rounded-lg border border-green-200 text-center min-w-0">
+              <div className="text-xl sm:text-2xl font-black text-green-600 tracking-tight">
+                {stats.checkedInCount}
+              </div>
+              <div className="text-[11px] sm:text-xs text-gray-700 font-bold leading-tight mt-0.5">
+                הגיעו
+              </div>
             </div>
-            <div className="p-3 bg-purple-50 rounded-lg border border-purple-200 text-center">
-              <div className="text-2xl font-black text-purple-600">{stats.checkInPercentage}%</div>
-              <div className="text-xs text-gray-700 font-bold">אחוז הגעה</div>
+            <div className="flex flex-col items-center justify-center p-2 sm:p-3 bg-purple-50 rounded-lg border border-purple-200 text-center min-w-0">
+              <div
+                className="text-xl sm:text-2xl font-black text-purple-600 tracking-tight scale-100"
+                dir="ltr"
+              >
+                {stats.checkInPercentage}%
+              </div>
+              <div className="text-[11px] sm:text-xs text-gray-700 font-bold leading-tight mt-0.5">
+                אחוז הגעה
+              </div>
             </div>
           </div>
         )}

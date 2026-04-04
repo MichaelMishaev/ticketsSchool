@@ -141,11 +141,19 @@ export default function EventTabNavigation({
       ref={tabListRef}
       role="tablist"
       aria-label="ניהול אירוע - קטגוריות"
-      className="hidden md:block border-b border-gray-200 bg-white sticky top-0 z-40 shadow-sm"
+      className="hidden md:block sticky top-0 z-40 shadow-sm relative backdrop-blur-md transition-all duration-300"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
+      style={{
+        backgroundImage:
+          'linear-gradient(rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.95)), url("https://images.unsplash.com/photo-1557682250-33bd709cbe85?auto=format&fit=crop&q=80&w=2000")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="flex -mb-px overflow-x-auto hide-scrollbar" dir="rtl">
           {tabs.map((tab) => {
             const Icon = tab.icon
@@ -164,13 +172,13 @@ export default function EventTabNavigation({
                 onClick={() => handleTabChange(tab.id)}
                 className={`
                   inline-flex items-center gap-2 px-6 py-4 md:py-2.5 font-medium text-sm
-                  transition-colors duration-200 whitespace-nowrap
+                  transition-all duration-300 whitespace-nowrap rounded-t-lg mt-1
                   focus:outline-none focus:ring-2 focus:ring-gray-400/20 focus:z-10
-                  min-h-[48px] border-b-2
+                  min-h-[48px] border-b-[3px]
                   ${
                     isActive
-                      ? 'border-gray-900 text-gray-900 bg-gray-50'
-                      : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'border-gray-900 text-gray-900 bg-white/70 shadow-[inset_0_-5px_15px_rgba(255,255,255,0.4)]'
+                      : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-white/40'
                   }
                 `}
               >
