@@ -97,7 +97,7 @@ export function createPaymentRequest(data: PaymentRequestData): PaymentRequest {
   // Build form parameters (based on YaadPay API docs)
   const formParams: Record<string, string> = {
     Masof: config.masof,
-    passP: config.apiSecret, // Required: authenticates this payment request to HYP
+    PassP: config.apiSecret, // Required: authenticates this payment request to HYP (case-sensitive: PassP)
     action: 'pay',
     Amount: formattedAmount,
     Order: data.orderId, // Our unique payment intent ID
@@ -119,12 +119,8 @@ export function createPaymentRequest(data: PaymentRequestData): PaymentRequest {
     Param1: JSON.stringify(data.metadata || {}),
   }
 
-  // Add test mode parameter if enabled
-  // HYP uses tmp=1 to mark a transaction as test (no real charge, same Masof/passP)
-  if (config.testMode) {
-    formParams.tmp = '1'
-    console.log('[YaadPay] TEST MODE: tmp=1 — transaction will not be charged')
-  }
+  // tmp = payment page template number (1-15), NOT a test flag
+  // Test mode requires using a separate HYP test terminal (מסוף טסט) with its own Masof
 
   console.log('[YaadPay] Creating payment request:', {
     orderId: data.orderId,
