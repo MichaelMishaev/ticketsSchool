@@ -25,6 +25,19 @@ export async function POST(request: NextRequest) {
   const rateLimitResponse = await paymentLimiter(request)
   if (rateLimitResponse) return rateLimitResponse
 
+  // Fail fast: encryption key required before any DB work
+  if (!process.env.ENCRYPTION_KEY || process.env.ENCRYPTION_KEY.length < 32) {
+    paymentLogger.error('ENCRYPTION_KEY missing or too short — payment route disabled', {
+      present: !!process.env.ENCRYPTION_KEY,
+      length: process.env.ENCRYPTION_KEY?.length ?? 0,
+      railwayEnv: process.env.RAILWAY_ENVIRONMENT_NAME,
+    })
+    return NextResponse.json(
+      { error: 'מערכת התשלומים אינה זמינה כעת. אנא פנה לתמיכה.' },
+      { status: 503 }
+    )
+  }
+
   // Runtime safety check - prevent using mock mode in production Railway environment
   const railwayEnv = process.env.RAILWAY_ENVIRONMENT_NAME // 'production' | 'development' | undefined
   const isRailwayProd = railwayEnv === 'production'
@@ -147,6 +160,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'פורמט מספר טלפון לא תקין' }, { status: 400 })
     }
 
+    // Clean up stale PAYMENT_PENDING registrations older than 30 min (abandoned payment sessions)
+    await prisma.registration.updateMany({
+      where: {
+        eventId: event.id,
+        phoneNumber: phoneNumber,
+        status: 'PAYMENT_PENDING',
+        createdAt: { lt: new Date(Date.now() - 30 * 60 * 1000) },
+      },
+      data: { status: 'CANCELLED' },
+    })
+
     // Check for duplicate registration (same phone number, not cancelled)
     const existingRegistration = await prisma.registration.findFirst({
       where: {
@@ -235,7 +259,7 @@ export async function POST(request: NextRequest) {
               event.eventType === 'CAPACITY_BASED' ? Number(registrationData.spotsCount) || 1 : 0,
             guestsCount:
               event.eventType === 'TABLE_BASED' ? Number(registrationData.guestsCount) : null,
-            status: 'CONFIRMED', // Will be set to WAITLIST if capacity exceeded (handled in callback)
+            status: 'PAYMENT_PENDING', // Will be set to CONFIRMED/WAITLIST on successful payment callback
             confirmationCode: Math.random().toString(36).substring(2, 8).toUpperCase(), // Temporary, will be replaced
             phoneNumber: phoneNumber,
             email: registrationData.email,

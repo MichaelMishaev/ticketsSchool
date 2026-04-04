@@ -286,6 +286,7 @@ enum RegistrationStatus {
   CONFIRMED
   WAITLIST
   CANCELLED
+  PAYMENT_PENDING
 }
 
 enum CancellationSource {

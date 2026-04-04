@@ -239,6 +239,10 @@ export async function POST(
       return NextResponse.json({ error: 'Registration is for a different event' }, { status: 400 })
     }
 
+    if (registration.status === 'PAYMENT_PENDING') {
+      return NextResponse.json({ error: "לא ניתן לבצע צ'ק-אין - ממתין לתשלום" }, { status: 400 })
+    }
+
     if (registration.status === 'CANCELLED') {
       return NextResponse.json({ error: 'Registration is cancelled' }, { status: 400 })
     }

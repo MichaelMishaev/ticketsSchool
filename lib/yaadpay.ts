@@ -97,7 +97,7 @@ export function createPaymentRequest(data: PaymentRequestData): PaymentRequest {
   // Build form parameters (based on YaadPay API docs)
   const formParams: Record<string, string> = {
     Masof: config.masof,
-    passP: config.apiSecret, // Required: authenticates this payment request to HYP
+    PassP: config.apiSecret, // Required: authenticates this payment request to HYP (case-sensitive: PassP)
     action: 'pay',
     Amount: formattedAmount,
     Order: data.orderId, // Our unique payment intent ID
@@ -119,11 +119,8 @@ export function createPaymentRequest(data: PaymentRequestData): PaymentRequest {
     Param1: JSON.stringify(data.metadata || {}),
   }
 
-  // Add test mode parameter if enabled
-  if (config.testMode) {
-    formParams.Masof = '4500481839' // Test terminal (if available)
-    console.log('[YaadPay] Using TEST MODE terminal:', formParams.Masof)
-  }
+  // tmp = payment page template number (1-15), NOT a test flag
+  // Test mode requires using a separate HYP test terminal (מסוף טסט) with its own Masof
 
   console.log('[YaadPay] Creating payment request:', {
     orderId: data.orderId,
@@ -228,7 +225,9 @@ export function validateCallback(params: YaadPayCallback): CallbackValidationRes
     } else {
       // No signature — HYP terminal not configured for signed callbacks.
       // The replay-attack fingerprint check in the callback handler still protects us.
-      console.warn('[YaadPay] Callback has no signature. Enable signed callbacks in HYP dashboard for stronger security.')
+      console.warn(
+        '[YaadPay] Callback has no signature. Enable signed callbacks in HYP dashboard for stronger security.'
+      )
     }
   } else {
     console.log('[YaadPay] MOCK MODE: Skipping signature validation for development')
