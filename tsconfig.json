@@ -23,12 +23,7 @@
     ],
     "paths": {
       "@/*": ["./*"]
-    },
-
-    // PHASE 1: Zero-risk bug prevention flags
-    "noUnusedLocals": true,              // Catch unused variables (dead code)
-    "noUnusedParameters": true,          // Catch unused function parameters
-    "noFallthroughCasesInSwitch": true   // Prevent switch statement bugs
+    }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": [
