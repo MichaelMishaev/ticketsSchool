@@ -25,6 +25,19 @@ export async function POST(request: NextRequest) {
   const rateLimitResponse = await paymentLimiter(request)
   if (rateLimitResponse) return rateLimitResponse
 
+  // Fail fast: encryption key required before any DB work
+  if (!process.env.ENCRYPTION_KEY || process.env.ENCRYPTION_KEY.length < 32) {
+    paymentLogger.error('ENCRYPTION_KEY missing or too short — payment route disabled', {
+      present: !!process.env.ENCRYPTION_KEY,
+      length: process.env.ENCRYPTION_KEY?.length ?? 0,
+      railwayEnv: process.env.RAILWAY_ENVIRONMENT_NAME,
+    })
+    return NextResponse.json(
+      { error: 'מערכת התשלומים אינה זמינה כעת. אנא פנה לתמיכה.' },
+      { status: 503 }
+    )
+  }
+
   // Runtime safety check - prevent using mock mode in production Railway environment
   const railwayEnv = process.env.RAILWAY_ENVIRONMENT_NAME // 'production' | 'development' | undefined
   const isRailwayProd = railwayEnv === 'production'

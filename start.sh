@@ -23,6 +23,14 @@ ls -la .next/ 2>/dev/null || echo ".next directory not found!"
 echo "========================================"
 echo ""
 
+# Guard: fail fast if critical secrets are missing
+if [ -z "$ENCRYPTION_KEY" ]; then
+    echo "❌ FATAL: ENCRYPTION_KEY is not set. Cannot start server."
+    echo "   Set this variable in Railway: Variables → ENCRYPTION_KEY"
+    exit 1
+fi
+echo "✅ ENCRYPTION_KEY is set (length: ${#ENCRYPTION_KEY})"
+
 # Ensure PORT is set
 if [ -z "$PORT" ]; then
     echo "⚠️  PORT not set, using default 3000"
