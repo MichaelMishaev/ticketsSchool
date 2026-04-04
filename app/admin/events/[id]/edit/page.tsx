@@ -46,7 +46,7 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
   // Route to appropriate edit component based on event type
   if (event.eventType === 'TABLE_BASED') {
     // Type-cast tables to match EditEventClient's expected type
-    const tables = event.tables.map((table) => ({
+    const tables = event.tables.map((table: (typeof event.tables)[number]) => ({
       ...table,
       reservation: table.reservation
         ? {
