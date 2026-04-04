@@ -132,7 +132,9 @@ export default function DrilldownModal({
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-sm font-semibold">{eventData.registrations.length} הרשמות</div>
+                <div className="text-sm font-semibold">
+                  {eventData.registrationCount ?? eventData.registrations?.length ?? 0} הרשמות
+                </div>
                 <div className="text-xs text-gray-500">{eventData.totalSpots} מקומות</div>
               </div>
             </div>
@@ -200,7 +202,7 @@ export default function DrilldownModal({
               </div>
               <div className="text-right">
                 <div className="text-sm font-semibold">
-                  {eventData.registrations.length} ממתינים
+                  {eventData.registrationCount ?? eventData.registrations?.length ?? 0} ממתינים
                 </div>
                 <div className="text-xs text-gray-500">{eventData.totalSpots} מקומות</div>
               </div>
