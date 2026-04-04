@@ -21,13 +21,6 @@ const TAB_FEATURE_MAP: Record<TabId, string> = {
   reports: 'reporting',
 }
 
-interface FieldSchema {
-  id: string
-  label: string
-  type: string
-  required?: boolean
-}
-
 interface Registration {
   id: string
   data: Record<string, unknown>
