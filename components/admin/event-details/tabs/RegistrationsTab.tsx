@@ -68,6 +68,10 @@ export default function RegistrationsTab({
     show: false,
     registrationId: null,
   })
+  const [deleteModal, setDeleteModal] = useState<{ show: boolean; registrationId: string | null }>({
+    show: false,
+    registrationId: null,
+  })
   const [cancelReason, setCancelReason] = useState('')
   const [showSuccessToast, setShowSuccessToast] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
@@ -242,7 +246,10 @@ export default function RegistrationsTab({
         const error = await response.json()
 
         // Check if error is due to capacity (supports both English and Hebrew messages)
-        if (error.error && (error.error.includes('Cannot promote') || error.error.includes('לא ניתן לאשר'))) {
+        if (
+          error.error &&
+          (error.error.includes('Cannot promote') || error.error.includes('לא ניתן לאשר'))
+        ) {
           // Event is full - offer to add to waitlist
           const addToWaitlist = confirm(
             `האירוע מלא! ${error.error}\n\nהאם להוסיף את ההרשמה לרשימת המתנה במקום?`
@@ -308,16 +315,20 @@ export default function RegistrationsTab({
   }
 
   // Delete registration
-  const handleDeleteRegistration = async (registrationId: string) => {
-    if (!confirm('האם למחוק הרשמה זו לצמיתות? פעולה זו אינה ניתנת לביטול.')) return
+  const handleConfirmDelete = async () => {
+    if (!deleteModal.registrationId) return
 
     try {
-      const response = await fetch(`/api/events/${eventId}/registrations/${registrationId}`, {
-        method: 'DELETE',
-      })
+      const response = await fetch(
+        `/api/events/${eventId}/registrations/${deleteModal.registrationId}`,
+        {
+          method: 'DELETE',
+        }
+      )
       if (response.ok) {
         showSuccess('ההרשמה נמחקה')
         onRegistrationUpdate()
+        setDeleteModal({ show: false, registrationId: null })
       } else {
         const error = await response.json()
         alert(error.error || 'שגיאה במחיקת ההרשמה')
@@ -397,7 +408,7 @@ export default function RegistrationsTab({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 text-center">
           <p className="text-2xl font-bold text-gray-900">{counts.all}</p>
-          <p className="text-xs text-gray-500 mt-0.5">{"סה\"כ"}</p>
+          <p className="text-xs text-gray-500 mt-0.5">{'סה"כ'}</p>
         </div>
         <div className="bg-green-50 rounded-xl border border-green-200 shadow-sm p-4 text-center">
           <p className="text-2xl font-bold text-green-700">{counts.confirmed}</p>
@@ -832,7 +843,7 @@ export default function RegistrationsTab({
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
-                              handleDeleteRegistration(registration.id)
+                              setDeleteModal({ show: true, registrationId: registration.id })
                             }}
                             className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl font-bold hover:from-red-600 hover:to-rose-600 active:scale-95 transition-all shadow-md hover:shadow-lg"
                           >
@@ -912,6 +923,51 @@ export default function RegistrationsTab({
                   setCancelModal({ show: false, registrationId: null })
                   setCancelReason('')
                 }}
+                className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors focus:outline-none focus:ring-4 focus:ring-gray-300"
+              >
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Delete Modal */}
+      {deleteModal.show && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          dir="rtl"
+        >
+          <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 animate-[fadeIn_200ms_ease-out] relative">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-900 border-b border-gray-100 pb-2 w-full text-right flex items-center gap-2">
+                <Trash2 className="w-5 h-5 text-red-500" />
+                מחיקת הרשמה
+              </h2>
+              <button
+                onClick={() => setDeleteModal({ show: false, registrationId: null })}
+                className="p-1 hover:bg-gray-100 rounded-lg transition-colors absolute top-4 left-4"
+                aria-label="סגור"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-base text-gray-700 mb-6 text-right">
+              האם למחוק הרשמה זו לצמיתות? <br />
+              <span className="text-red-600 font-semibold mt-2 inline-block">
+                פעולה זו אינה ניתנת לביטול.
+              </span>
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleConfirmDelete}
+                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors focus:outline-none focus:ring-4 focus:ring-red-500/20"
+              >
+                מחק לצמיתות
+              </button>
+              <button
+                onClick={() => setDeleteModal({ show: false, registrationId: null })}
                 className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors focus:outline-none focus:ring-4 focus:ring-gray-300"
               >
                 ביטול
