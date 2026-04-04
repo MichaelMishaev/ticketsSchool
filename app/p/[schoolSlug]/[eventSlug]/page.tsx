@@ -1018,6 +1018,7 @@ export default function EventPage() {
 
   return (
     <div
+      id="main-content"
       className={`min-h-screen py-6 sm:py-12 pb-32 md:pb-12 ${theme.page}`}
       style={{ background: `linear-gradient(to bottom right, ${gradientFrom}, ${gradientTo})` }}
     >
@@ -1536,6 +1537,16 @@ export default function EventPage() {
           )}
         </button>
       </div>
+
+      {/* IS 5568 — Accessibility statement link (required by Israeli law) */}
+      <footer className="mt-8 pb-4 text-center" dir="rtl">
+        <a
+          href="/negishut"
+          className="text-xs text-gray-400 hover:text-gray-600 underline focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 rounded"
+        >
+          הצהרת נגישות
+        </a>
+      </footer>
 
       {/* Modal for errors and confirmations */}
       <Modal

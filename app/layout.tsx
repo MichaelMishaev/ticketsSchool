@@ -67,6 +67,10 @@ export default function RootLayout({
       <body
         className={`${rubik.variable} ${inter.variable} ${manrope.variable} font-sans antialiased`}
       >
+        {/* IS 5568 / WCAG 2.4.1 — Skip to main content (first focusable element) */}
+        <a href="#main-content" className="skip-link">
+          דלג לתוכן הראשי
+        </a>
         <GoogleAnalytics />
         <EngagementTracker />
         {children}

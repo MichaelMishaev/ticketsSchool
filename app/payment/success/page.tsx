@@ -255,6 +255,7 @@ function SuccessContent() {
 
   return (
     <div
+      id="main-content"
       className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center p-4"
       dir="rtl"
     >

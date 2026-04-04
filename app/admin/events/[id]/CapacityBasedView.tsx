@@ -3,10 +3,28 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
-  Calendar, MapPin, Users, Clock, Trash2, UserCheck,
-  Download, Search, ChevronDown, ChevronUp,
-  ExternalLink, Copy, Check, Edit, X, Ban, Link2,
-  Building2, Info, Loader2, AlertCircle, MessageCircle
+  Calendar,
+  MapPin,
+  Users,
+  Clock,
+  Trash2,
+  UserCheck,
+  Download,
+  Search,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Copy,
+  Check,
+  Edit,
+  X,
+  Ban,
+  Link2,
+  Building2,
+  Info,
+  Loader2,
+  AlertCircle,
+  MessageCircle,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import CheckInLinkSection from '@/components/admin/CheckInLinkSection'
@@ -16,7 +34,7 @@ import {
   badgeVariants,
   iconButton,
   statusDots,
-  inputVariants
+  inputVariants,
 } from '@/lib/design-tokens'
 
 // Helper function to convert Israeli phone to WhatsApp URL
@@ -90,10 +108,19 @@ export default function EventManagementPageImproved() {
   const [loading, setLoading] = useState(true)
   const [searchInput, setSearchInput] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterStatus, setFilterStatus] = useState<'all' | 'CONFIRMED' | 'WAITLIST' | 'CANCELLED'>('all')
+  const [filterStatus, setFilterStatus] = useState<'all' | 'CONFIRMED' | 'WAITLIST' | 'CANCELLED'>(
+    'all'
+  )
   const [expandedRow, setExpandedRow] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
-  const [cancelModal, setCancelModal] = useState<{ show: boolean; registrationId: string | null }>({ show: false, registrationId: null })
+  const [cancelModal, setCancelModal] = useState<{ show: boolean; registrationId: string | null }>({
+    show: false,
+    registrationId: null,
+  })
+  const [deleteModal, setDeleteModal] = useState<{ show: boolean; registrationId: string | null }>({
+    show: false,
+    registrationId: null,
+  })
   const [cancelReason, setCancelReason] = useState('')
   const [isUpdating, setIsUpdating] = useState(false)
   const [showSuccessToast, setShowSuccessToast] = useState(false)
@@ -160,7 +187,7 @@ export default function EventManagementPageImproved() {
       const response = await fetch(`/api/events/${eventId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({ status: newStatus }),
       })
       if (response.ok) {
         showSuccess('סטטוס האירוע עודכן בהצלחה')
@@ -178,7 +205,7 @@ export default function EventManagementPageImproved() {
       const response = await fetch(`/api/events/${eventId}/registrations/${registrationId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'CONFIRMED' })
+        body: JSON.stringify({ status: 'CONFIRMED' }),
       })
       if (response.ok) {
         showSuccess('ההרשמה אושרה בהצלחה')
@@ -193,14 +220,17 @@ export default function EventManagementPageImproved() {
     if (!cancelModal.registrationId) return
 
     try {
-      const response = await fetch(`/api/events/${eventId}/registrations/${cancelModal.registrationId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: 'CANCELLED',
-          cancellationReason: cancelReason.trim() || undefined
-        })
-      })
+      const response = await fetch(
+        `/api/events/${eventId}/registrations/${cancelModal.registrationId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status: 'CANCELLED',
+            cancellationReason: cancelReason.trim() || undefined,
+          }),
+        }
+      )
       if (response.ok) {
         showSuccess('ההרשמה בוטלה בהצלחה')
         fetchEvent()
@@ -216,16 +246,24 @@ export default function EventManagementPageImproved() {
     }
   }
 
-  const handleDeleteRegistration = async (registrationId: string) => {
-    if (!confirm('האם למחוק הרשמה זו לצמיתות? פעולה זו אינה ניתנת לביטול.')) return
+  const handleDeleteRegistration = (registrationId: string) => {
+    setDeleteModal({ show: true, registrationId })
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModal.registrationId) return
 
     try {
-      const response = await fetch(`/api/events/${eventId}/registrations/${registrationId}`, {
-        method: 'DELETE'
-      })
+      const response = await fetch(
+        `/api/events/${eventId}/registrations/${deleteModal.registrationId}`,
+        {
+          method: 'DELETE',
+        }
+      )
       if (response.ok) {
         showSuccess('ההרשמה נמחקה')
         fetchEvent()
+        setDeleteModal({ show: false, registrationId: null })
       }
     } catch (error) {
       console.error('Error deleting registration:', error)
@@ -279,8 +317,9 @@ export default function EventManagementPageImproved() {
     )
   }
 
-  const filteredRegistrations = event.registrations.filter(reg => {
-    const matchesSearch = searchTerm === '' ||
+  const filteredRegistrations = event.registrations.filter((reg) => {
+    const matchesSearch =
+      searchTerm === '' ||
       JSON.stringify(reg.data).toLowerCase().includes(searchTerm.toLowerCase()) ||
       reg.phoneNumber?.includes(searchTerm) ||
       reg.confirmationCode.toLowerCase().includes(searchTerm.toLowerCase())
@@ -290,9 +329,11 @@ export default function EventManagementPageImproved() {
     return matchesSearch && matchesFilter
   })
 
-  const confirmedCount = event.registrations.filter(r => r.status === 'CONFIRMED')
+  const confirmedCount = event.registrations
+    .filter((r) => r.status === 'CONFIRMED')
     .reduce((sum, r) => sum + r.spotsCount, 0)
-  const waitlistCount = event.registrations.filter(r => r.status === 'WAITLIST')
+  const waitlistCount = event.registrations
+    .filter((r) => r.status === 'WAITLIST')
     .reduce((sum, r) => sum + r.spotsCount, 0)
   const totalCapacity = event.totalCapacity || event.capacity
   const spotsLeft = totalCapacity - confirmedCount
@@ -311,7 +352,7 @@ export default function EventManagementPageImproved() {
       email: 'אימייל',
       spotsCount: 'מספר מקומות',
       message: 'הודעה',
-      notes: 'הערות'
+      notes: 'הערות',
     }
 
     return commonFields[fieldKey] || fieldKey
@@ -373,7 +414,9 @@ export default function EventManagementPageImproved() {
               )}
               <div className="flex items-center gap-3">
                 <Calendar className="w-5 h-5 text-gray-600" />
-                <span className="font-medium text-gray-900">{format(new Date(event.startAt), 'dd/MM/yyyy HH:mm')}</span>
+                <span className="font-medium text-gray-900">
+                  {format(new Date(event.startAt), 'dd/MM/yyyy HH:mm')}
+                </span>
               </div>
               {event.location && (
                 <div className="flex items-center gap-3">
@@ -478,7 +521,8 @@ export default function EventManagementPageImproved() {
           <div className="mb-4 p-3 bg-blue-50 border-2 border-blue-200 rounded-lg">
             <p className="text-sm text-blue-900 font-medium flex items-center gap-2">
               <Search className="w-4 h-4" />
-              מחפש לפי קוד אישור: <span className="font-mono font-bold">{searchTerm.toUpperCase()}</span>
+              מחפש לפי קוד אישור:{' '}
+              <span className="font-mono font-bold">{searchTerm.toUpperCase()}</span>
             </p>
           </div>
         )}
@@ -496,9 +540,13 @@ export default function EventManagementPageImproved() {
               />
             </div>
             <div className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
-              <kbd className="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">Ctrl</kbd>
+              <kbd className="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">
+                Ctrl
+              </kbd>
               +
-              <kbd className="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">K</kbd>
+              <kbd className="px-2 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">
+                K
+              </kbd>
               לחיפוש מהיר
             </div>
           </div>
@@ -562,7 +610,9 @@ export default function EventManagementPageImproved() {
             <thead className="bg-gray-50 border-b-2 border-gray-200">
               <tr>
                 <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900">נרשם</th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900">פרטי קשר</th>
+                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900">
+                  פרטי קשר
+                </th>
                 <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900">סטטוס</th>
                 <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900">פעולות</th>
               </tr>
@@ -590,7 +640,9 @@ export default function EventManagementPageImproved() {
                     registration={registration}
                     spotsLeft={spotsLeft}
                     expandedRow={expandedRow}
-                    onToggleExpand={() => setExpandedRow(expandedRow === registration.id ? null : registration.id)}
+                    onToggleExpand={() =>
+                      setExpandedRow(expandedRow === registration.id ? null : registration.id)
+                    }
                     onPromote={() => handlePromoteToConfirmed(registration.id)}
                     onCancel={() => setCancelModal({ show: true, registrationId: registration.id })}
                     onDelete={() => handleDeleteRegistration(registration.id)}
@@ -605,7 +657,10 @@ export default function EventManagementPageImproved() {
 
       {/* Cancel Modal */}
       {cancelModal.show && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" dir="rtl">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          dir="rtl"
+        >
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 animate-[fadeIn_200ms_ease-out]">
             <div className="flex justify-between items-center mb-4">
               <h2 className={typography.h3}>ביטול הרשמה</h2>
@@ -637,18 +692,11 @@ export default function EventManagementPageImproved() {
                 className={inputVariants.default}
                 placeholder="למשל: נרשם ביקש לבטל בטלפון"
               />
-              <p className="text-xs text-gray-500 mt-2">
-                הסיבה תישמר לצורך רישום ומעקב
-              </p>
+              <p className="text-xs text-gray-500 mt-2">הסיבה תישמר לצורך רישום ומעקב</p>
             </div>
 
             <div className="flex gap-3">
-              <Button
-                variant="warning"
-                size="lg"
-                onClick={handleCancelRegistration}
-                fullWidth
-              >
+              <Button variant="warning" size="lg" onClick={handleCancelRegistration} fullWidth>
                 בטל הרשמה
               </Button>
               <Button
@@ -666,6 +714,51 @@ export default function EventManagementPageImproved() {
           </div>
         </div>
       )}
+
+      {/* Delete Modal */}
+      {deleteModal.show && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          dir="rtl"
+        >
+          <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 animate-[fadeIn_200ms_ease-out] relative">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-900 border-b border-gray-100 pb-2 w-full text-right flex items-center gap-2">
+                <Trash2 className="w-5 h-5 text-red-500" />
+                מחיקת הרשמה
+              </h2>
+              <button
+                onClick={() => setDeleteModal({ show: false, registrationId: null })}
+                className="p-1 hover:bg-gray-100 rounded-lg transition-colors absolute top-4 left-4"
+                aria-label="סגור"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-base text-gray-700 mb-6 text-right">
+              האם למחוק הרשמה זו לצמיתות? <br />
+              <span className="text-red-600 font-semibold mt-2 inline-block">
+                פעולה זו אינה ניתנת לביטול.
+              </span>
+            </p>
+
+            <div className="flex gap-3">
+              <Button variant="danger" size="lg" onClick={handleConfirmDelete} fullWidth>
+                מחק לצמיתות
+              </Button>
+              <Button
+                variant="ghost"
+                size="lg"
+                onClick={() => setDeleteModal({ show: false, registrationId: null })}
+                fullWidth
+              >
+                ביטול
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -675,7 +768,7 @@ function EmptyState({
   searchTerm,
   filterStatus,
   onClearFilters,
-  onCopyLink
+  onCopyLink,
 }: {
   searchTerm: string
   filterStatus: string
@@ -694,12 +787,8 @@ function EmptyState({
             </div>
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              לא נמצאו תוצאות
-            </h3>
-            <p className="text-gray-600 mb-4">
-              נסה לשנות את מילות החיפוש או הסינון
-            </p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">לא נמצאו תוצאות</h3>
+            <p className="text-gray-600 mb-4">נסה לשנות את מילות החיפוש או הסינון</p>
             <Button variant="secondary" onClick={onClearFilters}>
               נקה סינונים
             </Button>
@@ -713,12 +802,8 @@ function EmptyState({
             </div>
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              עדיין אין נרשמים לאירוע
-            </h3>
-            <p className="text-gray-600 mb-4">
-              שתף את קישור ההרשמה כדי להתחיל לקבל נרשמים
-            </p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">עדיין אין נרשמים לאירוע</h3>
+            <p className="text-gray-600 mb-4">שתף את קישור ההרשמה כדי להתחיל לקבל נרשמים</p>
             <Button
               variant="primary"
               size="lg"
@@ -750,7 +835,10 @@ function MobileRegistrationCard({
   onDelete: () => void
 }) {
   const getRegistrationStatusBadge = (status: string) => {
-    const statusMap: Record<string, { variant: keyof typeof badgeVariants; text: string; dotClass: string }> = {
+    const statusMap: Record<
+      string,
+      { variant: keyof typeof badgeVariants; text: string; dotClass: string }
+    > = {
       CONFIRMED: { variant: 'success', text: 'אושר', dotClass: statusDots.confirmed },
       WAITLIST: { variant: 'warning', text: 'רשימת המתנה', dotClass: statusDots.waitlist },
       CANCELLED: { variant: 'error', text: 'בוטל', dotClass: statusDots.cancelled },
@@ -774,7 +862,9 @@ function MobileRegistrationCard({
         <div className="flex items-center gap-3 flex-1 min-w-0">
           {getRegistrationStatusBadge(registration.status)}
           <div className="flex-1 min-w-0">
-            <div className="font-bold text-lg text-gray-900">{String(registration.data.name || '')}</div>
+            <div className="font-bold text-lg text-gray-900">
+              {String(registration.data.name || '')}
+            </div>
             {whatsappUrl ? (
               <a
                 href={whatsappUrl}
@@ -800,13 +890,17 @@ function MobileRegistrationCard({
       <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
         <div className="text-base">
           <span className="text-gray-600">קוד: </span>
-          <span className={`font-mono font-semibold ${searchTerm && registration.confirmationCode.toLowerCase().includes(searchTerm.toLowerCase()) ? 'bg-yellow-200 px-1 py-0.5 rounded' : 'text-gray-900'}`}>
+          <span
+            className={`font-mono font-semibold ${searchTerm && registration.confirmationCode.toLowerCase().includes(searchTerm.toLowerCase()) ? 'bg-yellow-200 px-1 py-0.5 rounded' : 'text-gray-900'}`}
+          >
             {registration.confirmationCode}
           </span>
         </div>
         <div className="text-base">
           <span className="text-gray-600">נרשם: </span>
-          <span className="text-gray-900">{format(new Date(registration.createdAt), 'dd/MM/yyyy HH:mm')}</span>
+          <span className="text-gray-900">
+            {format(new Date(registration.createdAt), 'dd/MM/yyyy HH:mm')}
+          </span>
         </div>
       </div>
 
@@ -861,7 +955,10 @@ function DesktopRegistrationRow({
   getFieldLabel: (key: string) => string
 }) {
   const getRegistrationStatusBadge = (status: string) => {
-    const statusMap: Record<string, { variant: keyof typeof badgeVariants; text: string; dotClass: string }> = {
+    const statusMap: Record<
+      string,
+      { variant: keyof typeof badgeVariants; text: string; dotClass: string }
+    > = {
       CONFIRMED: { variant: 'success', text: 'אושר', dotClass: statusDots.confirmed },
       WAITLIST: { variant: 'warning', text: 'רשימת המתנה', dotClass: statusDots.waitlist },
       CANCELLED: { variant: 'error', text: 'בוטל', dotClass: statusDots.cancelled },
@@ -887,7 +984,9 @@ function DesktopRegistrationRow({
               {registration.spotsCount}
             </div>
             <div>
-              <div className="font-semibold text-gray-900">{String(registration.data.name || '')}</div>
+              <div className="font-semibold text-gray-900">
+                {String(registration.data.name || '')}
+              </div>
               <div className="text-sm text-gray-600 font-mono">{registration.confirmationCode}</div>
             </div>
           </div>
@@ -949,8 +1048,15 @@ function DesktopRegistrationRow({
             >
               <Trash2 className="w-5 h-5" />
             </button>
-            <button className={iconButton.ghost} aria-label={expandedRow === registration.id ? "סגור פרטים" : "הצג פרטים"}>
-              {expandedRow === registration.id ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+            <button
+              className={iconButton.ghost}
+              aria-label={expandedRow === registration.id ? 'סגור פרטים' : 'הצג פרטים'}
+            >
+              {expandedRow === registration.id ? (
+                <ChevronUp className="w-5 h-5" />
+              ) : (
+                <ChevronDown className="w-5 h-5" />
+              )}
             </button>
           </div>
         </td>
@@ -961,7 +1067,9 @@ function DesktopRegistrationRow({
             <div className="space-y-2 text-sm">
               {Object.entries(registration.data).map(([key, value]) => (
                 <div key={key} className="flex gap-3">
-                  <span className="font-medium text-gray-900 min-w-[120px]">{getFieldLabel(key)}:</span>
+                  <span className="font-medium text-gray-900 min-w-[120px]">
+                    {getFieldLabel(key)}:
+                  </span>
                   <span className="text-gray-700">{String(value)}</span>
                 </div>
               ))}
