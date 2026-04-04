@@ -89,7 +89,7 @@ export async function POST(
       : baseNumber
 
     // Create duplicates with auto-incremented names
-    const tablesToCreate = []
+    const tablesToCreate: { eventId: string; tableNumber: string; capacity: number; minOrder: number; tableOrder: number; status: string }[] = []
     for (let i = 0; i < count; i++) {
       const newNumber = maxExistingNumber + i + 1
       const newTableNumber = sourceTable.tableNumber.replace(

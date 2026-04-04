@@ -342,7 +342,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    let endAt = null
+    let endAt: Date | null = null
     if (data.endAt) {
       endAt = new Date(data.endAt)
       if (isNaN(endAt.getTime())) {

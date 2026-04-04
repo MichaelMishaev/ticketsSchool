@@ -187,7 +187,7 @@ export async function POST(
       : baseNumber - 1
 
     // Create multiple tables with auto-increment
-    const tablesToCreate = []
+    const tablesToCreate: { eventId: string; tableNumber: string; capacity: number; minOrder: number; tableOrder: number; status: string }[] = []
     for (let i = 0; i < count; i++) {
       const newNumber = maxExistingNumber + i + 1
       const newTableNumber = `${prefix}${newNumber}${suffix}`

@@ -79,7 +79,7 @@ export async function GET(
     const totalSpotsTaken = confirmedRegistrations.reduce((sum, reg) => sum + reg.spotsCount, 0)
 
     // For TABLE_BASED events, get max table capacity
-    let maxTableCapacity = null
+    let maxTableCapacity: number | null = null
     if (event.eventType === 'TABLE_BASED') {
       const tables = await prisma.table.findMany({
         where: { eventId: event.id },

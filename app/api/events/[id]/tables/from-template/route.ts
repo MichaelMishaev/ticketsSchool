@@ -98,7 +98,7 @@ export async function POST(
 
     // Build tables from template config
     const config = template.config as any[]
-    const tablesToCreate = []
+    const tablesToCreate: { eventId: string; tableNumber: string; capacity: number; minOrder: number; tableOrder: number; status: string }[] = []
     let orderCounter = maxOrder
 
     for (const item of config) {
