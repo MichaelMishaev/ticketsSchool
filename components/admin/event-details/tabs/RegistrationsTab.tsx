@@ -393,6 +393,26 @@ export default function RegistrationsTab({
         </div>
       )}
 
+      {/* Stats grid — 4 prominent cards at a glance */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 text-center">
+          <p className="text-2xl font-bold text-gray-900">{counts.all}</p>
+          <p className="text-xs text-gray-500 mt-0.5">{"סה\"כ"}</p>
+        </div>
+        <div className="bg-green-50 rounded-xl border border-green-200 shadow-sm p-4 text-center">
+          <p className="text-2xl font-bold text-green-700">{counts.confirmed}</p>
+          <p className="text-xs text-green-600 mt-0.5">מאושרים</p>
+        </div>
+        <div className="bg-amber-50 rounded-xl border border-amber-200 shadow-sm p-4 text-center">
+          <p className="text-2xl font-bold text-amber-700">{counts.waitlist}</p>
+          <p className="text-xs text-amber-600 mt-0.5">המתנה</p>
+        </div>
+        <div className="bg-red-50 rounded-xl border border-red-200 shadow-sm p-4 text-center">
+          <p className="text-2xl font-bold text-red-600">{counts.cancelled}</p>
+          <p className="text-xs text-red-500 mt-0.5">בוטלו</p>
+        </div>
+      </div>
+
       {/* Header - Improved layout */}
       <div className="mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

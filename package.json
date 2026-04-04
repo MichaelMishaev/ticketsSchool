@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 9000",
+    "payment:tunnel": "bash scripts/payment-tunnel.sh",
+    "payment:mock": "bash scripts/payment-tunnel.sh --stop",
     "dev:clean": "bash scripts/dev-clean.sh",
     "dev:start": "bash scripts/dev-with-check.sh",
     "build": "prisma generate && next build",

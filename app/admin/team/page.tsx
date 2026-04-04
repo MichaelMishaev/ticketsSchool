@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { UserPlus, Mail, Clock, CheckCircle, XCircle, Trash2, RefreshCw } from 'lucide-react'
+import DevFeatureLabel from '@/components/dev/DevFeatureLabel'
 
 interface Invitation {
   id: string
@@ -403,6 +404,7 @@ export default function TeamManagementPage() {
           </>
         )}
       </div>
+      <DevFeatureLabel feature="team-management" />
     </div>
   )
 }

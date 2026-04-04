@@ -1032,7 +1032,17 @@ export default function EventPage() {
         {/* Event Header — Hero */}
         <div className={`${theme.sectionCard} overflow-hidden mb-6`}>
           {/* Hero: cover image (custom or default) */}
-          <div className="relative h-60 sm:h-80">
+          <div className="relative h-40 sm:h-56">
+            {/* Kartis Logo Watermark / Brand in the Top Corner */}
+            <div className="absolute top-4 left-4 z-10">
+              <a href="https://kartis.info" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-white/80 backdrop-blur-sm shadow-md px-3 py-1.5 rounded-full hover:bg-white transition-colors">
+                <div className="w-6 h-6 bg-red-600 rounded flex items-center justify-center">
+                  <Ticket className="w-3.5 h-3.5 text-white" />
+                </div>
+                <span className="text-sm font-bold text-gray-900 font-headline">kartis.info</span>
+              </a>
+            </div>
+
             <img
               src={event.coverImage ?? DEFAULT_COVER_IMAGE}
               alt={event.title}

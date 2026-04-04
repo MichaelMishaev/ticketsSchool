@@ -364,6 +364,22 @@ export default function CheckInTab({ eventId, eventDate }: CheckInTabProps) {
       ) : isEventDay ? (
         // Event Day - Full Check-In Interface
         <>
+          {/* Hero stats bar — most important metric at a glance */}
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            <div className="bg-green-50 rounded-xl border border-green-200 p-3 sm:p-4 text-center">
+              <p className="text-xl sm:text-2xl font-bold text-green-700">{stats.checkedIn}</p>
+              <p className="text-xs text-green-600 mt-0.5">הגיעו</p>
+            </div>
+            <div className="bg-white rounded-xl border-2 border-gray-300 p-3 sm:p-4 text-center">
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">{checkedInPercent}%</p>
+              <p className="text-xs text-gray-500 mt-0.5">הגעה</p>
+            </div>
+            <div className="bg-amber-50 rounded-xl border border-amber-200 p-3 sm:p-4 text-center">
+              <p className="text-xl sm:text-2xl font-bold text-amber-700">{stats.notCheckedIn}</p>
+              <p className="text-xs text-amber-600 mt-0.5">ממתינים</p>
+            </div>
+          </div>
+
           {/* Check-In Link Card */}
           <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 mb-6 text-white">
             <div className="flex items-center gap-3 mb-4">

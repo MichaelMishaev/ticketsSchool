@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import DrilldownModal from '@/components/DrilldownModal'
 import CreateEventDropdown from '@/components/CreateEventDropdown'
+import DevFeatureLabel from '@/components/dev/DevFeatureLabel'
 
 interface AdminInfo {
   role: 'SUPER_ADMIN' | 'OWNER' | 'ADMIN' | 'MANAGER'
@@ -481,6 +482,7 @@ export default function AdminDashboard() {
         data={modalData.data}
         type={modalData.type}
       />
+      <DevFeatureLabel feature="analytics" />
     </div>
   )
 }

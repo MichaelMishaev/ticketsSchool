@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import DevFeatureLabel from '@/components/dev/DevFeatureLabel'
 
 interface NoShow {
   id: string
@@ -483,6 +484,7 @@ export default function AttendanceReviewPage({
           </div>
         </div>
       )}
+      <DevFeatureLabel feature="attendance-ban" />
     </div>
   )
 }

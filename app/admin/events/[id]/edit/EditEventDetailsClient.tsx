@@ -9,6 +9,7 @@ import { EventFormData } from '@/types'
 import { useToast } from '@/components/Toast'
 import StepWizard from '@/components/StepWizard'
 import DateTimePicker from '@/components/DateTimePicker'
+import DevFeatureLabel from '@/components/dev/DevFeatureLabel'
 import {
   Calendar,
   MapPin,
@@ -1448,6 +1449,7 @@ export default function EditEventDetailsClient({
           </motion.div>
         </form>
       </div>
+      <DevFeatureLabel feature="event-management" />
     </>
   )
 }

@@ -12,6 +12,14 @@ import OverviewTab from '@/components/admin/event-details/tabs/OverviewTab'
 import RegistrationsTab from '@/components/admin/event-details/tabs/RegistrationsTab'
 import CheckInTab from '@/components/admin/event-details/tabs/CheckInTab'
 import ReportsTab from '@/components/admin/event-details/tabs/ReportsTab'
+import DevFeatureLabel from '@/components/dev/DevFeatureLabel'
+
+const TAB_FEATURE_MAP: Record<TabId, string> = {
+  overview: 'event-management',
+  registrations: 'registration',
+  checkin: 'check-in',
+  reports: 'reporting',
+}
 
 interface FieldSchema {
   id: string
@@ -222,6 +230,7 @@ export default function EventDetailsTabbed() {
           ) : undefined
         }
       />
+      <DevFeatureLabel feature={TAB_FEATURE_MAP[activeTab]} />
     </div>
   )
 }

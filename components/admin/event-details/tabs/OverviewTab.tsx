@@ -363,14 +363,12 @@ export default function OverviewTab({ event, onEventUpdate, onTabChange }: Overv
 
           <div className="space-y-3">
             {recentRegistrations.length === 0 ? (
-              /* Empty state - No registrations yet */
               <div className="text-center py-8">
                 <Clock className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-sm text-gray-500">טרם נרשמו משתתפים</p>
                 <p className="text-xs text-gray-400 mt-1">פעילות אחרונה תוצג כאן</p>
               </div>
             ) : (
-              /* Show recent registrations */
               <>
                 {recentRegistrations.map((registration) => (
                   <div

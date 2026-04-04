@@ -177,7 +177,7 @@ export default function EventTabNavigation({
                   min-h-[48px] border-b-[3px]
                   ${
                     isActive
-                      ? 'border-gray-900 text-gray-900 bg-white/70 shadow-[inset_0_-5px_15px_rgba(255,255,255,0.4)]'
+                      ? 'border-blue-600 text-blue-700 bg-white/90'
                       : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-white/40'
                   }
                 `}

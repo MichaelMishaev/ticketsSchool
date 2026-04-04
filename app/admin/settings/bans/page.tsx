@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { he } from 'date-fns/locale'
+import DevFeatureLabel from '@/components/dev/DevFeatureLabel'
 
 interface Ban {
   id: string
@@ -390,6 +391,7 @@ export default function BanManagementPage() {
           </div>
         )}
       </div>
+      <DevFeatureLabel feature="attendance-ban" />
     </div>
   )
 }

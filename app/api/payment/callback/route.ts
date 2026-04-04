@@ -9,11 +9,29 @@ import { Decimal } from '@prisma/client/runtime/library'
 import { paymentLogger } from '@/lib/logger-v2'
 
 /**
- * Parse callback parameters from GET or POST request
+ * Parse callback parameters from GET (query string) or POST (form body) request.
+ * HYP sends the user-facing redirect as GET and the server-to-server webhook as
+ * POST with application/x-www-form-urlencoded — both must be handled.
  */
-function parseCallbackParams(request: NextRequest): YaadPayCallback {
+async function parseCallbackParams(request: NextRequest): Promise<YaadPayCallback> {
   const url = new URL(request.url)
 
+  if (request.method === 'POST') {
+    const formData = await request.formData()
+    const get = (key: string) => (formData.get(key) as string | null) || undefined
+    return {
+      CCode: get('CCode') || '',
+      Order: get('Order') || '',
+      Id: get('Id') || '',
+      ConfirmationCode: get('ConfirmationCode'),
+      Amount: get('Amount'),
+      ACode: get('ACode'),
+      Param1: get('Param1'),
+      signature: get('signature'),
+    }
+  }
+
+  // GET — parameters arrive in query string
   return {
     CCode: url.searchParams.get('CCode') || '',
     Order: url.searchParams.get('Order') || '',
@@ -47,8 +65,8 @@ export async function POST(request: NextRequest) {
  */
 async function handleCallback(request: NextRequest) {
   try {
-    // Parse callback parameters
-    const params = parseCallbackParams(request)
+    // Parse callback parameters (await because POST reads the body stream)
+    const params = await parseCallbackParams(request)
 
     paymentLogger.info('Callback received', {
       cCode: params.CCode,

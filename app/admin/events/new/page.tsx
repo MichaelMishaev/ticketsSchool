@@ -10,6 +10,7 @@ import StepWizard from '@/components/StepWizard'
 import EventPreviewModal from '@/components/EventPreviewModal'
 import DateTimePicker from '@/components/DateTimePicker'
 import Modal from '@/components/Modal'
+import DevFeatureLabel from '@/components/dev/DevFeatureLabel'
 import { trackEventCreated } from '@/lib/analytics'
 import {
   typography,
@@ -414,7 +415,7 @@ export default function NewEventPage() {
   // Expandable sections state
   const [expandedSections, setExpandedSections] = useState({
     conditions: false,
-    completionMessage: false,
+    completionMessage: true,
     customFields: false,
     payment: false,
   })
@@ -676,7 +677,9 @@ export default function NewEventPage() {
         break
 
       case 'completionMessage':
-        if (typeof value === 'string' && value.length > CHAR_LIMITS.completionMessage) {
+        if (typeof value === 'string' && value.trim() === '') {
+          errors.completionMessage = 'שדה חובה – נא להזין הודעת אישור'
+        } else if (typeof value === 'string' && value.length > CHAR_LIMITS.completionMessage) {
           errors.completionMessage = `הודעה ארוכה מדי (מקסימום ${CHAR_LIMITS.completionMessage} תווים)`
         }
         break
@@ -840,7 +843,7 @@ export default function NewEventPage() {
       case 2: // Capacity
         return formData.capacity >= 1 && formData.maxSpotsPerPerson >= 1
       case 3: // Advanced
-        return true // Optional step
+        return (formData.completionMessage?.trim().length ?? 0) > 0
       default:
         return true
     }
@@ -920,6 +923,13 @@ export default function NewEventPage() {
 
     if (!formData.startAt) {
       addToast('תאריך התחלה הוא שדה חובה', 'error')
+      return
+    }
+
+    if (!formData.completionMessage?.trim()) {
+      validateField('completionMessage', '')
+      setExpandedSections((prev) => ({ ...prev, completionMessage: true }))
+      addToast('הודעת אישור היא שדה חובה', 'error')
       return
     }
 
@@ -1716,7 +1726,12 @@ export default function NewEventPage() {
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-green-600" />
                   <div className="text-right">
-                    <h3 className={typography.h5}>הודעה לנרשמים</h3>
+                    <h3 className={typography.h5}>
+                      הודעה לנרשמים
+                      <span className="mr-2 text-xs font-semibold text-white bg-red-500 rounded px-1.5 py-0.5 align-middle">
+                        חובה
+                      </span>
+                    </h3>
                     <p className={typography.micro + ' text-gray-600 mt-1'}>
                       הודעה מותאמת אישית שתוצג לאחר השלמת ההרשמה
                     </p>
@@ -1739,7 +1754,7 @@ export default function NewEventPage() {
                   >
                     <div className="p-6">
                       <label htmlFor="completionMessage" className={typography.label + ' mb-2'}>
-                        הודעת אישור
+                        הודעת אישור <span className="text-red-500">*</span>
                       </label>
                       <textarea
                         id="completionMessage"
@@ -1753,6 +1768,8 @@ export default function NewEventPage() {
                         rows={4}
                         placeholder="לדוגמה: מעולה! נרשמת בהצלחה למשחק. נתראה ביום חמישי בשעה 16:00!"
                         maxLength={CHAR_LIMITS.completionMessage}
+                        required
+                        aria-required="true"
                         aria-invalid={!!validationErrors.completionMessage}
                         aria-describedby={
                           validationErrors.completionMessage ? 'completion-error' : undefined
@@ -2460,6 +2477,7 @@ export default function NewEventPage() {
           </div>
         </form>
       </div>
+      <DevFeatureLabel feature="event-management" />
     </>
   )
 }

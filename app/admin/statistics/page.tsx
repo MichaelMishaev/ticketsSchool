@@ -1,6 +1,7 @@
 import { requireSuperAdmin } from '@/lib/auth.server'
 import { redirect } from 'next/navigation'
 import StatisticsDashboard from './StatisticsDashboard'
+import DevFeatureLabel from '@/components/dev/DevFeatureLabel'
 
 /**
  * Super Admin Statistics Dashboard
@@ -19,5 +20,10 @@ export default async function StatisticsPage() {
     redirect('/admin')
   }
 
-  return <StatisticsDashboard />
+  return (
+    <>
+      <StatisticsDashboard />
+      <DevFeatureLabel feature={['analytics', 'reporting']} />
+    </>
+  )
 }
