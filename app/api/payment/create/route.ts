@@ -25,8 +25,10 @@ export async function POST(request: NextRequest) {
   const rateLimitResponse = await paymentLimiter(request)
   if (rateLimitResponse) return rateLimitResponse
 
-  // Runtime safety check - prevent using mock mode in production
-  if (process.env.NODE_ENV === 'production' && process.env.YAADPAY_MOCK_MODE === 'true') {
+  // Runtime safety check - prevent using mock mode in production Railway environment
+  const railwayEnv = process.env.RAILWAY_ENVIRONMENT_NAME // 'production' | 'development' | undefined
+  const isRailwayProd = railwayEnv === 'production'
+  if (isRailwayProd && process.env.YAADPAY_MOCK_MODE === 'true') {
     paymentLogger.error('CRITICAL: Mock mode is enabled in production!')
     return NextResponse.json({ error: 'תצורה לא תקינה של מערכת התשלומים' }, { status: 500 })
   }
