@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import {
   Ticket,
   Zap,
@@ -14,7 +15,11 @@ import {
   Menu,
   X,
 } from 'lucide-react'
-import UseCaseTabs from './UseCaseTabs'
+
+const UseCaseTabs = dynamic(() => import('./UseCaseTabs'), {
+  ssr: false,
+  loading: () => <div className="w-full h-48 bg-gray-100 rounded-3xl animate-pulse" />,
+})
 
 export default function LandingPage() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
