@@ -582,12 +582,31 @@ export default function EventPage() {
           return
         }
 
-        // Payment endpoint returns HTML with auto-submit form
-        // Create blob URL and navigate to it (safe way to handle HTML response)
-        const html = await response.text()
-        const blob = new Blob([html], { type: 'text/html' })
-        const url = URL.createObjectURL(blob)
-        window.location.href = url
+        // Payment endpoint returns JSON with redirect info
+        const paymentData = await response.json()
+
+        if (paymentData.type === 'mock') {
+          // Mock mode: simple GET redirect to callback
+          window.location.href = paymentData.redirectUrl
+        } else {
+          // Real payment: create a DOM form and POST to HYP gateway
+          // (blob: URLs are blocked by CSP; native form submit is not a script)
+          const form = document.createElement('form')
+          form.method = 'POST'
+          form.action = paymentData.redirectUrl
+          form.style.display = 'none'
+          for (const [key, value] of Object.entries(
+            paymentData.formParams as Record<string, string>
+          )) {
+            const input = document.createElement('input')
+            input.type = 'hidden'
+            input.name = key
+            input.value = value
+            form.appendChild(input)
+          }
+          document.body.appendChild(form)
+          form.submit()
+        }
 
         return // Don't proceed with normal flow
       }
@@ -1035,7 +1054,12 @@ export default function EventPage() {
           <div className="relative h-40 sm:h-56">
             {/* Kartis Logo Watermark / Brand in the Top Corner */}
             <div className="absolute top-4 left-4 z-10">
-              <a href="https://kartis.info" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-white/80 backdrop-blur-sm shadow-md px-3 py-1.5 rounded-full hover:bg-white transition-colors">
+              <a
+                href="https://kartis.info"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 bg-white/80 backdrop-blur-sm shadow-md px-3 py-1.5 rounded-full hover:bg-white transition-colors"
+              >
                 <div className="w-6 h-6 bg-red-600 rounded flex items-center justify-center">
                   <Ticket className="w-3.5 h-3.5 text-white" />
                 </div>

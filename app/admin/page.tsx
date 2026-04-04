@@ -135,10 +135,10 @@ export default function AdminDashboard() {
       const statsData = await statsResponse.json()
       const events = await eventsResponse.json()
 
-      setStats(statsData)
+      if (!statsData.error) setStats(statsData)
 
       // Get recent events (last 5)
-      setRecentEvents(events.slice(0, 5))
+      if (Array.isArray(events)) setRecentEvents(events.slice(0, 5))
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
     } finally {

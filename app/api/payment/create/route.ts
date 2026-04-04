@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { normalizePhoneNumber } from '@/lib/utils'
-import { createPaymentRequest, generatePaymentRedirectHTML } from '@/lib/yaadpay'
+import { createPaymentRequest } from '@/lib/yaadpay'
 import { Decimal } from '@prisma/client/runtime/library'
 import { rateLimit } from '@/lib/rate-limiter'
 import { encryptPhone, encryptEmail } from '@/lib/encryption'
@@ -303,79 +303,9 @@ export async function POST(request: NextRequest) {
         }),
       })
 
-      const mockRedirectHTML = `
-<!DOCTYPE html>
-<html dir="rtl" lang="he">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>מעבד תשלום (מצב בדיקה)...</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      margin: 0;
-      direction: rtl;
-    }
-    .loader {
-      text-align: center;
-      color: white;
-    }
-    .spinner {
-      width: 50px;
-      height: 50px;
-      border: 4px solid rgba(255,255,255,0.3);
-      border-top-color: white;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 20px;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    h2 {
-      font-size: 24px;
-      margin: 0 0 10px;
-    }
-    p {
-      font-size: 14px;
-      opacity: 0.9;
-    }
-    .badge {
-      background: rgba(255,255,255,0.2);
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-size: 12px;
-      margin-top: 20px;
-    }
-  </style>
-</head>
-<body>
-  <div class="loader">
-    <div class="spinner"></div>
-    <h2>✅ תשלום אומת בהצלחה (מצב בדיקה)</h2>
-    <p>מעביר אותך לאישור ההרשמה...</p>
-    <div class="badge">🧪 MOCK MODE - Development Only</div>
-  </div>
-  <script>
-    // Auto-redirect to success callback after 2 seconds
-    setTimeout(() => {
-      window.location.href = '${callbackUrl}?${mockParams.toString()}';
-    }, 2000);
-  </script>
-</body>
-</html>
-      `.trim()
-
-      return new NextResponse(mockRedirectHTML, {
-        status: 200,
-        headers: {
-          'Content-Type': 'text/html; charset=utf-8',
-        },
+      return NextResponse.json({
+        type: 'mock',
+        redirectUrl: `${callbackUrl}?${mockParams.toString()}`,
       })
     }
 
@@ -404,15 +334,11 @@ export async function POST(request: NextRequest) {
       currency: event.currency,
     })
 
-    // Generate auto-submit HTML form
-    const redirectHTML = generatePaymentRedirectHTML(paymentRequest)
-
-    // Return HTML response (Next.js will render this and auto-submit)
-    return new NextResponse(redirectHTML, {
-      status: 200,
-      headers: {
-        'Content-Type': 'text/html; charset=utf-8',
-      },
+    // Return JSON so frontend can create a real DOM form (avoids CSP blob: issues)
+    return NextResponse.json({
+      type: 'payment',
+      redirectUrl: paymentRequest.redirectUrl,
+      formParams: paymentRequest.formParams,
     })
   } catch (error: unknown) {
     paymentLogger.error('Error creating payment session', { error })
