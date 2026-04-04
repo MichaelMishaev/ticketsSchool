@@ -21,7 +21,7 @@ interface TicketData {
   ticket: {
     id: string
     confirmationCode: string
-    status: 'CONFIRMED' | 'WAITLIST' | 'CANCELLED'
+    status: 'CONFIRMED' | 'WAITLIST' | 'CANCELLED' | 'PAYMENT_PENDING'
     spotsCount: number
     createdAt: string
     name: string
@@ -159,10 +159,20 @@ export default function TicketPage() {
   const isCheckedIn = ticket.checkIn !== null
   const isCancelled = ticket.status === 'CANCELLED'
   const isWaitlist = ticket.status === 'WAITLIST'
+  const isPaymentPending = ticket.status === 'PAYMENT_PENDING'
   const eventStarted = new Date(event.startAt) <= new Date()
 
   // Determine status color and icon
   const getStatusInfo = () => {
+    if (isPaymentPending) {
+      return {
+        color: 'bg-yellow-500',
+        icon: <AlertCircle className="w-6 h-6" />,
+        text: 'ממתין לתשלום',
+        bgColor: 'bg-yellow-100',
+        textColor: 'text-yellow-700',
+      }
+    }
     if (isCancelled) {
       return {
         color: 'bg-gray-500',

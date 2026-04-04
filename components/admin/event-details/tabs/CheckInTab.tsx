@@ -34,7 +34,7 @@ interface Registration {
   data: Record<string, unknown>
   spotsCount: number
   guestsCount: number
-  status: 'CONFIRMED' | 'WAITLIST'
+  status: 'CONFIRMED' | 'WAITLIST' | 'PAYMENT_PENDING'
   confirmationCode: string
   phoneNumber: string
   qrCode: string | null

@@ -43,7 +43,7 @@ interface Registration {
   data: Record<string, any>
   phoneNumber: string
   spotsCount: number
-  status: 'CONFIRMED' | 'WAITLIST' | 'CANCELLED'
+  status: 'CONFIRMED' | 'WAITLIST' | 'CANCELLED' | 'PAYMENT_PENDING'
   confirmationCode: string
   createdAt: Date | string
 }
@@ -60,9 +60,9 @@ export default function RegistrationsTab({
   onRegistrationUpdate,
 }: RegistrationsTabProps) {
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterStatus, setFilterStatus] = useState<'all' | 'CONFIRMED' | 'WAITLIST' | 'CANCELLED'>(
-    'all'
-  )
+  const [filterStatus, setFilterStatus] = useState<
+    'all' | 'CONFIRMED' | 'WAITLIST' | 'CANCELLED' | 'PAYMENT_PENDING'
+  >('all')
   const [expandedRow, setExpandedRow] = useState<string | null>(null)
   const [cancelModal, setCancelModal] = useState<{ show: boolean; registrationId: string | null }>({
     show: false,
@@ -165,9 +165,9 @@ export default function RegistrationsTab({
       })
     }
 
-    // Sort: CONFIRMED first, then WAITLIST, then CANCELLED
+    // Sort: PAYMENT_PENDING first (needs attention), then CONFIRMED, WAITLIST, CANCELLED
     filtered = filtered.sort((a, b) => {
-      const statusOrder = { CONFIRMED: 1, WAITLIST: 2, CANCELLED: 3 }
+      const statusOrder = { PAYMENT_PENDING: 0, CONFIRMED: 1, WAITLIST: 2, CANCELLED: 3 }
       return statusOrder[a.status] - statusOrder[b.status]
     })
 
@@ -387,6 +387,13 @@ export default function RegistrationsTab({
             בוטל
           </span>
         )
+      case 'PAYMENT_PENDING':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-800 text-xs font-bold rounded-full shadow-sm ring-1 ring-yellow-300/50">
+            <div className="w-2 h-2 bg-gradient-to-br from-yellow-500 to-amber-500 rounded-full animate-pulse shadow-sm"></div>
+            ממתין לתשלום
+          </span>
+        )
       default:
         return null
     }
@@ -550,7 +557,9 @@ export default function RegistrationsTab({
                       ? 'bg-gradient-to-b from-green-500 to-emerald-500'
                       : registration.status === 'WAITLIST'
                         ? 'bg-gradient-to-b from-amber-500 to-orange-500'
-                        : 'bg-gradient-to-b from-red-500 to-rose-500'
+                        : registration.status === 'PAYMENT_PENDING'
+                          ? 'bg-gradient-to-b from-yellow-400 to-amber-500'
+                          : 'bg-gradient-to-b from-red-500 to-rose-500'
                   }`}
                 />
 
@@ -765,7 +774,9 @@ export default function RegistrationsTab({
                                 ? 'מאושר'
                                 : registration.status === 'WAITLIST'
                                   ? 'רשימת המתנה'
-                                  : 'בוטל'}
+                                  : registration.status === 'PAYMENT_PENDING'
+                                    ? 'ממתין לתשלום'
+                                    : 'בוטל'}
                             </span>
                           </div>
 
@@ -826,18 +837,19 @@ export default function RegistrationsTab({
                           )}
 
                           {/* Cancel Registration */}
-                          {registration.status !== 'CANCELLED' && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setCancelModal({ show: true, registrationId: registration.id })
-                              }}
-                              className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold hover:from-amber-600 hover:to-orange-600 active:scale-95 transition-all shadow-md hover:shadow-lg"
-                            >
-                              <Ban className="w-4 h-4" />
-                              <span>בטל הרשמה</span>
-                            </button>
-                          )}
+                          {registration.status !== 'CANCELLED' &&
+                            registration.status !== 'PAYMENT_PENDING' && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setCancelModal({ show: true, registrationId: registration.id })
+                                }}
+                                className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold hover:from-amber-600 hover:to-orange-600 active:scale-95 transition-all shadow-md hover:shadow-lg"
+                              >
+                                <Ban className="w-4 h-4" />
+                                <span>בטל הרשמה</span>
+                              </button>
+                            )}
 
                           {/* Delete Registration */}
                           <button

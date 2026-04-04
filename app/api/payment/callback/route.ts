@@ -273,9 +273,12 @@ async function handleCallback(request: NextRequest) {
           }
 
           // Determine final registration status based on capacity (CAPACITY_BASED events only)
-          // If the registration was cancelled, start as WAITLIST and re-evaluate
+          // PAYMENT_PENDING is the new initial state; treat it (and CANCELLED) as needing evaluation
           let finalStatus: 'CONFIRMED' | 'WAITLIST' =
-            payment.registration.status === 'CANCELLED' ? 'WAITLIST' : payment.registration.status
+            payment.registration.status === 'PAYMENT_PENDING' ||
+            payment.registration.status === 'CANCELLED'
+              ? 'CONFIRMED'
+              : (payment.registration.status as 'CONFIRMED' | 'WAITLIST')
           let shouldIncrementSpots = false
 
           if (currentEvent.eventType === 'CAPACITY_BASED') {
@@ -327,11 +330,12 @@ async function handleCallback(request: NextRequest) {
             },
           })
 
-          // Optionally update registration status (keep as PENDING for retry)
+          // Mark registration as CANCELLED on payment failure (was PAYMENT_PENDING)
           await tx.registration.update({
             where: { id: payment.registrationId },
             data: {
               paymentStatus: 'FAILED',
+              status: 'CANCELLED',
             },
           })
 
@@ -394,7 +398,7 @@ async function handleCallback(request: NextRequest) {
               eventLocation: payment.event.location || undefined,
               confirmationCode: payment.registration.confirmationCode,
               qrCodeImage,
-              status: payment.registration.status as 'CONFIRMED' | 'WAITLIST',
+              status: result.registration.status as 'CONFIRMED' | 'WAITLIST',
               schoolName: payment.school.name,
               cancellationUrl,
             })

@@ -12,7 +12,7 @@ interface Registration {
   data: Record<string, unknown>
   phoneNumber: string
   spotsCount: number
-  status: 'CONFIRMED' | 'WAITLIST' | 'CANCELLED'
+  status: 'CONFIRMED' | 'WAITLIST' | 'CANCELLED' | 'PAYMENT_PENDING'
   confirmationCode: string
   createdAt: string | Date
 }
