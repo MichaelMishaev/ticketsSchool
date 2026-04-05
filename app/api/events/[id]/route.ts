@@ -59,6 +59,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const { id } = await params
+
+    // Auto-cancel stale PAYMENT_PENDING registrations (older than 30 minutes)
+    // This covers HYP auth errors where the callback URL is never reached
+    await prisma.registration.updateMany({
+      where: {
+        eventId: id,
+        status: 'PAYMENT_PENDING',
+        createdAt: { lt: new Date(Date.now() - 30 * 60 * 1000) },
+      },
+      data: {
+        status: 'CANCELLED',
+        paymentStatus: 'FAILED',
+      },
+    })
+
     const event = await prisma.event.findUnique({
       where: { id },
       include: {
