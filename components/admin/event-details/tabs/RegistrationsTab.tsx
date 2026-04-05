@@ -165,9 +165,14 @@ export default function RegistrationsTab({
       })
     }
 
-    // Sort: PAYMENT_PENDING first (needs attention), then CONFIRMED, WAITLIST, CANCELLED
+    // Exclude PAYMENT_PENDING from "all" view — they are not real registrations yet
+    if (filterStatus === 'all') {
+      filtered = filtered.filter((r) => r.status !== 'PAYMENT_PENDING')
+    }
+
+    // Sort: CONFIRMED, WAITLIST, CANCELLED, PAYMENT_PENDING last (abandoned payment attempts)
     filtered = filtered.sort((a, b) => {
-      const statusOrder = { PAYMENT_PENDING: 0, CONFIRMED: 1, WAITLIST: 2, CANCELLED: 3 }
+      const statusOrder = { CONFIRMED: 0, WAITLIST: 1, CANCELLED: 2, PAYMENT_PENDING: 3 }
       return statusOrder[a.status] - statusOrder[b.status]
     })
 
@@ -179,12 +184,17 @@ export default function RegistrationsTab({
     const confirmed = allRegistrations.filter((r) => r.status === 'CONFIRMED')
     const waitlist = allRegistrations.filter((r) => r.status === 'WAITLIST')
     const cancelled = allRegistrations.filter((r) => r.status === 'CANCELLED')
+    const pending = allRegistrations.filter((r) => r.status === 'PAYMENT_PENDING')
 
     return {
-      all: allRegistrations.reduce((sum, r) => sum + (r.spotsCount || 0), 0),
+      // "all" excludes PAYMENT_PENDING — they are not confirmed participants
+      all: allRegistrations
+        .filter((r) => r.status !== 'PAYMENT_PENDING')
+        .reduce((sum, r) => sum + (r.spotsCount || 0), 0),
       confirmed: confirmed.reduce((sum, r) => sum + (r.spotsCount || 0), 0),
       waitlist: waitlist.reduce((sum, r) => sum + (r.spotsCount || 0), 0),
       cancelled: cancelled.reduce((sum, r) => sum + (r.spotsCount || 0), 0),
+      pending: pending.reduce((sum, r) => sum + (r.spotsCount || 0), 0),
     }
   }, [allRegistrations])
 
@@ -518,6 +528,18 @@ export default function RegistrationsTab({
             >
               המתנה ({counts.waitlist})
             </button>
+            {counts.pending > 0 && (
+              <button
+                onClick={() => setFilterStatus('PAYMENT_PENDING')}
+                className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                  filterStatus === 'PAYMENT_PENDING'
+                    ? 'bg-yellow-500 text-white'
+                    : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border border-yellow-200'
+                }`}
+              >
+                ממתין לתשלום ({counts.pending})
+              </button>
+            )}
           </div>
         </div>
       </div>
