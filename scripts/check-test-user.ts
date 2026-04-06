@@ -8,7 +8,7 @@ async function checkTestUser() {
 
   const admin = await prisma.admin.findUnique({
     where: { email: testEmail },
-    include: { school: true }
+    include: { school: true },
   })
 
   if (admin) {
@@ -26,11 +26,11 @@ async function checkTestUser() {
       data: {
         name: 'Navigation Test School',
         slug: 'nav-test-school-' + Date.now(),
-        plan: 'FREE'
-      }
+        plan: 'FREE',
+      },
     })
 
-    const newAdmin = await prisma.admin.create({
+    await prisma.admin.create({
       data: {
         email: testEmail,
         passwordHash: hashedPassword,
@@ -38,8 +38,8 @@ async function checkTestUser() {
         schoolId: school.id,
         emailVerified: true,
         onboardingCompleted: true,
-        role: 'ADMIN'
-      }
+        role: 'ADMIN',
+      },
     })
 
     console.log('✅ Test user created successfully!')

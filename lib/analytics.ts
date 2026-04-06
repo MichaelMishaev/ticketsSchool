@@ -183,18 +183,7 @@ export const trackFormSubmission = (formName: string, success: boolean) => {
   })
 }
 
-// Navigation
-export const trackPageView = (pagePath: string, pageTitle: string) => {
-  trackEvent({
-    action: 'page_view',
-    category: 'engagement',
-    label: pagePath,
-    additionalParams: {
-      page_title: pageTitle,
-    },
-  })
-}
-
+// Navigation & External Links
 export const trackExternalLinkClick = (url: string) => {
   trackEvent({
     action: 'external_link_click',

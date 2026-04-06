@@ -58,7 +58,7 @@ async function createSchool(name: string, slug: string, options: CreateSchoolOpt
         primaryColor: options.color || '#3b82f6',
         logo: options.logo,
         isActive: true,
-      }
+      },
     })
 
     log(`✅ School created successfully!`, colors.green)
@@ -85,10 +85,10 @@ async function listSchools() {
           select: {
             events: true,
             admins: true,
-          }
-        }
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     })
 
     if (schools.length === 0) {
@@ -126,7 +126,7 @@ async function createAdmin(
     let schoolId: string | null = null
     if (options.schoolSlug) {
       const school = await prisma.school.findUnique({
-        where: { slug: options.schoolSlug }
+        where: { slug: options.schoolSlug },
       })
 
       if (!school) {
@@ -150,8 +150,8 @@ async function createAdmin(
         schoolId,
       },
       include: {
-        school: true
-      }
+        school: true,
+      },
     })
 
     log(`✅ Admin created successfully!`, colors.green)
@@ -175,7 +175,7 @@ async function migrateEventsToSchool(schoolSlug: string) {
     log(`\n🔄 Migrating events to school: ${schoolSlug}...`, colors.blue)
 
     const school = await prisma.school.findUnique({
-      where: { slug: schoolSlug }
+      where: { slug: schoolSlug },
     })
 
     if (!school) {
@@ -186,8 +186,8 @@ async function migrateEventsToSchool(schoolSlug: string) {
     // Find events without schoolId
     const eventsWithoutSchool = await prisma.event.findMany({
       where: {
-        schoolId: null as any // TypeScript workaround for migration
-      }
+        schoolId: null as any, // TypeScript workaround for migration
+      },
     })
 
     log(`   Found ${eventsWithoutSchool.length} events to migrate`, colors.cyan)
@@ -195,11 +195,11 @@ async function migrateEventsToSchool(schoolSlug: string) {
     // Update all events
     const result = await prisma.event.updateMany({
       where: {
-        schoolId: null as any
+        schoolId: null as any,
       },
       data: {
-        schoolId: school.id
-      }
+        schoolId: school.id,
+      },
     })
 
     log(`✅ Migrated ${result.count} events to ${school.name}`, colors.green)
@@ -217,27 +217,17 @@ async function seed() {
 
     // Create default school
     log(`\n1️⃣  Creating default school...`, colors.yellow)
-    const beeriSchool = await createSchool('Beeri School', 'beeri', {
+    await createSchool('Beeri School', 'beeri', {
       color: '#10b981',
     })
 
     // Create super admin
     log(`\n2️⃣  Creating super admin...`, colors.yellow)
-    const superAdmin = await createAdmin(
-      'superadmin@ticketsschool.com',
-      'Super Admin',
-      'admin123',
-      {}
-    )
+    await createAdmin('superadmin@ticketsschool.com', 'Super Admin', 'admin123', {})
 
     // Create school admin for Beeri
     log(`\n3️⃣  Creating school admin for Beeri...`, colors.yellow)
-    const beeriAdmin = await createAdmin(
-      'admin@beeri.com',
-      'Beeri Admin',
-      'beeri123',
-      { schoolSlug: 'beeri' }
-    )
+    await createAdmin('admin@beeri.com', 'Beeri Admin', 'beeri123', { schoolSlug: 'beeri' })
 
     // Migrate existing events to Beeri
     log(`\n4️⃣  Migrating existing events to Beeri school...`, colors.yellow)
@@ -256,7 +246,6 @@ async function seed() {
     log(`     Email: admin@beeri.com`, colors.cyan)
     log(`     Password: beeri123`, colors.cyan)
     log(`\n⚠️  IMPORTANT: Change these passwords in production!`, colors.red)
-
   } catch (error: any) {
     log(`❌ Seeding failed: ${error.message}`, colors.red)
     throw error
@@ -271,7 +260,10 @@ async function main() {
     switch (command) {
       case 'create':
         if (args.length < 3) {
-          log(`Usage: npm run school -- create <name> <slug> [--color <color>] [--logo <url>]`, colors.yellow)
+          log(
+            `Usage: npm run school -- create <name> <slug> [--color <color>] [--logo <url>]`,
+            colors.yellow
+          )
           process.exit(1)
         }
         const name = args[1]
@@ -290,11 +282,14 @@ async function main() {
 
       case 'create-admin':
         if (args.length < 4) {
-          log(`Usage: npm run school -- create-admin <email> <name> <password> [schoolSlug]`, colors.yellow)
+          log(
+            `Usage: npm run school -- create-admin <email> <name> <password> [schoolSlug]`,
+            colors.yellow
+          )
           process.exit(1)
         }
         await createAdmin(args[1], args[2], args[3], {
-          schoolSlug: args[4]
+          schoolSlug: args[4],
         })
         break
 

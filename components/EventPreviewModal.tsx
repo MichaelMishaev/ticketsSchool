@@ -3,7 +3,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Calendar, MapPin, Users, Clock, AlertCircle, CheckCircle } from 'lucide-react'
 import { EventFormData } from '@/types'
-import { format } from 'date-fns'
 
 interface EventPreviewModalProps {
   isOpen: boolean

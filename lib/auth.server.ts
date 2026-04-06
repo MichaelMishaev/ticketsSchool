@@ -1,3 +1,26 @@
+/**
+ * @LOCKED
+ * Reason: HIGHEST PRIORITY - Core authentication & multi-tenant isolation
+ * Scope:
+ *   - Session encoding/decoding (JWT)
+ *   - Authentication helpers (getCurrentAdmin, requireAdmin, requireSuperAdmin)
+ *   - Multi-tenant helpers (requireSchoolAccess)
+ *   - Login/logout logic
+ *   - Password hashing (bcrypt)
+ * See: /docs/infrastructure/GOLDEN_PATHS.md#MULTI_TENANT_ISOLATION_GLOBAL
+ *
+ * CRITICAL Multi-Tenant Patterns (NON-NEGOTIABLE):
+ *   - Session MUST include: adminId, email, role, schoolId, schoolName
+ *   - requireAdmin() validates JWT and returns session
+ *   - requireSchoolAccess(schoolId) blocks cross-school access
+ *   - SUPER_ADMIN can bypass schoolId restrictions
+ *
+ * Invariants Protected:
+ *   - INVARIANT_AUTH_001: Session integrity (JWT signature)
+ *   - INVARIANT_AUTH_002: Password security (bcrypt)
+ *   - INVARIANT_MT_001: Multi-tenant isolation (schoolId enforcement)
+ *   - INVARIANT_MT_002: No cross-school data access
+ */
 import 'server-only'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'

@@ -1,3 +1,23 @@
+/**
+ * @LOCKED
+ * Reason: HIGHEST PRIORITY - Edge runtime authentication & route protection
+ * Scope:
+ *   - JWT verification (Edge Runtime compatible with jose)
+ *   - Protected route enforcement
+ *   - Public route whitelisting
+ *   - Redirect logic for unauthenticated users
+ * See: /docs/infrastructure/GOLDEN_PATHS.md#MULTI_TENANT_ISOLATION_GLOBAL
+ *
+ * CRITICAL Patterns:
+ *   - Uses jose library (not jsonwebtoken) for Edge Runtime
+ *   - Protected paths: /admin/*, /api/events/*, /api/dashboard/*
+ *   - Public paths: /api/auth/*, /api/admin/signup, /api/admin/login, /p/*
+ *   - Redirects unauthenticated users to /admin/login
+ *
+ * Invariants Protected:
+ *   - INVARIANT_AUTH_001: Session integrity (JWT verification)
+ *   - INVARIANT_MT_001: Multi-tenant isolation (enforced by subsequent API logic)
+ */
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 
@@ -62,12 +82,12 @@ export async function middleware(request: NextRequest) {
   const requestId = crypto.randomUUID().slice(0, 8)
 
   // Allow public paths
-  if (PUBLIC_PATHS.some(path => pathname.startsWith(path))) {
+  if (PUBLIC_PATHS.some((path) => pathname.startsWith(path))) {
     return NextResponse.next()
   }
 
   // Check if path needs protection
-  const isProtectedPath = PROTECTED_PATHS.some(path => pathname.startsWith(path))
+  const isProtectedPath = PROTECTED_PATHS.some((path) => pathname.startsWith(path))
 
   if (!isProtectedPath) {
     return NextResponse.next()
@@ -99,7 +119,7 @@ export async function middleware(request: NextRequest) {
   // Verify JWT session
   try {
     const { payload } = await jwtVerify(sessionCookie.value, getJWTSecret(), {
-      algorithms: ['HS256']
+      algorithms: ['HS256'],
     })
 
     // Add request ID to response headers for tracing
@@ -119,7 +139,10 @@ export async function middleware(request: NextRequest) {
 
     // Clear invalid session
     const response = pathname.startsWith('/api/')
-      ? NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: { 'X-Request-ID': requestId } })
+      ? NextResponse.json(
+          { error: 'Unauthorized' },
+          { status: 401, headers: { 'X-Request-ID': requestId } }
+        )
       : NextResponse.redirect(new URL('/admin/login', request.url))
 
     response.cookies.delete('admin_session')

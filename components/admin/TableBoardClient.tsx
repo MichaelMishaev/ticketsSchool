@@ -7,7 +7,7 @@ import DuplicateTableModal from './DuplicateTableModal'
 import TableTemplateModal from './TableTemplateModal'
 import SaveTemplateModal from './SaveTemplateModal'
 import BulkEditModal from './BulkEditModal'
-import { X, Plus, Sparkles, Edit3, Trash2, CheckSquare, Users } from 'lucide-react'
+import { X, Plus, Sparkles, Edit3, Trash2, CheckSquare } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '../Toast'
 
@@ -41,7 +41,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
   })
   const [cancelReason, setCancelReason] = useState('')
   const [cancelling, setCancelling] = useState(false)
-  const [togglingHold, setTogglingHold] = useState(false)
+  const [_togglingHold, setTogglingHold] = useState(false)
   const [duplicateModal, setDuplicateModal] = useState<{
     show: boolean
     table: Table | null
@@ -392,7 +392,11 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
                 setIsBulkSelectionMode(!isBulkSelectionMode)
                 if (isBulkSelectionMode) handleDeselectAll()
               }}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              className={`inline-flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-colors font-medium ${
+                isBulkSelectionMode
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
+              }`}
             >
               <CheckSquare className="w-4 h-4" />
               <span>{isBulkSelectionMode ? 'בטל בחירה מרובה' : 'בחירה מרובה'}</span>

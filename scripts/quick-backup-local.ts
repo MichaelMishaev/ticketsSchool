@@ -7,14 +7,10 @@
 
 import * as fs from 'fs'
 import * as path from 'path'
+import * as readline from 'readline'
 
 const BASE_URL = 'https://kartis.info'
 const BACKUP_DIR = path.join(process.cwd(), 'backups', 'qa')
-
-interface LoginResponse {
-  success: boolean
-  admin?: any
-}
 
 async function login(email: string, password: string): Promise<string> {
   const response = await fetch(`${BASE_URL}/api/admin/login`, {
@@ -57,7 +53,6 @@ async function backup() {
   console.log('')
 
   // Get credentials from stdin
-  const readline = require('readline')
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,

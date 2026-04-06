@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useToast } from '@/components/Toast'
@@ -11,7 +11,6 @@ import TableCard from '@/components/admin/TableCard'
 import FieldBuilder, { defaultFields } from '@/components/field-builder'
 import { FieldSchema } from '@/types'
 import {
-  Calendar,
   MapPin,
   FileText,
   AlertCircle,
@@ -23,7 +22,6 @@ import {
   UtensilsCrossed,
   Ban,
   FormInput,
-  Users,
 } from 'lucide-react'
 
 interface TableDataWithId extends TableFormData {
@@ -112,8 +110,8 @@ export default function NewRestaurantEventPage() {
         return tables.length >= 1
       case 3: // Registration Fields
         // Ensure phone and name fields are present
-        const hasPhone = fieldsSchema.some(f => f.name === 'phone' && f.required)
-        const hasName = fieldsSchema.some(f => f.name === 'name' && f.required)
+        const hasPhone = fieldsSchema.some((f) => f.name === 'phone' && f.required)
+        const hasName = fieldsSchema.some((f) => f.name === 'name' && f.required)
         return hasPhone && hasName
       case 4: // Cancellation
         return true // Optional settings
@@ -189,15 +187,14 @@ export default function NewRestaurantEventPage() {
 
     // Get existing numbers to find the highest
     const existingNumbers = tables
-      .map(t => {
+      .map((t) => {
         const match = t.tableNumber.match(/\d+/)
         return match ? parseInt(match[0], 10) : 0
       })
-      .filter(n => n > 0)
+      .filter((n) => n > 0)
 
-    const maxExistingNumber = existingNumbers.length > 0
-      ? Math.max(...existingNumbers)
-      : baseNumber - 1
+    const maxExistingNumber =
+      existingNumbers.length > 0 ? Math.max(...existingNumbers) : baseNumber - 1
 
     // Create multiple tables
     const newTables: TableDataWithId[] = []
@@ -228,7 +225,7 @@ export default function NewRestaurantEventPage() {
       const newCount = tableData.count || currentCount
       const diff = newCount - currentCount
 
-      const groupTempIds = editingGroup.map(t => t.tempId)
+      const groupTempIds = editingGroup.map((t) => t.tempId)
 
       // Update existing tables in the group
       setTables((prev) => {
@@ -242,9 +239,11 @@ export default function NewRestaurantEventPage() {
         if (diff < 0) {
           const tablesToRemove = Math.abs(diff)
           const tablesToKeep = editingGroup.slice(0, currentCount - tablesToRemove)
-          const keepTempIds = tablesToKeep.map(t => t.tempId)
+          const keepTempIds = tablesToKeep.map((t) => t.tempId)
 
-          updated = updated.filter(t => !groupTempIds.includes(t.tempId) || keepTempIds.includes(t.tempId))
+          updated = updated.filter(
+            (t) => !groupTempIds.includes(t.tempId) || keepTempIds.includes(t.tempId)
+          )
         }
 
         // If increasing count, add new tables
@@ -262,15 +261,14 @@ export default function NewRestaurantEventPage() {
 
           // Get all existing numbers to find the highest
           const existingNumbers = updated
-            .map(t => {
+            .map((t) => {
               const match = t.tableNumber.match(/\d+/)
               return match ? parseInt(match[0], 10) : 0
             })
-            .filter(n => n > 0)
+            .filter((n) => n > 0)
 
-          const maxExistingNumber = existingNumbers.length > 0
-            ? Math.max(...existingNumbers)
-            : baseNumber
+          const maxExistingNumber =
+            existingNumbers.length > 0 ? Math.max(...existingNumbers) : baseNumber
 
           // Create new tables
           const newTables: TableDataWithId[] = []
@@ -297,17 +295,9 @@ export default function NewRestaurantEventPage() {
 
       // Show appropriate success message
       if (diff > 0) {
-        addToast(
-          `✨ ${currentCount} שולחנות עודכנו + ${diff} שולחנות נוספו!`,
-          'success',
-          3000
-        )
+        addToast(`✨ ${currentCount} שולחנות עודכנו + ${diff} שולחנות נוספו!`, 'success', 3000)
       } else if (diff < 0) {
-        addToast(
-          `🗑️ ${Math.abs(diff)} שולחנות נמחקו, ${newCount} שולחנות עודכנו`,
-          'info',
-          3000
-        )
+        addToast(`🗑️ ${Math.abs(diff)} שולחנות נמחקו, ${newCount} שולחנות עודכנו`, 'info', 3000)
       } else {
         addToast(`${currentCount} שולחנות עודכנו בהצלחה`, 'success', 2000)
       }
@@ -318,11 +308,7 @@ export default function NewRestaurantEventPage() {
     if (!editingTable) return
 
     setTables((prev) =>
-      prev.map((t) =>
-        t.tempId === editingTable.tempId
-          ? { ...t, ...tableData }
-          : t
-      )
+      prev.map((t) => (t.tempId === editingTable.tempId ? { ...t, ...tableData } : t))
     )
     setEditingTable(null)
     addToast('שולחן עודכן בהצלחה', 'success', 2000)
@@ -365,7 +351,7 @@ export default function NewRestaurantEventPage() {
 
     let currentGroup: TableDataWithId[] = []
 
-    tables.forEach((table, index) => {
+    tables.forEach((table) => {
       if (currentGroup.length === 0) {
         currentGroup.push(table)
         return
@@ -386,7 +372,7 @@ export default function NewRestaurantEventPage() {
           isGroup: currentGroup.length > 1,
           firstTable: currentGroup[0],
           count: currentGroup.length,
-          totalCapacity: currentGroup.reduce((sum, t) => sum + t.capacity, 0)
+          totalCapacity: currentGroup.reduce((sum, t) => sum + t.capacity, 0),
         })
         currentGroup = [table]
       }
@@ -399,7 +385,7 @@ export default function NewRestaurantEventPage() {
         isGroup: currentGroup.length > 1,
         firstTable: currentGroup[0],
         count: currentGroup.length,
-        totalCapacity: currentGroup.reduce((sum, t) => sum + t.capacity, 0)
+        totalCapacity: currentGroup.reduce((sum, t) => sum + t.capacity, 0),
       })
     }
 
@@ -494,9 +480,10 @@ export default function NewRestaurantEventPage() {
                   onChange={(e) => handleChange('title', e.target.value)}
                   className={`w-full px-4 py-3 border-2 rounded-lg text-lg
                     focus:ring-2 text-gray-900 bg-white
-                    ${formData.title.length > 0 && formData.title.length < 3
-                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                      : 'border-gray-300 focus:ring-purple-500 focus:border-purple-500'
+                    ${
+                      formData.title.length > 0 && formData.title.length < 3
+                        ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                        : 'border-gray-300 focus:ring-purple-500 focus:border-purple-500'
                     }`}
                   placeholder="ארוחת ערב, אירוח מיוחד..."
                   required
@@ -511,9 +498,7 @@ export default function NewRestaurantEventPage() {
 
               {/* Description */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  תיאור
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">תיאור</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => handleChange('description', e.target.value)}
@@ -527,9 +512,7 @@ export default function NewRestaurantEventPage() {
 
               {/* Location */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  מיקום
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">מיקום</label>
                 <div className="relative">
                   <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" />
                   <input
@@ -607,58 +590,62 @@ export default function NewRestaurantEventPage() {
               )}
 
               {/* Summary Statistics - Show when 6+ tables */}
-              {tables.length >= 6 && (() => {
-                // Check if all tables are identical
-                const allIdentical = tables.every(t =>
-                  t.capacity === tables[0].capacity &&
-                  t.minOrder === tables[0].minOrder
-                )
+              {tables.length >= 6 &&
+                (() => {
+                  // Check if all tables are identical
+                  const allIdentical = tables.every(
+                    (t) => t.capacity === tables[0].capacity && t.minOrder === tables[0].minOrder
+                  )
 
-                // Calculate range for variety
-                const capacities = tables.map(t => t.capacity)
-                const minOrders = tables.map(t => t.minOrder)
-                const minCapacity = Math.min(...capacities)
-                const maxCapacity = Math.max(...capacities)
-                const minMinOrder = Math.min(...minOrders)
-                const maxMinOrder = Math.max(...minOrders)
+                  // Calculate range for variety
+                  const capacities = tables.map((t) => t.capacity)
+                  const minOrders = tables.map((t) => t.minOrder)
+                  const minCapacity = Math.min(...capacities)
+                  const maxCapacity = Math.max(...capacities)
+                  const minMinOrder = Math.min(...minOrders)
+                  const maxMinOrder = Math.max(...minOrders)
 
-                return (
-                  <div className="mb-6 bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-4 border-2 border-purple-200">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
-                        <UtensilsCrossed className="w-5 h-5 text-white" />
+                  return (
+                    <div className="mb-6 bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-4 border-2 border-purple-200">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
+                          <UtensilsCrossed className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <div className="text-2xl font-bold text-gray-900">
+                            {tables.length} שולחנות
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            סה״כ {tables.reduce((sum, t) => sum + t.capacity, 0)} מקומות
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-2xl font-bold text-gray-900">{tables.length} שולחנות</div>
-                        <div className="text-sm text-gray-600">סה״כ {tables.reduce((sum, t) => sum + t.capacity, 0)} מקומות</div>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div className="bg-white rounded-lg p-3 border border-purple-100">
+                          <div className="text-gray-600 mb-1">
+                            {allIdentical ? 'קיבולת כל שולחן' : 'טווח קיבולת'}
+                          </div>
+                          <div className="text-xl font-bold text-purple-600">
+                            {allIdentical ? tables[0].capacity : `${minCapacity}-${maxCapacity}`}
+                          </div>
+                        </div>
+                        <div className="bg-white rounded-lg p-3 border border-purple-100">
+                          <div className="text-gray-600 mb-1">
+                            {allIdentical ? 'מינימום כל שולחן' : 'טווח מינימום'}
+                          </div>
+                          <div className="text-xl font-bold text-purple-600">
+                            {allIdentical ? tables[0].minOrder : `${minMinOrder}-${maxMinOrder}`}
+                          </div>
+                        </div>
                       </div>
+                      {allIdentical && (
+                        <div className="mt-3 text-center text-xs text-gray-600 bg-white rounded-lg py-2 border border-purple-100">
+                          ✨ כל השולחנות זהים
+                        </div>
+                      )}
                     </div>
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div className="bg-white rounded-lg p-3 border border-purple-100">
-                        <div className="text-gray-600 mb-1">
-                          {allIdentical ? 'קיבולת כל שולחן' : 'טווח קיבולת'}
-                        </div>
-                        <div className="text-xl font-bold text-purple-600">
-                          {allIdentical ? tables[0].capacity : `${minCapacity}-${maxCapacity}`}
-                        </div>
-                      </div>
-                      <div className="bg-white rounded-lg p-3 border border-purple-100">
-                        <div className="text-gray-600 mb-1">
-                          {allIdentical ? 'מינימום כל שולחן' : 'טווח מינימום'}
-                        </div>
-                        <div className="text-xl font-bold text-purple-600">
-                          {allIdentical ? tables[0].minOrder : `${minMinOrder}-${maxMinOrder}`}
-                        </div>
-                      </div>
-                    </div>
-                    {allIdentical && (
-                      <div className="mt-3 text-center text-xs text-gray-600 bg-white rounded-lg py-2 border border-purple-100">
-                        ✨ כל השולחנות זהים
-                      </div>
-                    )}
-                  </div>
-                )
-              })()}
+                  )
+                })()}
 
               {/* Table Cards - Grouped view */}
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
@@ -756,7 +743,11 @@ export default function NewRestaurantEventPage() {
                               onClick={() => {
                                 // Delete all tables in the group
                                 if (confirm(`האם למחוק ${group.count} שולחנות זהים?`)) {
-                                  setTables(prev => prev.filter(t => !group.tables.some(gt => gt.tempId === t.tempId)))
+                                  setTables((prev) =>
+                                    prev.filter(
+                                      (t) => !group.tables.some((gt) => gt.tempId === t.tempId)
+                                    )
+                                  )
                                   addToast(`${group.count} שולחנות נמחקו`, 'info', 2000)
                                 }
                               }}
@@ -781,7 +772,7 @@ export default function NewRestaurantEventPage() {
                   } else {
                     // Single table card
                     const table = group.firstTable
-                    const index = tables.findIndex(t => t.tempId === table.tempId)
+                    const index = tables.findIndex((t) => t.tempId === table.tempId)
 
                     return (
                       <TableCard
@@ -796,7 +787,9 @@ export default function NewRestaurantEventPage() {
                         onEdit={() => openEditModal(table)}
                         onDelete={() => handleDeleteTable(table.tempId)}
                         onMoveUp={index > 0 ? () => handleMoveUp(index) : undefined}
-                        onMoveDown={index < tables.length - 1 ? () => handleMoveDown(index) : undefined}
+                        onMoveDown={
+                          index < tables.length - 1 ? () => handleMoveDown(index) : undefined
+                        }
                       />
                     )
                   }
@@ -849,10 +842,7 @@ export default function NewRestaurantEventPage() {
                 </p>
               </div>
 
-              <FieldBuilder
-                fields={fieldsSchema}
-                onChange={setFieldsSchema}
-              />
+              <FieldBuilder fields={fieldsSchema} onChange={setFieldsSchema} />
             </div>
           </motion.div>
         )
@@ -927,9 +917,7 @@ export default function NewRestaurantEventPage() {
                           focus:ring-purple-500"
                       />
                       <label htmlFor="requireReason" className="flex-1 cursor-pointer">
-                        <span className="block font-medium text-gray-900">
-                          חייב סיבת ביטול
-                        </span>
+                        <span className="block font-medium text-gray-900">חייב סיבת ביטול</span>
                         <span className="block text-sm text-gray-600 mt-1">
                           לקוחות יתבקשו לציין סיבה לביטול ההזמנה
                         </span>
@@ -958,9 +946,7 @@ export default function NewRestaurantEventPage() {
             <UtensilsCrossed className="w-8 h-8 text-purple-600" />
             <h1 className="text-3xl font-bold text-gray-900">צור אירוע עם מקומות ישיבה</h1>
           </div>
-          <p className="text-gray-600">
-            הוסף אירוע חדש עם ניהול מקומות ישיבה והזמנות
-          </p>
+          <p className="text-gray-600">הוסף אירוע חדש עם ניהול מקומות ישיבה והזמנות</p>
         </div>
 
         {/* Wizard Steps */}

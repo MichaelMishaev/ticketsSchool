@@ -467,7 +467,7 @@ With P0 complete, you have:
 
 Execute: `npx playwright test tests/suites/*-p0.spec.ts`
 
-**Your TicketCap application now has comprehensive E2E test coverage for all critical functionality.** 🎉
+**Your kartis.info application now has comprehensive E2E test coverage for all critical functionality.** 🎉
 
 ---
 

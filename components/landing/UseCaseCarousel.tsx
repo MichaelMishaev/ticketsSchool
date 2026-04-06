@@ -2,16 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-  Target,
-  Trophy,
-  Users,
-  BarChart3,
-  Star,
-  Calendar,
-  Zap,
-  TrendingUp
-} from 'lucide-react'
+import { Target, Trophy, Users, BarChart3, Star, Calendar, Zap } from 'lucide-react'
 
 export interface UseCase {
   icon: React.ReactNode
@@ -80,7 +71,7 @@ interface UseCaseCarouselProps {
 
 export default function UseCaseCarousel({
   autoPlayInterval = 3000,
-  pauseOnHover = true
+  pauseOnHover = true,
 }: UseCaseCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
@@ -149,9 +140,7 @@ export default function UseCaseCarousel({
                 key={idx}
                 onClick={() => setCurrentIndex(idx)}
                 className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition-all duration-300 ${
-                  idx === currentIndex
-                    ? 'bg-red-600 w-6 sm:w-8'
-                    : 'bg-gray-300 hover:bg-gray-400'
+                  idx === currentIndex ? 'bg-red-600 w-6 sm:w-8' : 'bg-gray-300 hover:bg-gray-400'
                 }`}
                 aria-label={`Go to use case ${idx + 1}`}
               />

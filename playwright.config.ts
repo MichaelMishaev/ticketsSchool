@@ -19,7 +19,7 @@ export default defineConfig({
     },
   },
   use: {
-    baseURL: 'http://localhost:9000',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:9000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     actionTimeout: 15000, // 15 seconds for actions like click, fill

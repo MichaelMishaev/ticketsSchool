@@ -1,6 +1,6 @@
 # Test Automation Suite
 
-Comprehensive end-to-end test automation for TicketCap platform.
+Comprehensive end-to-end test automation for kartis.info platform.
 
 ## 📁 Structure
 

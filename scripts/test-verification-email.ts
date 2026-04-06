@@ -27,16 +27,12 @@ async function testVerificationEmail() {
 
   try {
     const testToken = 'test-token-' + Date.now()
-    const result = await sendVerificationEmail(
-      testEmail,
-      testToken,
-      'Test User'
-    )
+    const result = await sendVerificationEmail(testEmail, testToken, 'Test User')
 
     if (result) {
       console.log('✅ Email sent successfully!')
       console.log('\nCheck your inbox for:', testEmail)
-      console.log('Subject: אימות כתובת מייל - TicketCap')
+      console.log('Subject: אימות כתובת מייל - kartis.info')
       console.log('\n⚠️  Note: This is a test email. The verification link will not work.')
     } else {
       console.log('❌ Email failed to send')

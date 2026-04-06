@@ -1,3 +1,21 @@
+/**
+ * @LOCKED
+ * Reason: Business-critical authentication API
+ * Scope:
+ *   - Credential validation via login() helper
+ *   - Session creation with JWT
+ *   - Error messages (Hebrew)
+ *   - Onboarding status check
+ * See: /docs/infrastructure/GOLDEN_PATHS.md#AUTH_LOGIN_V1
+ *
+ * Multi-Tenant Enforcement:
+ *   - Session includes schoolId from admin record
+ *   - Returns onboardingCompleted status for redirect logic
+ *
+ * Invariants Protected:
+ *   - INVARIANT_AUTH_001: Session integrity
+ *   - INVARIANT_AUTH_002: Password security (bcrypt verification)
+ */
 import { NextRequest, NextResponse } from 'next/server'
 import { login } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'

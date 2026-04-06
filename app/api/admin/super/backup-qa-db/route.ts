@@ -10,7 +10,7 @@ import { randomUUID } from 'crypto'
 import { logger } from '@/lib/logger-v2'
 import 'server-only'
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Only SUPER_ADMIN can backup database
     await requireSuperAdmin()
