@@ -26,6 +26,7 @@ export interface WikiFeature {
   }[]
   relatedFeatures?: string[]
   videoUrl?: string
+  imageUrl?: string // path to generated help illustration
   lastUpdated: string
 }
 
@@ -73,10 +74,10 @@ export const wikiCategories: WikiCategory[] = [
             titleHe: 'צרו את האירוע הראשון',
             description: 'Step-by-step example',
             descriptionHe: 'דוגמה שלב אחר שלב',
-          }
-        ]
-      }
-    ]
+          },
+        ],
+      },
+    ],
   },
   {
     id: 'event-management',
@@ -92,7 +93,8 @@ export const wikiCategories: WikiCategory[] = [
         id: 'create-event',
         title: 'How to Create Your First Event',
         titleHe: 'איך ליצור את האירוע הראשון שלך',
-        description: 'Step-by-step guide to creating events like soccer matches, workshops, and concerts',
+        description:
+          'Step-by-step guide to creating events like soccer matches, workshops, and concerts',
         descriptionHe: 'מדריך שלב-אחר-שלב ליצירת אירועים כמו משחקי כדורגל, סדנאות וקונצרטים',
         category: 'event-management',
         type: 'CORE',
@@ -156,21 +158,33 @@ Open dashboard → See who's coming → You're ready!
             titleHe: 'תהליך מלא של משחק כדורגל',
             description: 'See exactly what you click, what happens, and what players see',
             descriptionHe: 'ראו בדיוק על מה אתם לוחצים, מה קורה, ומה השחקנים רואים',
-          }
+          },
         ],
-        relatedFeatures: ['edit-event', 'check-in-system']
+        relatedFeatures: ['edit-event', 'check-in-system'],
       },
       {
         id: 'edit-event',
         title: 'Fix Your Mistake in 30 Seconds - The Wrong Date Story',
         titleHe: 'תקן את הטעות שלך ב-30 שניות - סיפור התאריך הלא נכון',
-        description: 'What happens when you create an event for the wrong date? How to fix it without starting over',
+        description:
+          'What happens when you create an event for the wrong date? How to fix it without starting over',
         descriptionHe: 'מה קורה כשיוצרים אירוע לתאריך הלא נכון? איך לתקן בלי להתחיל מחדש',
         category: 'event-management',
         type: 'CORE',
         roles: ['ADMIN', 'OWNER'],
         difficulty: 'beginner',
-        keywords: ['edit', 'modify', 'update', 'fix', 'mistake', 'עריכה', 'שינוי', 'עדכון', 'תיקון', 'טעות'],
+        keywords: [
+          'edit',
+          'modify',
+          'update',
+          'fix',
+          'mistake',
+          'עריכה',
+          'שינוי',
+          'עדכון',
+          'תיקון',
+          'טעות',
+        ],
         lastUpdated: '2026-01-10',
         content: `# Fix Your Mistake in 30 Seconds - The Wrong Date Story
 
@@ -692,9 +706,160 @@ Imagine calling 1,200 people... 😱"
 ---
 
 **השורה התחתונה:** טעויות קורות. תכונת העריכה הופכת "אוי לא, אני צריך להתחיל מחדש!" ל"תוקן ב-30 שניות!" חסוך שעות, שמור את ההרשמות שלך, הודע לכולם אוטומטית.`,
-        relatedFeatures: ['create-event', 'event-status']
-      }
-    ]
+        relatedFeatures: ['create-event', 'event-status'],
+      },
+
+      {
+        id: 'waitlist',
+        title: 'No More FOMO — How the Waitlist Works',
+        titleHe: 'לא עוד FOMO — איך רשימת ההמתנה עובדת',
+        description:
+          'Automatic waitlist when your event is full, and how people get notified when a spot opens',
+        descriptionHe: 'רשימת המתנה אוטומטית כשהאירוע מלא, ואיך אנשים מקבלים הודעה כשמתפנה מקום',
+        category: 'event-management',
+        type: 'NEW',
+        roles: ['ALL'],
+        difficulty: 'beginner',
+        keywords: [
+          'waitlist',
+          'wait list',
+          'full',
+          'capacity',
+          'notify',
+          'רשימת המתנה',
+          'מלא',
+          'קיבולת',
+          'הודעה',
+        ],
+        lastUpdated: '2026-04-06',
+        content: `# No More FOMO — How the Waitlist Works
+
+## The Story
+
+**Shlomi** runs a cooking workshop for parents — maximum 20 people. He posts the link on the school WhatsApp group at 8am. By 8:17am, all 20 spots are gone.
+
+But 6 more parents messaged him: "I missed it! Can I get in if someone cancels?"
+
+Before: Shlomi kept a mental note of names. Someone always got forgotten.
+After: TicketCap handles all of it automatically.
+
+## How the Waitlist Works
+
+### When the Event Is Full
+
+When your event reaches its capacity limit, the registration page automatically switches to **"Join Waitlist"** mode:
+
+- Visitors see: "This event is full — join the waitlist to be notified if a spot opens"
+- They still fill in their details and submit
+- Their status is set to **WAITLISTED**
+
+### When a Spot Opens
+
+A spot opens when:
+- Someone cancels their confirmed registration
+- An admin manually cancels a registration
+
+When this happens:
+1. The **first person on the waitlist** is automatically notified (via email)
+2. They get a time-limited link to complete their registration
+3. If they don't respond within the time window, the **next person** on the waitlist gets notified
+
+### For the Admin
+
+You can see the waitlist in **Admin → Events → [Your Event] → Registrations**:
+- Filter by status **WAITLISTED** to see who's waiting
+- The list is ordered by when they joined (first-come, first-served)
+
+## Enabling the Waitlist
+
+The waitlist is **automatically enabled** when:
+1. Your event has a maximum capacity set
+2. That capacity is reached
+
+You don't need to do anything — it just works.
+
+## Real Example
+
+Shlomi's workshop:
+- 20 confirmed spots (full)
+- 6 people on the waitlist
+- Day before the event: 2 people cancel
+- Waitlist positions 1 and 2 are automatically notified
+- One responds and completes registration → 21 confirmed, 5 on waitlist
+- The other doesn't respond in time → position 3 is notified
+
+Shlomi sees a full workshop. Everyone got a fair shot.
+
+## Tips
+
+- Consider setting a **clear deadline** for waitlist spot acceptance (add it to your event description)
+- You can manually promote someone from the waitlist by cancelling their WAITLISTED status and inviting them directly`,
+
+        contentHe: `# לא עוד FOMO — איך רשימת ההמתנה עובדת
+
+## הסיפור
+
+**שלומי** מנהל סדנת בישול להורים — מקסימום 20 אנשים. הוא פרסם את הקישור בקבוצת WhatsApp של בית הספר בשעה 8:00. עד 8:17 כל 20 המקומות תפוסים.
+
+אבל 6 הורים נוספים שלחו לו הודעה: "פספסתי! אני יכול להיכנס אם מישהו מבטל?"
+
+לפני: שלומי שמר רשימה מנטלית של שמות. מישהו תמיד נשכח.
+אחרי: TicketCap מטפל בכל זה אוטומטית.
+
+## איך רשימת ההמתנה עובדת
+
+### כשהאירוע מלא
+
+כשהאירוע שלכם מגיע למגבלת הקיבולת, דף ההרשמה עובר אוטומטית למצב **"הצטרפו לרשימת המתנה"**:
+
+- מבקרים רואים: "האירוע מלא — הצטרפו לרשימת ההמתנה לקבלת הודעה אם מקום מתפנה"
+- הם עדיין ממלאים את פרטיהם ושולחים
+- הסטטוס שלהם מוגדר ל**WAITLISTED**
+
+### כשמקום מתפנה
+
+מקום מתפנה כש:
+- מישהו מבטל את הרשמתו המאושרת
+- מנהל מבטל הרשמה ידנית
+
+כשזה קורה:
+1. **האדם הראשון ברשימת ההמתנה** מקבל הודעה אוטומטית (באימייל)
+2. הם מקבלים קישור מוגבל בזמן להשלמת הרשמתם
+3. אם הם לא מגיבים בתוך חלון הזמן, **האדם הבא** ברשימת ההמתנה מקבל הודעה
+
+### עבור המנהל
+
+ניתן לראות את רשימת ההמתנה ב**אדמין → אירועים → [האירוע שלכם] → הרשמות**:
+- סנן לפי סטטוס **WAITLISTED** לראות מי ממתין
+- הרשימה מסודרת לפי מתי הצטרפו (ראשון-ראשון-נצור)
+
+## הפעלת רשימת ההמתנה
+
+רשימת ההמתנה **מופעלת אוטומטית** כש:
+1. לאירוע שלכם מוגדרת קיבולת מקסימלית
+2. קיבולת זו מגיעה
+
+אתם לא צריכים לעשות כלום — זה פשוט עובד.
+
+## דוגמה אמיתית
+
+סדנת הבישול של שלומי:
+- 20 מקומות מאושרים (מלא)
+- 6 אנשים ברשימת ההמתנה
+- יום לפני האירוע: 2 אנשים מבטלים
+- עמדות 1 ו-2 ברשימת ההמתנה מקבלות הודעה אוטומטית
+- אחד מגיב ומשלים הרשמה → 21 מאושרים, 5 ברשימת ההמתנה
+- השני לא מגיב בזמן → עמדה 3 מקבלת הודעה
+
+שלומי רואה סדנה מלאה. לכולם הייתה הזדמנות הוגנת.
+
+## טיפים
+
+- שקלו להגדיר **מועד אחרון ברור** לקבלת מקום מרשימת ההמתנה (הוסיפו לתיאור האירוע שלכם)
+- ניתן לקדם מישהו ידנית מרשימת ההמתנה על ידי ביטול סטטוס ה-WAITLISTED שלו והזמנתם ישירות`,
+        relatedFeatures: ['create-event', 'cancel-registration', 'view-leads'],
+      },
+    ],
   },
   {
     id: 'table-management',
@@ -708,15 +873,28 @@ Imagine calling 1,200 people... 😱"
     features: [
       {
         id: 'table-based-events',
-        title: 'Tables vs Capacity - Sarah\'s Wedding Hall Dilemma',
+        title: "Tables vs Capacity - Sarah's Wedding Hall Dilemma",
         titleHe: 'שולחנות מול קיבולת - הדילמה של אולם החתונות של שרה',
-        description: 'When do you need table-based events? Sarah manages a wedding hall and had to learn the hard way',
-        descriptionHe: 'מתי צריך אירועים מבוססי שולחנות? שרה מנהלת אולם חתונות ולמדה את זה בדרך הקשה',
+        description:
+          'When do you need table-based events? Sarah manages a wedding hall and had to learn the hard way',
+        descriptionHe:
+          'מתי צריך אירועים מבוססי שולחנות? שרה מנהלת אולם חתונות ולמדה את זה בדרך הקשה',
         category: 'table-management',
         type: 'ADVANCED',
         roles: ['ADMIN', 'OWNER'],
         difficulty: 'intermediate',
-        keywords: ['table', 'seating', 'assignment', 'wedding', 'capacity', 'שולחן', 'הושבה', 'הקצאה', 'חתונה', 'קיבולת'],
+        keywords: [
+          'table',
+          'seating',
+          'assignment',
+          'wedding',
+          'capacity',
+          'שולחן',
+          'הושבה',
+          'הקצאה',
+          'חתונה',
+          'קיבולת',
+        ],
         lastUpdated: '2026-01-10',
         content: `# Tables vs Capacity - Sarah's Wedding Hall Dilemma
 
@@ -1266,11 +1444,13 @@ A: Not required, but HIGHLY recommended. Sarah learned this the hard way! (See s
           {
             title: 'Wedding Chaos vs Wedding Success',
             titleHe: 'כאוס בחתונה מול הצלחה בחתונה',
-            description: 'Sarah\'s first wedding (capacity-based): 45 min chaos. Second wedding (table-based): 15 min smooth seating',
-            descriptionHe: 'החתונה הראשונה של שרה (מבוסס קיבולת): 45 דק׳ כאוס. חתונה שנייה (מבוסס שולחנות): 15 דק׳ הושבה חלקה',
-          }
+            description:
+              "Sarah's first wedding (capacity-based): 45 min chaos. Second wedding (table-based): 15 min smooth seating",
+            descriptionHe:
+              'החתונה הראשונה של שרה (מבוסס קיבולת): 45 דק׳ כאוס. חתונה שנייה (מבוסס שולחנות): 15 דק׳ הושבה חלקה',
+          },
         ],
-        relatedFeatures: ['duplicate-tables', 'table-templates', 'bulk-edit-tables']
+        relatedFeatures: ['duplicate-tables', 'table-templates', 'bulk-edit-tables'],
       },
       {
         id: 'duplicate-tables',
@@ -1592,9 +1772,9 @@ A: Use bulk-delete to select and remove the duplicated tables. Then try again.`,
             titleHe: 'הקמת חתונה מלאה',
             description: 'From 0 to 40 tables in 30 seconds - see every click',
             descriptionHe: 'מ-0 ל-40 שולחנות ב-30 שניות - ראו כל לחיצה',
-          }
+          },
         ],
-        relatedFeatures: ['table-templates', 'bulk-edit-tables']
+        relatedFeatures: ['table-templates', 'bulk-edit-tables'],
       },
       {
         id: 'table-templates',
@@ -2144,13 +2324,14 @@ A: No. Templates are like a copy-paste tool. Once applied, the tables belong to 
 10. תתפלאו איך בכלל חייתם בלי זה!
 
 **תוצאה:** מאות שעות שנחסכו בשנה, עקביות טובה יותר, פחות לחץ, אתם מאושרים יותר! 🎉`,
-        relatedFeatures: ['duplicate-tables', 'bulk-edit-tables']
+        relatedFeatures: ['duplicate-tables', 'bulk-edit-tables'],
       },
       {
         id: 'bulk-edit-tables',
         title: 'Change 40 Tables at Once - The VIP Section Story',
         titleHe: 'שנה 40 שולחנות בבת אחת - סיפור קטע ה-VIP',
-        description: 'How one click saved a concert venue manager from editing 40 tables individually',
+        description:
+          'How one click saved a concert venue manager from editing 40 tables individually',
         descriptionHe: 'איך קליק אחד חסך למנהל אולם הופעות עריכה של 40 שולחנות בנפרד',
         category: 'table-management',
         type: 'NEW',
@@ -2160,14 +2341,14 @@ A: No. Templates are like a copy-paste tool. Once applied, the tables belong to 
         lastUpdated: '2026-01-10',
         content: `# Change 40 Tables at Once - The VIP Section Story\n\n**Meet Eli - Concert Venue Manager**\n\n"We're hosting a big concert this Friday. I already created 80 tables (regular + VIP). Then my boss tells me:\n\n'Eli, the VIP tables (Tables 1-40) need a minimum order of 8 people now, not 6. Corporate policy changed.'\n\nI looked at the screen... 40 tables to edit... this will take 45 minutes... 😫"\n\n## The Old Way (Don't do this!)\n\n❌ **Manual editing (45 minutes of clicking):**\n1. Click on Table 1 → Change min order 6→8 → Save\n2. Click on Table 2 → Change min order 6→8 → Save\n3. Click on Table 3 → Change min order 6→8 → Save\n4. ...repeat 37 more times...\n5. By Table 20, you're making mistakes\n6. By Table 30, you want to quit\n7. Finally done at Table 40 💀\n\n## The New Way (30 seconds!)\n\n✅ **Bulk edit magic:**\n\n**Step 1: Select the tables**\n- Click checkbox on Table 1 (VIP)\n- Click checkbox on Table 2 (VIP)\n- Or... click "Select Range: Tables 1-40"\n- All 40 VIP tables now highlighted in blue\n- Counter shows: "40 tables selected"\n\n**Step 2: Click "Edit Selected"**\n- Button appears at bottom: "Edit 40 tables"\n- Click it → popup appears\n\n**Step 3: Change what you need**\n- Popup shows:\n  - Capacity: [leave empty to keep current]\n  - Minimum Order: [8]\n  - Status: [leave empty to keep current]\n- Enter "8" in Minimum Order field\n- Click "Apply to 40 tables"\n\n**Step 4: Done!**\n- ✅ All 40 tables updated in 2 seconds\n- System shows: "40 tables updated successfully"\n- You saved 44 minutes and 30 seconds!\n\n## Real Scenarios\n\n### Scenario 1: Last-Minute Venue Change\n\n**The problem:**\nFriday morning, 4 hours before concert:\n- Fire marshal says: "Capacity reduced from 10 to 8 per table"\n- You have 80 tables total\n- Need to change capacity on ALL of them\n- Concert starts in 4 hours\n\n**The panic:**\n- If you edit manually: 80 tables × 40 seconds = 53 minutes\n- You have other tasks to do!\n- Can't afford to spend an hour clicking\n\n**The solution:**\n1. Click "Select All" → 80 tables selected\n2. Click "Edit Selected"\n3. Change capacity to 8\n4. Click "Apply to 80 tables"\n5. **Done in 15 seconds!**\n\n**Eli's reaction:**\n"I literally said 'wow' out loud. Saved 52 minutes before a major event. That time went to checking sound equipment instead."\n\n### Scenario 2: Delete Wrong Tables\n\n**The problem:**\n- Created 50 tables for Wedding A\n- Created 50 tables for Wedding B (same event by accident!)\n- Need to delete the duplicate 50 tables\n- Don't want to click 50 times\n\n**The solution:**\n1. Select the duplicate tables (Tables 51-100)\n2. Click "Delete Selected"\n3. System checks: "Are these tables reserved?"\n4. If yes → Shows which ones are reserved (can't delete)\n5. If no → "Delete 50 tables permanently?"\n6. Click "Yes, delete 50 tables"\n7. **Gone in 10 seconds!**\n\n**Protection feature:**\n- System WON'T let you delete tables with reservations\n- If Tables 51-55 have reservations, you'll see:\n  - "Cannot delete 5 tables: they have reservations"\n  - "Can delete 45 tables: they're empty"\n- Prevents accidental deletion of paid tables!\n\n## The Complete Workflow\n\n**Part 1: Selecting Tables**\n\n**Option A - Select one by one:**\n- Click checkbox on Table 1\n- Click checkbox on Table 2\n- Click checkbox on Table 3\n- Works for small selections\n\n**Option B - Select range:**\n- Click "Select Range"\n- Enter "1-40" (Tables 1 through 40)\n- Click "Select" → All 40 selected\n- Best for consecutive tables\n\n**Option C - Select all:**\n- Click "Select All" at top\n- All tables in the event selected\n- Best for global changes (capacity, status)\n\n**Part 2: Editing Tables**\n\n**What you can change:**\n- **Capacity:** Change max people per table\n- **Minimum Order:** Change minimum people required\n- **Status:** Change AVAILABLE ↔ RESERVED ↔ INACTIVE\n\n**How it works:**\n1. Select tables (using any method above)\n2. Click "Edit Selected" button\n3. Popup shows 3 fields (leave empty = keep current)\n4. Fill what you want to change\n5. Click "Apply to X tables"\n6. System updates all selected tables\n7. See success message: "X tables updated"\n\n**Part 3: Deleting Tables**\n\n**Safety first:**\n1. Select tables to delete\n2. Click "Delete Selected"\n3. System checks for reservations\n4. Shows warning: "Delete X tables permanently?"\n5. Lists which tables CAN'T be deleted (have reservations)\n6. You confirm: "Yes, delete X tables"\n7. Tables deleted (except reserved ones)\n\n## Calculations: Time Saved\n\n**Editing 40 VIP tables:**\n- Manual: 40 tables × 1 minute = 40 minutes\n- Bulk edit: 30 seconds\n- **Saved: 39.5 minutes per event**\n\n**Deleting 50 duplicate tables:**\n- Manual: 50 tables × 30 seconds = 25 minutes\n- Bulk delete: 15 seconds\n- **Saved: 24 minutes 45 seconds**\n\n**Changing capacity on 80 tables (emergency):**\n- Manual: 80 tables × 40 seconds = 53 minutes\n- Bulk edit: 20 seconds\n- **Saved: 52 minutes 40 seconds**\n\n**Eli's concert venue (monthly):**\n- 8 concerts per month\n- Average 2 bulk changes per concert (VIP sections, last-minute adjustments)\n- Average time saved: 30 minutes per change\n- **Monthly savings: 8 concerts × 2 changes × 30 min = 8 hours!**\n\n## Practical Tips\n\n**Before bulk editing:**\n- ✅ Double-check your selection count (is "40 tables selected" correct?)\n- ✅ Use filters to narrow down selection (status: AVAILABLE)\n- ✅ Test on 2-3 tables first if unsure\n\n**When bulk editing:**\n- Leave fields empty that you don't want to change\n- System keeps current values for empty fields\n- Only fill what needs updating\n\n**When bulk deleting:**\n- System protects reserved tables (can't delete)\n- You'll see which ones are protected\n- Confirmation required (no accidental deletes)\n\n## Common Questions\n\n**Q: What if I select the wrong tables?**\nA: Click "Deselect All" and start over. Nothing changes until you click "Apply"\n\n**Q: Can I undo a bulk edit?**\nA: No undo button, but you can bulk edit again to revert changes\n\n**Q: What if some tables have reservations and I try to delete?**\nA: System blocks deletion of reserved tables and shows you which ones are protected\n\n**Q: Can I change different values for different tables?**\nA: No, bulk edit applies same change to all. For different values, edit individually\n\n**Q: What's the maximum number of tables I can select?**\nA: No limit! Select 100, 200, even 500 tables at once\n\n## Success Stories\n\n**Eli's concert venue:**\n- Before: 53 minutes to change 80 tables (emergency)\n- After: 20 seconds with bulk edit\n- **Mood change: Panic → Relief**\n- "I had time to check sound equipment instead of clicking buttons"\n\n**Sarah's wedding hall:**\n- Before: 40 minutes to delete duplicate tables\n- After: 15 seconds with bulk delete\n- **Saved: 39 minutes 45 seconds**\n- "I thought I'd be there all morning. Done before my coffee cooled!"\n\n**David's sports club:**\n- Before: Changes to VIP section took 35 minutes each event\n- After: 25 seconds with bulk edit\n- Over 10 events: **Saved 5.8 hours**\n- "That's 5.8 hours I spent coaching instead of clicking"\n\n---\n\n**The bottom line:** Bulk edit turns 40 minutes of repetitive clicking into 30 seconds of smart selection. Your time is valuable - use it for planning great events, not clicking "Save" 40 times!`,
         contentHe: `# שנה 40 שולחנות בבת אחת - סיפור קטע ה-VIP\n\n**הכירו את אלי - מנהל אולם הופעות**\n\n"אנחנו מארחים הופעה גדולה ביום שישי. כבר יצרתי 80 שולחנות (רגיל + VIP). ואז הבוס שלי אומר לי:\n\n'אלי, שולחנות ה-VIP (שולחנות 1-40) צריכים הזמנה מינימלית של 8 אנשים עכשיו, לא 6. המדיניות של החברה השתנתה.'\n\nהסתכלתי על המסך... 40 שולחנות לערוך... זה ייקח 45 דקות... 😫"\n\n## הדרך הישנה (אל תעשו את זה!)\n\n❌ **עריכה ידנית (45 דקות של לחיצות):**\n1. לחץ על שולחן 1 → שנה מינימום 6→8 → שמור\n2. לחץ על שולחן 2 → שנה מינימום 6→8 → שמור\n3. לחץ על שולחן 3 → שנה מינימום 6→8 → שמור\n4. ...חזור 37 פעמים נוספות...\n5. בשולחן 20, אתה מתחיל לעשות טעויות\n6. בשולחן 30, אתה רוצה להתפטר\n7. סוף סוף גמרת בשולחן 40 💀\n\n## הדרך החדשה (30 שניות!)\n\n✅ **קסם עריכה מרובה:**\n\n**שלב 1: בחר את השולחנות**\n- לחץ על תיבת הסימון בשולחן 1 (VIP)\n- לחץ על תיבת הסימון בשולחן 2 (VIP)\n- או... לחץ על "בחר טווח: שולחנות 1-40"\n- כל 40 שולחנות ה-VIP מסומנים כעת בכחול\n- המונה מציג: "40 שולחנות נבחרו"\n\n**שלב 2: לחץ על "ערוך נבחרים"**\n- כפתור מופיע בתחתית: "ערוך 40 שולחנות"\n- לחץ עליו → חלון קופץ מופיע\n\n**שלב 3: שנה מה שצריך**\n- החלון הקופץ מציג:\n  - קיבולת: [השאר ריק כדי לשמור את הנוכחי]\n  - הזמנה מינימלית: [8]\n  - סטטוס: [השאר ריק כדי לשמור את הנוכחי]\n- הזן "8" בשדה הזמנה מינימלית\n- לחץ על "החל על 40 שולחנות"\n\n**שלב 4: סיימת!**\n- ✅ כל 40 השולחנות עודכנו ב-2 שניות\n- המערכת מציגה: "40 שולחנות עודכנו בהצלחה"\n- חסכת 44 דקות ו-30 שניות!\n\n## תרחישים אמיתיים\n\n### תרחיש 1: שינוי אולם ברגע האחרון\n\n**הבעיה:**\nיום שישי בבוקר, 4 שעות לפני ההופעה:\n- מפקח הכבאות אומר: "קיבולת מופחתת מ-10 ל-8 לכל שולחן"\n- יש לך 80 שולחנות בסך הכל\n- צריך לשנות את הקיבולת על כולם\n- ההופעה מתחילה בעוד 4 שעות\n\n**הפאניקה:**\n- אם תערוך ידנית: 80 שולחנות × 40 שניות = 53 דקות\n- יש לך משימות אחרות לעשות!\n- לא יכול להרשות לעצמך לבזבז שעה על לחיצות\n\n**הפתרון:**\n1. לחץ על "בחר הכל" → 80 שולחנות נבחרו\n2. לחץ על "ערוך נבחרים"\n3. שנה קיבולת ל-8\n4. לחץ על "החל על 80 שולחנות"\n5. **סיימת ב-15 שניות!**\n\n**תגובת אלי:**\n"ממש אמרתי 'וואו' בקול רם. חסכתי 52 דקות לפני אירוע גדול. הזמן הזה הלך לבדיקת ציוד הסאונד במקום."\n\n### תרחיש 2: מחק שולחנות שגויים\n\n**הבעיה:**\n- יצרת 50 שולחנות לחתונה א'\n- יצרת 50 שולחנות לחתונה ב' (אותו אירוע בטעות!)\n- צריך למחוק את 50 השולחנות המשוכפלים\n- לא רוצה ללחוץ 50 פעמים\n\n**הפתרון:**\n1. בחר את השולחנות המשוכפלים (שולחנות 51-100)\n2. לחץ על "מחק נבחרים"\n3. המערכת בודקת: "האם השולחנות האלה שמורים?"\n4. אם כן → מראה אילו שמורים (לא ניתן למחוק)\n5. אם לא → "למחוק 50 שולחנות לצמיתות?"\n6. לחץ על "כן, מחק 50 שולחנות"\n7. **נעלמו ב-10 שניות!**\n\n**תכונת הגנה:**\n- המערכת לא תאפשר לך למחוק שולחנות עם הזמנות\n- אם לשולחנות 51-55 יש הזמנות, תראה:\n  - "לא ניתן למחוק 5 שולחנות: יש להם הזמנות"\n  - "ניתן למחוק 45 שולחנות: הם ריקים"\n- מונע מחיקה בטעות של שולחנות ששולמו!\n\n## התהליך המלא\n\n**חלק 1: בחירת שולחנות**\n\n**אפשרות א' - בחר אחד אחד:**\n- לחץ על תיבת הסימון בשולחן 1\n- לחץ על תיבת הסימון בשולחן 2\n- לחץ על תיבת הסימון בשולחן 3\n- עובד לבחירות קטנות\n\n**אפשרות ב' - בחר טווח:**\n- לחץ על "בחר טווח"\n- הזן "1-40" (שולחנות 1 עד 40)\n- לחץ על "בחר" → כל 40 נבחרו\n- הכי טוב לשולחנות רצופים\n\n**אפשרות ג' - בחר הכל:**\n- לחץ על "בחר הכל" בראש\n- כל השולחנות באירוע נבחרו\n- הכי טוב לשינויים גלובליים (קיבולת, סטטוס)\n\n**חלק 2: עריכת שולחנות**\n\n**מה אפשר לשנות:**\n- **קיבולת:** שנה מקסימום אנשים לשולחן\n- **הזמנה מינימלית:** שנה מינימום אנשים נדרש\n- **סטטוס:** שנה זמין ↔ שמור ↔ לא פעיל\n\n**איך זה עובד:**\n1. בחר שולחנות (בכל שיטה למעלה)\n2. לחץ על כפתור "ערוך נבחרים"\n3. חלון קופץ מציג 3 שדות (השאר ריק = שמור נוכחי)\n4. מלא מה שאתה רוצה לשנות\n5. לחץ על "החל על X שולחנות"\n6. המערכת מעדכנת את כל השולחנות הנבחרים\n7. ראה הודעת הצלחה: "X שולחנות עודכנו"\n\n**חלק 3: מחיקת שולחנות**\n\n**בטיחות קודם:**\n1. בחר שולחנות למחיקה\n2. לחץ על "מחק נבחרים"\n3. המערכת בודקת הזמנות\n4. מציגה אזהרה: "למחוק X שולחנות לצמיתות?"\n5. מציגה אילו שולחנות לא ניתן למחוק (יש הזמנות)\n6. אתה מאשר: "כן, מחק X שולחנות"\n7. שולחנות נמחקים (חוץ משמורים)\n\n## חישובים: זמן שנחסך\n\n**עריכת 40 שולחנות VIP:**\n- ידני: 40 שולחנות × 1 דקה = 40 דקות\n- עריכה מרובה: 30 שניות\n- **נחסך: 39.5 דקות לכל אירוע**\n\n**מחיקת 50 שולחנות משוכפלים:**\n- ידני: 50 שולחנות × 30 שניות = 25 דקות\n- מחיקה מרובה: 15 שניות\n- **נחסך: 24 דקות 45 שניות**\n\n**שינוי קיבולת על 80 שולחנות (חירום):**\n- ידני: 80 שולחנות × 40 שניות = 53 דקות\n- עריכה מרובה: 20 שניות\n- **נחסך: 52 דקות 40 שניות**\n\n**אולם ההופעות של אלי (חודשי):**\n- 8 הופעות לחודש\n- ממוצע 2 שינויים מרובים להופעה (קטעי VIP, התאמות רגע אחרון)\n- ממוצע זמן נחסך: 30 דקות לשינוי\n- **חיסכון חודשי: 8 הופעות × 2 שינויים × 30 דק' = 8 שעות!**\n\n## טיפים מעשיים\n\n**לפני עריכה מרובה:**\n- ✅ בדוק פעמיים את מספר הבחירות (האם "40 שולחנות נבחרו" נכון?)\n- ✅ השתמש בסינונים לצמצום הבחירה (סטטוס: זמין)\n- ✅ נסה על 2-3 שולחנות קודם אם לא בטוח\n\n**בזמן עריכה מרובה:**\n- השאר שדות ריקים שאתה לא רוצה לשנות\n- המערכת שומרת ערכים נוכחיים לשדות ריקים\n- מלא רק מה שצריך עדכון\n\n**בזמן מחיקה מרובה:**\n- המערכת מגנה על שולחנות שמורים (לא ניתן למחוק)\n- תראה אילו מוגנים\n- נדרש אישור (אין מחיקות בטעות)\n\n## שאלות נפוצות\n\n**ש: מה אם בחרתי את השולחנות הלא נכונים?**\nת: לחץ על "בטל בחירת הכל" והתחל מחדש. שום דבר לא משתנה עד שתלחץ על "החל"\n\n**ש: האם אפשר לבטל עריכה מרובה?**\nת: אין כפתור ביטול, אבל אפשר לערוך מרובה שוב כדי להחזיר שינויים\n\n**ש: מה אם לחלק מהשולחנות יש הזמנות ואני מנסה למחוק?**\nת: המערכת חוסמת מחיקה של שולחנות שמורים ומראה לך אילו מוגנים\n\n**ש: האם אפשר לשנות ערכים שונים לשולחנות שונים?**\nת: לא, עריכה מרובה מחילה אותו שינוי על הכל. לערכים שונים, ערוך בנפרד\n\n**ש: מה המספר המקסימלי של שולחנות שאפשר לבחור?**\nת: אין הגבלה! בחר 100, 200, אפילו 500 שולחנות בבת אחת\n\n## סיפורי הצלחה\n\n**אולם ההופעות של אלי:**\n- לפני: 53 דקות לשנות 80 שולחנות (חירום)\n- אחרי: 20 שניות עם עריכה מרובה\n- **שינוי מצב רוח: פאניקה → הקלה**\n- "היה לי זמן לבדוק ציוד סאונד במקום ללחוץ על כפתורים"\n\n**אולם החתונות של שרה:**\n- לפני: 40 דקות למחוק שולחנות משוכפלים\n- אחרי: 15 שניות עם מחיקה מרובה\n- **נחסך: 39 דקות 45 שניות**\n- "חשבתי שאהיה שם כל הבוקר. סיימתי לפני שהקפה התקרר!"\n\n**מועדון הספורט של דוד:**\n- לפני: שינויים בקטע VIP לקחו 35 דקות לכל אירוע\n- אחרי: 25 שניות עם עריכה מרובה\n- על פני 10 אירועים: **נחסך 5.8 שעות**\n- "זה 5.8 שעות שביליתי באימון במקום בלחיצות"\n\n---\n\n**השורה התחתונה:** עריכה מרובה הופכת 40 דקות של לחיצות חוזרות ל-30 שניות של בחירה חכמה. הזמן שלך יקר - השתמש בו לתכנון אירועים מעולים, לא ללחוץ על "שמור" 40 פעמים!`,
-        relatedFeatures: ['duplicate-tables', 'table-management']
-      }
-    ]
+        relatedFeatures: ['duplicate-tables', 'table-management'],
+      },
+    ],
   },
   {
     id: 'check-in',
     name: 'Check-In System',
-    nameHe: 'מערכת צ\'ק-אין',
+    nameHe: "מערכת צ'ק-אין",
     icon: 'QrCode',
     description: 'QR code scanning and attendance tracking',
     descriptionHe: 'סריקת QR ומעקב נוכחות',
@@ -2177,9 +2358,9 @@ A: No. Templates are like a copy-paste tool. Once applied, the tables belong to 
       {
         id: 'qr-scanner',
         title: 'How the Check-In System Works',
-        titleHe: 'איך מערכת הצ\'ק-אין עובדת',
+        titleHe: "איך מערכת הצ'ק-אין עובדת",
         description: 'From creating your event to checking people in on game day',
-        descriptionHe: 'מיצירת האירוע ועד לצ\'ק-אין של אנשים ביום המשחק',
+        descriptionHe: "מיצירת האירוע ועד לצ'ק-אין של אנשים ביום המשחק",
         category: 'check-in',
         type: 'NEW',
         roles: ['ADMIN', 'MANAGER', 'OWNER'],
@@ -2467,14 +2648,14 @@ A: The system only allows one check-in per code. After first scan, it shows "alr
         examples: [
           {
             title: 'Complete Check-In Workflow',
-            titleHe: 'תהליך צ\'ק-אין מלא',
+            titleHe: "תהליך צ'ק-אין מלא",
             description: 'From opening the link to checking in 85 people in 10 minutes',
-            descriptionHe: 'מפתיחת הקישור ועד לצ\'ק-אין של 85 אנשים ב-10 דקות',
-          }
+            descriptionHe: "מפתיחת הקישור ועד לצ'ק-אין של 85 אנשים ב-10 דקות",
+          },
         ],
-        relatedFeatures: ['create-event', 'attendance-tracking']
-      }
-    ]
+        relatedFeatures: ['create-event', 'attendance-tracking'],
+      },
+    ],
   },
   {
     id: 'ban-management',
@@ -2482,7 +2663,7 @@ A: The system only allows one check-in per code. After first scan, it shows "alr
     nameHe: 'ניהול חסימות',
     icon: 'ShieldAlert',
     description: 'Ban users from registering or checking in',
-    descriptionHe: 'חסום משתמשים מהרשמה או צ\'ק-אין',
+    descriptionHe: "חסום משתמשים מהרשמה או צ'ק-אין",
     color: 'red',
     order: 4,
     features: [
@@ -3022,27 +3203,1050 @@ A: Ban their phone number. Most people won't get a new phone number just to regi
 **שבוע 6:** שמרו על המערכת - חסמו כל עבריינים חוזרים חדשים
 
 **תוצאה:** תוך חודשיים, יש לכם בסיס שחקנים אמין שבו אנשים או מגיעים או מבטלים כראוי. כולם מרוויחים!`,
-        relatedFeatures: ['check-in-system', 'attendance-tracking']
-      }
-    ]
-  }
+        relatedFeatures: ['check-in-system', 'attendance-tracking'],
+      },
+    ],
+  },
+
+  // ──────────────────────────────────────────────────
+  // LEADS & REGISTRATIONS
+  // ──────────────────────────────────────────────────
+  {
+    id: 'leads-registrations',
+    name: 'Leads & Registrations',
+    nameHe: 'לידים והרשמות',
+    icon: 'Users',
+    description: 'View, manage, and export everyone who registered for your events',
+    descriptionHe: 'צפייה, ניהול וייצוא של כל מי שנרשם לאירועים שלכם',
+    color: 'teal',
+    order: 5,
+    features: [
+      {
+        id: 'view-leads',
+        title: 'Who Registered? Your Leads Database Explained',
+        titleHe: 'מי נרשם? מסד נתוני הלידים שלכם',
+        description:
+          'See everyone who registered across all events, search and filter by name or phone',
+        descriptionHe: 'ראו את כולם שנרשמו בכל האירועים, חפשו וסננו לפי שם או טלפון',
+        category: 'leads-registrations',
+        type: 'CORE',
+        roles: ['ADMIN', 'OWNER', 'MANAGER'],
+        difficulty: 'beginner',
+        keywords: [
+          'leads',
+          'registrations',
+          'who registered',
+          'search',
+          'לידים',
+          'הרשמות',
+          'מי נרשם',
+          'חיפוש',
+        ],
+        lastUpdated: '2026-04-06',
+        content: `# Who Registered? Your Leads Database Explained
+
+## The Story
+
+Meet **Tamar**, a school event coordinator. She runs three events a month — a parent evening, a sports day, and a workshop series. After every event she always gets the same questions from the principal: "Who came? How many people?"
+
+Before TicketCap, Tamar had a Google Sheet that was always out of date. Now she opens the **Leads** section and the answer is right there.
+
+## What Are "Leads"?
+
+In TicketCap, a **lead** is anyone who submitted a registration form — whether they showed up or not. Think of it as your contact book, automatically built by every registration.
+
+## How to View Your Leads
+
+1. Go to **Admin → Leads** in the top navigation
+2. You'll see a table with every registration across **all your events**
+3. Each row shows: name, phone, email, which event, registration date, and status
+
+## Searching and Filtering
+
+**Find a specific person:**
+- Type their name or phone number in the search box at the top
+- Results update instantly as you type
+
+**Filter by event:**
+- Use the event dropdown to see registrations for one specific event
+
+**Filter by status:**
+- CONFIRMED — they completed registration (and payment, if required)
+- PAYMENT_PENDING — started but didn't complete payment
+- CANCELLED — manually cancelled
+
+## Real Example
+
+Tamar's principal asks: "Did Dani Levi register for the parent evening?"
+
+Tamar types "דני לוי" in the search box. In two seconds she sees: **Dani Levi, confirmed, registered on March 15th**. Done.
+
+## Pro Tips
+
+- The leads list is your marketing gold — these are real people interested in your events
+- Phone numbers are verified at registration, so they're reliable
+- Use the export feature to download the list before big events`,
+
+        contentHe: `# מי נרשם? מסד נתוני הלידים שלכם
+
+## הסיפור
+
+הכירו את **תמר**, רכזת אירועים בבית ספר. היא מפעילה שלושה אירועים בחודש — ערב הורים, יום ספורט, וסדרת סדנאות. אחרי כל אירוע היא מקבלת אותן שאלות מהמנהל: "מי בא? כמה אנשים?"
+
+לפני TicketCap, לתמר הייתה גיליון גוגל שתמיד היה לא מעודכן. עכשיו היא פותחת את קטע **הלידים** והתשובה שם.
+
+## מה זה "לידים"?
+
+ב-TicketCap, **ליד** הוא כל מי שהגיש טופס הרשמה — בין אם הגיע ובין אם לא. חשבו על זה כספר הקשרים שלכם, שנבנה אוטומטית מכל הרשמה.
+
+## איך לצפות בלידים שלכם
+
+1. עברו ל**אדמין → לידים** בניווט העליון
+2. תראו טבלה עם כל ההרשמה בכל **האירועים שלכם**
+3. כל שורה מציגה: שם, טלפון, אימייל, איזה אירוע, תאריך הרשמה וסטטוס
+
+## חיפוש וסינון
+
+**מצאו אדם ספציפי:**
+- הקלידו את שמו או מספר הטלפון שלו בתיבת החיפוש למעלה
+- התוצאות מתעדכנות מיד
+
+**סינון לפי אירוע:**
+- השתמשו בתפריט האירועים לראות הרשמות לאירוע ספציפי אחד
+
+**סינון לפי סטטוס:**
+- CONFIRMED — השלימו הרשמה (ותשלום, אם נדרש)
+- PAYMENT_PENDING — התחילו אך לא השלימו תשלום
+- CANCELLED — בוטל ידנית
+
+## דוגמה אמיתית
+
+המנהל של תמר שואל: "האם דני לוי נרשם לערב ההורים?"
+
+תמר מקלידה "דני לוי" בתיבת החיפוש. תוך שתי שניות היא רואה: **דני לוי, מאושר, נרשם ב-15 במרץ**. סיום.
+
+## טיפים מקצועיים
+
+- רשימת הלידים היא הזהב השיווקי שלכם — אלה אנשים אמיתיים המעוניינים באירועים שלכם
+- מספרי הטלפון מאומתים בהרשמה, כך שהם אמינים
+- השתמשו בתכונת הייצוא להורדת הרשימה לפני אירועים גדולים`,
+        relatedFeatures: ['export-registrations', 'cancel-registration'],
+      },
+
+      {
+        id: 'export-registrations',
+        title: 'Download Your Guest List in One Click',
+        titleHe: 'הורידו את רשימת האורחים בלחיצה אחת',
+        description: 'Export registration data to CSV or Excel for printing or sharing',
+        descriptionHe: 'ייצוא נתוני הרשמה ל-CSV או Excel להדפסה או שיתוף',
+        category: 'leads-registrations',
+        type: 'CORE',
+        roles: ['ADMIN', 'OWNER', 'MANAGER'],
+        difficulty: 'beginner',
+        keywords: [
+          'export',
+          'csv',
+          'excel',
+          'download',
+          'guest list',
+          'ייצוא',
+          'הורדה',
+          'רשימת אורחים',
+        ],
+        lastUpdated: '2026-04-06',
+        content: `# Download Your Guest List in One Click
+
+## The Story
+
+It's the morning of **Yosef's** school graduation ceremony. He needs to give the venue a printed list of 200 confirmed attendees. In the old days, this meant hours of copy-paste.
+
+With TicketCap, he clicks **Export → CSV**, opens it in Excel, and hands it to the printer in 3 minutes.
+
+## How to Export
+
+### From the Event Page
+1. Open the event in **Admin → Events**
+2. Click the **Registrations** tab
+3. Click the **Export** button (top right of the registrations table)
+4. Choose your format: **CSV** (universal) or **Excel**
+5. The file downloads immediately
+
+### From the Leads Page
+1. Go to **Admin → Leads**
+2. Apply any filters you want (e.g., only confirmed, only one event)
+3. Click **Export** — exports only the filtered results
+
+## What's in the Export?
+
+| Column | Description |
+|--------|-------------|
+| Name | Full name |
+| Phone | Registration phone number |
+| Email | If collected |
+| Event | Which event they registered for |
+| Status | CONFIRMED / CANCELLED |
+| Registration Date | When they signed up |
+| Custom Fields | Any fields you added (e.g., "Food preference", "Class") |
+
+## Practical Uses
+
+- **Print a check-in list** for events without QR scanning
+- **Share with venue staff** who need a headcount
+- **Follow up by phone** — call everyone who didn't show up
+- **Archive** for school records
+
+## Tips
+
+- Export **before** the event to prepare check-in materials
+- Export **after** the event filtered by CONFIRMED to record actual attendance`,
+
+        contentHe: `# הורידו את רשימת האורחים בלחיצה אחת
+
+## הסיפור
+
+זה בוקר טקס סיום הלימודים של **יוסף**. הוא צריך לתת לאולם רשימה מודפסת של 200 משתתפים מאושרים. בימים הישנים, זה היה אומר שעות של העתק-הדבק.
+
+עם TicketCap, הוא לוחץ **ייצוא → CSV**, פותח ב-Excel, ומוסר למדפסת תוך 3 דקות.
+
+## איך לייצא
+
+### מדף האירוע
+1. פתחו את האירוע ב**אדמין → אירועים**
+2. לחצו על הכרטיסייה **הרשמות**
+3. לחצו על כפתור **ייצוא** (פינה ימנית עליונה של טבלת ההרשמות)
+4. בחרו את הפורמט שלכם: **CSV** (אוניברסלי) או **Excel**
+5. הקובץ מוריד מיד
+
+### מדף הלידים
+1. עברו ל**אדמין → לידים**
+2. החילו כל סינון שתרצו (למשל, רק מאושרים, רק אירוע אחד)
+3. לחצו **ייצוא** — מייצא רק את התוצאות המסוננות
+
+## מה יש בייצוא?
+
+| עמודה | תיאור |
+|-------|-------|
+| שם | שם מלא |
+| טלפון | מספר טלפון הרשמה |
+| אימייל | אם נאסף |
+| אירוע | לאיזה אירוע נרשמו |
+| סטטוס | CONFIRMED / CANCELLED |
+| תאריך הרשמה | מתי נרשמו |
+| שדות מותאמים | כל שדות שהוספתם (למשל, "העדפת אוכל", "כיתה") |
+
+## שימושים מעשיים
+
+- **הדפסת רשימת צ'ק-אין** לאירועים ללא סריקת QR
+- **שיתוף עם אנשי צוות האולם** שצריכים ספירת אנשים
+- **מעקב טלפוני** — התקשרו לכולם שלא הגיעו
+- **ארכיון** לרשומות בית הספר
+
+## טיפים
+
+- ייצאו **לפני** האירוע להכנת חומרי צ'ק-אין
+- ייצאו **אחרי** האירוע מסונן לפי CONFIRMED לתיעוד נוכחות בפועל`,
+        relatedFeatures: ['view-leads', 'cancel-registration'],
+      },
+
+      {
+        id: 'cancel-registration',
+        title: "Someone Can't Come — Cancel Without the Drama",
+        titleHe: 'מישהו לא יכול לבוא — ביטול בלי דרמה',
+        description: "Manually cancel a specific person's registration from the admin panel",
+        descriptionHe: 'ביטול ידני של הרשמה של אדם ספציפי מלוח הניהול',
+        category: 'leads-registrations',
+        type: 'CORE',
+        roles: ['ADMIN', 'OWNER', 'MANAGER'],
+        difficulty: 'beginner',
+        keywords: ['cancel', 'registration', 'remove', 'ביטול', 'הרשמה', 'הסרה'],
+        lastUpdated: '2026-04-06',
+        content: `# Someone Can't Come — Cancel Without the Drama
+
+## The Story
+
+**Rina** registered her whole family for the school trip — 3 spots. A week later, her son got sick and they can't come. She messages the coordinator: "Please cancel us."
+
+The coordinator, **David**, opens TicketCap, finds Rina's registration, clicks cancel. Done in 30 seconds. The 3 spots are freed for others.
+
+## How to Cancel a Registration
+
+### Method 1: From the Event
+1. Go to **Admin → Events** and open the event
+2. Click the **Registrations** tab
+3. Find the person (use the search box)
+4. Click the **⋮ menu** next to their name
+5. Select **Cancel Registration**
+6. Confirm the cancellation in the popup
+
+### Method 2: From Leads
+1. Go to **Admin → Leads**
+2. Search for the person's name or phone
+3. Click their name to open registration details
+4. Click **Cancel Registration**
+
+## What Happens When You Cancel?
+
+- Their status changes to **CANCELLED**
+- Their spot is **freed** — capacity increases by that amount
+- If there's a **waitlist**, the next person is automatically notified
+- The person does **not** automatically receive a cancellation email (you can do this manually)
+
+## Important Notes
+
+⚠️ **Cancellation is permanent** — you can't "un-cancel". If you made a mistake, the person needs to re-register.
+
+💡 **Group registrations**: If someone registered multiple guests (e.g., a family of 4), cancelling removes all of them together.
+
+💰 **Paid events**: Cancellation does not trigger an automatic refund. Handle refunds separately through your payment provider.
+
+## When to Use This
+
+- Someone calls to cancel and can't do it themselves
+- No-show follow-up: cancel ghost registrations after the event
+- Administrative clean-up before printing final lists`,
+
+        contentHe: `# מישהו לא יכול לבוא — ביטול בלי דרמה
+
+## הסיפור
+
+**רינה** רשמה את כל משפחתה לטיול בית הספר — 3 מקומות. שבוע לאחר מכן, בנה חלה ולא יכולים לבוא. היא שלחה הודעה לרכז: "בבקשה בטל אותנו."
+
+הרכז, **דוד**, פותח את TicketCap, מוצא את ההרשמה של רינה, לוחץ ביטול. סיום תוך 30 שניות. 3 המקומות משתחררים לאחרים.
+
+## איך לבטל הרשמה
+
+### שיטה 1: מהאירוע
+1. עברו ל**אדמין → אירועים** ופתחו את האירוע
+2. לחצו על הכרטיסייה **הרשמות**
+3. מצאו את האדם (השתמשו בתיבת חיפוש)
+4. לחצו על **תפריט ⋮** ליד שמו
+5. בחרו **ביטול הרשמה**
+6. אשרו את הביטול בחלון הקופץ
+
+### שיטה 2: מלידים
+1. עברו ל**אדמין → לידים**
+2. חפשו את שם האדם או הטלפון
+3. לחצו על שמו לפתיחת פרטי ההרשמה
+4. לחצו **ביטול הרשמה**
+
+## מה קורה כשמבטלים?
+
+- הסטטוס שלהם משתנה ל**CANCELLED**
+- המקום שלהם **משתחרר** — הקיבולת עולה בהתאם
+- אם יש **רשימת המתנה**, האדם הבא מקבל הודעה אוטומטית
+- האדם **לא** מקבל אוטומטית אימייל ביטול (תוכלו לעשות זאת ידנית)
+
+## הערות חשובות
+
+⚠️ **ביטול הוא קבוע** — לא ניתן "לבטל ביטול". אם טעיתם, האדם צריך להירשם מחדש.
+
+💡 **הרשמות קבוצתיות**: אם מישהו רשם מספר אורחים (למשל, משפחה של 4), ביטול מסיר את כולם יחד.
+
+💰 **אירועים בתשלום**: ביטול לא מפעיל החזר כספי אוטומטי. טפלו בהחזרים בנפרד דרך ספק התשלומים שלכם.
+
+## מתי להשתמש בזה
+
+- מישהו מתקשר לבטל ולא יכול לעשות זאת בעצמו
+- מעקב אחר אי-הופעות: ביטול הרשמות רפאים אחרי האירוע
+- ניקיון מנהלי לפני הדפסת רשימות סופיות`,
+        relatedFeatures: ['view-leads', 'export-registrations', 'waitlist'],
+      },
+    ],
+  },
+
+  // ──────────────────────────────────────────────────
+  // PAYMENTS
+  // ──────────────────────────────────────────────────
+  {
+    id: 'payments',
+    name: 'Payments',
+    nameHe: 'תשלומים',
+    icon: 'Crown',
+    description: 'Collect money at registration — set prices, track payments, handle failures',
+    descriptionHe: 'גביית כסף בהרשמה — הגדרת מחירים, מעקב תשלומים, טיפול בכשלים',
+    color: 'green',
+    order: 6,
+    features: [
+      {
+        id: 'paid-events',
+        title: 'Collecting Money at Registration — How Paid Events Work',
+        titleHe: 'גביית כסף בהרשמה — איך אירועים בתשלום עובדים',
+        description:
+          'Set a ticket price, publish a paid event, and understand what happens when someone pays',
+        descriptionHe: 'הגדרת מחיר כרטיס, פרסום אירוע בתשלום, והבנת מה קורה כשמישהו משלם',
+        category: 'payments',
+        type: 'CORE',
+        roles: ['ADMIN', 'OWNER'],
+        difficulty: 'beginner',
+        keywords: ['paid', 'payment', 'price', 'ticket', 'money', 'תשלום', 'מחיר', 'כרטיס', 'כסף'],
+        lastUpdated: '2026-04-06',
+        content: `# Collecting Money at Registration — How Paid Events Work
+
+## The Story
+
+**Avi** runs a school parent association. Every year they do a fundraiser dinner — ₪150 per ticket. Previously they collected cash at the door: chaotic, awkward, always someone who "forgot" money.
+
+This year, Avi sets up a paid event on TicketCap. Everyone pays when they register. By the time the evening arrives, every person who shows up has already paid. Zero cash handling. Zero awkwardness.
+
+## Setting Up a Paid Event
+
+When creating or editing an event:
+
+1. Toggle **"Paid Event"** to ON
+2. Enter the **ticket price** in ₪ (shekels)
+3. Optionally set a **per-person price** (for events where each guest pays separately)
+4. Save and publish
+
+## What Your Registrants Experience
+
+When someone opens your registration link:
+
+1. They fill in their details (name, phone, custom fields)
+2. They see the total amount: e.g., "Total: ₪150"
+3. They click **"Pay & Register"**
+4. They're redirected to the payment page (powered by HYP/CardCom)
+5. They enter their credit card details
+6. On success → they get a confirmation page + ticket
+7. You get notified in real-time
+
+## What You See in Admin
+
+- Registrations show with status **CONFIRMED** (paid) or **PAYMENT_PENDING** (started but didn't finish)
+- The dashboard shows total revenue collected
+- You can see individual payment details per registration
+
+## Important: PAYMENT_PENDING vs CONFIRMED
+
+| Status | Meaning | Spot Reserved? |
+|--------|---------|----------------|
+| CONFIRMED | Paid successfully | Yes ✅ |
+| PAYMENT_PENDING | Started payment, not finished | Temporary hold |
+
+PAYMENT_PENDING registrations are automatically cleaned up if the payment isn't completed within a reasonable time.
+
+## Tips
+
+- Always test your paid event with a ₪1 test payment before going live
+- Consider adding a clear "No refunds" or refund policy in your event description`,
+
+        contentHe: `# גביית כסף בהרשמה — איך אירועים בתשלום עובדים
+
+## הסיפור
+
+**אבי** מנהל ועד הורים בבית ספר. כל שנה הם עושים ארוחת ערב לגיוס כספים — ₪150 לכרטיס. בעבר הם גבו מזומן בפתח: כאוטי, מביך, תמיד מישהו שכח כסף.
+
+השנה, אבי מגדיר אירוע בתשלום ב-TicketCap. כולם משלמים כשהם נרשמים. בזמן שהערב מגיע, כל אדם שמגיע כבר שילם. אפס טיפול במזומן. אפס מבוכה.
+
+## הגדרת אירוע בתשלום
+
+בעת יצירה או עריכת אירוע:
+
+1. החליפו **"אירוע בתשלום"** ל-ON
+2. הזינו את **מחיר הכרטיס** ב-₪ (שקלים)
+3. אופציונלית הגדירו **מחיר לאדם** (לאירועים בהם כל אורח משלם בנפרד)
+4. שמרו ופרסמו
+
+## מה חווים הנרשמים שלכם
+
+כשמישהו פותח את קישור ההרשמה שלכם:
+
+1. הם ממלאים את פרטיהם (שם, טלפון, שדות מותאמים)
+2. הם רואים את הסכום הכולל: למשל, "סה"כ: ₪150"
+3. הם לוחצים על **"שלם והירשם"**
+4. הם מופנים לדף התשלום (מופעל על ידי HYP/CardCom)
+5. הם מזינים פרטי כרטיס אשראי
+6. בהצלחה → הם מקבלים דף אישור + כרטיס
+7. אתם מקבלים הודעה בזמן אמת
+
+## מה אתם רואים באדמין
+
+- הרשמות מוצגות עם סטטוס **CONFIRMED** (שולם) או **PAYMENT_PENDING** (התחיל אך לא סיים)
+- לוח המחוונים מציג סך ההכנסות שנגבו
+- ניתן לראות פרטי תשלום נפרדים לכל הרשמה
+
+## חשוב: PAYMENT_PENDING מול CONFIRMED
+
+| סטטוס | משמעות | מקום שמור? |
+|--------|---------|-----------|
+| CONFIRMED | שולם בהצלחה | כן ✅ |
+| PAYMENT_PENDING | התחיל תשלום, לא סיים | החזקה זמנית |
+
+הרשמות PAYMENT_PENDING מנוקות אוטומטית אם התשלום לא הושלם תוך זמן סביר.
+
+## טיפים
+
+- תמיד בדקו את האירוע בתשלום שלכם עם תשלום בדיקה של ₪1 לפני שיגור
+- שקלו להוסיף מדיניות ברורה "אין החזרים" או החזרים בתיאור האירוע`,
+        relatedFeatures: ['payment-flow', 'failed-payments'],
+      },
+
+      {
+        id: 'payment-flow',
+        title: 'What Your Registrants Experience',
+        titleHe: 'מה חווים הנרשמים שלכם',
+        description:
+          "The full payment journey from the registrant's perspective: link → pay → confirmation",
+        descriptionHe: 'מסע התשלום המלא מנקודת המבט של הנרשם: קישור → תשלום → אישור',
+        category: 'payments',
+        type: 'CORE',
+        roles: ['ALL'],
+        difficulty: 'beginner',
+        keywords: [
+          'payment flow',
+          'registrant experience',
+          'confirmation',
+          'ticket',
+          'תהליך תשלום',
+          'חוויית נרשם',
+          'אישור',
+          'כרטיס',
+        ],
+        lastUpdated: '2026-04-06',
+        content: `# What Your Registrants Experience
+
+## Walking Through the Journey
+
+Here's exactly what someone sees when they register for your paid event — step by step.
+
+### Step 1: They Open Your Link
+
+You share something like: \`ticketcap.co.il/p/your-school/your-event\`
+
+They land on a clean registration page with your event details: name, date, description, price.
+
+### Step 2: They Fill in Their Details
+
+They complete your registration form:
+- Name (required)
+- Phone number (required — used for WhatsApp confirmation)
+- Any custom fields you added (e.g., "How many guests?", "Dietary restrictions")
+
+### Step 3: They See the Price Summary
+
+Before payment, they see a clear summary:
+\`\`\`
+Ticket: ₪150
+Guests: 2 × ₪75 = ₪150
+─────────────
+Total: ₪150
+\`\`\`
+
+### Step 4: They're Redirected to Payment
+
+They click **"Pay & Register"** and go to the secure payment page.
+
+This is powered by **HYP** (a licensed Israeli payment processor). They see a standard credit card form.
+
+### Step 5: Payment Succeeds
+
+They're redirected back to your TicketCap confirmation page showing:
+- ✅ "You're registered!"
+- Their ticket with a QR code
+- Event details
+
+### Step 6: They Get a Digital Ticket
+
+The confirmation page includes a ticket they can:
+- Screenshot and save
+- Show at the door for QR scanning
+- Access again via the link in any follow-up message
+
+## If Payment Fails
+
+If their card is declined:
+- They see a friendly error page with a "Try Again" option
+- No registration is created — no ghost booking
+
+## What You See
+
+In real-time, you'll see the new registration appear in your event's registration list with status **CONFIRMED**.`,
+
+        contentHe: `# מה חווים הנרשמים שלכם
+
+## מעבר דרך המסע
+
+הנה בדיוק מה שמישהו רואה כשהוא נרשם לאירוע בתשלום שלכם — שלב אחר שלב.
+
+### שלב 1: הם פותחים את הקישור שלכם
+
+אתם משתפים משהו כמו: \`ticketcap.co.il/p/your-school/your-event\`
+
+הם נוחתים בדף הרשמה נקי עם פרטי האירוע שלכם: שם, תאריך, תיאור, מחיר.
+
+### שלב 2: הם ממלאים את פרטיהם
+
+הם משלימים את טופס ההרשמה שלכם:
+- שם (נדרש)
+- מספר טלפון (נדרש — משמש לאישור WhatsApp)
+- כל שדות מותאמים שהוספתם (למשל, "כמה אורחים?", "הגבלות תזונה")
+
+### שלב 3: הם רואים את סיכום המחיר
+
+לפני התשלום, הם רואים סיכום ברור:
+\`\`\`
+כרטיס: ₪150
+אורחים: 2 × ₪75 = ₪150
+─────────────
+סה"כ: ₪150
+\`\`\`
+
+### שלב 4: הם מופנים לתשלום
+
+הם לוחצים על **"שלם והירשם"** ועוברים לדף תשלום מאובטח.
+
+זה מופעל על ידי **HYP** (מעבד תשלומים ישראלי מורשה). הם רואים טופס כרטיס אשראי סטנדרטי.
+
+### שלב 5: התשלום מצליח
+
+הם מופנים חזרה לדף האישור של TicketCap המציג:
+- ✅ "אתם רשומים!"
+- הכרטיס שלהם עם קוד QR
+- פרטי האירוע
+
+### שלב 6: הם מקבלים כרטיס דיגיטלי
+
+דף האישור כולל כרטיס שניתן:
+- לצלם ולשמור
+- להציג בכניסה לסריקת QR
+- לגשת אליו שוב דרך הקישור בכל הודעת המשך
+
+## אם התשלום נכשל
+
+אם הכרטיס שלהם נדחה:
+- הם רואים דף שגיאה ידידותי עם אפשרות "נסה שוב"
+- לא נוצרת הרשמה — אין הזמנת רפאים
+
+## מה אתם רואים
+
+בזמן אמת, תראו את ההרשמה החדשה מופיעה ברשימת ההרשמות של האירוע שלכם עם סטטוס **CONFIRMED**.`,
+        relatedFeatures: ['paid-events', 'failed-payments'],
+      },
+
+      {
+        id: 'failed-payments',
+        title: "Payment Didn't Go Through? Here's What To Do",
+        titleHe: 'התשלום לא עבר? הנה מה לעשות',
+        description:
+          'Ghost registrations, PAYMENT_PENDING status, and how the system handles payment failures',
+        descriptionHe: 'הרשמות רפאים, סטטוס PAYMENT_PENDING, ואיך המערכת מטפלת בכשלי תשלום',
+        category: 'payments',
+        type: 'ADVANCED',
+        roles: ['ADMIN', 'OWNER'],
+        difficulty: 'intermediate',
+        keywords: [
+          'failed payment',
+          'payment pending',
+          'ghost registration',
+          'error',
+          'כשל תשלום',
+          'תשלום ממתין',
+          'הרשמת רפאים',
+          'שגיאה',
+        ],
+        lastUpdated: '2026-04-06',
+        content: `# Payment Didn't Go Through? Here's What To Do
+
+## Understanding the Problem
+
+When someone starts the payment process but their card is declined (or they close the browser), the system may briefly show a **PAYMENT_PENDING** registration.
+
+Think of it like an online shopping cart: they put the item in the cart but never checked out.
+
+## What Is PAYMENT_PENDING?
+
+This status means:
+- The person **started** the registration and payment process
+- Payment was **not completed** (declined, timed out, or abandoned)
+- Their spot is in a **temporary hold** — not fully reserved
+
+**These are NOT real registrations.** They won't appear in your confirmed guest list.
+
+## What Happens Automatically
+
+TicketCap handles this automatically:
+
+1. **During the payment**: The spot is temporarily held so two people can't grab the last ticket simultaneously
+2. **If payment fails**: The PAYMENT_PENDING registration is cleaned up automatically
+3. **Your capacity is restored**: The spot becomes available again
+
+## What You Might See in Admin
+
+In the registrations list, you may occasionally see PAYMENT_PENDING entries. This is normal — it means someone is in the middle of paying right now, or they gave up.
+
+**You don't need to do anything.** The system handles cleanup.
+
+## When to Act
+
+Contact the person manually if:
+- They message you saying "I tried to pay but something went wrong"
+- You want to help them complete registration
+- It's been over 24 hours and the entry is still showing
+
+**How to help them:**
+1. Verify their entry is in PAYMENT_PENDING (not CONFIRMED)
+2. Ask them to try the registration link again from the beginning
+3. Suggest they try a different card or browser
+
+## Pro Tip
+
+If you see many PAYMENT_PENDING entries piling up, it may indicate:
+- Your event price seems high to registrants (they're abandoning at payment)
+- A technical issue with the payment page (contact support)`,
+
+        contentHe: `# התשלום לא עבר? הנה מה לעשות
+
+## הבנת הבעיה
+
+כשמישהו מתחיל את תהליך התשלום אך הכרטיס שלו נדחה (או שהוא סגר את הדפדפן), המערכת עשויה להציג בקצרה הרשמת **PAYMENT_PENDING**.
+
+חשבו על זה כעגלת קניות מקוונת: הם שמו את הפריט בעגלה אך אף פעם לא עברו לקופה.
+
+## מה זה PAYMENT_PENDING?
+
+סטטוס זה אומר:
+- האדם **התחיל** את תהליך ההרשמה והתשלום
+- התשלום **לא הושלם** (נדחה, פג תוקף, או ננטש)
+- המקום שלהם ב**החזקה זמנית** — לא שמור במלואו
+
+**אלה אינן הרשמות אמיתיות.** הן לא יופיעו ברשימת האורחים המאושרים שלכם.
+
+## מה קורה אוטומטית
+
+TicketCap מטפל בזה אוטומטית:
+
+1. **במהלך התשלום**: המקום מוחזק זמנית כך ששני אנשים לא יכולים לתפוס את הכרטיס האחרון בו זמנית
+2. **אם התשלום נכשל**: הרשמת PAYMENT_PENDING מנוקית אוטומטית
+3. **הקיבולת שלכם משוחזרת**: המקום הופך זמין שוב
+
+## מה תראו באדמין
+
+ברשימת ההרשמות, ייתכן שתראו לפעמים רשומות PAYMENT_PENDING. זה נורמלי — זה אומר שמישהו באמצע תשלום עכשיו, או שהם ויתרו.
+
+**אתם לא צריכים לעשות כלום.** המערכת מטפלת בניקיון.
+
+## מתי לפעול
+
+צרו קשר עם האדם ידנית אם:
+- הם שלחו הודעה לאמר "ניסיתי לשלם אך משהו השתבש"
+- אתם רוצים לעזור להם להשלים הרשמה
+- עברו יותר מ-24 שעות והרשומה עדיין מוצגת
+
+**איך לעזור להם:**
+1. ודאו שהרשומה שלהם ב-PAYMENT_PENDING (לא CONFIRMED)
+2. בקשו מהם לנסות את קישור ההרשמה שוב מהתחלה
+3. הציעו להם לנסות כרטיס אחר או דפדפן אחר
+
+## טיפ מקצועי
+
+אם אתם רואים הרבה רשומות PAYMENT_PENDING שמצטברות, ייתכן שזה מציין:
+- מחיר האירוע שלכם נראה גבוה לנרשמים (הם נוטשים בתשלום)
+- בעיה טכנית עם דף התשלום (צרו קשר עם תמיכה)`,
+        relatedFeatures: ['paid-events', 'payment-flow', 'cancel-registration'],
+      },
+    ],
+  },
+
+  // ──────────────────────────────────────────────────
+  // YOUR TEAM
+  // ──────────────────────────────────────────────────
+  {
+    id: 'team-management',
+    name: 'Your Team',
+    nameHe: 'הצוות שלכם',
+    icon: 'UserPlus',
+    description: 'Invite team members and manage who can do what in your organization',
+    descriptionHe: 'הזמנת חברי צוות וניהול מי יכול לעשות מה בארגון שלכם',
+    color: 'indigo',
+    order: 7,
+    features: [
+      {
+        id: 'invite-team',
+        title: 'Stop Doing It All Alone — Invite a Team Member',
+        titleHe: 'הפסיקו לעשות הכל לבד — הזמינו חבר צוות',
+        description:
+          'Send an invitation email, choose their role, and what the invitee sees when they accept',
+        descriptionHe: 'שלחו אימייל הזמנה, בחרו את תפקידם, ומה רואה המוזמן כשהוא מקבל',
+        category: 'team-management',
+        type: 'CORE',
+        roles: ['OWNER', 'ADMIN'],
+        difficulty: 'beginner',
+        keywords: [
+          'invite',
+          'team',
+          'member',
+          'role',
+          'email',
+          'הזמנה',
+          'צוות',
+          'חבר',
+          'תפקיד',
+          'אימייל',
+        ],
+        lastUpdated: '2026-04-06',
+        content: `# Stop Doing It All Alone — Invite a Team Member
+
+## The Story
+
+**Miriam** is the school secretary and sole admin of their TicketCap account. She's doing everything: creating events, managing registrations, handling check-in at the door. She's exhausted.
+
+She decides to give her colleague **Gal** access to handle check-in, and give **Noa** (the vice principal) read-only access to see registration stats.
+
+Three different people. Three different permission levels. One simple invitation flow.
+
+## How to Invite Someone
+
+1. Go to **Admin → Settings → Team**
+2. Click **"Invite Team Member"**
+3. Enter their email address
+4. Choose their **role** (see role guide below)
+5. Click **"Send Invitation"**
+
+They receive an email with a link to create their account (or log in if they already have one).
+
+## What the Invitee Experiences
+
+1. They get an email: "You've been invited to join [School Name] on TicketCap"
+2. They click the link
+3. If new: they create a password and are instantly added to your organization
+4. If existing user: they're added to your organization automatically
+5. They see your organization's events and admin panel — limited to their role
+
+## Choosing the Right Role
+
+| Role | Best For |
+|------|----------|
+| **ADMIN** | Trusted staff who need full control |
+| **MANAGER** | Event coordinators who manage registrations |
+| **VIEWER** | Principals, teachers who only need to see stats |
+
+## Managing Your Team
+
+- View all members in **Settings → Team**
+- Change someone's role at any time
+- Remove access by clicking "Remove" next to their name
+
+## Tips
+
+- Start with **VIEWER** for new people — you can always upgrade later
+- Remove access promptly when staff leave the organization`,
+
+        contentHe: `# הפסיקו לעשות הכל לבד — הזמינו חבר צוות
+
+## הסיפור
+
+**מרים** היא מזכירת בית הספר ומנהלת המערכת היחידה של חשבון TicketCap שלהם. היא עושה הכל: יוצרת אירועים, מנהלת הרשמות, מטפלת בצ'ק-אין בכניסה. היא מותשת.
+
+היא מחליטה לתת לעמיתה **גל** גישה לטיפול בצ'ק-אין, ולתת ל**נועה** (סגנית המנהל) גישה לקריאה בלבד לצפייה בסטטיסטיקות הרשמה.
+
+שלושה אנשים שונים. שלושה רמות הרשאות שונות. תהליך הזמנה פשוט אחד.
+
+## איך להזמין מישהו
+
+1. עברו ל**אדמין → הגדרות → צוות**
+2. לחצו על **"הזמן חבר צוות"**
+3. הזינו את כתובת האימייל שלו
+4. בחרו את **תפקידו** (ראו מדריך תפקידים למטה)
+5. לחצו על **"שלח הזמנה"**
+
+הם מקבלים אימייל עם קישור ליצירת חשבון (או כניסה אם כבר יש להם).
+
+## מה חווה המוזמן
+
+1. הם מקבלים אימייל: "הוזמנתם להצטרף ל-[שם בית ספר] ב-TicketCap"
+2. הם לוחצים על הקישור
+3. אם חדשים: הם יוצרים סיסמה ומצורפים מיד לארגון שלכם
+4. אם משתמש קיים: הם מצורפים לארגון שלכם אוטומטית
+5. הם רואים את האירועים ולוח הניהול של הארגון שלכם — מוגבל לתפקידם
+
+## בחירת התפקיד הנכון
+
+| תפקיד | הכי מתאים ל |
+|--------|------------|
+| **ADMIN** | צוות מהימן הזקוק לשליטה מלאה |
+| **MANAGER** | רכזי אירועים המנהלים הרשמות |
+| **VIEWER** | מנהלים, מורים שצריכים רק לראות סטטיסטיקות |
+
+## ניהול הצוות שלכם
+
+- צפו בכל החברים ב**הגדרות → צוות**
+- שנו את תפקיד מישהו בכל עת
+- הסירו גישה על ידי לחיצה על "הסר" ליד שמו
+
+## טיפים
+
+- התחילו עם **VIEWER** לאנשים חדשים — תמיד ניתן לשדרג מאוחר יותר
+- הסירו גישה מיד כשעובדים עוזבים את הארגון`,
+        relatedFeatures: ['user-roles'],
+      },
+
+      {
+        id: 'user-roles',
+        title: 'Who Can Do What? Roles Explained Simply',
+        titleHe: 'מי יכול לעשות מה? תפקידים מוסברים בפשטות',
+        description: 'OWNER vs ADMIN vs MANAGER vs VIEWER — what each role can and cannot do',
+        descriptionHe: 'OWNER מול ADMIN מול MANAGER מול VIEWER — מה כל תפקיד יכול ולא יכול לעשות',
+        category: 'team-management',
+        type: 'CORE',
+        roles: ['ALL'],
+        difficulty: 'beginner',
+        keywords: [
+          'roles',
+          'permissions',
+          'owner',
+          'admin',
+          'manager',
+          'viewer',
+          'תפקידים',
+          'הרשאות',
+          'בעלים',
+          'מנהל',
+          'מנהל מערכת',
+          'צופה',
+        ],
+        lastUpdated: '2026-04-06',
+        content: `# Who Can Do What? Roles Explained Simply
+
+## The 4 Roles at a Glance
+
+Think of it like a school hierarchy:
+
+| Role | School Analogy | What They Can Do |
+|------|---------------|-----------------|
+| **OWNER** | Principal | Everything — including billing and deleting the organization |
+| **ADMIN** | Vice Principal | Everything except billing/ownership transfer |
+| **MANAGER** | Event Coordinator | Create events, manage registrations, run check-in |
+| **VIEWER** | Department Head | See everything, change nothing |
+
+## Detailed Permission Breakdown
+
+### OWNER
+- ✅ Create, edit, delete events
+- ✅ Manage all registrations
+- ✅ Run check-in
+- ✅ Invite & remove team members
+- ✅ Change team member roles
+- ✅ Access billing and subscription
+- ✅ Delete the organization
+
+### ADMIN
+- ✅ Create, edit, delete events
+- ✅ Manage all registrations
+- ✅ Run check-in
+- ✅ Invite & manage team members (except OWNERs)
+- ❌ Cannot access billing
+- ❌ Cannot transfer ownership
+
+### MANAGER
+- ✅ Create and edit events
+- ✅ View and manage registrations
+- ✅ Export guest lists
+- ✅ Run check-in (QR scanner)
+- ❌ Cannot delete events
+- ❌ Cannot manage team members
+- ❌ Cannot ban attendees
+
+### VIEWER
+- ✅ View events and registrations
+- ✅ See analytics/stats
+- ❌ Cannot create or edit anything
+- ❌ Cannot perform check-in
+- ❌ Cannot export data
+
+## Which Role Should I Give?
+
+**Day-to-day event staff** → MANAGER
+**Trusted admin (secretary, coordinator)** → ADMIN
+**Principal who wants to monitor** → VIEWER
+**Co-owner of the account** → OWNER (use sparingly — only 1-2 people)
+
+## Changing Roles
+
+Any ADMIN or OWNER can change a team member's role:
+1. Go to **Settings → Team**
+2. Click the role dropdown next to the person's name
+3. Select the new role — takes effect immediately`,
+
+        contentHe: `# מי יכול לעשות מה? תפקידים מוסברים בפשטות
+
+## 4 התפקידים במבט מהיר
+
+חשבו על זה כהיררכיית בית ספר:
+
+| תפקיד | אנלוגיה לבית ספר | מה הם יכולים לעשות |
+|--------|-----------------|-------------------|
+| **OWNER** | מנהל | הכל — כולל חיוב ומחיקת הארגון |
+| **ADMIN** | סגן מנהל | הכל מלבד חיוב/העברת בעלות |
+| **MANAGER** | רכז אירועים | יצירת אירועים, ניהול הרשמות, הפעלת צ'ק-אין |
+| **VIEWER** | ראש מחלקה | ראיית הכל, שינוי כלום |
+
+## פירוט הרשאות מפורט
+
+### OWNER
+- ✅ יצירה, עריכה, מחיקת אירועים
+- ✅ ניהול כל ההרשמות
+- ✅ הפעלת צ'ק-אין
+- ✅ הזמנה והסרת חברי צוות
+- ✅ שינוי תפקידי חברי צוות
+- ✅ גישה לחיוב ומנוי
+- ✅ מחיקת הארגון
+
+### ADMIN
+- ✅ יצירה, עריכה, מחיקת אירועים
+- ✅ ניהול כל ההרשמות
+- ✅ הפעלת צ'ק-אין
+- ✅ הזמנה וניהול חברי צוות (מלבד OWNERs)
+- ❌ לא יכול לגשת לחיוב
+- ❌ לא יכול להעביר בעלות
+
+### MANAGER
+- ✅ יצירה ועריכת אירועים
+- ✅ צפייה וניהול הרשמות
+- ✅ ייצוא רשימות אורחים
+- ✅ הפעלת צ'ק-אין (סורק QR)
+- ❌ לא יכול למחוק אירועים
+- ❌ לא יכול לנהל חברי צוות
+- ❌ לא יכול לחסום משתתפים
+
+### VIEWER
+- ✅ צפייה באירועים ובהרשמות
+- ✅ צפייה בניתוחים/סטטיסטיקות
+- ❌ לא יכול ליצור או לערוך כלום
+- ❌ לא יכול לבצע צ'ק-אין
+- ❌ לא יכול לייצא נתונים
+
+## איזה תפקיד לתת?
+
+**צוות אירועים יומיומי** → MANAGER
+**אדמין מהימן (מזכירה, רכזת)** → ADMIN
+**מנהל שרוצה לעקוב** → VIEWER
+**שותף בחשבון** → OWNER (השתמשו בחסכנות — רק 1-2 אנשים)
+
+## שינוי תפקידים
+
+כל ADMIN או OWNER יכול לשנות את תפקיד חבר צוות:
+1. עברו ל**הגדרות → צוות**
+2. לחצו על תפריט התפקיד ליד שם האדם
+3. בחרו את התפקיד החדש — נכנס לתוקף מיד`,
+        relatedFeatures: ['invite-team'],
+      },
+    ],
+  },
 ]
 
 // Helper functions
 export function getAllFeatures(): WikiFeature[] {
-  return wikiCategories.flatMap(cat => cat.features)
+  return wikiCategories.flatMap((cat) => cat.features)
 }
 
 export function searchFeatures(query: string, language: 'en' | 'he' = 'en'): WikiFeature[] {
   const normalizedQuery = query.toLowerCase()
-  return getAllFeatures().filter(feature => {
-    const searchFields = language === 'he'
-      ? [feature.titleHe, feature.descriptionHe, feature.contentHe, ...feature.keywords]
-      : [feature.title, feature.description, feature.content, ...feature.keywords]
+  return getAllFeatures().filter((feature) => {
+    const searchFields =
+      language === 'he'
+        ? [feature.titleHe, feature.descriptionHe, feature.contentHe, ...feature.keywords]
+        : [feature.title, feature.description, feature.content, ...feature.keywords]
 
-    return searchFields.some(field =>
-      field.toLowerCase().includes(normalizedQuery)
-    )
+    return searchFields.some((field) => field.toLowerCase().includes(normalizedQuery))
   })
 }
 
@@ -3055,30 +4259,30 @@ export function filterFeatures(filters: {
   let features = getAllFeatures()
 
   if (filters.categories && filters.categories.length > 0) {
-    features = features.filter(f => filters.categories!.includes(f.category))
+    features = features.filter((f) => filters.categories!.includes(f.category))
   }
 
   if (filters.types && filters.types.length > 0) {
-    features = features.filter(f => filters.types!.includes(f.type))
+    features = features.filter((f) => filters.types!.includes(f.type))
   }
 
   if (filters.roles && filters.roles.length > 0) {
-    features = features.filter(f =>
-      f.roles.some(role => filters.roles!.includes(role) || f.roles.includes('ALL'))
+    features = features.filter((f) =>
+      f.roles.some((role) => filters.roles!.includes(role) || f.roles.includes('ALL'))
     )
   }
 
   if (filters.difficulty && filters.difficulty.length > 0) {
-    features = features.filter(f => filters.difficulty!.includes(f.difficulty))
+    features = features.filter((f) => filters.difficulty!.includes(f.difficulty))
   }
 
   return features
 }
 
 export function getCategoryById(id: string): WikiCategory | undefined {
-  return wikiCategories.find(cat => cat.id === id)
+  return wikiCategories.find((cat) => cat.id === id)
 }
 
 export function getFeatureById(id: string): WikiFeature | undefined {
-  return getAllFeatures().find(f => f.id === id)
+  return getAllFeatures().find((f) => f.id === id)
 }
