@@ -55,6 +55,7 @@ export const metadata: Metadata = {
     description: 'מערכת ניהול כרטיסים לאירועים ומשחקים',
     images: ['/images/og-image.png'],
   },
+  manifest: '/manifest.json',
 }
 
 export default function RootLayout({

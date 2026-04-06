@@ -50,6 +50,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@ducanh2912/next-pwa": "^10.2.9",
     "@hookform/resolvers": "^5.2.2",
     "@paralleldrive/cuid2": "^3.0.6",
     "@prisma/client": "^6.16.2",

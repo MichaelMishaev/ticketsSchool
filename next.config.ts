@@ -1,8 +1,16 @@
 import type { NextConfig } from 'next'
 import path from 'path'
 import bundleAnalyzer from '@next/bundle-analyzer'
+import withPWAInit from '@ducanh2912/next-pwa'
 
 const withBundleAnalyzer = bundleAnalyzer({ enabled: process.env.ANALYZE === 'true' })
+
+const withPWA = withPWAInit({
+  dest: 'public',
+  disable: process.env.NODE_ENV === 'development',
+  reloadOnOnline: false,
+  workboxOptions: { disableDevLogs: true },
+})
 
 const nextConfig: NextConfig = {
   // Prevent Next.js from bundling packages that use worker threads or native paths
@@ -76,4 +84,4 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default withBundleAnalyzer(nextConfig)
+export default withBundleAnalyzer(withPWA(nextConfig))

@@ -73,6 +73,9 @@ public/*
 !public/restaurants/
 !public/restaurants/**
 !public/file.svg
+!public/manifest.json
+!public/icons/
+!public/icons/**
 
 # Storybook build outputs
 .out
