@@ -214,6 +214,7 @@ export default function HelpWikiPage() {
   const selectFeature = (feature: WikiFeature) => {
     setSelectedFeature(feature)
     setSidebarOpen(false) // Close mobile sidebar after selection
+    setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50)
   }
 
   // Copy code
@@ -322,7 +323,7 @@ export default function HelpWikiPage() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="xl:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
                 aria-label={language === 'he' ? 'תפריט' : 'Menu'}
               >
                 {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -608,12 +609,13 @@ export default function HelpWikiPage() {
         {/* Sidebar */}
         <aside
           className={`
-            fixed lg:sticky top-16 bottom-0 z-40
+            fixed xl:sticky top-16 bottom-0 z-40
+            ${language === 'he' ? 'right-0 xl:right-auto' : 'left-0 xl:left-auto'}
             w-80 bg-white border-l-2 border-gray-200 overflow-y-auto
             transition-transform duration-300 ease-in-out
             ${sidebarOpen ? 'translate-x-0' : language === 'he' ? 'translate-x-full' : '-translate-x-full'}
-            lg:translate-x-0 lg:block
-            shadow-xl lg:shadow-none
+            xl:translate-x-0
+            shadow-xl xl:shadow-none
           `}
           style={{ height: 'calc(100vh - 4rem)' }}
         >
@@ -716,9 +718,9 @@ export default function HelpWikiPage() {
         {/* Main Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8">
           {selectedFeature ? (
-            <article className="max-w-4xl mx-auto">
+            <article className="max-w-4xl mx-auto scroll-mt-16">
               {/* Mobile Back Button */}
-              <div className="lg:hidden mb-4">
+              <div className="xl:hidden mb-4">
                 <button
                   onClick={() => setSelectedFeature(null)}
                   className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium text-gray-700"
@@ -729,7 +731,7 @@ export default function HelpWikiPage() {
               </div>
 
               {/* Breadcrumb */}
-              <nav className="hidden lg:flex items-center gap-2 text-sm text-gray-500 mb-6">
+              <nav className="hidden xl:flex items-center gap-2 text-sm text-gray-500 mb-6">
                 <button
                   onClick={() => setSelectedFeature(null)}
                   className="hover:text-gray-700 transition-colors hover:underline"
@@ -834,6 +836,11 @@ export default function HelpWikiPage() {
                         </code>
                       )
                     },
+                    table: ({ children }: any) => (
+                      <div className="overflow-x-auto my-4">
+                        <table>{children}</table>
+                      </div>
+                    ),
                   }}
                 >
                   {language === 'he' ? selectedFeature.contentHe : selectedFeature.content}
@@ -1147,7 +1154,7 @@ export default function HelpWikiPage() {
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-30 xl:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}

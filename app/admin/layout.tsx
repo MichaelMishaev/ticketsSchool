@@ -405,8 +405,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         )}
       </nav>
-      <main className="py-4 sm:py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 sm:pb-0">{children}</div>
+      <main className={pathname === '/admin/help' ? '' : 'py-4 sm:py-10'}>
+        {pathname === '/admin/help' ? (
+          children
+        ) : (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 sm:pb-0">{children}</div>
+        )}
       </main>
 
       {/* Floating WhatsApp Help Button - Hidden on event detail pages to avoid interfering with table interactions */}
