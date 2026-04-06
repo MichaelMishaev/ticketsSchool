@@ -34,9 +34,18 @@ import {
   Share2,
   Check,
   Info,
-  AlertCircle
+  AlertCircle,
 } from 'lucide-react'
-import { wikiCategories, searchFeatures, filterFeatures, type WikiCategory, type WikiFeature, type FeatureType, type UserRole, type DifficultyLevel } from '@/lib/wiki-data'
+import {
+  wikiCategories,
+  searchFeatures,
+  filterFeatures,
+  type WikiCategory,
+  type WikiFeature,
+  type FeatureType,
+  type UserRole,
+  type DifficultyLevel,
+} from '@/lib/wiki-data'
 import ReactMarkdown from 'react-markdown'
 
 // Icon mapping
@@ -59,72 +68,77 @@ const iconMap: Record<string, any> = {
   Globe,
   FileDown,
   Mail,
-  Wrench
+  Wrench,
 }
 
 // Color schemes for categories
-const colorSchemes: Record<string, {bg: string, border: string, text: string, hover: string, badge: string}> = {
+const colorSchemes: Record<
+  string,
+  { bg: string; border: string; text: string; hover: string; badge: string }
+> = {
   blue: {
     bg: 'bg-blue-50',
     border: 'border-blue-200',
     text: 'text-blue-700',
     hover: 'hover:bg-blue-100',
-    badge: 'bg-blue-100 text-blue-700'
+    badge: 'bg-blue-100 text-blue-700',
   },
   purple: {
     bg: 'bg-purple-50',
     border: 'border-purple-200',
     text: 'text-purple-700',
     hover: 'hover:bg-purple-100',
-    badge: 'bg-purple-100 text-purple-700'
+    badge: 'bg-purple-100 text-purple-700',
   },
   green: {
     bg: 'bg-green-50',
     border: 'border-green-200',
     text: 'text-green-700',
     hover: 'hover:bg-green-100',
-    badge: 'bg-green-100 text-green-700'
+    badge: 'bg-green-100 text-green-700',
   },
   orange: {
     bg: 'bg-orange-50',
     border: 'border-orange-200',
     text: 'text-orange-700',
     hover: 'hover:bg-orange-100',
-    badge: 'bg-orange-100 text-orange-700'
+    badge: 'bg-orange-100 text-orange-700',
   },
   red: {
     bg: 'bg-red-50',
     border: 'border-red-200',
     text: 'text-red-700',
     hover: 'hover:bg-red-100',
-    badge: 'bg-red-100 text-red-700'
+    badge: 'bg-red-100 text-red-700',
   },
   indigo: {
     bg: 'bg-indigo-50',
     border: 'border-indigo-200',
     text: 'text-indigo-700',
     hover: 'hover:bg-indigo-100',
-    badge: 'bg-indigo-100 text-indigo-700'
+    badge: 'bg-indigo-100 text-indigo-700',
   },
   pink: {
     bg: 'bg-pink-50',
     border: 'border-pink-200',
     text: 'text-pink-700',
     hover: 'hover:bg-pink-100',
-    badge: 'bg-pink-100 text-pink-700'
+    badge: 'bg-pink-100 text-pink-700',
   },
   teal: {
     bg: 'bg-teal-50',
     border: 'border-teal-200',
     text: 'text-teal-700',
     hover: 'hover:bg-teal-100',
-    badge: 'bg-teal-100 text-teal-700'
-  }
+    badge: 'bg-teal-100 text-teal-700',
+  },
 }
 
 export default function HelpWikiPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['getting-started']))
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    new Set(['getting-started'])
+  )
   const [selectedFeature, setSelectedFeature] = useState<WikiFeature | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [language, setLanguage] = useState<'en' | 'he'>('he')
@@ -140,13 +154,13 @@ export default function HelpWikiPage() {
 
   // Filter and search features
   const filteredFeatures = useMemo(() => {
-    let features = searchQuery.trim()
+    const features = searchQuery.trim()
       ? searchFeatures(searchQuery, language)
       : filterFeatures({
           categories: selectedCategories.length > 0 ? selectedCategories : undefined,
           types: selectedTypes.length > 0 ? selectedTypes : undefined,
           roles: selectedRoles.length > 0 ? selectedRoles : undefined,
-          difficulty: selectedDifficulty.length > 0 ? selectedDifficulty : undefined
+          difficulty: selectedDifficulty.length > 0 ? selectedDifficulty : undefined,
         })
 
     return features
@@ -155,19 +169,35 @@ export default function HelpWikiPage() {
   // Filter categories based on active tab and search/filters
   const visibleCategories = useMemo(() => {
     // First filter by tab
-    const tabFilteredCategories = activeTab === 'events'
-      ? wikiCategories.filter(cat => cat.id !== 'table-management')
-      : wikiCategories.filter(cat => cat.id === 'table-management')
+    const tabFilteredCategories =
+      activeTab === 'events'
+        ? wikiCategories.filter((cat) => cat.id !== 'table-management')
+        : wikiCategories.filter((cat) => cat.id === 'table-management')
 
     // Then apply search/filter
-    if (!searchQuery.trim() && selectedCategories.length === 0 && selectedTypes.length === 0 && selectedRoles.length === 0 && selectedDifficulty.length === 0) {
+    if (
+      !searchQuery.trim() &&
+      selectedCategories.length === 0 &&
+      selectedTypes.length === 0 &&
+      selectedRoles.length === 0 &&
+      selectedDifficulty.length === 0
+    ) {
       return tabFilteredCategories
     }
 
-    return tabFilteredCategories.filter(category =>
-      category.features.some(feature => filteredFeatures.includes(feature))
+    return tabFilteredCategories.filter((category) =>
+      category.features.some((feature) => filteredFeatures.includes(feature))
     )
-  }, [activeTab, wikiCategories, filteredFeatures, searchQuery, selectedCategories, selectedTypes, selectedRoles, selectedDifficulty])
+  }, [
+    activeTab,
+    wikiCategories,
+    filteredFeatures,
+    searchQuery,
+    selectedCategories,
+    selectedTypes,
+    selectedRoles,
+    selectedDifficulty,
+  ])
 
   // Toggle category expansion
   const toggleCategory = (categoryId: string) => {
@@ -206,11 +236,11 @@ export default function HelpWikiPage() {
   useEffect(() => {
     const hash = window.location.hash.slice(1)
     if (hash) {
-      const feature = filteredFeatures.find(f => f.id === hash)
+      const feature = filteredFeatures.find((f) => f.id === hash)
       if (feature) {
         setSelectedFeature(feature)
         // Expand the category
-        setExpandedCategories(prev => new Set([...prev, feature.category]))
+        setExpandedCategories((prev) => new Set([...prev, feature.category]))
       }
     }
   }, [])
@@ -218,15 +248,32 @@ export default function HelpWikiPage() {
   // Feature type badge
   const FeatureTypeBadge = ({ type }: { type: FeatureType }) => {
     const badges = {
-      NEW: { text: language === 'he' ? 'חדש' : 'NEW', className: 'bg-gradient-to-r from-green-500 to-emerald-500 text-white' },
-      UPDATED: { text: language === 'he' ? 'עודכן' : 'UPDATED', className: 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white' },
-      CORE: { text: language === 'he' ? 'ליבה' : 'CORE', className: 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' },
-      ADVANCED: { text: language === 'he' ? 'מתקדם' : 'ADVANCED', className: 'bg-gradient-to-r from-orange-500 to-red-500 text-white' },
-      BETA: { text: language === 'he' ? 'בטא' : 'BETA', className: 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white' }
+      NEW: {
+        text: language === 'he' ? 'חדש' : 'NEW',
+        className: 'bg-gradient-to-r from-green-500 to-emerald-500 text-white',
+      },
+      UPDATED: {
+        text: language === 'he' ? 'עודכן' : 'UPDATED',
+        className: 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white',
+      },
+      CORE: {
+        text: language === 'he' ? 'ליבה' : 'CORE',
+        className: 'bg-gradient-to-r from-purple-500 to-pink-500 text-white',
+      },
+      ADVANCED: {
+        text: language === 'he' ? 'מתקדם' : 'ADVANCED',
+        className: 'bg-gradient-to-r from-orange-500 to-red-500 text-white',
+      },
+      BETA: {
+        text: language === 'he' ? 'בטא' : 'BETA',
+        className: 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white',
+      },
     }
     const badge = badges[type]
     return (
-      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-bold ${badge.className} shadow-sm`}>
+      <span
+        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-bold ${badge.className} shadow-sm`}
+      >
         {badge.text}
       </span>
     )
@@ -235,13 +282,27 @@ export default function HelpWikiPage() {
   // Difficulty badge
   const DifficultyBadge = ({ difficulty }: { difficulty: DifficultyLevel }) => {
     const badges = {
-      beginner: { text: language === 'he' ? 'מתחיל' : 'Beginner', className: 'bg-green-100 text-green-700', icon: '⭐' },
-      intermediate: { text: language === 'he' ? 'בינוני' : 'Intermediate', className: 'bg-yellow-100 text-yellow-700', icon: '⭐⭐' },
-      advanced: { text: language === 'he' ? 'מתקדם' : 'Advanced', className: 'bg-red-100 text-red-700', icon: '⭐⭐⭐' }
+      beginner: {
+        text: language === 'he' ? 'מתחיל' : 'Beginner',
+        className: 'bg-green-100 text-green-700',
+        icon: '⭐',
+      },
+      intermediate: {
+        text: language === 'he' ? 'בינוני' : 'Intermediate',
+        className: 'bg-yellow-100 text-yellow-700',
+        icon: '⭐⭐',
+      },
+      advanced: {
+        text: language === 'he' ? 'מתקדם' : 'Advanced',
+        className: 'bg-red-100 text-red-700',
+        icon: '⭐⭐⭐',
+      },
     }
     const badge = badges[difficulty]
     return (
-      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${badge.className}`}>
+      <span
+        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${badge.className}`}
+      >
         <span>{badge.icon}</span>
         <span>{badge.text}</span>
       </span>
@@ -249,7 +310,10 @@ export default function HelpWikiPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50" dir={language === 'he' ? 'rtl' : 'ltr'}>
+    <div
+      className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50"
+      dir={language === 'he' ? 'rtl' : 'ltr'}
+    >
       {/* Top Navigation Bar */}
       <div className="sticky top-0 z-50 bg-white border-b-2 border-gray-200 shadow-sm">
         <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -284,7 +348,9 @@ export default function HelpWikiPage() {
                 <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder={language === 'he' ? 'חפש תכונות, מדריכים...' : 'Search features, guides...'}
+                  placeholder={
+                    language === 'he' ? 'חפש תכונות, מדריכים...' : 'Search features, guides...'
+                  }
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pr-12 pl-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-gray-900
@@ -351,9 +417,10 @@ export default function HelpWikiPage() {
                 setSearchQuery('')
               }}
               className={`flex-1 sm:flex-none px-6 py-3 rounded-t-xl font-bold text-lg transition-all duration-200 relative
-                ${activeTab === 'events'
-                  ? 'bg-gradient-to-b from-purple-500 to-purple-600 text-white shadow-lg'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ${
+                  activeTab === 'events'
+                    ? 'bg-gradient-to-b from-purple-500 to-purple-600 text-white shadow-lg'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }
               `}
             >
@@ -370,9 +437,10 @@ export default function HelpWikiPage() {
                 setSearchQuery('')
               }}
               className={`flex-1 sm:flex-none px-6 py-3 rounded-t-xl font-bold text-lg transition-all duration-200 relative
-                ${activeTab === 'table-events'
-                  ? 'bg-gradient-to-b from-green-500 to-green-600 text-white shadow-lg'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ${
+                  activeTab === 'table-events'
+                    ? 'bg-gradient-to-b from-green-500 to-green-600 text-white shadow-lg'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }
               `}
             >
@@ -397,10 +465,13 @@ export default function HelpWikiPage() {
                 </label>
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {(activeTab === 'events'
-                    ? wikiCategories.filter(cat => cat.id !== 'table-management')
-                    : wikiCategories.filter(cat => cat.id === 'table-management')
-                  ).map(cat => (
-                    <label key={cat.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+                    ? wikiCategories.filter((cat) => cat.id !== 'table-management')
+                    : wikiCategories.filter((cat) => cat.id === 'table-management')
+                  ).map((cat) => (
+                    <label
+                      key={cat.id}
+                      className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                    >
                       <input
                         type="checkbox"
                         checked={selectedCategories.includes(cat.id)}
@@ -408,12 +479,14 @@ export default function HelpWikiPage() {
                           if (e.target.checked) {
                             setSelectedCategories([...selectedCategories, cat.id])
                           } else {
-                            setSelectedCategories(selectedCategories.filter(c => c !== cat.id))
+                            setSelectedCategories(selectedCategories.filter((c) => c !== cat.id))
                           }
                         }}
                         className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                       />
-                      <span className="text-sm text-gray-700">{language === 'he' ? cat.nameHe : cat.name}</span>
+                      <span className="text-sm text-gray-700">
+                        {language === 'he' ? cat.nameHe : cat.name}
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -425,8 +498,11 @@ export default function HelpWikiPage() {
                   {language === 'he' ? 'סוג' : 'Type'}
                 </label>
                 <div className="space-y-2">
-                  {(['NEW', 'UPDATED', 'CORE', 'ADVANCED', 'BETA'] as FeatureType[]).map(type => (
-                    <label key={type} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+                  {(['NEW', 'UPDATED', 'CORE', 'ADVANCED', 'BETA'] as FeatureType[]).map((type) => (
+                    <label
+                      key={type}
+                      className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                    >
                       <input
                         type="checkbox"
                         checked={selectedTypes.includes(type)}
@@ -434,7 +510,7 @@ export default function HelpWikiPage() {
                           if (e.target.checked) {
                             setSelectedTypes([...selectedTypes, type])
                           } else {
-                            setSelectedTypes(selectedTypes.filter(t => t !== type))
+                            setSelectedTypes(selectedTypes.filter((t) => t !== type))
                           }
                         }}
                         className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
@@ -451,8 +527,13 @@ export default function HelpWikiPage() {
                   {language === 'he' ? 'תפקיד' : 'Role'}
                 </label>
                 <div className="space-y-2">
-                  {(['ALL', 'SUPER_ADMIN', 'OWNER', 'ADMIN', 'MANAGER', 'VIEWER'] as UserRole[]).map(role => (
-                    <label key={role} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+                  {(
+                    ['ALL', 'SUPER_ADMIN', 'OWNER', 'ADMIN', 'MANAGER', 'VIEWER'] as UserRole[]
+                  ).map((role) => (
+                    <label
+                      key={role}
+                      className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                    >
                       <input
                         type="checkbox"
                         checked={selectedRoles.includes(role)}
@@ -460,7 +541,7 @@ export default function HelpWikiPage() {
                           if (e.target.checked) {
                             setSelectedRoles([...selectedRoles, role])
                           } else {
-                            setSelectedRoles(selectedRoles.filter(r => r !== role))
+                            setSelectedRoles(selectedRoles.filter((r) => r !== role))
                           }
                         }}
                         className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
@@ -477,8 +558,11 @@ export default function HelpWikiPage() {
                   {language === 'he' ? 'קושי' : 'Difficulty'}
                 </label>
                 <div className="space-y-2">
-                  {(['beginner', 'intermediate', 'advanced'] as DifficultyLevel[]).map(diff => (
-                    <label key={diff} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+                  {(['beginner', 'intermediate', 'advanced'] as DifficultyLevel[]).map((diff) => (
+                    <label
+                      key={diff}
+                      className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                    >
                       <input
                         type="checkbox"
                         checked={selectedDifficulty.includes(diff)}
@@ -486,7 +570,7 @@ export default function HelpWikiPage() {
                           if (e.target.checked) {
                             setSelectedDifficulty([...selectedDifficulty, diff])
                           } else {
-                            setSelectedDifficulty(selectedDifficulty.filter(d => d !== diff))
+                            setSelectedDifficulty(selectedDifficulty.filter((d) => d !== diff))
                           }
                         }}
                         className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
@@ -499,7 +583,10 @@ export default function HelpWikiPage() {
             </div>
 
             {/* Clear Filters */}
-            {(selectedCategories.length > 0 || selectedTypes.length > 0 || selectedRoles.length > 0 || selectedDifficulty.length > 0) && (
+            {(selectedCategories.length > 0 ||
+              selectedTypes.length > 0 ||
+              selectedRoles.length > 0 ||
+              selectedDifficulty.length > 0) && (
               <button
                 onClick={() => {
                   setSelectedCategories([])
@@ -537,17 +624,16 @@ export default function HelpWikiPage() {
                 <p className="text-sm font-medium text-blue-700">
                   {language === 'he'
                     ? `נמצאו ${filteredFeatures.length} תוצאות`
-                    : `${filteredFeatures.length} results found`
-                  }
+                    : `${filteredFeatures.length} results found`}
                 </p>
               </div>
             )}
 
-            {visibleCategories.map(category => {
+            {visibleCategories.map((category) => {
               const Icon = iconMap[category.icon]
               const colorScheme = colorSchemes[category.color] || colorSchemes.blue
               const isExpanded = expandedCategories.has(category.id)
-              const categoryFeatures = category.features.filter(f => filteredFeatures.includes(f))
+              const categoryFeatures = category.features.filter((f) => filteredFeatures.includes(f))
 
               if (categoryFeatures.length === 0 && (searchQuery || selectedCategories.length > 0)) {
                 return null // Hide empty categories when filtering
@@ -562,36 +648,55 @@ export default function HelpWikiPage() {
                       ${isExpanded ? `${colorScheme.bg} ${colorScheme.border} border-2` : 'hover:bg-gray-50'}
                     `}
                   >
-                    {Icon && <Icon className={`w-5 h-5 ${isExpanded ? colorScheme.text : 'text-gray-600'}`} />}
-                    <span className={`flex-1 text-right font-bold text-sm ${isExpanded ? colorScheme.text : 'text-gray-700'}`}>
+                    {Icon && (
+                      <Icon
+                        className={`w-5 h-5 ${isExpanded ? colorScheme.text : 'text-gray-600'}`}
+                      />
+                    )}
+                    <span
+                      className={`flex-1 text-right font-bold text-sm ${isExpanded ? colorScheme.text : 'text-gray-700'}`}
+                    >
                       {language === 'he' ? category.nameHe : category.name}
                     </span>
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${colorScheme.badge}`}>
+                    <span
+                      className={`text-xs font-medium px-2 py-1 rounded-full ${colorScheme.badge}`}
+                    >
                       {categoryFeatures.length}
                     </span>
-                    {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                    {isExpanded ? (
+                      <ChevronDown className="w-4 h-4" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4" />
+                    )}
                   </button>
 
                   {/* Features List */}
                   {isExpanded && (
                     <div className="mr-8 space-y-1">
-                      {categoryFeatures.map(feature => (
+                      {categoryFeatures.map((feature) => (
                         <button
                           key={feature.id}
                           onClick={() => selectFeature(feature)}
                           className={`w-full text-right p-3 rounded-lg transition-all duration-200 group
-                            ${selectedFeature?.id === feature.id
-                              ? `${colorScheme.bg} ${colorScheme.border} border-2 shadow-sm`
-                              : 'hover:bg-gray-50'
+                            ${
+                              selectedFeature?.id === feature.id
+                                ? `${colorScheme.bg} ${colorScheme.border} border-2 shadow-sm`
+                                : 'hover:bg-gray-50'
                             }
                           `}
                         >
                           <div className="flex items-center justify-between gap-2 mb-1">
                             <div className="flex items-center gap-1">
-                              {feature.type === 'NEW' && <Sparkles className="w-3 h-3 text-green-500" />}
-                              {feature.difficulty === 'advanced' && <Star className="w-3 h-3 text-orange-500" />}
+                              {feature.type === 'NEW' && (
+                                <Sparkles className="w-3 h-3 text-green-500" />
+                              )}
+                              {feature.difficulty === 'advanced' && (
+                                <Star className="w-3 h-3 text-orange-500" />
+                              )}
                             </div>
-                            <span className={`text-sm font-medium ${selectedFeature?.id === feature.id ? colorScheme.text : 'text-gray-700'}`}>
+                            <span
+                              className={`text-sm font-medium ${selectedFeature?.id === feature.id ? colorScheme.text : 'text-gray-700'}`}
+                            >
                               {language === 'he' ? feature.titleHe : feature.title}
                             </span>
                           </div>
@@ -609,7 +714,7 @@ export default function HelpWikiPage() {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-6 lg:p-12">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">
           {selectedFeature ? (
             <article className="max-w-4xl mx-auto">
               {/* Mobile Back Button */}
@@ -640,43 +745,59 @@ export default function HelpWikiPage() {
                   }}
                   className="hover:text-gray-700 transition-colors hover:underline"
                 >
-                  {language === 'he' ? wikiCategories.find(c => c.id === selectedFeature.category)?.nameHe : wikiCategories.find(c => c.id === selectedFeature.category)?.name}
+                  {language === 'he'
+                    ? wikiCategories.find((c) => c.id === selectedFeature.category)?.nameHe
+                    : wikiCategories.find((c) => c.id === selectedFeature.category)?.name}
                 </button>
                 <ChevronRight className="w-4 h-4" />
-                <span className="text-gray-900 font-medium">{language === 'he' ? selectedFeature.titleHe : selectedFeature.title}</span>
+                <span className="text-gray-900 font-medium">
+                  {language === 'he' ? selectedFeature.titleHe : selectedFeature.title}
+                </span>
               </nav>
 
               {/* Header */}
-              <div className="mb-6 lg:mb-8">
-                <div className="flex items-start justify-between gap-4 mb-4">
-                  <div className="flex-1">
-                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 lg:mb-3">
-                      {language === 'he' ? selectedFeature.titleHe : selectedFeature.title}
-                    </h1>
-                    <p className="text-base sm:text-lg lg:text-xl text-gray-600">
-                      {language === 'he' ? selectedFeature.descriptionHe : selectedFeature.description}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={shareFeature}
-                      className="p-2 lg:p-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                      title={language === 'he' ? 'שתף' : 'Share'}
-                    >
-                      <Share2 className="w-4 h-4 lg:w-5 lg:h-5 text-gray-700" />
-                    </button>
-                  </div>
+              <div className="mb-6 lg:mb-8 relative">
+                <div className="pe-12 mb-4">
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 lg:mb-3">
+                    {language === 'he' ? selectedFeature.titleHe : selectedFeature.title}
+                  </h1>
+                  <p className="text-base sm:text-lg lg:text-xl text-gray-600">
+                    {language === 'he'
+                      ? selectedFeature.descriptionHe
+                      : selectedFeature.description}
+                  </p>
                 </div>
+                <button
+                  onClick={shareFeature}
+                  className="absolute top-0 end-0 p-2 lg:p-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  title={language === 'he' ? 'שתף' : 'Share'}
+                >
+                  <Share2 className="w-4 h-4 lg:w-5 lg:h-5 text-gray-700" />
+                </button>
 
                 {/* Meta Info */}
                 <div className="flex flex-wrap items-center gap-3">
                   <FeatureTypeBadge type={selectedFeature.type} />
                   <DifficultyBadge difficulty={selectedFeature.difficulty} />
                   <span className="text-sm text-gray-500">
-                    {language === 'he' ? 'עודכן' : 'Updated'}: {new Date(selectedFeature.lastUpdated).toLocaleDateString(language === 'he' ? 'he-IL' : 'en-US')}
+                    {language === 'he' ? 'עודכן' : 'Updated'}:{' '}
+                    {new Date(selectedFeature.lastUpdated).toLocaleDateString(
+                      language === 'he' ? 'he-IL' : 'en-US'
+                    )}
                   </span>
                 </div>
               </div>
+
+              {/* Article Image */}
+              {selectedFeature.imageUrl && (
+                <div className="mb-6">
+                  <img
+                    src={selectedFeature.imageUrl}
+                    alt={language === 'he' ? selectedFeature.titleHe : selectedFeature.title}
+                    className="w-full rounded-xl object-cover max-h-64 shadow-sm border border-gray-200"
+                  />
+                </div>
+              )}
 
               {/* Content */}
               <div className="prose prose-sm sm:prose-base lg:prose-lg max-w-none mb-8 lg:mb-12 bg-white rounded-xl border-2 border-gray-200 p-4 sm:p-6 lg:p-8 shadow-sm overflow-hidden break-words overflow-wrap-anywhere max-w-full">
@@ -697,15 +818,22 @@ export default function HelpWikiPage() {
                             className="absolute top-2 left-2 p-1.5 sm:p-2 bg-gray-800 hover:bg-gray-700 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
                             aria-label={language === 'he' ? 'העתק קוד' : 'Copy code'}
                           >
-                            {copiedCode ? <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" /> : <Copy className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" />}
+                            {copiedCode ? (
+                              <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-400" />
+                            ) : (
+                              <Copy className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" />
+                            )}
                           </button>
                         </div>
                       ) : (
-                        <code className="bg-gray-100 text-gray-900 px-1.5 py-0.5 rounded text-sm" {...props}>
+                        <code
+                          className="bg-gray-100 text-gray-900 px-1.5 py-0.5 rounded text-sm"
+                          {...props}
+                        >
                           {children}
                         </code>
                       )
-                    }
+                    },
                   }}
                 >
                   {language === 'he' ? selectedFeature.contentHe : selectedFeature.content}
@@ -721,7 +849,10 @@ export default function HelpWikiPage() {
                   </h2>
                   <div className="grid gap-4 sm:gap-6">
                     {selectedFeature.examples.map((example, index) => (
-                      <div key={index} className="bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-200 rounded-xl p-4 sm:p-6">
+                      <div
+                        key={index}
+                        className="bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-200 rounded-xl p-4 sm:p-6"
+                      >
                         <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2">
                           {language === 'he' ? example.titleHe : example.title}
                         </h3>
@@ -755,11 +886,13 @@ export default function HelpWikiPage() {
                     {language === 'he' ? 'תכונות קשורות' : 'Related Features'}
                   </h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    {selectedFeature.relatedFeatures.map(relatedId => {
-                      const related = filteredFeatures.find(f => f.id === relatedId)
+                    {selectedFeature.relatedFeatures.map((relatedId) => {
+                      const related = filteredFeatures.find((f) => f.id === relatedId)
                       if (!related) return null
-                      const category = wikiCategories.find(c => c.id === related.category)
-                      const colorScheme = category ? colorSchemes[category.color] : colorSchemes.blue
+                      const category = wikiCategories.find((c) => c.id === related.category)
+                      const colorScheme = category
+                        ? colorSchemes[category.color]
+                        : colorSchemes.blue
 
                       return (
                         <button
@@ -768,7 +901,9 @@ export default function HelpWikiPage() {
                           className={`p-3 sm:p-4 rounded-lg border-2 ${colorScheme.border} ${colorScheme.hover} transition-all duration-200 text-right group`}
                         >
                           <div className="flex items-center justify-between gap-2 mb-1">
-                            <ChevronRight className={`w-4 h-4 sm:w-5 sm:h-5 ${colorScheme.text} group-hover:translate-x-1 transition-transform`} />
+                            <ChevronRight
+                              className={`w-4 h-4 sm:w-5 sm:h-5 ${colorScheme.text} group-hover:translate-x-1 transition-transform`}
+                            />
                             <span className="font-bold text-sm sm:text-base text-gray-900">
                               {language === 'he' ? related.titleHe : related.title}
                             </span>
@@ -787,9 +922,11 @@ export default function HelpWikiPage() {
             /* Welcome Screen */
             <div className="max-w-5xl mx-auto">
               <div className="text-center mb-12">
-                <div className={`inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-6 shadow-2xl
+                <div
+                  className={`inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-6 shadow-2xl
                   ${activeTab === 'events' ? 'bg-gradient-to-br from-purple-500 to-purple-600' : 'bg-gradient-to-br from-green-500 to-green-600'}
-                `}>
+                `}
+                >
                   {activeTab === 'events' ? (
                     <Calendar className="w-10 h-10 text-white" />
                   ) : (
@@ -798,33 +935,38 @@ export default function HelpWikiPage() {
                 </div>
                 <h1 className="text-5xl font-bold text-gray-900 mb-4">
                   {activeTab === 'events'
-                    ? (language === 'he' ? '⚽ אירועים רגילים' : '⚽ Regular Events')
-                    : (language === 'he' ? '🍽️ אירועי שולחנות' : '🍽️ Table Events')
-                  }
+                    ? language === 'he'
+                      ? '⚽ אירועים רגילים'
+                      : '⚽ Regular Events'
+                    : language === 'he'
+                      ? '🍽️ אירועי שולחנות'
+                      : '🍽️ Table Events'}
                 </h1>
                 <p className="text-xl text-gray-600 max-w-2xl mx-auto">
                   {activeTab === 'events'
-                    ? (language === 'he'
+                    ? language === 'he'
                       ? 'מושלם למשחקי כדורגל, סדנאות, קונצרטים ואירועים עם הושבה פתוחה'
                       : 'Perfect for soccer matches, workshops, concerts, and open seating events'
-                    )
-                    : (language === 'he'
+                    : language === 'he'
                       ? 'אידיאלי לחתונות, ארוחות ערב, כנסים ואירועים עם הקצאת שולחנות'
-                      : 'Ideal for weddings, dinners, conferences, and events with table assignments'
-                    )
-                  }
+                      : 'Ideal for weddings, dinners, conferences, and events with table assignments'}
                 </p>
               </div>
 
               {/* Quick Start Guide */}
-              <div className={`bg-gradient-to-br rounded-2xl p-8 mb-12 shadow-lg border-2
-                ${activeTab === 'events'
-                  ? 'from-purple-50 via-blue-50 to-pink-50 border-purple-200'
-                  : 'from-green-50 via-emerald-50 to-teal-50 border-green-200'
+              <div
+                className={`bg-gradient-to-br rounded-2xl p-8 mb-12 shadow-lg border-2
+                ${
+                  activeTab === 'events'
+                    ? 'from-purple-50 via-blue-50 to-pink-50 border-purple-200'
+                    : 'from-green-50 via-emerald-50 to-teal-50 border-green-200'
                 }
-              `}>
+              `}
+              >
                 <div className="flex items-center gap-3 mb-6">
-                  <Rocket className={`w-8 h-8 ${activeTab === 'events' ? 'text-purple-600' : 'text-green-600'}`} />
+                  <Rocket
+                    className={`w-8 h-8 ${activeTab === 'events' ? 'text-purple-600' : 'text-green-600'}`}
+                  />
                   <h2 className="text-3xl font-bold text-gray-900">
                     {language === 'he' ? 'התחלה מהירה' : 'Quick Start'}
                   </h2>
@@ -839,7 +981,9 @@ export default function HelpWikiPage() {
                         {language === 'he' ? 'צור אירוע' : 'Create Event'}
                       </h3>
                       <p className="text-sm text-gray-600">
-                        {language === 'he' ? 'הגדר קיבולת כוללת (למשל, 100 מקומות למשחק)' : 'Set total capacity (e.g., 100 spots for match)'}
+                        {language === 'he'
+                          ? 'הגדר קיבולת כוללת (למשל, 100 מקומות למשחק)'
+                          : 'Set total capacity (e.g., 100 spots for match)'}
                       </p>
                     </div>
                     <div className="bg-white rounded-xl p-6 border-2 border-white hover:border-blue-300 transition-all duration-200 shadow-sm">
@@ -850,7 +994,9 @@ export default function HelpWikiPage() {
                         {language === 'he' ? 'שתף קישור' : 'Share Link'}
                       </h3>
                       <p className="text-sm text-gray-600">
-                        {language === 'he' ? 'שלח את הקישור לקבוצת וואטסאפ' : 'Send link to WhatsApp group'}
+                        {language === 'he'
+                          ? 'שלח את הקישור לקבוצת וואטסאפ'
+                          : 'Send link to WhatsApp group'}
                       </p>
                     </div>
                     <div className="bg-white rounded-xl p-6 border-2 border-white hover:border-pink-300 transition-all duration-200 shadow-sm">
@@ -861,7 +1007,9 @@ export default function HelpWikiPage() {
                         {language === 'he' ? 'עקוב בזמן אמת' : 'Track Real-time'}
                       </h3>
                       <p className="text-sm text-gray-600">
-                        {language === 'he' ? 'המערכת מונעת הזמנות יתר אוטומטית' : 'System prevents overbooking automatically'}
+                        {language === 'he'
+                          ? 'המערכת מונעת הזמנות יתר אוטומטית'
+                          : 'System prevents overbooking automatically'}
                       </p>
                     </div>
                   </div>
@@ -875,7 +1023,9 @@ export default function HelpWikiPage() {
                         {language === 'he' ? 'צור שולחנות' : 'Create Tables'}
                       </h3>
                       <p className="text-sm text-gray-600">
-                        {language === 'he' ? 'צור שולחן אחד, שכפל 39 פעמים = 40 שולחנות!' : 'Create one table, duplicate 39x = 40 tables!'}
+                        {language === 'he'
+                          ? 'צור שולחן אחד, שכפל 39 פעמים = 40 שולחנות!'
+                          : 'Create one table, duplicate 39x = 40 tables!'}
                       </p>
                     </div>
                     <div className="bg-white rounded-xl p-6 border-2 border-white hover:border-emerald-300 transition-all duration-200 shadow-sm">
@@ -886,7 +1036,9 @@ export default function HelpWikiPage() {
                         {language === 'he' ? 'הגדר קיבולת' : 'Set Capacity'}
                       </h3>
                       <p className="text-sm text-gray-600">
-                        {language === 'he' ? 'כל שולחן עם קיבולת והזמנה מינימלית' : 'Each table with capacity and min order'}
+                        {language === 'he'
+                          ? 'כל שולחן עם קיבולת והזמנה מינימלית'
+                          : 'Each table with capacity and min order'}
                       </p>
                     </div>
                     <div className="bg-white rounded-xl p-6 border-2 border-white hover:border-teal-300 transition-all duration-200 shadow-sm">
@@ -897,7 +1049,9 @@ export default function HelpWikiPage() {
                         {language === 'he' ? 'אורחים בוחרים' : 'Guests Choose'}
                       </h3>
                       <p className="text-sm text-gray-600">
-                        {language === 'he' ? 'אורחים בוחרים שולחן בעת ההרשמה' : 'Guests select table during registration'}
+                        {language === 'he'
+                          ? 'אורחים בוחרים שולחן בעת ההרשמה'
+                          : 'Guests select table during registration'}
                       </p>
                     </div>
                   </div>
@@ -910,32 +1064,38 @@ export default function HelpWikiPage() {
                   {language === 'he' ? 'תכונות מובילות' : 'Featured'}
                 </h2>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {visibleCategories.flatMap(cat => cat.features).filter(f => f.type === 'NEW').slice(0, 6).map(feature => {
-                    const category = visibleCategories.find(c => c.id === feature.category)
-                    const colorScheme = category ? colorSchemes[category.color] : colorSchemes.blue
+                  {visibleCategories
+                    .flatMap((cat) => cat.features)
+                    .filter((f) => f.type === 'NEW')
+                    .slice(0, 6)
+                    .map((feature) => {
+                      const category = visibleCategories.find((c) => c.id === feature.category)
+                      const colorScheme = category
+                        ? colorSchemes[category.color]
+                        : colorSchemes.blue
 
-                    return (
-                      <button
-                        key={feature.id}
-                        onClick={() => selectFeature(feature)}
-                        className={`p-6 rounded-xl border-2 ${colorScheme.border} ${colorScheme.hover} transition-all duration-200 text-right group hover:shadow-lg`}
-                      >
-                        <div className="flex items-start justify-between gap-2 mb-3">
-                          <FeatureTypeBadge type={feature.type} />
-                          <Sparkles className="w-5 h-5 text-yellow-500" />
-                        </div>
-                        <h3 className="font-bold text-gray-900 mb-2 text-lg">
-                          {language === 'he' ? feature.titleHe : feature.title}
-                        </h3>
-                        <p className="text-sm text-gray-600 mb-3">
-                          {language === 'he' ? feature.descriptionHe : feature.description}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <DifficultyBadge difficulty={feature.difficulty} />
-                        </div>
-                      </button>
-                    )
-                  })}
+                      return (
+                        <button
+                          key={feature.id}
+                          onClick={() => selectFeature(feature)}
+                          className={`p-6 rounded-xl border-2 ${colorScheme.border} ${colorScheme.hover} transition-all duration-200 text-right group hover:shadow-lg`}
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-3">
+                            <FeatureTypeBadge type={feature.type} />
+                            <Sparkles className="w-5 h-5 text-yellow-500" />
+                          </div>
+                          <h3 className="font-bold text-gray-900 mb-2 text-lg">
+                            {language === 'he' ? feature.titleHe : feature.title}
+                          </h3>
+                          <p className="text-sm text-gray-600 mb-3">
+                            {language === 'he' ? feature.descriptionHe : feature.description}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <DifficultyBadge difficulty={feature.difficulty} />
+                          </div>
+                        </button>
+                      )
+                    })}
                 </div>
               </div>
 
@@ -945,7 +1105,7 @@ export default function HelpWikiPage() {
                   {language === 'he' ? 'עיון לפי קטגוריה' : 'Browse by Category'}
                 </h2>
                 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {visibleCategories.map(category => {
+                  {visibleCategories.map((category) => {
                     const Icon = iconMap[category.icon]
                     const colorScheme = colorSchemes[category.color]
 
@@ -958,7 +1118,9 @@ export default function HelpWikiPage() {
                         }}
                         className={`p-6 rounded-xl border-2 ${colorScheme.border} ${colorScheme.hover} transition-all duration-200 group hover:shadow-lg`}
                       >
-                        <div className={`w-12 h-12 ${colorScheme.bg} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                        <div
+                          className={`w-12 h-12 ${colorScheme.bg} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}
+                        >
                           {Icon && <Icon className={`w-6 h-6 ${colorScheme.text}`} />}
                         </div>
                         <h3 className="font-bold text-gray-900 mb-2">
@@ -967,7 +1129,9 @@ export default function HelpWikiPage() {
                         <p className="text-sm text-gray-600 mb-3">
                           {language === 'he' ? category.descriptionHe : category.description}
                         </p>
-                        <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${colorScheme.badge}`}>
+                        <span
+                          className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${colorScheme.badge}`}
+                        >
                           {category.features.length} {language === 'he' ? 'תכונות' : 'features'}
                         </span>
                       </button>
