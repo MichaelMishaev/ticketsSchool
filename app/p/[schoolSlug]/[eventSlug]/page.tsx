@@ -42,6 +42,7 @@ import {
 import Modal from '@/components/ui/Modal'
 import { ToastContainer, toast } from '@/components/ui/Toast'
 import { DEFAULT_COVER_IMAGE } from '@/components/CoverImagePicker'
+import { InstallPWAButton } from '@/components/ui/InstallPWAButton'
 
 interface School {
   id: string
@@ -1101,6 +1102,7 @@ export default function EventPage() {
                 {event.school.name}
               </div>
             </div>
+            <InstallPWAButton className="ml-auto" />
           </div>
         )}
 
