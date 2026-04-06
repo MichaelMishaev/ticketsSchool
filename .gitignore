@@ -110,6 +110,7 @@ logs
 # Test results and reports
 playwright-report/
 test-results/
+test-results-p0.json/
 
 # Design instructions (contains API keys)
 DESIGN_INSTRUCTIONS.md
