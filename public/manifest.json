@@ -3,6 +3,7 @@
   "short_name": "kartis",
   "description": "מערכת ניהול כרטיסים לאירועים ומשחקים",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#f9fafb",
   "theme_color": "#1d4ed8",
