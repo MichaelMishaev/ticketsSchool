@@ -38,9 +38,13 @@ describe('InstallPWAButton', () => {
     fireInstallPrompt()
     const btn = screen.getByRole('button', { name: /התקן אפליקציה/i })
     expect(btn).toBeInTheDocument()
-    // Text label should not be visible (sr-only)
-    const label = btn.querySelector('span:not(.sr-only)')
-    expect(label).toBeNull()
+    // Visible text should not be directly rendered (only sr-only)
+    const visibleText = Array.from(btn.childNodes).find(
+      (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.includes('התקן')
+    )
+    expect(visibleText).toBeUndefined()
+    // sr-only span should be present
+    expect(btn.querySelector('.sr-only')).not.toBeNull()
   })
 
   it('calls prompt() when button is clicked', async () => {
