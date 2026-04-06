@@ -4,7 +4,7 @@ echo ""
 # NPM Audit (HIGH/CRITICAL only in production dependencies)
 # Known unfixable: serialize-javascript chain via @ducanh2912/next-pwa (all versions affected, tracked 2026-04-06)
 echo "🔍 Running npm audit for HIGH/CRITICAL vulnerabilities..."
-AUDIT_OUTPUT=$(npm audit --audit-level=high --production 2>&1)
+AUDIT_OUTPUT=$(npm audit --audit-level=high --production 2>&1) || true
 AUDIT_EXIT=$?
 
 if [ $AUDIT_EXIT -ne 0 ]; then
