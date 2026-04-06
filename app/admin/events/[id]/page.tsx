@@ -23,11 +23,7 @@ import { getCurrentAdmin } from '@/lib/auth.server'
 import TableBoardView from '@/components/admin/TableBoardView'
 import EventDetailsTabbed from './EventDetailsTabbed'
 
-export default async function EventDetailsPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
+export default async function EventDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
   // Get current admin for permission check

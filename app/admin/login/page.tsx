@@ -111,7 +111,6 @@ export default function AdminLoginPage() {
     }
   }
 
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 sm:px-6 lg:px-8 relative">
       {/* Home Button */}
@@ -120,7 +119,9 @@ export default function AdminLoginPage() {
         className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-md hover:shadow-lg transition-all hover:scale-105 group"
       >
         <Home className="h-5 w-5 text-blue-600 group-hover:text-blue-700" />
-        <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">חזרה לדף הבית</span>
+        <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
+          חזרה לדף הבית
+        </span>
       </Link>
 
       <div className="max-w-md w-full space-y-8">
@@ -128,12 +129,8 @@ export default function AdminLoginPage() {
           <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-blue-100">
             <Lock className="h-6 w-6 text-blue-600" />
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            כניסת מנהלים
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            kartis.info Admin Panel
-          </p>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">כניסת מנהלים</h2>
+          <p className="mt-2 text-center text-sm text-gray-600">kartis.info Admin Panel</p>
         </div>
         <div className="bg-white py-8 px-4 shadow-xl rounded-lg sm:px-10">
           {success && (
@@ -192,7 +189,6 @@ export default function AdminLoginPage() {
           </div>
 
           <form className="space-y-6" onSubmit={handleSubmit}>
-
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 text-right">
                 שם משתמש או אימייל
@@ -213,7 +209,10 @@ export default function AdminLoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 text-right">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 text-right"
+              >
                 סיסמה
               </label>
               <div className="mt-1">

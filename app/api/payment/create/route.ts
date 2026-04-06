@@ -181,7 +181,16 @@ export async function POST(request: NextRequest) {
     })
 
     if (existingRegistration) {
-      return NextResponse.json({ error: 'מספר הטלפון כבר רשום לאירוע זה' }, { status: 400 })
+      if (existingRegistration.status === 'PAYMENT_PENDING') {
+        // Fresh PAYMENT_PENDING = customer abandoned the payment page — cancel it and allow retry
+        await prisma.registration.update({
+          where: { id: existingRegistration.id },
+          data: { status: 'CANCELLED' },
+        })
+      } else {
+        // CONFIRMED / WAITLIST — genuine duplicate, reject
+        return NextResponse.json({ error: 'מספר הטלפון כבר רשום לאירוע זה' }, { status: 400 })
+      }
     }
 
     // Check if user is banned

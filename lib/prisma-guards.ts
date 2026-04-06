@@ -165,7 +165,12 @@ export function applyPrismaGuards(client: any) {
   return client.$extends({
     query: {
       $allModels: {
-        async $allOperations({ model, operation, args, query }: {
+        async $allOperations({
+          model,
+          operation,
+          args,
+          query,
+        }: {
           model: string
           operation: string
           args: any
@@ -184,9 +189,9 @@ export function applyPrismaGuards(client: any) {
           guardHardDeletes(params)
 
           return query(args)
-        }
-      }
-    }
+        },
+      },
+    },
   })
 }
 

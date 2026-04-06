@@ -34,7 +34,8 @@ async function generateTicketImage(
   code: string,
   qrCode: string | null,
   eventDate: string | null,
-  eventLocation: string | null
+  eventLocation: string | null,
+  message: string | null
 ): Promise<string> {
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d')!
@@ -159,6 +160,21 @@ async function generateTicketImage(
     yPos += 35
   }
 
+  // Special Message
+  if (message) {
+    yPos += 15
+    ctx.fillStyle = '#1e3a8a'
+    ctx.font = 'bold 20px Arial, sans-serif'
+    ctx.textAlign = 'center'
+
+    const messageLines = wrapText(ctx, message, width - 60)
+    messageLines.forEach((line) => {
+      ctx.fillText(line, width / 2, yPos)
+      yPos += 30
+    })
+    yPos += 15
+  }
+
   // Footer
   ctx.fillStyle = '#9ca3af'
   ctx.font = '12px Arial, sans-serif'
@@ -195,6 +211,7 @@ function SuccessContent() {
   const eventTitle = searchParams.get('event') || 'האירוע'
   const eventDate = searchParams.get('date')
   const eventLocation = searchParams.get('location')
+  const message = searchParams.get('message')
   const rawReturnUrl = searchParams.get('return') || '/'
   const returnUrl = isValidReturnUrl(rawReturnUrl) ? rawReturnUrl : '/'
 
@@ -226,7 +243,8 @@ function SuccessContent() {
         code,
         qrCode,
         eventDate,
-        eventLocation
+        eventLocation,
+        message
       )
 
       // Create download link
@@ -299,6 +317,15 @@ function SuccessContent() {
               <Download className="w-4 h-4" />
               הורד QR כתמונה
             </a>
+          </div>
+        )}
+
+        {/* Special Message */}
+        {message && (
+          <div className="bg-blue-50 rounded-xl p-6 mb-6 border-2 border-blue-200">
+            <p className="text-blue-900 text-center font-bold text-lg leading-relaxed whitespace-pre-wrap">
+              {message}
+            </p>
           </div>
         )}
 

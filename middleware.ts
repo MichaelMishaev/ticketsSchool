@@ -82,12 +82,12 @@ export async function middleware(request: NextRequest) {
   const requestId = crypto.randomUUID().slice(0, 8)
 
   // Allow public paths
-  if (PUBLIC_PATHS.some(path => pathname.startsWith(path))) {
+  if (PUBLIC_PATHS.some((path) => pathname.startsWith(path))) {
     return NextResponse.next()
   }
 
   // Check if path needs protection
-  const isProtectedPath = PROTECTED_PATHS.some(path => pathname.startsWith(path))
+  const isProtectedPath = PROTECTED_PATHS.some((path) => pathname.startsWith(path))
 
   if (!isProtectedPath) {
     return NextResponse.next()
@@ -119,7 +119,7 @@ export async function middleware(request: NextRequest) {
   // Verify JWT session
   try {
     const { payload } = await jwtVerify(sessionCookie.value, getJWTSecret(), {
-      algorithms: ['HS256']
+      algorithms: ['HS256'],
     })
 
     // Add request ID to response headers for tracing
@@ -139,7 +139,10 @@ export async function middleware(request: NextRequest) {
 
     // Clear invalid session
     const response = pathname.startsWith('/api/')
-      ? NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: { 'X-Request-ID': requestId } })
+      ? NextResponse.json(
+          { error: 'Unauthorized' },
+          { status: 401, headers: { 'X-Request-ID': requestId } }
+        )
       : NextResponse.redirect(new URL('/admin/login', request.url))
 
     response.cookies.delete('admin_session')

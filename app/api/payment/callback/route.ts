@@ -61,6 +61,28 @@ export async function POST(request: NextRequest) {
 }
 
 /**
+ * Helper to construct the success URL with all required query parameters
+ */
+function getSuccessUrl(payment: any, requestUrl: string): URL {
+  const successUrl = new URL(`/payment/success`, requestUrl)
+  successUrl.searchParams.set('code', payment.registration.confirmationCode)
+  successUrl.searchParams.set('event', payment.event.title)
+  if (payment.event.location) {
+    successUrl.searchParams.set('location', payment.event.location)
+  }
+  if (payment.event.completionMessage) {
+    successUrl.searchParams.set('message', payment.event.completionMessage)
+  }
+  try {
+    const eventDate = format(new Date(payment.event.startAt), 'EEEE, dd בMMMM yyyy בשעה HH:mm', {
+      locale: he,
+    })
+    successUrl.searchParams.set('date', eventDate)
+  } catch (e) {}
+  return successUrl
+}
+
+/**
  * Shared callback handler for both GET and POST
  */
 async function handleCallback(request: NextRequest) {
@@ -119,9 +141,7 @@ async function handleCallback(request: NextRequest) {
         orderId: validation.orderId,
         registrationId: payment.registrationId,
       })
-      return NextResponse.redirect(
-        new URL(`/payment/success?code=${payment.registration.confirmationCode}`, request.url)
-      )
+      return NextResponse.redirect(getSuccessUrl(payment, request.url))
     }
 
     // Verify multi-tenant isolation
@@ -173,17 +193,7 @@ async function handleCallback(request: NextRequest) {
         }
 
         // Return success (idempotent) but don't process again
-        const registration = await prisma.registration.findFirst({
-          where: { paymentIntentId: validation.orderId },
-        })
-
-        if (registration) {
-          return NextResponse.redirect(
-            new URL(`/payment/success?code=${registration.confirmationCode}`, request.url)
-          )
-        }
-
-        return NextResponse.redirect(new URL('/payment/error', request.url))
+        return NextResponse.redirect(getSuccessUrl(payment, request.url))
       }
       throw e
     }
@@ -358,9 +368,7 @@ async function handleCallback(request: NextRequest) {
       paymentLogger.info('Payment processed by concurrent request, redirecting', {
         orderId: validation.orderId,
       })
-      return NextResponse.redirect(
-        new URL(`/payment/success?code=${payment.registration.confirmationCode}`, request.url)
-      )
+      return NextResponse.redirect(getSuccessUrl(payment, request.url))
     }
 
     // Handle success case
@@ -423,9 +431,7 @@ async function handleCallback(request: NextRequest) {
       }
 
       // Redirect to success page
-      return NextResponse.redirect(
-        new URL(`/payment/success?code=${payment.registration.confirmationCode}`, request.url)
-      )
+      return NextResponse.redirect(getSuccessUrl(payment, request.url))
     } else {
       // Handle failure case
       paymentLogger.error('Payment failed', {

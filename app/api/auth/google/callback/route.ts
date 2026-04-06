@@ -61,7 +61,9 @@ export async function GET(request: NextRequest) {
     }
 
     if (!storedOAuthState.codeVerifier) {
-      authLogger.error('Google OAuth code verifier not found in state', { stateId: storedOAuthState.id })
+      authLogger.error('Google OAuth code verifier not found in state', {
+        stateId: storedOAuthState.id,
+      })
       await prisma.oAuthState.delete({ where: { id: storedOAuthState.id } })
       return NextResponse.redirect(new URL('/admin/login?error=oauth_invalid_state', BASE_URL))
     }
@@ -148,7 +150,10 @@ export async function GET(request: NextRequest) {
       // Safe to create new user or link to OAuth-only account
       if (existingEmailUser && !existingEmailUser.passwordHash) {
         // OAuth-only account with same email - link Google ID
-        authLogger.info('Linking Google to OAuth-only account', { email, adminId: existingEmailUser.id })
+        authLogger.info('Linking Google to OAuth-only account', {
+          email,
+          adminId: existingEmailUser.id,
+        })
         admin = await prisma.admin.update({
           where: { id: existingEmailUser.id },
           data: {

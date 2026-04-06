@@ -27,11 +27,7 @@ async function testVerificationEmail() {
 
   try {
     const testToken = 'test-token-' + Date.now()
-    const result = await sendVerificationEmail(
-      testEmail,
-      testToken,
-      'Test User'
-    )
+    const result = await sendVerificationEmail(testEmail, testToken, 'Test User')
 
     if (result) {
       console.log('✅ Email sent successfully!')

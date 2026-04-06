@@ -42,8 +42,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 COPY --chown=nextjs:nodejs start.sh ./
 
-# Copy ALL node_modules from builder (CRITICAL for migrations)
-# Prisma 6.x requires 'effect' and other transitive deps not in the standalone bundle
+# Copy Prisma binaries and ALL dependencies from builder (CRITICAL for migrations)
+# Copy complete node_modules to avoid missing transitive deps (e.g. 'effect' in Prisma 6.x)
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 RUN chmod +x start.sh
