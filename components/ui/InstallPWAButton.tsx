@@ -4,7 +4,9 @@ import React, { useState, useEffect } from 'react'
 import { Download } from 'lucide-react'
 import { iconButton } from '@/lib/design-tokens'
 
-// The browser's BeforeInstallPromptEvent is not in standard TypeScript lib
+// The browser's BeforeInstallPromptEvent is not in standard TypeScript lib.
+// This interface is intentionally not exported — the test file declares its own
+// copy for the same reason (can't import a non-exported interface).
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
