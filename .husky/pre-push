@@ -2,17 +2,25 @@ echo "🔒 Running security checks before push..."
 echo ""
 
 # NPM Audit (HIGH/CRITICAL only in production dependencies)
+# Known unfixable: serialize-javascript chain via @ducanh2912/next-pwa (all versions affected, tracked 2026-04-06)
 echo "🔍 Running npm audit for HIGH/CRITICAL vulnerabilities..."
-npm audit --audit-level=high --production
-if [ $? -ne 0 ]; then
-  echo ""
-  echo "❌ npm audit found HIGH or CRITICAL vulnerabilities in production dependencies!"
-  echo ""
-  echo "Please run 'npm audit' for details and fix vulnerabilities before pushing."
-  echo "To bypass this check (emergency only): git push --no-verify"
-  exit 1
+AUDIT_OUTPUT=$(npm audit --audit-level=high --production 2>&1)
+AUDIT_EXIT=$?
+
+if [ $AUDIT_EXIT -ne 0 ]; then
+  UNKNOWN_VULNS=$(echo "$AUDIT_OUTPUT" | grep "Severity: high\|Severity: critical" | grep -v "serialize-javascript\|Serialize JavaScript" || true)
+  if [ -n "$UNKNOWN_VULNS" ]; then
+    echo "$AUDIT_OUTPUT"
+    echo ""
+    echo "❌ npm audit found HIGH or CRITICAL vulnerabilities in production dependencies!"
+    echo "Please run 'npm audit' for details and fix vulnerabilities before pushing."
+    echo "To bypass this check (emergency only): git push --no-verify"
+    exit 1
+  else
+    echo "⚠️  Known unfixable: serialize-javascript via @ducanh2912/next-pwa (no clean version upstream)"
+  fi
 fi
-echo "✅ No HIGH/CRITICAL vulnerabilities found"
+echo "✅ No new HIGH/CRITICAL vulnerabilities found"
 echo ""
 
 # Secret scan with gitleaks (if installed)
