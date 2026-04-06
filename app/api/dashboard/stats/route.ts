@@ -8,10 +8,7 @@ export async function GET(request: NextRequest) {
     // Get current admin session
     const admin = await getCurrentAdmin()
     if (!admin) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Build where clause based on admin role
@@ -39,59 +36,42 @@ export async function GET(request: NextRequest) {
       // If SUPER_ADMIN doesn't specify schoolId, show ALL schools
     }
 
-    // Get events with registration counts (filtered by school)
-    const events = await prisma.event.findMany({
-      where,
-      include: {
-        _count: {
-          select: {
-            registrations: true
-          }
-        },
-        registrations: {
-          select: {
-            status: true,
-            spotsCount: true
-          }
-        }
-      }
-    })
+    // Use parallel aggregate queries — avoids loading all registration rows into memory
+    const registrationWhere = where.schoolId
+      ? { event: { schoolId: where.schoolId as string } }
+      : {}
 
-    // Calculate statistics
-    const activeEvents = events.filter(e => e.status === 'OPEN').length
+    const [activeEvents, confirmedAgg, waitlistAgg, capacityAgg] = await Promise.all([
+      prisma.event.count({ where: { ...where, status: 'OPEN' } }),
+      prisma.registration.aggregate({
+        where: { status: 'CONFIRMED', ...registrationWhere },
+        _sum: { spotsCount: true },
+      }),
+      prisma.registration.aggregate({
+        where: { status: 'WAITLIST', ...registrationWhere },
+        _sum: { spotsCount: true },
+      }),
+      prisma.event.aggregate({
+        where,
+        _sum: { capacity: true },
+      }),
+    ])
 
-    // Calculate total confirmed registrations and waitlist
-    let totalRegistrations = 0
-    let waitlistCount = 0
-    let totalCapacity = 0
+    const totalRegistrations = confirmedAgg._sum.spotsCount ?? 0
+    const waitlistCount = waitlistAgg._sum.spotsCount ?? 0
+    const totalCapacity = capacityAgg._sum.capacity ?? 0
 
-    events.forEach(event => {
-      totalCapacity += event.capacity
-
-      event.registrations.forEach(reg => {
-        if (reg.status === 'CONFIRMED') {
-          totalRegistrations += reg.spotsCount
-        } else if (reg.status === 'WAITLIST') {
-          waitlistCount += reg.spotsCount
-        }
-      })
-    })
-
-    const occupancyRate = totalCapacity > 0
-      ? Math.round((totalRegistrations / totalCapacity) * 100)
-      : 0
+    const occupancyRate =
+      totalCapacity > 0 ? Math.round((totalRegistrations / totalCapacity) * 100) : 0
 
     return NextResponse.json({
       activeEvents,
       totalRegistrations,
       waitlistCount,
-      occupancyRate
+      occupancyRate,
     })
   } catch (error) {
     logger.error('Error fetching dashboard stats', { source: 'dashboard', error })
-    return NextResponse.json(
-      { error: 'Failed to fetch stats' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 })
   }
 }

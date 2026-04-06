@@ -1,10 +1,16 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { CheckInStats } from '@/components/check-in/CheckInStats'
 import { CheckInCard } from '@/components/check-in/CheckInCard'
-import { QRScanner } from '@/components/check-in/QRScanner'
 import { format } from 'date-fns'
+
+// Lazy-load ZXing/html5-qrcode (~288 KB) — only needed when user opens scanner
+const QRScanner = dynamic(
+  () => import('@/components/check-in/QRScanner').then((m) => ({ default: m.QRScanner })),
+  { ssr: false }
+)
 
 interface Registration {
   id: string

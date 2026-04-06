@@ -104,33 +104,45 @@ export default function FieldBuilder({ fields, onChange }: FieldBuilderProps) {
       {/* Fields List */}
       <div className="space-y-3">
         {/* ══════════════════════════════════════════════════════════════
-            COMPACT DEFAULT FIELDS - שם מלא + טלפון
-            Read-only system fields, responsive layout
+            DEFAULT FIELDS - שם מלא + טלפון
+            Read-only system fields, each shown as a distinct card
         ══════════════════════════════════════════════════════════════ */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 px-3 py-2.5 rounded-lg border border-purple-200/80 bg-gradient-to-r from-purple-50/60 to-blue-50/60">
-          <div className="flex items-center gap-3 flex-1">
-            {fields
-              .filter((f) => isDefaultField(f.id))
-              .map((field) => {
-                const config = fieldTypeConfig[field.type as keyof typeof fieldTypeConfig]
-                const Icon = config?.icon || Type
-                return (
-                  <div key={field.id} className="flex items-center gap-2">
-                    <div className={`p-1.5 rounded ${config?.bg || 'bg-gray-50'}`}>
-                      <Icon className={`w-3.5 h-3.5 ${config?.color || 'text-gray-600'}`} />
-                    </div>
-                    <span className="font-medium text-sm text-gray-700 whitespace-nowrap">
-                      {field.label}
-                    </span>
-                  </div>
-                )
-              })}
-          </div>
-          <span className="inline-flex items-center gap-1 text-[10px] text-purple-600 font-medium px-2 py-0.5 bg-purple-100/70 rounded border border-purple-200/50 flex-shrink-0 self-start sm:self-center">
-            <Lock className="w-3 h-3" />
-            <span>שדות מערכת</span>
-          </span>
-        </div>
+        {fields
+          .filter((f) => isDefaultField(f.id))
+          .map((field, index) => {
+            const config = fieldTypeConfig[field.type as keyof typeof fieldTypeConfig]
+            const Icon = config?.icon || Type
+            return (
+              <div
+                key={field.id}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl border border-purple-200 bg-gradient-to-r from-purple-50/70 to-blue-50/50"
+              >
+                {/* Field number indicator */}
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-purple-200 text-purple-700 text-xs font-bold flex items-center justify-center">
+                  {index + 1}
+                </div>
+
+                {/* Field type icon */}
+                <div className={`p-1.5 rounded-lg flex-shrink-0 ${config?.bg || 'bg-gray-50'}`}>
+                  <Icon className={`w-4 h-4 ${config?.color || 'text-gray-600'}`} />
+                </div>
+
+                {/* Field label */}
+                <span className="font-semibold text-sm text-gray-800 flex-1">{field.label}</span>
+
+                {/* Required badge */}
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-600 text-xs font-bold rounded-full whitespace-nowrap">
+                  חובה
+                </span>
+
+                {/* Locked badge */}
+                <span className="inline-flex items-center gap-1 text-[10px] text-purple-600 font-medium px-2 py-0.5 bg-purple-100 rounded-full border border-purple-200 flex-shrink-0">
+                  <Lock className="w-3 h-3" />
+                  <span>מערכת</span>
+                </span>
+              </div>
+            )
+          })}
 
         {/* ══════════════════════════════════════════════════════════════
             CUSTOM FIELDS - user-created, fully editable

@@ -844,6 +844,20 @@ export default function RegistrationsTab({
                             </button>
                           )}
 
+                          {/* Manual approval for pending payment (e.g. paid by phone/cash) */}
+                          {registration.status === 'PAYMENT_PENDING' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handlePromoteToConfirmed(registration.id)
+                              }}
+                              className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-yellow-500 to-amber-500 text-white rounded-xl font-bold hover:from-yellow-600 hover:to-amber-600 active:scale-95 transition-all shadow-md hover:shadow-lg"
+                            >
+                              <UserCheck className="w-4 h-4" />
+                              <span>אישור ידני</span>
+                            </button>
+                          )}
+
                           {/* Restore Cancelled */}
                           {registration.status === 'CANCELLED' && (
                             <button

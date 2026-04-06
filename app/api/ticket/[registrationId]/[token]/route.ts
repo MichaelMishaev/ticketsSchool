@@ -86,6 +86,7 @@ export async function GET(
         endAt: registration.event.endAt,
         location: registration.event.location,
         description: registration.event.description,
+        completionMessage: registration.event.completionMessage,
         // For generating QR data for staff scanning
         checkInToken: registration.event.checkInToken,
       },

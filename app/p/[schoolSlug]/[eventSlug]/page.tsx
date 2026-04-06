@@ -266,6 +266,21 @@ export default function EventPage() {
       ctx.fillText(event.school.name, width / 2, yPos)
     }
 
+    // Special Message
+    if (event.completionMessage) {
+      yPos += 25
+      ctx.fillStyle = '#1e3a8a'
+      ctx.font = 'bold 20px Arial, sans-serif'
+      ctx.textAlign = 'center'
+
+      const messageLines = wrapText(event.completionMessage, width - 60)
+      messageLines.forEach((line) => {
+        ctx.fillText(line, width / 2, yPos)
+        yPos += 30
+      })
+      yPos += 5
+    }
+
     // Footer
     ctx.fillStyle = '#9ca3af'
     ctx.font = '12px Arial, sans-serif'
@@ -806,6 +821,14 @@ export default function EventPage() {
                 </p>
               </div>
 
+              {event.completionMessage && (
+                <div className="mt-6 bg-blue-50 rounded-xl p-6 border-2 border-blue-200">
+                  <p className="text-blue-900 text-center font-bold text-lg leading-relaxed whitespace-pre-wrap">
+                    {event.completionMessage}
+                  </p>
+                </div>
+              )}
+
               <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-600">
                   קוד אישור לרשימת המתנה:{' '}
@@ -882,6 +905,14 @@ export default function EventPage() {
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">ההרשמה הושלמה בהצלחה!</h1>
             <p className="text-gray-600 mb-6">המקום שלך נשמר לאירוע</p>
+
+            {event.completionMessage && (
+              <div className="bg-blue-50 rounded-xl p-6 mb-6 border-2 border-blue-200">
+                <p className="text-blue-900 text-center font-bold text-lg leading-relaxed whitespace-pre-wrap">
+                  {event.completionMessage}
+                </p>
+              </div>
+            )}
 
             <div className="bg-gray-50 rounded-lg p-6 mb-6">
               <p className="text-sm text-gray-500 mb-2">קוד אישור</p>
@@ -1079,7 +1110,7 @@ export default function EventPage() {
             <img
               src={event.coverImage ?? DEFAULT_COVER_IMAGE}
               alt={event.title}
-              loading="lazy"
+              fetchPriority="high"
               className="w-full h-full object-cover"
             />
             {/* Dark overlay for text legibility */}

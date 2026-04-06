@@ -24,20 +24,22 @@ export async function PATCH(
   try {
     // Check authentication
     const admin = await getCurrentAdmin()
-    logger.debug('Registration PATCH authentication check', { source: 'registration', authenticated: !!admin })
+    logger.debug('Registration PATCH authentication check', {
+      source: 'registration',
+      authenticated: !!admin,
+    })
     if (!admin) {
-      logger.warn('Registration PATCH unauthorized: No admin session found', { source: 'registration' })
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      logger.warn('Registration PATCH unauthorized: No admin session found', {
+        source: 'registration',
+      })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     logger.debug('Registration PATCH admin authenticated', {
       source: 'registration',
       adminId: admin.adminId,
       email: admin.email,
       role: admin.role,
-      schoolId: admin.schoolId
+      schoolId: admin.schoolId,
     })
 
     const { id, registrationId } = await params
@@ -46,14 +48,11 @@ export async function PATCH(
     // Verify admin has access to this event's school (include title for alerts)
     const eventCheck = await prisma.event.findUnique({
       where: { id },
-      select: { schoolId: true, title: true }
+      select: { schoolId: true, title: true },
     })
 
     if (!eventCheck) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
     // Check school access (SUPER_ADMIN can access all, others must match schoolId)
@@ -65,156 +64,193 @@ export async function PATCH(
     }
 
     // Use transaction to ensure atomic operation and prevent race conditions
-    const registration = await prisma.$transaction(async (tx) => {
-      // Get current registration with assigned table info and contact details
-      const currentRegistration = await tx.registration.findUnique({
-        where: { id: registrationId, eventId: id },
-        include: {
-          event: {
-            select: { eventType: true }
+    const registration = await prisma.$transaction(
+      async (tx) => {
+        // Get current registration with assigned table info and contact details
+        const currentRegistration = await tx.registration.findUnique({
+          where: { id: registrationId, eventId: id },
+          include: {
+            event: {
+              select: { eventType: true },
+            },
+            assignedTable: {
+              select: { id: true },
+            },
           },
-          assignedTable: {
-            select: { id: true }
-          }
+        })
+
+        if (!currentRegistration) {
+          throw new Error('Registration not found')
         }
-      })
 
-      if (!currentRegistration) {
-        throw new Error('Registration not found')
-      }
+        // Handle status changes - check capacity if promoting to CONFIRMED
+        const oldStatus = currentRegistration.status
+        const newStatus = data.status
+        const oldSpotsCount = currentRegistration.spotsCount
+        const newSpotsCount = data.spotsCount ?? oldSpotsCount
 
-      // Handle status changes - check capacity if promoting to CONFIRMED
-      const oldStatus = currentRegistration.status
-      const newStatus = data.status
-      const oldSpotsCount = currentRegistration.spotsCount
-      const newSpotsCount = data.spotsCount ?? oldSpotsCount
+        // Check if we're promoting to CONFIRMED (need capacity validation)
+        const isPromotingToConfirmed = oldStatus !== 'CONFIRMED' && newStatus === 'CONFIRMED'
+        const isIncreasingConfirmedSpots =
+          oldStatus === 'CONFIRMED' && newStatus === 'CONFIRMED' && newSpotsCount > oldSpotsCount
 
-      // Check if we're promoting to CONFIRMED (need capacity validation)
-      const isPromotingToConfirmed = oldStatus !== 'CONFIRMED' && newStatus === 'CONFIRMED'
-      const isIncreasingConfirmedSpots = oldStatus === 'CONFIRMED' && newStatus === 'CONFIRMED' && newSpotsCount > oldSpotsCount
-
-      if (isPromotingToConfirmed || isIncreasingConfirmedSpots) {
-        // Get event with lock
-        const [event] = await tx.$queryRaw<Array<{
-          id: string
-          capacity: number
-          spotsReserved: number | null
-        }>>`
+        if (isPromotingToConfirmed || isIncreasingConfirmedSpots) {
+          // Get event with lock
+          const [event] = await tx.$queryRaw<
+            Array<{
+              id: string
+              capacity: number
+              spotsReserved: number | null
+            }>
+          >`
           SELECT id, capacity, "spotsReserved" FROM "Event"
           WHERE id = ${id}
           FOR UPDATE
         `
 
-        if (!event) {
-          throw new Error('Event not found')
-        }
+          if (!event) {
+            throw new Error('Event not found')
+          }
 
-        // CRITICAL: Always validate against REAL aggregate count to prevent overbooking
-        // The spotsReserved counter can get out of sync, so we must verify with actual data
-        const confirmedAgg = await tx.registration.aggregate({
-          where: {
-            eventId: id,
-            status: 'CONFIRMED',
-            id: { not: registrationId } // Exclude this registration if it was already confirmed
-          },
-          _sum: { spotsCount: true }
-        })
+          // CRITICAL: Always validate against REAL aggregate count to prevent overbooking
+          // The spotsReserved counter can get out of sync, so we must verify with actual data
+          const confirmedAgg = await tx.registration.aggregate({
+            where: {
+              eventId: id,
+              status: 'CONFIRMED',
+              id: { not: registrationId }, // Exclude this registration if it was already confirmed
+            },
+            _sum: { spotsCount: true },
+          })
 
-        const actualConfirmed = confirmedAgg._sum.spotsCount || 0
-        const spotsNeeded = isPromotingToConfirmed ? newSpotsCount : (newSpotsCount - oldSpotsCount)
-        const actualSpotsLeft = event.capacity - actualConfirmed
+          const actualConfirmed = confirmedAgg._sum.spotsCount || 0
+          const spotsNeeded = isPromotingToConfirmed ? newSpotsCount : newSpotsCount - oldSpotsCount
+          const actualSpotsLeft = event.capacity - actualConfirmed
 
-        // Block if not enough actual capacity
-        if (actualSpotsLeft < spotsNeeded) {
-          throw new Error(`לא ניתן לאשר: נותרו רק ${actualSpotsLeft} מקומות פנויים, אך ההרשמה דורשת ${spotsNeeded} מקומות`)
-        }
+          // Block if not enough actual capacity
+          if (actualSpotsLeft < spotsNeeded) {
+            throw new Error(
+              `לא ניתן לאשר: נותרו רק ${actualSpotsLeft} מקומות פנויים, אך ההרשמה דורשת ${spotsNeeded} מקומות`
+            )
+          }
 
-        // Also update the spotsReserved counter for performance optimization
-        // But the aggregate check above is the source of truth
-        if (event.spotsReserved !== null) {
-          await tx.$executeRaw`
+          // Also update the spotsReserved counter for performance optimization
+          // But the aggregate check above is the source of truth
+          if (event.spotsReserved !== null) {
+            await tx.$executeRaw`
             UPDATE "Event"
             SET "spotsReserved" = "spotsReserved" + ${spotsNeeded}
             WHERE id = ${id}
           `
-        }
-      } else if (oldStatus === 'CONFIRMED' && newStatus !== 'CONFIRMED') {
-        // Freeing up spots - update counter if it exists (capacity-based)
-        if (currentRegistration.event.eventType === 'CAPACITY_BASED') {
-          try {
-            await tx.$executeRaw`
+          }
+        } else if (oldStatus === 'CONFIRMED' && newStatus !== 'CONFIRMED') {
+          // Freeing up spots - update counter if it exists (capacity-based)
+          if (currentRegistration.event.eventType === 'CAPACITY_BASED') {
+            try {
+              await tx.$executeRaw`
               UPDATE "Event"
               SET "spotsReserved" = GREATEST(0, "spotsReserved" - ${oldSpotsCount})
               WHERE id = ${id}
             `
-          } catch (error) {
-            // Column doesn't exist yet (migration not applied) - that's OK
+            } catch (error) {
+              // Column doesn't exist yet (migration not applied) - that's OK
+            }
+          }
+
+          // Free table if table-based
+          if (
+            currentRegistration.event.eventType === 'TABLE_BASED' &&
+            currentRegistration.assignedTable
+          ) {
+            await tx.table.update({
+              where: { id: currentRegistration.assignedTable.id },
+              data: { status: 'AVAILABLE', reservedById: null },
+            })
           }
         }
 
-        // Free table if table-based
-        if (currentRegistration.event.eventType === 'TABLE_BASED' && currentRegistration.assignedTable) {
-          await tx.table.update({
-            where: { id: currentRegistration.assignedTable.id },
-            data: { status: 'AVAILABLE', reservedById: null }
+        // Prepare registration data update
+        const updateData: any = {
+          status: newStatus,
+          ...(data.spotsCount && { spotsCount: data.spotsCount }),
+        }
+
+        // Handle data field updates (merge with existing data)
+        if (data.removedFromTable || data.data) {
+          const existingData = (currentRegistration.data as any) || {}
+          updateData.data = {
+            ...existingData,
+            ...(data.data || {}),
+            ...(data.removedFromTable && {
+              removedFromTable: true,
+              removedAt: new Date().toISOString(),
+            }),
+          }
+        }
+
+        // If moving to waitlist from confirmed, assign priority
+        if (newStatus === 'WAITLIST' && oldStatus === 'CONFIRMED') {
+          // Get the highest priority in waitlist and add 1
+          const highestPriority = await tx.registration.aggregate({
+            where: { eventId: id, status: 'WAITLIST' },
+            _max: { waitlistPriority: true },
+          })
+          updateData.waitlistPriority = (highestPriority._max.waitlistPriority || 0) + 1
+        }
+
+        // If manually approving a pending payment, also update the registration's payment fields
+        if (oldStatus === 'PAYMENT_PENDING' && newStatus === 'CONFIRMED') {
+          updateData.paymentStatus = 'COMPLETED'
+          updateData.amountPaid = currentRegistration.amountDue // Mark full amount as paid
+        }
+
+        // If cancelling, record cancellation details
+        if (newStatus === 'CANCELLED' && oldStatus !== 'CANCELLED') {
+          updateData.cancelledAt = new Date()
+          updateData.cancelledBy = 'ADMIN'
+          if (data.cancellationReason) {
+            updateData.cancellationReason = data.cancellationReason
+          }
+        }
+
+        const updatedRegistration = await tx.registration.update({
+          where: {
+            id: registrationId,
+            eventId: id,
+          },
+          data: updateData,
+        })
+
+        // If manually approving a pending payment, mark the linked Payment as completed
+        if (oldStatus === 'PAYMENT_PENDING' && newStatus === 'CONFIRMED') {
+          await tx.payment.updateMany({
+            where: { registrationId: registrationId, status: 'PROCESSING' },
+            data: {
+              status: 'COMPLETED',
+              paymentMethod: 'manual',
+              yaadPayTransactionId: `MANUAL-${Date.now()}`,
+              completedAt: new Date(),
+            },
           })
         }
-      }
 
-      // Prepare registration data update
-      const updateData: any = {
-        status: newStatus,
-        ...(data.spotsCount && { spotsCount: data.spotsCount }),
+        return updatedRegistration
+      },
+      {
+        isolationLevel: 'Serializable',
+        timeout: 10000,
       }
-
-      // Handle data field updates (merge with existing data)
-      if (data.removedFromTable || data.data) {
-        const existingData = (currentRegistration.data as any) || {}
-        updateData.data = {
-          ...existingData,
-          ...(data.data || {}),
-          ...(data.removedFromTable && { removedFromTable: true, removedAt: new Date().toISOString() })
-        }
-      }
-
-      // If moving to waitlist from confirmed, assign priority
-      if (newStatus === 'WAITLIST' && oldStatus === 'CONFIRMED') {
-        // Get the highest priority in waitlist and add 1
-        const highestPriority = await tx.registration.aggregate({
-          where: { eventId: id, status: 'WAITLIST' },
-          _max: { waitlistPriority: true }
-        })
-        updateData.waitlistPriority = (highestPriority._max.waitlistPriority || 0) + 1
-      }
-
-      // If cancelling, record cancellation details
-      if (newStatus === 'CANCELLED' && oldStatus !== 'CANCELLED') {
-        updateData.cancelledAt = new Date()
-        updateData.cancelledBy = 'ADMIN'
-        if (data.cancellationReason) {
-          updateData.cancellationReason = data.cancellationReason
-        }
-      }
-
-      return await tx.registration.update({
-        where: {
-          id: registrationId,
-          eventId: id
-        },
-        data: updateData
-      })
-    }, {
-      isolationLevel: 'Serializable',
-      timeout: 10000
-    })
+    )
 
     // SAFETY CHECK: Detect if overbooking somehow occurred (shouldn't happen, but alert if it does)
     if (data.status === 'CONFIRMED') {
       try {
-        const [overbookCheck] = await prisma.$queryRaw<Array<{
-          capacity: number
-          confirmedSpots: bigint
-        }>>`
+        const [overbookCheck] = await prisma.$queryRaw<
+          Array<{
+            capacity: number
+            confirmedSpots: bigint
+          }>
+        >`
           SELECT e.capacity,
                  COALESCE(SUM(r."spotsCount"), 0) as "confirmedSpots"
           FROM "Event" e
@@ -229,13 +265,13 @@ export async function PATCH(
             eventId: id,
             capacity: overbookCheck.capacity,
             confirmedSpots: Number(overbookCheck.confirmedSpots),
-            overage: Number(overbookCheck.confirmedSpots) - overbookCheck.capacity
+            overage: Number(overbookCheck.confirmedSpots) - overbookCheck.capacity,
           })
 
           // Get registration details for the alert
           const regDetails = await prisma.registration.findUnique({
             where: { id: registrationId },
-            select: { phoneNumber: true, spotsCount: true, data: true }
+            select: { phoneNumber: true, spotsCount: true, data: true },
           })
           const regData = (regDetails?.data as Record<string, any>) || {}
 
@@ -249,13 +285,19 @@ export async function PATCH(
             currentConfirmed: Number(overbookCheck.confirmedSpots),
             attemptedSpots: regDetails?.spotsCount || 0,
             registrantName: regData.studentName || regData.name || regData.parentName || 'לא צוין',
-            registrantPhone: regDetails?.phoneNumber || 'לא צוין'
+            registrantPhone: regDetails?.phoneNumber || 'לא צוין',
           }).catch((emailError) => {
-            logger.error('Failed to send overbooking alert email', { source: 'registration', error: emailError })
+            logger.error('Failed to send overbooking alert email', {
+              source: 'registration',
+              error: emailError,
+            })
           })
         }
       } catch (checkError) {
-        logger.error('Error checking for overbooking', { source: 'registration', error: checkError })
+        logger.error('Error checking for overbooking', {
+          source: 'registration',
+          error: checkError,
+        })
       }
     }
 
@@ -265,23 +307,14 @@ export async function PATCH(
 
     // Handle specific error messages (capacity validation errors)
     if (error.message.includes('Cannot promote') || error.message.includes('לא ניתן לאשר')) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
     if (error.message.includes('not found')) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: error.message }, { status: 404 })
     }
 
-    return NextResponse.json(
-      { error: 'Failed to update registration' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to update registration' }, { status: 500 })
   }
 }
 
@@ -293,10 +326,7 @@ export async function DELETE(
     // Check authentication
     const admin = await getCurrentAdmin()
     if (!admin) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { id, registrationId } = await params
@@ -304,14 +334,11 @@ export async function DELETE(
     // Verify admin has access to this event's school
     const event = await prisma.event.findUnique({
       where: { id },
-      select: { schoolId: true }
+      select: { schoolId: true },
     })
 
     if (!event) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
     // Check school access (SUPER_ADMIN can access all, others must match schoolId)
@@ -323,57 +350,54 @@ export async function DELETE(
     }
 
     // Use transaction to atomically delete and update counter
-    await prisma.$transaction(async (tx) => {
-      // Get registration to check status and spots
-      const registration = await tx.registration.findUnique({
-        where: { id: registrationId, eventId: id },
-        select: { status: true, spotsCount: true }
-      })
+    await prisma.$transaction(
+      async (tx) => {
+        // Get registration to check status and spots
+        const registration = await tx.registration.findUnique({
+          where: { id: registrationId, eventId: id },
+          select: { status: true, spotsCount: true },
+        })
 
-      if (!registration) {
-        throw new Error('Registration not found')
-      }
-
-      // Delete the registration
-      await tx.registration.delete({
-        where: {
-          id: registrationId,
-          eventId: id
+        if (!registration) {
+          throw new Error('Registration not found')
         }
-      })
 
-      // If it was confirmed, free up the spots (if spotsReserved column exists)
-      if (registration.status === 'CONFIRMED') {
-        try {
-          await tx.$executeRaw`
+        // Delete the registration
+        await tx.registration.delete({
+          where: {
+            id: registrationId,
+            eventId: id,
+          },
+        })
+
+        // If it was confirmed, free up the spots (if spotsReserved column exists)
+        if (registration.status === 'CONFIRMED') {
+          try {
+            await tx.$executeRaw`
             UPDATE "Event"
             SET "spotsReserved" = GREATEST(0, "spotsReserved" - ${registration.spotsCount})
             WHERE id = ${id}
           `
-        } catch (error) {
-          // Column doesn't exist yet (migration not applied) - that's OK
-          // The spots are freed by virtue of the registration being deleted
+          } catch (error) {
+            // Column doesn't exist yet (migration not applied) - that's OK
+            // The spots are freed by virtue of the registration being deleted
+          }
         }
+      },
+      {
+        isolationLevel: 'Serializable',
+        timeout: 10000,
       }
-    }, {
-      isolationLevel: 'Serializable',
-      timeout: 10000
-    })
+    )
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
     logger.error('Error deleting registration', { source: 'registration', error })
 
     if (error.message.includes('not found')) {
-      return NextResponse.json(
-        { error: 'Registration not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Registration not found' }, { status: 404 })
     }
 
-    return NextResponse.json(
-      { error: 'Failed to delete registration' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to delete registration' }, { status: 500 })
   }
 }

@@ -65,18 +65,15 @@ export async function GET(
       return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
-    // Calculate total spots taken
-    const confirmedRegistrations = await prisma.registration.findMany({
+    // Calculate total spots taken using aggregate (avoids loading all rows)
+    const { _sum } = await prisma.registration.aggregate({
       where: {
         eventId: event.id,
         status: 'CONFIRMED',
       },
-      select: {
-        spotsCount: true,
-      },
+      _sum: { spotsCount: true },
     })
-
-    const totalSpotsTaken = confirmedRegistrations.reduce((sum, reg) => sum + reg.spotsCount, 0)
+    const totalSpotsTaken = _sum.spotsCount ?? 0
 
     // For TABLE_BASED events, get max table capacity
     let maxTableCapacity: number | null = null

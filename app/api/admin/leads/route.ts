@@ -11,10 +11,7 @@ export async function GET(request: NextRequest) {
     // Enforce multi-tenant isolation
     if (admin.role !== 'SUPER_ADMIN') {
       if (!admin.schoolId) {
-        return NextResponse.json(
-          { error: 'Admin must have a school assigned' },
-          { status: 403 }
-        )
+        return NextResponse.json({ error: 'Admin must have a school assigned' }, { status: 403 })
       }
     }
 
@@ -54,7 +51,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Fetch all registrations with event data
+    // Fetch recent registrations with event data (limit to prevent full table scan)
     const registrations = await prisma.registration.findMany({
       where,
       include: {
@@ -70,19 +67,23 @@ export async function GET(request: NextRequest) {
       orderBy: {
         createdAt: 'desc',
       },
+      take: 2000,
     })
 
     // Group by normalized phone number
-    const leadsMap = new Map<string, {
-      name: string
-      phone: string
-      email: string | null
-      events: Array<{ id: string; name: string; date: Date; status: string }>
-      confirmedCount: number
-      waitlistCount: number
-      latestRegistration: Date
-      totalGuests: number
-    }>()
+    const leadsMap = new Map<
+      string,
+      {
+        name: string
+        phone: string
+        email: string | null
+        events: Array<{ id: string; name: string; date: Date; status: string }>
+        confirmedCount: number
+        waitlistCount: number
+        latestRegistration: Date
+        totalGuests: number
+      }
+    >()
 
     for (const reg of registrations) {
       // Extract name and email from JSON data field
@@ -151,12 +152,14 @@ export async function GET(request: NextRequest) {
           name,
           phone: normalizedPhone,
           email,
-          events: [{
-            id: reg.event.id,
-            name: reg.event.title,
-            date: reg.event.startAt,
-            status: reg.status,
-          }],
+          events: [
+            {
+              id: reg.event.id,
+              name: reg.event.title,
+              date: reg.event.startAt,
+              status: reg.status,
+            },
+          ],
           confirmedCount: reg.status === 'CONFIRMED' ? 1 : 0,
           waitlistCount: reg.status === 'WAITLIST' ? 1 : 0,
           latestRegistration: reg.createdAt,
@@ -175,9 +178,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     logger.error('Failed to fetch leads', { source: 'admin', error })
-    return NextResponse.json(
-      { error: 'Failed to fetch leads' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch leads' }, { status: 500 })
   }
 }

@@ -1,5 +1,8 @@
 import type { NextConfig } from 'next'
 import path from 'path'
+import bundleAnalyzer from '@next/bundle-analyzer'
+
+const withBundleAnalyzer = bundleAnalyzer({ enabled: process.env.ANALYZE === 'true' })
 
 const nextConfig: NextConfig = {
   // Prevent Next.js from bundling packages that use worker threads or native paths
@@ -22,6 +25,14 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      {
+        source: '/images/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
+      {
+        source: '/_next/static/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
       {
         source: '/(.*)',
         headers: [
@@ -65,4 +76,4 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default nextConfig
+export default withBundleAnalyzer(nextConfig)

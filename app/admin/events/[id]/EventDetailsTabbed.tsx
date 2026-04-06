@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import dynamic from 'next/dynamic'
 import { useParams, useSearchParams } from 'next/navigation'
 import { Loader2, AlertCircle } from 'lucide-react'
 import EventTabNavigation, { TabId } from '@/components/admin/event-details/EventTabNavigation'
@@ -9,23 +10,30 @@ import FloatingCheckInMenu, {
   CheckInButton,
 } from '@/components/admin/event-details/FloatingCheckInMenu'
 import OverviewTab from '@/components/admin/event-details/tabs/OverviewTab'
-import RegistrationsTab from '@/components/admin/event-details/tabs/RegistrationsTab'
-import CheckInTab from '@/components/admin/event-details/tabs/CheckInTab'
-import ReportsTab from '@/components/admin/event-details/tabs/ReportsTab'
 import DevFeatureLabel from '@/components/dev/DevFeatureLabel'
+
+const TabSpinner = () => (
+  <div className="flex justify-center items-center h-64">
+    <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+  </div>
+)
+
+const RegistrationsTab = dynamic(
+  () => import('@/components/admin/event-details/tabs/RegistrationsTab'),
+  { loading: TabSpinner }
+)
+const CheckInTab = dynamic(() => import('@/components/admin/event-details/tabs/CheckInTab'), {
+  loading: TabSpinner,
+})
+const ReportsTab = dynamic(() => import('@/components/admin/event-details/tabs/ReportsTab'), {
+  loading: TabSpinner,
+})
 
 const TAB_FEATURE_MAP: Record<TabId, string> = {
   overview: 'event-management',
   registrations: 'registration',
   checkin: 'check-in',
   reports: 'reporting',
-}
-
-interface FieldSchema {
-  id: string
-  label: string
-  type: string
-  required?: boolean
 }
 
 interface Registration {

@@ -44,6 +44,7 @@ interface TicketData {
     endAt: string
     location: string | null
     description: string | null
+    completionMessage: string | null
     checkInToken: string | null
   }
   school: {
@@ -285,6 +286,15 @@ export default function TicketPage() {
               {ticket.confirmationCode}
             </p>
           </div>
+
+          {/* Special Message */}
+          {event.completionMessage && !isCancelled && (
+            <div className="p-6 border-b border-gray-100 bg-blue-50/50">
+              <p className="text-blue-900 text-center font-medium leading-relaxed whitespace-pre-wrap">
+                {event.completionMessage}
+              </p>
+            </div>
+          )}
 
           {/* QR Code Section */}
           {!isCancelled && qrCodeImage && (
