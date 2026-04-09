@@ -83,11 +83,14 @@ export async function login(email: string, password: string): Promise<AuthSessio
     })
 
     if (!admin) {
+      // Constant-time: always run bcrypt to prevent timing-based email enumeration
+      await bcrypt.compare(password, '$2a$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWX')
       return null
     }
 
     // OAuth users don't have password hash
     if (!admin.passwordHash) {
+      await bcrypt.compare(password, '$2a$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWX')
       return null
     }
 

@@ -32,14 +32,18 @@ export function rateLimit(options: {
     // Skip rate limiting for E2E tests (Playwright sets this header)
     // Also check for test environment variable
     if (
-      req.headers.get('x-playwright-test') === 'true' ||
+      process.env.SKIP_RATE_LIMIT === 'true' ||
       process.env.PLAYWRIGHT_TEST === 'true' ||
-      process.env.SKIP_RATE_LIMIT === 'true'
+      (process.env.NODE_ENV !== 'production' && req.headers.get('x-playwright-test') === 'true')
     ) {
       return null
     }
 
-    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
+    const forwardedFor = req.headers.get('x-forwarded-for')
+    const ip =
+      (forwardedFor ? forwardedFor.split(',')[0].trim() : null) ||
+      req.headers.get('x-real-ip') ||
+      'unknown'
     const key = `${req.nextUrl.pathname}:${ip}`
 
     const now = Date.now()
