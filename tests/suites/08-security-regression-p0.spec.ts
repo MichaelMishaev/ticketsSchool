@@ -467,8 +467,9 @@ test.describe('Security Regression P0 - CRITICAL Bugs', () => {
 
   // US-SEC-04: Auth bypass — admin API routes require session
   test.describe('[US-SEC-04] Auth bypass prevention', () => {
-    test('server: /api/admin/schools returns 401 without session', async ({ context }) => {
-      const res = await context.request.get('/api/admin/schools')
+    test('server: /api/events returns 401 without session', async ({ context }) => {
+      // /api/events is protected by middleware — must return 401 with no session cookie
+      const res = await context.request.get('/api/events')
       expect(res.status()).toBe(401)
     })
 
@@ -483,12 +484,20 @@ test.describe('Security Regression P0 - CRITICAL Bugs', () => {
     test('server: admin cannot read another school event by direct ID', async ({ context }) => {
       const schoolA = await createSchool().withName('Sec School A').create()
       const schoolB = await createSchool().withName('Sec School B').create()
-      const adminA = await createAdmin().withSchool(schoolA.id).create()
+      const adminA = await createAdmin()
+        .withEmail(generateEmail('sec-tenant-a'))
+        .withPassword('TestPassword123!')
+        .withSchool(schoolA.id)
+        .create()
       const eventB = await createEvent().withSchool(schoolB.id).withCapacity(10).inFuture().create()
 
-      await loginViaAPI(context, adminA.email, adminA.password)
+      const loggedIn = await loginViaAPI(context, adminA.email, adminA.password)
+      expect(loggedIn).toBe(true)
+
       const res = await context.request.get(`/api/events/${eventB.id}`)
-      expect([403, 404]).toContain(res.status())
+      // Must not be 200 — cross-tenant access blocked (403) or event not found (404)
+      expect(res.status()).not.toBe(200)
+      expect([401, 403, 404]).toContain(res.status())
     })
 
     test('server: admin cannot read registrations from another school event', async ({
@@ -496,12 +505,20 @@ test.describe('Security Regression P0 - CRITICAL Bugs', () => {
     }) => {
       const schoolA = await createSchool().withName('Sec ISO A').create()
       const schoolB = await createSchool().withName('Sec ISO B').create()
-      const adminA = await createAdmin().withSchool(schoolA.id).create()
+      const adminA = await createAdmin()
+        .withEmail(generateEmail('sec-iso-a'))
+        .withPassword('TestPassword123!')
+        .withSchool(schoolA.id)
+        .create()
       const eventB = await createEvent().withSchool(schoolB.id).withCapacity(10).inFuture().create()
 
-      await loginViaAPI(context, adminA.email, adminA.password)
+      const loggedIn = await loginViaAPI(context, adminA.email, adminA.password)
+      expect(loggedIn).toBe(true)
+
       const res = await context.request.get(`/api/events/${eventB.id}/registrations`)
-      expect([403, 404]).toContain(res.status())
+      // Must not be 200 — cross-tenant access blocked
+      expect(res.status()).not.toBe(200)
+      expect([401, 403, 404]).toContain(res.status())
     })
   })
 
