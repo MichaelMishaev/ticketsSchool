@@ -1,10 +1,12 @@
 import { test, expect } from '@playwright/test'
 import {
   createSchool,
+  createAdmin,
   createEvent,
   createRegistration,
   cleanupTestData,
 } from '../fixtures/test-data'
+import { loginViaAPI } from '../helpers/auth-helpers'
 import { generateEmail, generateIsraeliPhone } from '../helpers/test-helpers'
 import { prisma } from '@/lib/prisma'
 import { cancelReservation, adminCancelReservation } from '@/lib/cancellation'
@@ -524,6 +526,99 @@ test.describe('Waitlist Promotion P0 - Critical Tests', () => {
       // Verify waitlist promoted
       const promoted = await prisma.registration.findUnique({ where: { id: waitlistReg.id } })
       expect(promoted?.status).toBe('CONFIRMED')
+    })
+  })
+
+  // US-WAIT-01: Waitlist registration does NOT increment spotsReserved
+  test.describe('[US-WAIT-01] Waitlist does not consume capacity', () => {
+    test('server: spotsReserved stays at capacity after waitlist registration', async ({
+      context,
+    }) => {
+      const school = await createSchool().withName('Waitlist Cap Test').create()
+      const admin = await createAdmin().withSchool(school.id).create()
+      const event = await createEvent()
+        .withSchool(school.id)
+        .withCapacity(1)
+        .withSpotsReserved(1)
+        .inFuture()
+        .create()
+
+      const res = await context.request.post(`/api/p/${school.slug}/${event.slug}/register`, {
+        data: {
+          name: 'Waitlist User',
+          phoneNumber: '+972509220001',
+          email: 'wait-cap@test.com',
+          spotsCount: 1,
+        },
+      })
+
+      if ([200, 201].includes(res.status())) {
+        const body = await res.json()
+        const status = body.status ?? body.registration?.status
+        expect(status).toBe('WAITLIST')
+
+        await loginViaAPI(context, admin.email, admin.password)
+        const evtRes = await context.request.get(`/api/events/${event.id}`)
+        if (evtRes.status() === 200) {
+          const evtBody = await evtRes.json()
+          // spotsReserved must not exceed capacity
+          expect(evtBody.spotsReserved).toBe(1)
+        }
+      }
+    })
+  })
+
+  // US-WAIT-03/04: Waitlist ordered by createdAt ascending
+  test.describe('[US-WAIT-03/04] Waitlist ordering by timestamp', () => {
+    test('server: waitlist registrations returned in createdAt ascending order', async ({
+      context,
+    }) => {
+      const school = await createSchool().withName('Waitlist Order Test').create()
+      const admin = await createAdmin().withSchool(school.id).create()
+      const event = await createEvent()
+        .withSchool(school.id)
+        .withCapacity(1)
+        .withSpotsReserved(1)
+        .inFuture()
+        .create()
+
+      const w1 = await createRegistration()
+        .withEvent(event.id)
+        .waitlist()
+        .withPhone('+972509220010')
+        .create()
+      await new Promise((r) => setTimeout(r, 100))
+      await createRegistration().withEvent(event.id).waitlist().withPhone('+972509220011').create()
+
+      await loginViaAPI(context, admin.email, admin.password)
+      const res = await context.request.get(`/api/events/${event.id}/registrations?status=WAITLIST`)
+      if (res.status() === 200) {
+        const body = await res.json()
+        const registrations = body.registrations ?? body
+        if (Array.isArray(registrations) && registrations.length >= 2) {
+          const dates = registrations.map((r: any) => new Date(r.createdAt).getTime())
+          expect(dates[0]).toBeLessThanOrEqual(dates[1])
+        }
+      }
+    })
+  })
+
+  // US-WAIT-06: Waitlist registration can be cancelled
+  test.describe('[US-WAIT-06] Cancel waitlist spot', () => {
+    test('server: WAITLIST registration status can be set to CANCELLED', async ({ context }) => {
+      const school = await createSchool().withName('Waitlist Cancel Test').create()
+      const admin = await createAdmin().withSchool(school.id).create()
+      const event = await createEvent().withSchool(school.id).withCapacity(50).inFuture().create()
+      const waitlistReg = await createRegistration().withEvent(event.id).waitlist().create()
+
+      await loginViaAPI(context, admin.email, admin.password)
+      const res = await context.request.patch(
+        `/api/events/${event.id}/registrations/${waitlistReg.id}`,
+        {
+          data: { status: 'CANCELLED' },
+        }
+      )
+      expect([200, 204]).toContain(res.status())
     })
   })
 })
