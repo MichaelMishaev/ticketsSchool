@@ -155,7 +155,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     // Check event exists and get school
     const existingEvent = await prisma.event.findUnique({
       where: { id },
-      select: { schoolId: true },
+      select: { schoolId: true, spotsReserved: true },
     })
 
     if (!existingEvent) {
@@ -185,7 +185,18 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (data.endAt !== undefined) {
       updateData.endAt = data.endAt ? new Date(data.endAt) : null
     }
-    if (data.capacity !== undefined) updateData.capacity = parseInt(data.capacity)
+    if (data.capacity !== undefined) {
+      const newCapacity = parseInt(data.capacity)
+      if (newCapacity < existingEvent.spotsReserved) {
+        return NextResponse.json(
+          {
+            error: `Cannot reduce capacity below current confirmed count (${existingEvent.spotsReserved} spots reserved)`,
+          },
+          { status: 400 }
+        )
+      }
+      updateData.capacity = newCapacity
+    }
     if (data.maxSpotsPerPerson !== undefined)
       updateData.maxSpotsPerPerson = parseInt(data.maxSpotsPerPerson)
     if (data.fieldsSchema !== undefined) {
