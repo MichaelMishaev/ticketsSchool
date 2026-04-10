@@ -71,7 +71,13 @@ export default function EventDetailsTabbed() {
   const searchParams = useSearchParams()
   const eventId = params.id as string
 
-  const [activeTab, setActiveTab] = useState<TabId>('overview')
+  const [activeTab, setActiveTab] = useState<TabId>(() => {
+    const urlTab = searchParams.get('tab') as TabId | null
+    if (urlTab && ['overview', 'registrations', 'checkin', 'reports'].includes(urlTab)) {
+      return urlTab
+    }
+    return 'overview'
+  })
   const [event, setEvent] = useState<Event | null>(null)
   const [registrations, setRegistrations] = useState<Registration[]>([])
   const [loading, setLoading] = useState(true)
@@ -94,24 +100,22 @@ export default function EventDetailsTabbed() {
       })()
     : false
 
-  // Initialize active tab from URL query param
+  // Sync URL when tab changes (replaceState bypasses Next.js navigation — no re-render)
   useEffect(() => {
-    const urlTab = searchParams.get('tab') as TabId | null
-    if (urlTab && ['overview', 'registrations', 'checkin', 'reports'].includes(urlTab)) {
-      setActiveTab(urlTab)
-    }
-  }, [searchParams])
+    const url = new URL(window.location.href)
+    url.searchParams.set('tab', activeTab)
+    window.history.replaceState(null, '', url.toString())
+  }, [activeTab])
 
   // Scroll to top of tab content when tab changes
-  // This ensures users see the top of the tab, not the footer
   useEffect(() => {
-    if (tabContentRef.current) {
-      // Scroll the tab content container into view at the top
-      tabContentRef.current.scrollIntoView({ behavior: 'instant', block: 'start' })
-    } else {
-      // Fallback: scroll window to top
-      window.scrollTo({ top: 0, behavior: 'instant' })
-    }
+    requestAnimationFrame(() => {
+      if (tabContentRef.current) {
+        tabContentRef.current.scrollIntoView({ behavior: 'instant', block: 'start' })
+      } else {
+        window.scrollTo({ top: 0, behavior: 'instant' })
+      }
+    })
   }, [activeTab])
 
   // Fetch event data
@@ -179,9 +183,9 @@ export default function EventDetailsTabbed() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50 -mx-4 -mt-4 -mb-24 sm:-mx-6 lg:-mx-8 sm:-mt-10 sm:-mb-10">
       {/* Desktop top navigation - hidden on mobile */}
-      <EventTabNavigation eventId={eventId} activeTab={activeTab} onTabChange={setActiveTab} />
+      <EventTabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Tab Content - Add padding for bottom bars */}
       <div
@@ -226,7 +230,6 @@ export default function EventDetailsTabbed() {
 
       {/* Mobile bottom navigation - hidden on desktop */}
       <MobileBottomTabBar
-        eventId={eventId}
         activeTab={activeTab}
         onTabChange={setActiveTab}
         checkInButton={

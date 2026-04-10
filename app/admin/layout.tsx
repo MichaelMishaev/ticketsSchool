@@ -405,7 +405,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         )}
       </nav>
-      <main className={pathname === '/admin/help' ? '' : 'py-4 sm:py-10'}>
+      <main className={`overflow-x-hidden ${pathname === '/admin/help' ? '' : 'py-4 sm:py-10'}`}>
         {pathname === '/admin/help' ? (
           children
         ) : (

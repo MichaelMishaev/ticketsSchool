@@ -152,7 +152,7 @@ export default function OverviewTab({ event, onEventUpdate, onTabChange }: Overv
       <CompactEventHero event={event} />
 
       <div
-        className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-44 md:pb-6 space-y-5 overflow-x-hidden"
+        className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-6 space-y-5 overflow-x-hidden"
         dir="rtl"
       >
         {/* Payment Indicator - If event has payment */}

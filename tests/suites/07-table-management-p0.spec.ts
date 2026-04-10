@@ -57,9 +57,9 @@ test.describe('Table Management - P0 Critical', () => {
   test.afterAll(async () => {
     // Cleanup
     await prisma.table.deleteMany({ where: { eventId } })
-    await prisma.event.deleteMany({ where: { schoolId } })
+    await prisma.event.updateMany({ where: { schoolId }, data: { deletedAt: new Date() } })
     await prisma.admin.deleteMany({ where: { schoolId } })
-    await prisma.school.delete({ where: { id: schoolId } })
+    await prisma.school.update({ where: { id: schoolId }, data: { isActive: false } })
   })
 
   test('should duplicate a table with auto-increment naming', async ({ page }) => {
@@ -200,7 +200,7 @@ test.describe('Table Management - P0 Critical', () => {
 
     // Cleanup
     await prisma.table.deleteMany({ where: { eventId: newEvent.id } })
-    await prisma.event.delete({ where: { id: newEvent.id } })
+    await prisma.event.update({ where: { id: newEvent.id }, data: { deletedAt: new Date() } })
     await prisma.tableTemplate.delete({ where: { id: template.id } })
   })
 

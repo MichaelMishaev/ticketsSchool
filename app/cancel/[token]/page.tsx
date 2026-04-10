@@ -271,7 +271,14 @@ export default function CancellationPage() {
             <div>
               <label htmlFor="reason" className="block text-sm font-medium text-gray-700 mb-2">
                 סיבת ביטול{' '}
-                {event?.requireCancellationReason && <span className="text-red-600">*</span>}
+                {event?.requireCancellationReason && (
+                  <>
+                    <span className="text-red-600" aria-hidden="true">
+                      *
+                    </span>
+                    <span className="sr-only"> (שדה חובה)</span>
+                  </>
+                )}
               </label>
               <textarea
                 id="reason"
@@ -279,11 +286,13 @@ export default function CancellationPage() {
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 required={event?.requireCancellationReason}
+                aria-required={event?.requireCancellationReason ?? false}
+                aria-describedby="reason-hint"
                 rows={4}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
                 placeholder="למה אתה מבטל את ההזמנה? (אופציונלי)"
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p id="reason-hint" className="mt-1 text-xs text-gray-500">
                 {event?.requireCancellationReason
                   ? 'נא לציין סיבת ביטול'
                   : 'ציון סיבה עוזר לנו לשפר את השירות'}

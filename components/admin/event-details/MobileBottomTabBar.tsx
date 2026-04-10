@@ -1,7 +1,5 @@
 'use client'
 
-import { useEffect, useCallback } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
 import { LayoutGrid, Users, ClipboardCheck, BarChart3 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -42,41 +40,18 @@ const tabs: Tab[] = [
 ]
 
 interface MobileBottomTabBarProps {
-  eventId: string
   activeTab: TabId
   onTabChange?: (tab: TabId) => void
   checkInButton?: React.ReactNode
 }
 
 export default function MobileBottomTabBar({
-  eventId,
   activeTab,
   onTabChange,
   checkInButton,
 }: MobileBottomTabBarProps) {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-
-  // Stable callback reference
-  const stableOnTabChange = useCallback(
-    (tab: TabId) => {
-      if (onTabChange) {
-        onTabChange(tab)
-      }
-    },
-    [onTabChange]
-  )
-
   const handleTabChange = (tab: TabId) => {
-    // Update state immediately
-    stableOnTabChange(tab)
-
-    // Update URL
-    const newParams = new URLSearchParams(searchParams.toString())
-    newParams.set('tab', tab)
-    router.push(`/admin/events/${eventId}?${newParams.toString()}`, {
-      scroll: false,
-    })
+    onTabChange?.(tab)
   }
 
   return (
@@ -138,10 +113,12 @@ export default function MobileBottomTabBar({
                   isActive ? 'bg-blue-100' : 'bg-transparent'
                 )}
               >
-                <Icon className={cn(
-                  'w-5 h-5 transition-transform duration-200',
-                  isActive && 'scale-110'
-                )} />
+                <Icon
+                  className={cn(
+                    'w-5 h-5 transition-transform duration-200',
+                    isActive && 'scale-110'
+                  )}
+                />
               </span>
 
               {/* Label */}

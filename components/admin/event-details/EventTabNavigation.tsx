@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
 import { LayoutGrid, Users, ClipboardCheck, BarChart3 } from 'lucide-react'
 
 export type TabId = 'overview' | 'registrations' | 'checkin' | 'reports'
@@ -41,28 +40,13 @@ const tabs: Tab[] = [
 ]
 
 interface EventTabNavigationProps {
-  eventId: string
   activeTab: TabId
   onTabChange: (tab: TabId) => void
 }
 
-export default function EventTabNavigation({
-  eventId,
-  activeTab,
-  onTabChange,
-}: EventTabNavigationProps) {
-  const router = useRouter()
-  const searchParams = useSearchParams()
+export default function EventTabNavigation({ activeTab, onTabChange }: EventTabNavigationProps) {
   const [touchStart, setTouchStart] = useState<number | null>(null)
   const tabListRef = useRef<HTMLDivElement>(null)
-
-  // Handle URL query param changes
-  useEffect(() => {
-    const urlTab = searchParams.get('tab') as TabId | null
-    if (urlTab && tabs.find((t) => t.id === urlTab)) {
-      onTabChange(urlTab)
-    }
-  }, [searchParams, onTabChange])
 
   // Keyboard navigation
   useEffect(() => {
@@ -129,11 +113,6 @@ export default function EventTabNavigation({
 
   const handleTabChange = (tab: TabId) => {
     onTabChange(tab)
-
-    // Update URL with query param
-    const newParams = new URLSearchParams(searchParams.toString())
-    newParams.set('tab', tab)
-    router.push(`/admin/events/${eventId}?${newParams.toString()}`, { scroll: false })
   }
 
   return (
