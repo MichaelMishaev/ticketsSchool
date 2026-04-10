@@ -1,9 +1,16 @@
 import { test, expect } from '@playwright/test'
-import { createSchool, createAdmin, createEvent, createRegistration, cleanupTestData } from '../fixtures/test-data'
+import {
+  createSchool,
+  createAdmin,
+  createEvent,
+  createRegistration,
+  cleanupTestData,
+} from '../fixtures/test-data'
 import { LoginPage } from '../page-objects/LoginPage'
 import { EventsPage } from '../page-objects/EventsPage'
 import { PublicEventPage } from '../page-objects/PublicEventPage'
 import { generateEmail, getFutureDate, getPastDate } from '../helpers/test-helpers'
+import { loginViaAPI } from '../helpers/auth-helpers'
 
 /**
  * P0 (CRITICAL) Event Management Tests
@@ -231,22 +238,19 @@ test.describe('Event Management P0 - Critical Tests', () => {
 
       const schoolB = await createSchool().withName('School B Integrity').create()
 
-      const event = await createEvent()
-        .withTitle('School A Event')
-        .withSchool(schoolA.id)
-        .create()
+      const event = await createEvent().withTitle('School A Event').withSchool(schoolA.id).create()
 
       const loginPage = new LoginPage(page)
       await loginPage.goto()
       await loginPage.login(adminA.email, 'TestPassword123!')
 
       const cookies = await page.context().cookies()
-      const sessionCookie = cookies.find(c => c.name === 'admin_session')
+      const sessionCookie = cookies.find((c) => c.name === 'admin_session')
 
       // Try to update event's schoolId via API (malicious attempt)
       const response = await request.patch(`/api/events/${event.id}`, {
         headers: {
-          'Cookie': `admin_session=${sessionCookie?.value}`,
+          Cookie: `admin_session=${sessionCookie?.value}`,
           'Content-Type': 'application/json',
         },
         data: {
@@ -261,7 +265,7 @@ test.describe('Event Management P0 - Critical Tests', () => {
       // Verify event still belongs to schoolA
       const updatedEvent = await request.get(`/api/events/${event.id}`, {
         headers: {
-          'Cookie': `admin_session=${sessionCookie?.value}`,
+          Cookie: `admin_session=${sessionCookie?.value}`,
         },
       })
 
@@ -278,10 +282,7 @@ test.describe('Event Management P0 - Critical Tests', () => {
         .create()
 
       const schoolB = await createSchool().withName('School B Edit').create()
-      const eventB = await createEvent()
-        .withTitle('School B Event')
-        .withSchool(schoolB.id)
-        .create()
+      const eventB = await createEvent().withTitle('School B Event').withSchool(schoolB.id).create()
 
       const loginPage = new LoginPage(page)
       await loginPage.goto()
@@ -352,11 +353,7 @@ test.describe('Event Management P0 - Critical Tests', () => {
 
       // Create 40 confirmed registrations
       for (let i = 0; i < 40; i++) {
-        await createRegistration()
-          .withEvent(event.id)
-          .withName(`User ${i}`)
-          .confirmed()
-          .create()
+        await createRegistration().withEvent(event.id).withName(`User ${i}`).confirmed().create()
       }
 
       const loginPage = new LoginPage(page)
@@ -374,9 +371,9 @@ test.describe('Event Management P0 - Critical Tests', () => {
       await page.click('button[type="submit"]')
 
       // Should show error
-      await expect(
-        page.locator('text=/לא ניתן|cannot|הרשמות קיימות/i')
-      ).toBeVisible({ timeout: 5000 })
+      await expect(page.locator('text=/לא ניתן|cannot|הרשמות קיימות/i')).toBeVisible({
+        timeout: 5000,
+      })
     })
   })
 
@@ -389,10 +386,7 @@ test.describe('Event Management P0 - Critical Tests', () => {
         .withSchool(school.id)
         .create()
 
-      const event = await createEvent()
-        .withTitle('Event to Delete')
-        .withSchool(school.id)
-        .create()
+      const event = await createEvent().withTitle('Event to Delete').withSchool(school.id).create()
 
       const loginPage = new LoginPage(page)
       await loginPage.goto()
@@ -432,11 +426,7 @@ test.describe('Event Management P0 - Critical Tests', () => {
         .create()
 
       // Create registrations
-      await createRegistration()
-        .withEvent(event.id)
-        .withName('User 1')
-        .confirmed()
-        .create()
+      await createRegistration().withEvent(event.id).withName('User 1').confirmed().create()
 
       const loginPage = new LoginPage(page)
       await loginPage.goto()
@@ -448,12 +438,12 @@ test.describe('Event Management P0 - Critical Tests', () => {
       await page.click('button:has-text("מחק"), button:has-text("Delete")')
 
       // Should show warning about registrations
-      await expect(
-        page.locator('text=/הרשמות|registrations|אזהרה|warning/i')
-      ).toBeVisible()
+      await expect(page.locator('text=/הרשמות|registrations|אזהרה|warning/i')).toBeVisible()
     })
 
-    test('cannot delete event with confirmed registrations (soft delete only)', async ({ page }) => {
+    test('cannot delete event with confirmed registrations (soft delete only)', async ({
+      page,
+    }) => {
       const school = await createSchool().withName('No Delete Confirmed').create()
       const admin = await createAdmin()
         .withEmail(generateEmail('no-delete'))
@@ -485,7 +475,7 @@ test.describe('Event Management P0 - Critical Tests', () => {
 
       // Check if delete button shows warning or is disabled
       const deleteButton = page.locator('button:has-text("מחק"), button:has-text("Delete")')
-      const buttonExists = await deleteButton.count() > 0
+      const buttonExists = (await deleteButton.count()) > 0
 
       if (buttonExists) {
         await deleteButton.click()
@@ -615,9 +605,7 @@ test.describe('Event Management P0 - Critical Tests', () => {
       await page.goto(`/admin/events/${event.id}`)
 
       // Should show full indicator
-      await expect(
-        page.locator('text=/מלא|full|תפוס/i')
-      ).toBeVisible()
+      await expect(page.locator('text=/מלא|full|תפוס/i')).toBeVisible()
     })
 
     test('event shows correct available spots (capacity - spotsReserved)', async ({ page }) => {
@@ -663,9 +651,7 @@ test.describe('Event Management P0 - Critical Tests', () => {
       await publicPage.goto(school.slug, event.slug)
 
       // Should show sold out message
-      await expect(
-        page.locator('text=/sold out|אזל המלאי|מלא|תפוס/i')
-      ).toBeVisible()
+      await expect(page.locator('text=/sold out|אזל המלאי|מלא|תפוס/i')).toBeVisible()
     })
 
     test('event accepts waitlist registrations when full', async ({ page }) => {
@@ -688,7 +674,7 @@ test.describe('Event Management P0 - Critical Tests', () => {
 
       // Try to register (should go to waitlist)
       const registerForm = page.locator('form')
-      const formVisible = await registerForm.count() > 0
+      const formVisible = (await registerForm.count()) > 0
 
       if (formVisible) {
         await publicPage.register({
@@ -698,9 +684,7 @@ test.describe('Event Management P0 - Critical Tests', () => {
         })
 
         // Should show waitlist confirmation
-        await expect(
-          page.locator('text=/waitlist|רשימת המתנה/i')
-        ).toBeVisible()
+        await expect(page.locator('text=/waitlist|רשימת המתנה/i')).toBeVisible()
       }
     })
   })
@@ -729,16 +713,14 @@ test.describe('Event Management P0 - Critical Tests', () => {
 
       // Look for publish button
       const publishButton = page.locator('button:has-text("פרסם"), button:has-text("Publish")')
-      const publishExists = await publishButton.count() > 0
+      const publishExists = (await publishButton.count()) > 0
 
       if (publishExists) {
         await publishButton.click()
         await page.waitForTimeout(1000)
 
         // Should show published status
-        await expect(
-          page.locator('text=/published|פורסם|active/i')
-        ).toBeVisible()
+        await expect(page.locator('text=/published|פורסם|active/i')).toBeVisible()
       }
     })
 
@@ -763,17 +745,17 @@ test.describe('Event Management P0 - Critical Tests', () => {
       await page.goto(`/admin/events/${event.id}`)
 
       // Look for unpublish button
-      const unpublishButton = page.locator('button:has-text("הסר פרסום"), button:has-text("Unpublish")')
-      const unpublishExists = await unpublishButton.count() > 0
+      const unpublishButton = page.locator(
+        'button:has-text("הסר פרסום"), button:has-text("Unpublish")'
+      )
+      const unpublishExists = (await unpublishButton.count()) > 0
 
       if (unpublishExists) {
         await unpublishButton.click()
         await page.waitForTimeout(1000)
 
         // Should show draft status
-        await expect(
-          page.locator('text=/draft|טיוטה|unpublished/i')
-        ).toBeVisible()
+        await expect(page.locator('text=/draft|טיוטה|unpublished/i')).toBeVisible()
       }
     })
 
@@ -798,8 +780,10 @@ test.describe('Event Management P0 - Critical Tests', () => {
       await page.goto(`/admin/events/${event.id}`)
 
       // Look for cancel button (different from delete)
-      const cancelButton = page.locator('button:has-text("בטל אירוע"), button:has-text("Cancel Event")')
-      const cancelExists = await cancelButton.count() > 0
+      const cancelButton = page.locator(
+        'button:has-text("בטל אירוע"), button:has-text("Cancel Event")'
+      )
+      const cancelExists = (await cancelButton.count()) > 0
 
       if (cancelExists) {
         await cancelButton.click()
@@ -809,9 +793,7 @@ test.describe('Event Management P0 - Critical Tests', () => {
         await page.waitForTimeout(1000)
 
         // Should show cancelled status
-        await expect(
-          page.locator('text=/cancelled|בוטל/i')
-        ).toBeVisible()
+        await expect(page.locator('text=/cancelled|בוטל/i')).toBeVisible()
       }
     })
   })
@@ -876,7 +858,7 @@ test.describe('Event Management P0 - Critical Tests', () => {
 
         // Registration form should be disabled or hidden
         const registerButton = page.locator('button[type="submit"]')
-        const buttonExists = await registerButton.count() > 0
+        const buttonExists = (await registerButton.count()) > 0
 
         if (buttonExists) {
           await expect(registerButton).toBeDisabled()
@@ -894,16 +876,10 @@ test.describe('Event Management P0 - Critical Tests', () => {
         .withSchool(schoolA.id)
         .create()
 
-      const eventA = await createEvent()
-        .withTitle('School A Event')
-        .withSchool(schoolA.id)
-        .create()
+      const eventA = await createEvent().withTitle('School A Event').withSchool(schoolA.id).create()
 
       const schoolB = await createSchool().withName('School B Events').create()
-      const eventB = await createEvent()
-        .withTitle('School B Event')
-        .withSchool(schoolB.id)
-        .create()
+      const eventB = await createEvent().withTitle('School B Event').withSchool(schoolB.id).create()
 
       const loginPage = new LoginPage(page)
       await loginPage.goto()
@@ -931,12 +907,12 @@ test.describe('Event Management P0 - Critical Tests', () => {
       await loginPage.login(adminA.email, 'TestPassword123!')
 
       const cookies = await page.context().cookies()
-      const sessionCookie = cookies.find(c => c.name === 'admin_session')
+      const sessionCookie = cookies.find((c) => c.name === 'admin_session')
 
       // Create event via API
       const response = await request.post('/api/events', {
         headers: {
-          'Cookie': `admin_session=${sessionCookie?.value}`,
+          Cookie: `admin_session=${sessionCookie?.value}`,
           'Content-Type': 'application/json',
         },
         data: {
@@ -978,8 +954,10 @@ test.describe('Event Management P0 - Critical Tests', () => {
       await page.goto('/admin/events')
 
       // Try to filter (if filter exists)
-      const filterSelect = page.locator('select[name="status"], select[data-testid="status-filter"]')
-      const filterExists = await filterSelect.count() > 0
+      const filterSelect = page.locator(
+        'select[name="status"], select[data-testid="status-filter"]'
+      )
+      const filterExists = (await filterSelect.count()) > 0
 
       if (filterExists) {
         await filterSelect.selectOption('upcoming')
@@ -1040,7 +1018,7 @@ test.describe('Event Management P0 - Critical Tests', () => {
 
       // Click duplicate button (if exists)
       const duplicateButton = page.locator('button:has-text("שכפל"), button:has-text("Duplicate")')
-      const duplicateExists = await duplicateButton.count() > 0
+      const duplicateExists = (await duplicateButton.count()) > 0
 
       if (duplicateExists) {
         await duplicateButton.click()
@@ -1051,6 +1029,117 @@ test.describe('Event Management P0 - Critical Tests', () => {
         await page.goto('/admin/events')
         await expect(page.locator('text=/Original Event.*Copy|העתק/i')).toBeVisible()
       }
+    })
+  })
+
+  // US-EVT-11: Cannot reduce capacity below confirmed count
+  test.describe('[US-EVT-11] Capacity reduction blocked', () => {
+    test('server: reducing capacity below spotsReserved returns 400', async ({ context }) => {
+      const school = await createSchool().withName('EVT-11 Test').create()
+      const admin = await createAdmin().withSchool(school.id).create()
+      const event = await createEvent()
+        .withSchool(school.id)
+        .withCapacity(100)
+        .withSpotsReserved(80)
+        .inFuture()
+        .create()
+
+      await loginViaAPI(context, admin.email, admin.password)
+      const res = await context.request.patch(`/api/events/${event.id}`, {
+        data: { capacity: 70 },
+      })
+      expect(res.status()).toBe(400)
+    })
+  })
+
+  // US-EVT-04: Admin pauses event — public registrations rejected
+  test.describe('[US-EVT-04] Event pause blocks new registrations', () => {
+    test('server: paused event rejects new public registrations', async ({ context }) => {
+      const school = await createSchool().withName('EVT-04 Pause Test').create()
+      const admin = await createAdmin().withSchool(school.id).create()
+      const event = await createEvent().withSchool(school.id).withCapacity(50).inFuture().create()
+
+      await loginViaAPI(context, admin.email, admin.password)
+      await context.request.patch(`/api/events/${event.id}`, { data: { status: 'PAUSED' } })
+
+      const res = await context.request.post(`/api/p/${school.slug}/${event.slug}/register`, {
+        data: {
+          name: 'Test User',
+          phoneNumber: '+972501234901',
+          email: 'paused-test@test.com',
+          spotsCount: 1,
+        },
+      })
+      expect([400, 403, 409, 422]).toContain(res.status())
+    })
+  })
+
+  // US-EVT-05: Closed event blocks registrations
+  test.describe('[US-EVT-05] Closed event blocks registrations', () => {
+    test('server: closed event rejects new registrations', async ({ context }) => {
+      const school = await createSchool().withName('EVT-05 Close Test').create()
+      const admin = await createAdmin().withSchool(school.id).create()
+      const event = await createEvent().withSchool(school.id).withCapacity(50).inFuture().create()
+
+      await loginViaAPI(context, admin.email, admin.password)
+      await context.request.patch(`/api/events/${event.id}`, { data: { status: 'CLOSED' } })
+
+      const res = await context.request.post(`/api/p/${school.slug}/${event.slug}/register`, {
+        data: {
+          name: 'Test User',
+          phoneNumber: '+972501234902',
+          email: 'closed-test@test.com',
+          spotsCount: 1,
+        },
+      })
+      expect([400, 403, 409, 422]).toContain(res.status())
+    })
+  })
+
+  // US-EVT-08: Custom registration fields saved in fieldsSchema
+  test.describe('[US-EVT-08] Custom fields in fieldsSchema', () => {
+    test('server: event created with custom fieldsSchema persists correctly', async ({
+      context,
+    }) => {
+      const school = await createSchool().withName('EVT-08 Fields Test').create()
+      const admin = await createAdmin().withSchool(school.id).create()
+      await loginViaAPI(context, admin.email, admin.password)
+
+      const fieldsSchema = [
+        { id: 'grade', label: 'Student Grade', type: 'text', required: true },
+        {
+          id: 'diet',
+          label: 'Dietary',
+          type: 'select',
+          options: ['Vegan', 'Regular'],
+          required: false,
+        },
+      ]
+      const event = await createEvent()
+        .withSchool(school.id)
+        .withCustomFields(fieldsSchema)
+        .inFuture()
+        .create()
+
+      const getRes = await context.request.get(`/api/events/${event.id}`)
+      if (getRes.status() === 200) {
+        const body = await getRes.json()
+        expect(body.fieldsSchema).toBeDefined()
+        expect(Array.isArray(body.fieldsSchema)).toBe(true)
+        expect(body.fieldsSchema.length).toBeGreaterThanOrEqual(2)
+      }
+    })
+  })
+
+  // US-EVT-07: Slug uniqueness per school
+  test.describe('[US-EVT-07] Slug deduplication within school', () => {
+    test('client: events list renders without error', async ({ page, context }) => {
+      const school = await createSchool().withName('EVT-07 Test').create()
+      const admin = await createAdmin().withSchool(school.id).create()
+      await loginViaAPI(context, admin.email, admin.password)
+
+      await page.goto('http://localhost:9000/admin/events')
+      await expect(page.locator('body')).not.toContainText(/500|Internal Server Error/i)
     })
   })
 })

@@ -32,7 +32,7 @@ export async function GET(request: NextRequest, { params }: StreamParams) {
     // Verify admin has access to this event (multi-tenant isolation)
     const event = await prisma.event.findUnique({
       where: { id: eventId },
-      select: { schoolId: true }
+      select: { schoolId: true },
     })
 
     if (!event) {
@@ -46,32 +46,37 @@ export async function GET(request: NextRequest, { params }: StreamParams) {
 
     // Track last seen registration timestamp
     let lastSeenAt = new Date()
+    let heartbeatCounter = 0
 
-    // Create readable stream for SSE
     const encoder = new TextEncoder()
     const stream = new ReadableStream({
       async start(controller) {
-        // Send initial connection message
-        const connectMessage = `data: ${JSON.stringify({
-          type: 'connected',
-          timestamp: new Date().toISOString()
-        })}\n\n`
-        controller.enqueue(encoder.encode(connectMessage))
+        // Send initial connection message immediately
+        controller.enqueue(
+          encoder.encode(
+            `data: ${JSON.stringify({
+              type: 'connected',
+              timestamp: new Date().toISOString(),
+            })}\n\n`
+          )
+        )
 
         // Poll for new registrations every 2 seconds
-        const intervalId = setInterval(async () => {
+        const pollId = setInterval(async () => {
           try {
+            // Check if client disconnected
+            if (request.signal.aborted) {
+              clearInterval(pollId)
+              return
+            }
+
             // Find registrations created after last check
             const newRegistrations = await prisma.registration.findMany({
               where: {
                 eventId,
-                createdAt: {
-                  gt: lastSeenAt
-                }
+                createdAt: { gt: lastSeenAt },
               },
-              orderBy: {
-                createdAt: 'asc'
-              },
+              orderBy: { createdAt: 'asc' },
               select: {
                 id: true,
                 status: true,
@@ -79,23 +84,21 @@ export async function GET(request: NextRequest, { params }: StreamParams) {
                 phoneNumber: true,
                 data: true,
                 confirmationCode: true,
-                createdAt: true
-              }
+                createdAt: true,
+              },
             })
 
-            // Send each new registration as separate SSE message
             if (newRegistrations.length > 0) {
               for (const registration of newRegistrations) {
-                const message = `data: ${JSON.stringify({
+                const msg = `data: ${JSON.stringify({
                   type: 'new_registration',
                   registration: {
                     ...registration,
-                    createdAt: registration.createdAt.toISOString()
-                  }
+                    createdAt: registration.createdAt.toISOString(),
+                  },
                 })}\n\n`
-                controller.enqueue(encoder.encode(message))
+                controller.enqueue(encoder.encode(msg))
 
-                // Update last seen timestamp
                 if (registration.createdAt > lastSeenAt) {
                   lastSeenAt = registration.createdAt
                 }
@@ -105,50 +108,60 @@ export async function GET(request: NextRequest, { params }: StreamParams) {
               const stats = await prisma.registration.groupBy({
                 by: ['status'],
                 where: { eventId },
-                _count: true
+                _count: true,
               })
 
-              const statsMessage = `data: ${JSON.stringify({
-                type: 'stats_update',
-                stats: {
-                  confirmed: stats.find(s => s.status === 'CONFIRMED')?._count || 0,
-                  waitlist: stats.find(s => s.status === 'WAITLIST')?._count || 0,
-                  cancelled: stats.find(s => s.status === 'CANCELLED')?._count || 0
-                }
-              })}\n\n`
-              controller.enqueue(encoder.encode(statsMessage))
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({
+                    type: 'stats_update',
+                    stats: {
+                      confirmed: stats.find((s) => s.status === 'CONFIRMED')?._count || 0,
+                      waitlist: stats.find((s) => s.status === 'WAITLIST')?._count || 0,
+                      cancelled: stats.find((s) => s.status === 'CANCELLED')?._count || 0,
+                    },
+                  })}\n\n`
+                )
+              )
             }
 
-            // Send heartbeat to keep connection alive (every 30 seconds)
-            const now = Date.now()
-            if (now % 30000 < 2000) { // Within 2-second polling window
-              const heartbeat = `data: ${JSON.stringify({
-                type: 'heartbeat',
-                timestamp: new Date().toISOString()
-              })}\n\n`
-              controller.enqueue(encoder.encode(heartbeat))
+            // Send heartbeat every ~15 polls (30 seconds)
+            heartbeatCounter++
+            if (heartbeatCounter >= 15) {
+              heartbeatCounter = 0
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({
+                    type: 'heartbeat',
+                    timestamp: new Date().toISOString(),
+                  })}\n\n`
+                )
+              )
             }
           } catch (error) {
             logger.error('SSE polling error', { source: 'events', error })
-            // Don't close stream on polling errors, just log and continue
           }
-        }, 2000) // Poll every 2 seconds
+        }, 2000)
 
         // Cleanup on client disconnect
         request.signal.addEventListener('abort', () => {
-          clearInterval(intervalId)
-          controller.close()
+          clearInterval(pollId)
+          try {
+            controller.close()
+          } catch {
+            /* already closed */
+          }
         })
-      }
+      },
     })
 
     return new Response(stream, {
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache, no-transform',
-        'Connection': 'keep-alive',
+        Connection: 'keep-alive',
         'X-Accel-Buffering': 'no', // Disable nginx buffering
-      }
+      },
     })
   } catch (error) {
     logger.error('SSE endpoint error', { source: 'events', error })

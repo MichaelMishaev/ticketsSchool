@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       // Log the error but don't fail
       return NextResponse.json({
         received: true,
-        warning: 'Invalid parameters - logged for review'
+        warning: 'Invalid parameters - logged for review',
       })
     }
 
@@ -67,10 +67,12 @@ export async function POST(request: NextRequest) {
           select: {
             id: true,
             title: true,
-            schoolId: true
-          }
-        }
-      }
+            schoolId: true,
+            capacity: true,
+            spotsReserved: true,
+          },
+        },
+      },
     })
 
     if (!registration) {
@@ -78,7 +80,7 @@ export async function POST(request: NextRequest) {
       // Return 200 OK to prevent retries for non-existent payments
       return NextResponse.json({
         received: true,
-        warning: 'Payment not found - may be test transaction'
+        warning: 'Payment not found - may be test transaction',
       })
     }
 
@@ -99,7 +101,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           received: true,
           message: 'Payment already processed',
-          status: registration.payment.status
+          status: registration.payment.status,
         })
       }
     }
@@ -130,8 +132,8 @@ export async function POST(request: NextRequest) {
             yaadPayConfirmCode: confirmationCode,
             yaadPayCCode: parseInt(params.CCode || '-1'),
             completedAt: isSuccess ? new Date() : undefined,
-            updatedAt: new Date()
-          }
+            updatedAt: new Date(),
+          },
         })
       } else {
         // Create payment record if it doesn't exist
@@ -150,20 +152,56 @@ export async function POST(request: NextRequest) {
             yaadPayCCode: parseInt(params.CCode || '-1'),
             payerEmail: registration.email || undefined,
             payerPhone: registration.phoneNumber || undefined,
-            completedAt: isSuccess ? new Date() : undefined
-          }
+            completedAt: isSuccess ? new Date() : undefined,
+          },
         })
       }
 
-      // Update registration payment status
-      await tx.registration.update({
-        where: { id: registration.id },
-        data: {
-          paymentStatus: newRegistrationPaymentStatus,
-          amountPaid: isSuccess ? (amount || registration.amountDue) : undefined,
-          updatedAt: new Date()
+      // Update registration payment status AND promotion status
+      if (isSuccess) {
+        // Re-check capacity atomically (mirrors callback route logic)
+        const currentEvent = await tx.event.findUniqueOrThrow({
+          where: { id: registration.event.id },
+          select: { capacity: true, spotsReserved: true },
+        })
+        const spotsAvailable = currentEvent.capacity - currentEvent.spotsReserved
+        const finalStatus =
+          spotsAvailable >= (registration.spotsCount ?? 1) ? 'CONFIRMED' : 'WAITLIST'
+        const shouldIncrementSpots = finalStatus === 'CONFIRMED'
+
+        await tx.registration.update({
+          where: { id: registration.id },
+          data: {
+            paymentStatus: newRegistrationPaymentStatus,
+            amountPaid: amount || registration.amountDue,
+            status: finalStatus,
+            updatedAt: new Date(),
+          },
+        })
+
+        if (shouldIncrementSpots) {
+          await tx.event.update({
+            where: { id: registration.event.id },
+            data: { spotsReserved: { increment: registration.spotsCount ?? 1 } },
+          })
         }
-      })
+
+        paymentLogger.info('Registration status promoted via webhook', {
+          orderId,
+          finalStatus,
+          spotsAvailable,
+        })
+      } else {
+        // Payment failed - mark registration as CANCELLED
+        await tx.registration.update({
+          where: { id: registration.id },
+          data: {
+            paymentStatus: newRegistrationPaymentStatus,
+            status: 'CANCELLED',
+            updatedAt: new Date(),
+          },
+        })
+      }
     })
 
     const processingTime = Date.now() - startTime
@@ -186,9 +224,8 @@ export async function POST(request: NextRequest) {
       status: newPaymentStatus,
       orderId,
       transactionId,
-      processingTime
+      processingTime,
     })
-
   } catch (error) {
     const processingTime = Date.now() - startTime
 
@@ -201,7 +238,7 @@ export async function POST(request: NextRequest) {
     // Log the error for manual review, but don't fail the webhook
     return NextResponse.json({
       received: true,
-      warning: 'Error processing webhook - logged for review'
+      warning: 'Error processing webhook - logged for review',
     })
   }
 }
@@ -214,6 +251,6 @@ export async function GET() {
   return NextResponse.json({
     status: 'ok',
     endpoint: 'yaadpay-webhook',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   })
 }

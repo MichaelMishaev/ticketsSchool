@@ -13,12 +13,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'לא מחובר' }, { status: 401 })
     }
 
+    // Only OWNER and ADMIN can modify logos (not VIEWER)
+    if (admin.role !== 'OWNER' && admin.role !== 'ADMIN' && admin.role !== 'SUPER_ADMIN') {
+      return NextResponse.json({ error: 'אין הרשאה לעדכן לוגו' }, { status: 403 })
+    }
+
     // Admin must have a school
     if (!admin.schoolId) {
-      return NextResponse.json(
-        { error: 'לא נמצא ארגון משויך למשתמש' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'לא נמצא ארגון משויך למשתמש' }, { status: 400 })
     }
 
     // Parse multipart/form-data
@@ -27,7 +29,11 @@ export async function POST(request: NextRequest) {
 
     // Handle delete action
     if (action === 'delete') {
-      logger.info('Admin deleting logo for school', { source: 'admin', adminEmail: admin.email, schoolId: admin.schoolId })
+      logger.info('Admin deleting logo for school', {
+        source: 'admin',
+        adminEmail: admin.email,
+        schoolId: admin.schoolId,
+      })
 
       // Delete from storage (no-op for base64, but needed for future S3)
       await deleteLogo(admin.schoolId)
@@ -38,7 +44,12 @@ export async function POST(request: NextRequest) {
         data: { logo: null },
       })
 
-      logger.info('Successfully deleted logo', { source: 'admin', schoolId: updatedSchool.id, schoolName: updatedSchool.name, deletedBy: admin.email })
+      logger.info('Successfully deleted logo', {
+        source: 'admin',
+        schoolId: updatedSchool.id,
+        schoolName: updatedSchool.name,
+        deletedBy: admin.email,
+      })
 
       return NextResponse.json({
         success: true,
@@ -60,12 +71,22 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'לא נבחר קובץ' }, { status: 400 })
       }
 
-      logger.info('Admin uploading logo for school', { source: 'admin', adminEmail: admin.email, schoolId: admin.schoolId, fileName: file.name, fileSizeKB: Math.round(file.size / 1024), fileType: file.type })
+      logger.info('Admin uploading logo for school', {
+        source: 'admin',
+        adminEmail: admin.email,
+        schoolId: admin.schoolId,
+        fileName: file.name,
+        fileSizeKB: Math.round(file.size / 1024),
+        fileType: file.type,
+      })
 
       // Client-side validation (File object)
       const validation = validateImageFile(file)
       if (!validation.valid) {
-        logger.warn('Logo validation failed', { source: 'admin', validationError: validation.error })
+        logger.warn('Logo validation failed', {
+          source: 'admin',
+          validationError: validation.error,
+        })
         return NextResponse.json({ error: validation.error }, { status: 400 })
       }
 
@@ -82,7 +103,13 @@ export async function POST(request: NextRequest) {
         data: { logo: logoDataUrl },
       })
 
-      logger.info('Successfully uploaded logo', { source: 'admin', schoolId: updatedSchool.id, schoolName: updatedSchool.name, logoSizeKB: Math.round(logoDataUrl.length / 1024), uploadedBy: admin.email })
+      logger.info('Successfully uploaded logo', {
+        source: 'admin',
+        schoolId: updatedSchool.id,
+        schoolName: updatedSchool.name,
+        logoSizeKB: Math.round(logoDataUrl.length / 1024),
+        uploadedBy: admin.email,
+      })
 
       return NextResponse.json({
         success: true,
@@ -97,10 +124,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Invalid action
-    return NextResponse.json(
-      { error: 'פעולה לא חוקית. השתמש ב-upload או delete' },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: 'פעולה לא חוקית. השתמש ב-upload או delete' }, { status: 400 })
   } catch (error) {
     logger.error('Error updating logo', { source: 'admin', error })
     return NextResponse.json(

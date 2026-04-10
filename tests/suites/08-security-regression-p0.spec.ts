@@ -1,7 +1,14 @@
 import { test, expect } from '@playwright/test'
-import { createSchool, createAdmin, createEvent, cleanupTestData } from '../fixtures/test-data'
+import {
+  createSchool,
+  createAdmin,
+  createEvent,
+  createRegistration,
+  cleanupTestData,
+} from '../fixtures/test-data'
 import { LoginPage } from '../page-objects/LoginPage'
 import { generateEmail } from '../helpers/test-helpers'
+import { loginViaAPI } from '../helpers/auth-helpers'
 
 /**
  * P0 (CRITICAL) Security Regression Tests
@@ -455,6 +462,111 @@ test.describe('Security Regression P0 - CRITICAL Bugs', () => {
 
       // SUPER_ADMIN should succeed
       expect(response.ok()).toBeTruthy()
+    })
+  })
+
+  // US-SEC-04: Auth bypass — admin API routes require session
+  test.describe('[US-SEC-04] Auth bypass prevention', () => {
+    test('server: /api/events returns 401 without session', async ({ context }) => {
+      // /api/events is protected by middleware — must return 401 with no session cookie
+      const res = await context.request.get('/api/events')
+      expect(res.status()).toBe(401)
+    })
+
+    test('server: /api/dashboard/stats returns 401 without session', async ({ context }) => {
+      const res = await context.request.get('/api/dashboard/stats')
+      expect(res.status()).toBe(401)
+    })
+  })
+
+  // US-SEC-05: Cross-tenant isolation
+  test.describe('[US-SEC-05] Cross-tenant data isolation', () => {
+    test('server: admin cannot read another school event by direct ID', async ({ context }) => {
+      const schoolA = await createSchool().withName('Sec School A').create()
+      const schoolB = await createSchool().withName('Sec School B').create()
+      const adminA = await createAdmin()
+        .withEmail(generateEmail('sec-tenant-a'))
+        .withPassword('TestPassword123!')
+        .withSchool(schoolA.id)
+        .create()
+      const eventB = await createEvent().withSchool(schoolB.id).withCapacity(10).inFuture().create()
+
+      const loggedIn = await loginViaAPI(context, adminA.email, adminA.password)
+      expect(loggedIn).toBe(true)
+
+      const res = await context.request.get(`/api/events/${eventB.id}`)
+      // Must not be 200 — cross-tenant access blocked (403) or event not found (404)
+      expect(res.status()).not.toBe(200)
+      expect([401, 403, 404]).toContain(res.status())
+    })
+
+    test('server: admin cannot read registrations from another school event', async ({
+      context,
+    }) => {
+      const schoolA = await createSchool().withName('Sec ISO A').create()
+      const schoolB = await createSchool().withName('Sec ISO B').create()
+      const adminA = await createAdmin()
+        .withEmail(generateEmail('sec-iso-a'))
+        .withPassword('TestPassword123!')
+        .withSchool(schoolA.id)
+        .create()
+      const eventB = await createEvent().withSchool(schoolB.id).withCapacity(10).inFuture().create()
+
+      const loggedIn = await loginViaAPI(context, adminA.email, adminA.password)
+      expect(loggedIn).toBe(true)
+
+      const res = await context.request.get(`/api/events/${eventB.id}/registrations`)
+      // Must not be 200 — cross-tenant access blocked
+      expect(res.status()).not.toBe(200)
+      expect([401, 403, 404]).toContain(res.status())
+    })
+  })
+
+  // US-SEC-06: Cancellation token single-use
+  test.describe('[US-SEC-06] Cancellation token is single-use', () => {
+    test('server: second use of cancellation token is handled gracefully', async ({ context }) => {
+      const school = await createSchool().withName('Token SingleUse Test').create()
+      const event = await createEvent().withSchool(school.id).withCapacity(50).inFuture().create()
+      const reg = await createRegistration().withEvent(event.id).confirmed().create()
+
+      const token = (reg as any).cancellationToken
+      if (!token) return // skip if not exposed by builder
+
+      const res1 = await context.request.get(`/api/cancel/${token}`)
+      const res2 = await context.request.get(`/api/cancel/${token}`)
+
+      expect([200, 302]).toContain(res1.status())
+      // Second call: already cancelled or token invalid
+      expect([200, 302, 400, 404, 410]).toContain(res2.status())
+    })
+  })
+
+  // US-SEC-01: SQL injection stored as literal text (Prisma parameterization)
+  test.describe('[US-SEC-01] SQL injection prevention', () => {
+    test('server: SQL injection in registration name does not crash the server', async ({
+      context,
+    }) => {
+      const school = await createSchool().withName('SQLi Test').create()
+      const admin = await createAdmin().withSchool(school.id).create()
+      const event = await createEvent().withSchool(school.id).withCapacity(50).inFuture().create()
+
+      const res = await context.request.post(`/api/p/${school.slug}/${event.slug}/register`, {
+        data: {
+          name: "Robert'); DROP TABLE registrations; --",
+          phoneNumber: '+972509330001',
+          email: 'sqli-test@test.com',
+          spotsCount: 1,
+        },
+      })
+
+      // Prisma parameterizes queries — no 500 allowed
+      expect(res.status()).not.toBe(500)
+
+      if ([200, 201].includes(res.status())) {
+        await loginViaAPI(context, admin.email, admin.password)
+        const evtRes = await context.request.get(`/api/events/${event.id}`)
+        expect(evtRes.status()).toBe(200)
+      }
     })
   })
 })

@@ -223,11 +223,17 @@ export function validateCallback(params: YaadPayCallback): CallbackValidationRes
       }
       console.log('[YaadPay] Callback signature verified OK')
     } else {
-      // No signature — HYP terminal not configured for signed callbacks.
-      // The replay-attack fingerprint check in the callback handler still protects us.
-      console.warn(
-        '[YaadPay] Callback has no signature. Enable signed callbacks in HYP dashboard for stronger security.'
+      // No signature — reject for security. HYP terminal MUST be configured for signed callbacks.
+      console.error(
+        '[YaadPay] Callback rejected: no signature present. Enable signed callbacks in HYP dashboard.'
       )
+      return {
+        isValid: false,
+        isSuccess: false,
+        orderId: params.Order || '',
+        transactionId: params.Id || '',
+        errorMessage: 'Missing signature - callback rejected for security',
+      }
     }
   } else {
     console.log('[YaadPay] MOCK MODE: Skipping signature validation for development')

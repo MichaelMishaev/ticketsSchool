@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger-v2'
 
-// Disable caching for this route to ensure fresh data
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+// Allow ISR with 15-second revalidation for fresh-enough data
+export const revalidate = 15
 
 /**
  * GET /api/p/[schoolSlug]/[eventSlug]
@@ -116,10 +115,8 @@ export async function GET(
       totalSpotsTaken,
     })
 
-    // Add cache control headers to prevent caching
-    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
-    response.headers.set('Pragma', 'no-cache')
-    response.headers.set('Expires', '0')
+    // Allow short CDN/browser caching with stale-while-revalidate
+    response.headers.set('Cache-Control', 'public, s-maxage=15, stale-while-revalidate=30')
 
     return response
   } catch (error) {

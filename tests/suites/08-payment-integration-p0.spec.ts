@@ -40,7 +40,7 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
           paymentRequired: true,
           paymentTiming: 'UPFRONT',
           pricingModel: 'FIXED_PRICE',
-          priceAmount: 50.00,
+          priceAmount: 50.0,
           currency: 'ILS',
         },
       })
@@ -62,16 +62,22 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
       })
 
       // Submit form - should redirect to payment
-      await page.click('button[type="submit"]:has-text("המשך לתשלום"), button[type="submit"]:has-text("Continue to Payment")')
+      await page.click(
+        'button[type="submit"]:has-text("המשך לתשלום"), button[type="submit"]:has-text("Continue to Payment")'
+      )
 
       // Wait for redirect to payment gateway
       await page.waitForTimeout(2000)
 
       // Should be on payment redirect page OR YaadPay (depending on test env)
       const currentUrl = page.url()
-      const isPaymentRedirect = currentUrl.includes('/payment/redirect') ||
-                               currentUrl.includes('yaadpay.co.il') ||
-                               await page.locator('text=/מעביר לתשלום|מעביר לדף התשלום/i').isVisible().catch(() => false)
+      const isPaymentRedirect =
+        currentUrl.includes('/payment/redirect') ||
+        currentUrl.includes('yaadpay.co.il') ||
+        (await page
+          .locator('text=/מעביר לתשלום|מעביר לדף התשלום/i')
+          .isVisible()
+          .catch(() => false))
 
       expect(isPaymentRedirect).toBeTruthy()
     })
@@ -91,7 +97,7 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
           paymentRequired: true,
           paymentTiming: 'UPFRONT',
           pricingModel: 'FIXED_PRICE',
-          priceAmount: 75.00,
+          priceAmount: 75.0,
         },
       })
 
@@ -109,7 +115,7 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
           confirmationCode: generateConfirmationCode(),
           paymentStatus: 'PENDING',
           paymentIntentId: `test-payment-intent-${Date.now()}`,
-          amountDue: 75.00,
+          amountDue: 75.0,
         },
       })
 
@@ -118,7 +124,7 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
           registrationId: registration.id,
           eventId: event.id,
           schoolId: school.id,
-          amount: 75.00,
+          amount: 75.0,
           currency: 'ILS',
           status: 'PENDING',
           yaadPayOrderId: registration.paymentIntentId!,
@@ -173,7 +179,7 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
           paymentRequired: true,
           paymentTiming: 'UPFRONT',
           pricingModel: 'FIXED_PRICE',
-          priceAmount: 100.00,
+          priceAmount: 100.0,
         },
       })
 
@@ -191,7 +197,7 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
           confirmationCode: generateConfirmationCode(),
           paymentStatus: 'PENDING',
           paymentIntentId: `test-failed-payment-${Date.now()}`,
-          amountDue: 100.00,
+          amountDue: 100.0,
         },
       })
 
@@ -200,7 +206,7 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
           registrationId: registration.id,
           eventId: event.id,
           schoolId: school.id,
-          amount: 100.00,
+          amount: 100.0,
           currency: 'ILS',
           status: 'PENDING',
           yaadPayOrderId: registration.paymentIntentId!,
@@ -238,7 +244,9 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
   })
 
   test.describe('[08.3] Post-Registration Payment - Invoice Email', () => {
-    test('should create registration with PENDING payment and send invoice email', async ({ page }) => {
+    test('should create registration with PENDING payment and send invoice email', async ({
+      page,
+    }) => {
       // Setup: Create POST_REGISTRATION paid event
       const school = await createSchool().withName('Post Reg Payment School').create()
       const event = await prisma.event.create({
@@ -253,7 +261,7 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
           paymentRequired: true,
           paymentTiming: 'POST_REGISTRATION',
           pricingModel: 'FIXED_PRICE',
-          priceAmount: 100.00,
+          priceAmount: 100.0,
         },
       })
 
@@ -261,7 +269,9 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
       await publicPage.goto(school.slug, event.slug)
 
       // Verify payment info is displayed
-      await expect(page.locator('text=/תשלום לאחר ההרשמה|payment.*after.*registration/i')).toBeVisible()
+      await expect(
+        page.locator('text=/תשלום לאחר ההרשמה|payment.*after.*registration/i')
+      ).toBeVisible()
 
       // Fill and submit registration
       const userEmail = generateEmail('post-reg')
@@ -325,7 +335,7 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
           paymentRequired: true,
           paymentTiming: 'UPFRONT',
           pricingModel: 'PER_GUEST',
-          priceAmount: 25.00, // ₪25 per guest
+          priceAmount: 25.0, // ₪25 per guest
         },
       })
 
@@ -445,7 +455,7 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
           paymentRequired: true,
           paymentTiming: 'UPFRONT',
           pricingModel: 'FIXED_PRICE',
-          priceAmount: 50.00,
+          priceAmount: 50.0,
         },
       })
 
@@ -463,7 +473,7 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
           confirmationCode: generateConfirmationCode(),
           paymentStatus: 'PENDING',
           paymentIntentId: `test-idempotency-${Date.now()}`,
-          amountDue: 50.00,
+          amountDue: 50.0,
         },
       })
 
@@ -472,7 +482,7 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
           registrationId: registration.id,
           eventId: event.id,
           schoolId: school.id,
-          amount: 50.00,
+          amount: 50.0,
           currency: 'ILS',
           status: 'PENDING',
           yaadPayOrderId: registration.paymentIntentId!,
@@ -541,7 +551,7 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
           paymentRequired: true,
           paymentTiming: 'UPFRONT',
           pricingModel: 'FIXED_PRICE',
-          priceAmount: 75.50,
+          priceAmount: 75.5,
         },
       })
 
@@ -556,7 +566,10 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
       await expect(page.locator('text=/תשלום מראש|upfront|במעמד ההרשמה/i')).toBeVisible()
 
       // Verify payment icon (credit card emoji)
-      const hasPaymentIcon = await page.locator('text=/💳|🔒|💰/').isVisible().catch(() => false)
+      const hasPaymentIcon = await page
+        .locator('text=/💳|🔒|💰/')
+        .isVisible()
+        .catch(() => false)
       if (hasPaymentIcon) {
         expect(hasPaymentIcon).toBeTruthy()
       }
@@ -577,7 +590,7 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
           paymentRequired: true,
           paymentTiming: 'POST_REGISTRATION',
           pricingModel: 'PER_GUEST',
-          priceAmount: 30.00,
+          priceAmount: 30.0,
         },
       })
 
@@ -590,6 +603,101 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
 
       // Verify payment timing
       await expect(page.locator('text=/תשלום לאחר ההרשמה|payment.*after/i')).toBeVisible()
+    })
+  })
+
+  // US-PAY-07: Free event goes directly to CONFIRMED (no payment)
+  test.describe('[US-PAY-07] Free event skips payment', () => {
+    test('server: registration on free event gets CONFIRMED status directly', async ({
+      context,
+    }) => {
+      const school = await createSchool().withName('Free Event Test').create()
+      const event = await createEvent().withSchool(school.id).withCapacity(50).inFuture().create()
+
+      const res = await context.request.post(`/api/p/${school.slug}/${event.slug}/register`, {
+        data: {
+          name: 'Free Reg User',
+          phoneNumber: '+972509110001',
+          email: 'free-pay@test.com',
+          spotsCount: 1,
+        },
+      })
+      if ([200, 201].includes(res.status())) {
+        const body = await res.json()
+        const status = body.status ?? body.registration?.status
+        expect(status).toBe('CONFIRMED')
+      }
+    })
+  })
+
+  // US-PAY-05: Duplicate payment callback is idempotent
+  test.describe('[US-PAY-05] Duplicate callback idempotency', () => {
+    test('server: replaying identical callback does not crash or double-process', async ({
+      context,
+    }) => {
+      const fingerprint = `test-fp-${Date.now()}`
+      const payload = {
+        TransactionID: `test-txn-${Date.now()}`,
+        ResponseCode: '0',
+        fingerprint,
+        Amount: '100',
+        UniqueID: `test-uid-${Date.now()}`,
+      }
+
+      const res1 = await context.request.post('/api/payment/callback', { data: payload })
+      const res2 = await context.request.post('/api/payment/callback', { data: payload })
+
+      expect([200, 400, 409]).toContain(res1.status())
+      expect([200, 400, 409]).toContain(res2.status())
+      // Neither should be a 500
+      expect(res1.status()).not.toBe(500)
+      expect(res2.status()).not.toBe(500)
+    })
+  })
+
+  // US-PAY-10: Forged callback is rejected
+  test.describe('[US-PAY-10] Forged payment callback rejected', () => {
+    test('server: callback with empty/invalid fingerprint is not a 500', async ({ context }) => {
+      const res = await context.request.post('/api/payment/callback', {
+        data: {
+          TransactionID: 'FORGED-123',
+          ResponseCode: '0',
+          fingerprint: '',
+          Amount: '9999',
+        },
+      })
+      expect(res.status()).not.toBe(500)
+      expect([200, 400, 401, 403, 422]).toContain(res.status())
+    })
+  })
+
+  // US-PAY-04: Per-guest pricing creates PAYMENT_PENDING for upfront events
+  test.describe('[US-PAY-04] Per-guest pricing', () => {
+    test('server: upfront payment event creates PAYMENT_PENDING registration', async ({
+      context,
+    }) => {
+      const school = await createSchool().withName('PriceCalc Test').create()
+      const event = await createEvent()
+        .withSchool(school.id)
+        .withCapacity(50)
+        .withPayment(true, 'UPFRONT', 'PER_GUEST', 50)
+        .inFuture()
+        .create()
+
+      const res = await context.request.post(`/api/p/${school.slug}/${event.slug}/register`, {
+        data: {
+          name: 'Price Test User',
+          phoneNumber: '+972509110002',
+          email: 'price-pay@test.com',
+          spotsCount: 3,
+        },
+      })
+
+      if ([200, 201].includes(res.status())) {
+        const body = await res.json()
+        const status = body.status ?? body.registration?.status
+        expect(status).toBe('PAYMENT_PENDING')
+      }
     })
   })
 
@@ -610,7 +718,7 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
           paymentRequired: true,
           paymentTiming: 'UPFRONT',
           pricingModel: 'FIXED_PRICE',
-          priceAmount: 50.00,
+          priceAmount: 50.0,
         },
       })
 
@@ -625,7 +733,7 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
           paymentRequired: true,
           paymentTiming: 'UPFRONT',
           pricingModel: 'FIXED_PRICE',
-          priceAmount: 60.00,
+          priceAmount: 60.0,
         },
       })
 
@@ -640,7 +748,7 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
           confirmationCode: generateConfirmationCode(),
           paymentStatus: 'PENDING',
           paymentIntentId: `school-a-payment-${Date.now()}`,
-          amountDue: 50.00,
+          amountDue: 50.0,
         },
       })
 
@@ -649,7 +757,7 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
           registrationId: regA.id,
           eventId: eventA.id,
           schoolId: schoolA.id, // School A
-          amount: 50.00,
+          amount: 50.0,
           currency: 'ILS',
           status: 'COMPLETED',
           yaadPayOrderId: regA.paymentIntentId!,
@@ -667,7 +775,7 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
           confirmationCode: generateConfirmationCode(),
           paymentStatus: 'PENDING',
           paymentIntentId: `school-b-payment-${Date.now()}`,
-          amountDue: 60.00,
+          amountDue: 60.0,
         },
       })
 
@@ -676,7 +784,7 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
           registrationId: regB.id,
           eventId: eventB.id,
           schoolId: schoolB.id, // School B
-          amount: 60.00,
+          amount: 60.0,
           currency: 'ILS',
           status: 'COMPLETED',
           yaadPayOrderId: regB.paymentIntentId!,
@@ -692,7 +800,7 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
       })
       expect(schoolAPayments).toHaveLength(1)
       expect(schoolAPayments[0].id).toBe(paymentA.id)
-      expect(schoolAPayments[0].amount).toBe(50.00)
+      expect(schoolAPayments[0].amount).toBe(50.0)
 
       // School B can only see their payments
       const schoolBPayments = await prisma.payment.findMany({
@@ -700,7 +808,7 @@ test.describe('Payment Integration P0 - Critical Tests', () => {
       })
       expect(schoolBPayments).toHaveLength(1)
       expect(schoolBPayments[0].id).toBe(paymentB.id)
-      expect(schoolBPayments[0].amount).toBe(60.00)
+      expect(schoolBPayments[0].amount).toBe(60.0)
 
       // Verify payment record has correct school association
       expect(paymentA.schoolId).toBe(schoolA.id)

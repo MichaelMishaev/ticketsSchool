@@ -10,6 +10,7 @@ import { createId } from '@paralleldrive/cuid2'
 import { Decimal } from '@prisma/client/runtime/library'
 import { generateCheckInToken, validateCheckInTokenFormat } from '@/lib/check-in-token'
 import { registrationLogger } from '@/lib/logger-v2'
+import { isValidEmail } from '@/lib/validation-helpers'
 import { rateLimit } from '@/lib/rate-limiter'
 
 const registerLimiter = rateLimit({
@@ -117,6 +118,17 @@ export async function POST(
 
     if (!data.name || typeof data.name !== 'string' || data.name.trim() === '') {
       throw new Error('Name is required')
+    }
+
+    // Validate email format if provided
+    if (data.email && typeof data.email === 'string' && data.email.trim() !== '') {
+      if (!isValidEmail(data.email.trim())) {
+        return NextResponse.json(
+          { error: 'Email address is invalid', field: 'email' },
+          { status: 400 }
+        )
+      }
+      data.email = data.email.trim().toLowerCase()
     }
 
     // Validate and sanitize custom fields against event's fieldsSchema

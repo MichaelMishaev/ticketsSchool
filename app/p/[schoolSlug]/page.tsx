@@ -117,10 +117,11 @@ function SchoolLandingPage({ data }: { data: SchoolLandingData }) {
                 const percentage = Math.min(100, (event.totalSpotsTaken / event.capacity) * 100)
 
                 return (
-                  <div
+                  <a
                     key={event.id}
-                    className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-shadow overflow-hidden cursor-pointer"
-                    onClick={() => router.push(`/p/${school.slug}/${event.slug}`)}
+                    href={`/p/${school.slug}/${event.slug}`}
+                    className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-shadow overflow-hidden cursor-pointer block"
+                    aria-label={`${event.title} — ${isFull ? 'מלא, הרשמה לרשימת המתנה' : `${spotsLeft} מקומות פנויים`}`}
                   >
                     {/* Event Header */}
                     <div
@@ -175,7 +176,14 @@ function SchoolLandingPage({ data }: { data: SchoolLandingData }) {
                             {isFull ? 'מלא' : `${spotsLeft} מקומות`}
                           </span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <div
+                          role="progressbar"
+                          aria-valuenow={event.totalSpotsTaken}
+                          aria-valuemin={0}
+                          aria-valuemax={event.capacity}
+                          aria-label={`תפוסה: ${event.totalSpotsTaken} מתוך ${event.capacity} מקומות`}
+                          className="w-full bg-gray-200 rounded-full h-2 overflow-hidden"
+                        >
                           <div
                             className={`h-full rounded-full transition-all ${
                               isFull
@@ -185,22 +193,24 @@ function SchoolLandingPage({ data }: { data: SchoolLandingData }) {
                                   : 'bg-green-500'
                             }`}
                             style={{ width: `${percentage}%` }}
+                            aria-hidden="true"
                           />
                         </div>
                       </div>
 
-                      {/* CTA Button */}
-                      <button
-                        className="w-full mt-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-2"
+                      {/* CTA — visual indicator only; the whole card <a> is the interactive element */}
+                      <span
+                        aria-hidden="true"
+                        className="w-full mt-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-lg transition-all flex items-center justify-center gap-2"
                         style={{
                           background: `linear-gradient(to right, ${schoolColor}, ${schoolColor}dd)`,
                         }}
                       >
                         {isFull ? 'הרשמה לרשימת המתנה' : 'להרשמה'}
                         <ArrowRight className="w-5 h-5" />
-                      </button>
+                      </span>
                     </div>
-                  </div>
+                  </a>
                 )
               })}
             </div>

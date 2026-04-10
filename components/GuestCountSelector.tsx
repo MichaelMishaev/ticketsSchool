@@ -43,16 +43,28 @@ export default function GuestCountSelector({
     }
   }
 
+  const groupId = `guest-count-${label?.replace(/\s+/g, '-') ?? 'selector'}`
+
   return (
     <div className="space-y-3" dir="rtl">
-      {label && <label className={`block text-sm font-medium ${labelClass}`}>{label}</label>}
+      {label && (
+        <label id={`${groupId}-label`} className={`block text-sm font-medium ${labelClass}`}>
+          {label}
+        </label>
+      )}
 
-      <div className="flex items-center justify-center gap-4">
+      <div
+        role="group"
+        aria-labelledby={label ? `${groupId}-label` : undefined}
+        className="flex items-center justify-center gap-4"
+      >
         {/* Decrement Button */}
         <button
           type="button"
           onClick={decrement}
           disabled={value <= min}
+          aria-label={`הפחת ${label ?? 'כמות'}`}
+          aria-disabled={value <= min}
           className={`
             flex items-center justify-center
             w-12 h-12 sm:w-14 sm:h-14
@@ -64,15 +76,38 @@ export default function GuestCountSelector({
                 : activeClass
             }
           `}
-          aria-label="הפחת מספר אורחים"
         >
-          <Minus className="w-5 h-5 sm:w-6 sm:h-6" />
+          <Minus className="w-5 h-5 sm:w-6 sm:h-6" aria-hidden="true" />
         </button>
 
-        {/* Count Display */}
-        <div className="flex flex-col items-center justify-center min-w-[100px]">
-          <div className={`text-4xl sm:text-5xl font-bold ${countClass}`}>{value}</div>
-          <div className={`text-sm mt-1 ${subClass}`}>{value === 1 ? 'אורח' : 'אורחים'}</div>
+        {/* Count Display — spinbutton pattern for screen readers */}
+        <div
+          role="spinbutton"
+          aria-valuenow={value}
+          aria-valuemin={min}
+          aria-valuemax={max}
+          aria-label={label ?? 'כמות'}
+          aria-live="polite"
+          aria-atomic="true"
+          tabIndex={0}
+          className="flex flex-col items-center justify-center min-w-[100px] outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowUp') {
+              e.preventDefault()
+              increment()
+            }
+            if (e.key === 'ArrowDown') {
+              e.preventDefault()
+              decrement()
+            }
+          }}
+        >
+          <div className={`text-4xl sm:text-5xl font-bold ${countClass}`} aria-hidden="true">
+            {value}
+          </div>
+          <div className={`text-sm mt-1 ${subClass}`} aria-hidden="true">
+            {value === 1 ? 'אורח' : 'אורחים'}
+          </div>
         </div>
 
         {/* Increment Button */}
@@ -80,6 +115,8 @@ export default function GuestCountSelector({
           type="button"
           onClick={increment}
           disabled={value >= max}
+          aria-label={`הוסף ${label ?? 'כמות'}`}
+          aria-disabled={value >= max}
           className={`
             flex items-center justify-center
             w-12 h-12 sm:w-14 sm:h-14
@@ -91,14 +128,13 @@ export default function GuestCountSelector({
                 : activeClass
             }
           `}
-          aria-label="הוסף אורח"
         >
-          <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
+          <Plus className="w-5 h-5 sm:w-6 sm:h-6" aria-hidden="true" />
         </button>
       </div>
 
       {/* Range Info */}
-      <div className={`text-center text-xs ${rangeClass}`}>
+      <div className={`text-center text-xs ${rangeClass}`} aria-hidden="true">
         {min} - {max} אורחים
       </div>
     </div>

@@ -29,11 +29,7 @@ test.describe('Edge Cases & Error Handling P0 - Critical Tests', () => {
   test.describe('[07.2.1] Email Sending Failures', () => {
     test('registration succeeds even if email fails', async ({ page }) => {
       const school = await createSchool().create()
-      const event = await createEvent()
-        .withSchool(school.id)
-        .withCapacity(50)
-        .inFuture()
-        .create()
+      const event = await createEvent().withSchool(school.id).withCapacity(50).inFuture().create()
 
       const publicPage = new PublicEventPage(page)
       await publicPage.goto(school.slug, event.slug)
@@ -50,9 +46,8 @@ test.describe('Edge Cases & Error Handling P0 - Critical Tests', () => {
 
       // Registration should still succeed even if email fails
       // Check for confirmation (either message or code)
-      const hasSuccess = await page
-        .locator('text=/הרשמה הושלמה|הושלמה בהצלחה|confirmation|success/i')
-        .count() > 0
+      const hasSuccess =
+        (await page.locator('text=/הרשמה הושלמה|הושלמה בהצלחה|confirmation|success/i').count()) > 0
 
       expect(hasSuccess).toBeTruthy()
 
@@ -112,10 +107,7 @@ test.describe('Edge Cases & Error Handling P0 - Critical Tests', () => {
       ])
 
       // Wait for responses
-      await Promise.all([
-        page1.waitForTimeout(3000),
-        page2.waitForTimeout(3000),
-      ])
+      await Promise.all([page1.waitForTimeout(3000), page2.waitForTimeout(3000)])
 
       // Check results - one should be confirmed, one waitlisted
       const page1Text = await page1.textContent('body')
@@ -139,8 +131,8 @@ test.describe('Edge Cases & Error Handling P0 - Critical Tests', () => {
         where: { eventId: event.id },
       })
 
-      const confirmedRegs = registrations.filter(r => r.status === 'CONFIRMED')
-      const waitlistRegs = registrations.filter(r => r.status === 'WAITLIST')
+      const confirmedRegs = registrations.filter((r) => r.status === 'CONFIRMED')
+      const waitlistRegs = registrations.filter((r) => r.status === 'WAITLIST')
 
       expect(confirmedRegs.length).toBe(1)
       expect(waitlistRegs.length).toBe(1)
@@ -167,17 +159,13 @@ test.describe('Edge Cases & Error Handling P0 - Critical Tests', () => {
         .create()
 
       // Create 10 concurrent users trying to register (more than capacity)
-      const contexts = await Promise.all(
-        Array.from({ length: 10 }, () => browser.newContext())
-      )
+      const contexts = await Promise.all(Array.from({ length: 10 }, () => browser.newContext()))
 
-      const pages = await Promise.all(contexts.map(ctx => ctx.newPage()))
+      const pages = await Promise.all(contexts.map((ctx) => ctx.newPage()))
 
       // Navigate all to registration page
       await Promise.all(
-        pages.map(page =>
-          page.goto(`http://localhost:9000/p/${school.slug}/${event.slug}`)
-        )
+        pages.map((page) => page.goto(`http://localhost:9000/p/${school.slug}/${event.slug}`))
       )
 
       // Fill and submit all forms simultaneously
@@ -194,15 +182,15 @@ test.describe('Edge Cases & Error Handling P0 - Critical Tests', () => {
       )
 
       // Wait for all to complete
-      await Promise.all(pages.map(page => page.waitForTimeout(3000)))
+      await Promise.all(pages.map((page) => page.waitForTimeout(3000)))
 
       // Verify results in database
       const registrations = await prisma.registration.findMany({
         where: { eventId: event.id },
       })
 
-      const confirmedRegs = registrations.filter(r => r.status === 'CONFIRMED')
-      const waitlistRegs = registrations.filter(r => r.status === 'WAITLIST')
+      const confirmedRegs = registrations.filter((r) => r.status === 'CONFIRMED')
+      const waitlistRegs = registrations.filter((r) => r.status === 'WAITLIST')
 
       // Should have exactly 5 confirmed, 5 waitlisted
       expect(confirmedRegs.length).toBe(5)
@@ -216,7 +204,7 @@ test.describe('Edge Cases & Error Handling P0 - Critical Tests', () => {
       expect(updatedEvent?.spotsReserved).toBe(5)
 
       // Cleanup
-      await Promise.all(contexts.map(ctx => ctx.close()))
+      await Promise.all(contexts.map((ctx) => ctx.close()))
     })
   })
 
@@ -325,11 +313,7 @@ test.describe('Edge Cases & Error Handling P0 - Critical Tests', () => {
 
     test('validation enforces max length on registration name', async ({ page }) => {
       const school = await createSchool().create()
-      const event = await createEvent()
-        .withSchool(school.id)
-        .withCapacity(50)
-        .inFuture()
-        .create()
+      const event = await createEvent().withSchool(school.id).withCapacity(50).inFuture().create()
 
       await page.goto(`http://localhost:9000/p/${school.slug}/${event.slug}`)
 
@@ -375,12 +359,12 @@ test.describe('Edge Cases & Error Handling P0 - Critical Tests', () => {
       await loginPage.login(admin.email, 'TestPassword123!')
 
       const cookies = await page.context().cookies()
-      const sessionCookie = cookies.find(c => c.name === 'admin_session')
+      const sessionCookie = cookies.find((c) => c.name === 'admin_session')
 
       // Try to create event with null description
       const response = await request.post('/api/events', {
         headers: {
-          'Cookie': `admin_session=${sessionCookie?.value}`,
+          Cookie: `admin_session=${sessionCookie?.value}`,
           'Content-Type': 'application/json',
         },
         data: {
@@ -493,11 +477,7 @@ test.describe('Edge Cases & Error Handling P0 - Critical Tests', () => {
   test.describe('[07.6.1] Network - Slow Connection Simulation', () => {
     test('loading indicators shown during slow request', async ({ page }) => {
       const school = await createSchool().create()
-      const event = await createEvent()
-        .withSchool(school.id)
-        .withCapacity(50)
-        .inFuture()
-        .create()
+      const event = await createEvent().withSchool(school.id).withCapacity(50).inFuture().create()
 
       // Simulate slow network (throttle to 3G)
       const client = await page.context().newCDPSession(page)
@@ -521,8 +501,8 @@ test.describe('Edge Cases & Error Handling P0 - Critical Tests', () => {
       await page.click('button[type="submit"]')
 
       // Check if loading indicator appears (button disabled, spinner, etc.)
-      const buttonDisabled = await page.locator('button[type="submit"]:disabled').count() > 0
-      const hasLoadingText = await page.locator('text=/טוען|loading|שולח|sending/i').count() > 0
+      const buttonDisabled = (await page.locator('button[type="submit"]:disabled').count()) > 0
+      const hasLoadingText = (await page.locator('text=/טוען|loading|שולח|sending/i').count()) > 0
 
       // Should show some loading indication
       expect(buttonDisabled || hasLoadingText).toBeTruthy()
@@ -607,8 +587,9 @@ test.describe('Edge Cases & Error Handling P0 - Critical Tests', () => {
       expect(orphanedEvents.length).toBeGreaterThan(0)
 
       // Cleanup
-      await prisma.event.delete({
+      await prisma.event.update({
         where: { id: orphanedEvent.id },
+        data: { deletedAt: new Date() },
       })
     })
   })
@@ -624,11 +605,7 @@ test.describe('Edge Cases & Error Handling P0 - Critical Tests', () => {
 
       // Create 10 confirmed registrations
       for (let i = 0; i < 10; i++) {
-        await createRegistration()
-          .withEvent(event.id)
-          .withSpots(1)
-          .confirmed()
-          .create()
+        await createRegistration().withEvent(event.id).withSpots(1).confirmed().create()
       }
 
       // Verify count matches
@@ -705,17 +682,17 @@ test.describe('Edge Cases & Error Handling P0 - Critical Tests', () => {
       const cookies1 = await context1.cookies()
       const cookies2 = await context2.cookies()
 
-      const session1 = cookies1.find(c => c.name === 'admin_session')
-      const session2 = cookies2.find(c => c.name === 'admin_session')
+      const session1 = cookies1.find((c) => c.name === 'admin_session')
+      const session2 = cookies2.find((c) => c.name === 'admin_session')
 
       // Both try to update the registration
       const [response1, response2] = await Promise.all([
         page1.request.patch(`/api/events/${event.id}/registrations/${registration.id}`, {
-          headers: { 'Cookie': `admin_session=${session1?.value}` },
+          headers: { Cookie: `admin_session=${session1?.value}` },
           data: { name: 'Admin 1 Changed Name' },
         }),
         page2.request.patch(`/api/events/${event.id}/registrations/${registration.id}`, {
-          headers: { 'Cookie': `admin_session=${session2?.value}` },
+          headers: { Cookie: `admin_session=${session2?.value}` },
           data: { name: 'Admin 2 Changed Name' },
         }),
       ])

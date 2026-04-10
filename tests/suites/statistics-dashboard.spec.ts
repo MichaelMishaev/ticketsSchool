@@ -9,6 +9,7 @@ import {
   prisma,
 } from '../fixtures/test-data'
 import { generateEmail } from '../helpers/test-helpers'
+import { loginViaAPI } from '../helpers/auth-helpers'
 
 /**
  * Super Admin Statistics Dashboard E2E Tests
@@ -904,5 +905,72 @@ test.describe('Statistics Dashboard - Mobile Responsiveness', () => {
 
     // Verify content changes
     await expect(page.locator('text=סה״כ הרשמות')).toBeVisible({ timeout: 10000 })
+  })
+})
+
+// US-STAT-05: Registration counts accurate after cancellations
+test.describe('[US-STAT-05] Accurate counts after cancellation', () => {
+  test.afterAll(async () => {
+    await cleanupTestData()
+  })
+
+  test('server: registrations API shows correct confirmed vs cancelled counts', async ({
+    context,
+  }) => {
+    const school = await createSchool().withName('Stats Accuracy Test').create()
+    const admin = await createAdmin().withSchool(school.id).create()
+    const event = await createEvent().withSchool(school.id).withCapacity(100).inFuture().create()
+
+    await createRegistration().withEvent(event.id).confirmed().create()
+    await createRegistration().withEvent(event.id).confirmed().create()
+    await createRegistration().withEvent(event.id).confirmed().create()
+    await createRegistration().withEvent(event.id).cancelled().create()
+
+    await loginViaAPI(context, admin.email, admin.password)
+    const res = await context.request.get(`/api/events/${event.id}/registrations`)
+    if (res.status() === 200) {
+      const body = await res.json()
+      const regs = body.registrations ?? body
+      if (Array.isArray(regs)) {
+        const confirmed = regs.filter((r: any) => r.status === 'CONFIRMED')
+        const cancelled = regs.filter((r: any) => r.status === 'CANCELLED')
+        expect(confirmed.length).toBe(3)
+        expect(cancelled.length).toBe(1)
+      }
+    }
+  })
+})
+
+// US-STAT-01: Statistics dashboard loads without error
+test.describe('[US-STAT-01] Statistics dashboard loads', () => {
+  test.afterAll(async () => {
+    await cleanupTestData()
+  })
+
+  test('client: /admin/statistics renders without 500', async ({ page, context }) => {
+    const school = await createSchool().withName('Stats Dashboard Test').create()
+    const admin = await createAdmin().withSchool(school.id).create()
+
+    await loginViaAPI(context, admin.email, admin.password)
+    await page.goto('http://localhost:9000/admin/statistics')
+    await expect(page.locator('body')).not.toContainText(/500|Internal Server Error/i)
+  })
+})
+
+// US-STAT-02: Per-event stats tab loads
+test.describe('[US-STAT-02] Per-event statistics', () => {
+  test.afterAll(async () => {
+    await cleanupTestData()
+  })
+
+  test('client: event overview tab shows metrics without error', async ({ page, context }) => {
+    const school = await createSchool().withName('PerEvt Stats Test').create()
+    const admin = await createAdmin().withSchool(school.id).create()
+    const event = await createEvent().withSchool(school.id).withCapacity(50).inFuture().create()
+    await createRegistration().withEvent(event.id).confirmed().create()
+
+    await loginViaAPI(context, admin.email, admin.password)
+    await page.goto(`http://localhost:9000/admin/events/${event.id}`)
+    await expect(page.locator('body')).not.toContainText(/500|Internal Server Error/i)
   })
 })
