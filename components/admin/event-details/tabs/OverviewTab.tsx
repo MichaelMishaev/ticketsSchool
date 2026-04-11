@@ -1,7 +1,15 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { Trash2, CheckCircle2, Clock, AlertCircle, CreditCard, User } from 'lucide-react'
+import {
+  Trash2,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  CreditCard,
+  User,
+  AlertTriangle,
+} from 'lucide-react'
 import CheckInHeroCard from '@/components/admin/event-details/CheckInHeroCard'
 import CompactShareCards from '@/components/admin/event-details/CompactShareCards'
 import { useConfirmation } from '@/hooks/useConfirmation'
@@ -59,10 +67,15 @@ export default function OverviewTab({ event, onEventUpdate, onTabChange }: Overv
   const confirmedRegistrations = registrations.filter((r) => r.status === 'CONFIRMED')
   const waitlistRegistrations = registrations.filter((r) => r.status === 'WAITLIST')
   const cancelledRegistrations = registrations.filter((r) => r.status === 'CANCELLED')
+  // PAYMENT_PENDING: user started payment flow but never completed it. Needs
+  // manual admin attention — either reach out to them to complete payment, or
+  // approve manually if they paid by another method (cash/bank transfer).
+  const paymentPendingRegistrations = registrations.filter((r) => r.status === 'PAYMENT_PENDING')
 
   const confirmedCount = confirmedRegistrations.reduce((sum, reg) => sum + (reg.spotsCount || 0), 0)
   const waitlistCount = waitlistRegistrations.reduce((sum, reg) => sum + (reg.spotsCount || 0), 0)
   const cancelledCount = cancelledRegistrations.reduce((sum, reg) => sum + (reg.spotsCount || 0), 0)
+  const paymentPendingCount = paymentPendingRegistrations.length
   const totalCapacity = event.totalCapacity || event.capacity
   const availableSpots = Math.max(0, totalCapacity - confirmedCount)
   const capacityPercent = Math.min(100, (confirmedCount / totalCapacity) * 100)
@@ -151,6 +164,47 @@ export default function OverviewTab({ event, onEventUpdate, onTabChange }: Overv
         className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-6 space-y-5 overflow-x-hidden"
         dir="rtl"
       >
+        {/* PAYMENT_PENDING Alert Banner - admin must see this immediately on any tab.
+            Clicking jumps to the registrations tab and applies a PAYMENT_PENDING filter
+            so they can immediately approve/follow-up without hunting through the list. */}
+        {paymentPendingCount > 0 && (
+          <button
+            onClick={() => {
+              if (onTabChange) {
+                onTabChange('registrations')
+                setTimeout(() => {
+                  const filterEvent = new CustomEvent('filterRegistrations', {
+                    detail: { status: 'PAYMENT_PENDING' },
+                  })
+                  window.dispatchEvent(filterEvent)
+                }, 100)
+              }
+            }}
+            className="w-full md:max-w-2xl md:mx-auto bg-gradient-to-br from-amber-50 to-yellow-100
+                       border-2 border-amber-400 rounded-xl p-4 shadow-md animate-pulse
+                       hover:animate-none hover:shadow-lg hover:border-amber-500
+                       active:scale-[0.98] transition-all duration-200
+                       focus:outline-none focus:ring-4 focus:ring-amber-500/30 text-right"
+            aria-label={`${paymentPendingCount} הרשמות ממתינות לתשלום — לחץ לצפייה`}
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-white rounded-lg border-2 border-amber-400 shadow-sm flex-shrink-0">
+                <AlertTriangle className="w-6 h-6 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-base font-bold text-amber-900 mb-1">
+                  ⚠️ {paymentPendingCount}{' '}
+                  {paymentPendingCount === 1 ? 'הרשמה ממתינה' : 'הרשמות ממתינות'} לתשלום
+                </p>
+                <p className="text-sm text-amber-800">
+                  משתתפים התחילו הרשמה אך לא השלימו את התשלום. נדרש אישור ידני או יצירת קשר.
+                </p>
+                <p className="text-xs text-amber-700 font-medium mt-2">לחץ כאן לצפייה ואישור ←</p>
+              </div>
+            </div>
+          </button>
+        )}
+
         {/* Payment Indicator - If event has payment */}
         {event.paymentRequired && (
           <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4 shadow-sm md:max-w-2xl md:mx-auto">
@@ -366,52 +420,66 @@ export default function OverviewTab({ event, onEventUpdate, onTabChange }: Overv
               </div>
             ) : (
               <>
-                {recentRegistrations.map((registration) => (
-                  <div
-                    key={registration.id}
-                    className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    {/* User icon */}
+                {recentRegistrations.map((registration) => {
+                  // Distinct visual treatment per status. PAYMENT_PENDING gets an
+                  // urgent yellow/amber-ring so admins spot unpaid registrations at a
+                  // glance — previously it was silently rendered as "waitlist".
+                  const isPending = registration.status === 'PAYMENT_PENDING'
+                  const isConfirmed = registration.status === 'CONFIRMED'
+                  const iconBg = isConfirmed
+                    ? 'bg-green-100 text-green-600'
+                    : isPending
+                      ? 'bg-yellow-100 text-yellow-700 ring-2 ring-yellow-400 animate-pulse'
+                      : 'bg-amber-100 text-amber-600'
+                  const statusLabel = isConfirmed
+                    ? 'מאושר'
+                    : isPending
+                      ? '⚠️ ממתין לתשלום'
+                      : 'ברשימת המתנה'
+                  const statusClass = isConfirmed
+                    ? 'text-green-600 font-medium'
+                    : isPending
+                      ? 'text-yellow-700 font-bold'
+                      : 'text-amber-600 font-medium'
+                  return (
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                        registration.status === 'CONFIRMED'
-                          ? 'bg-green-100 text-green-600'
-                          : 'bg-amber-100 text-amber-600'
+                      key={registration.id}
+                      className={`flex items-start gap-3 p-3 rounded-lg transition-colors ${
+                        isPending
+                          ? 'bg-yellow-50 border border-yellow-300 hover:bg-yellow-100'
+                          : 'bg-gray-50 hover:bg-gray-100'
                       }`}
                     >
-                      <User className="w-5 h-5" />
-                    </div>
+                      {/* User icon */}
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${iconBg}`}
+                      >
+                        <User className="w-5 h-5" />
+                      </div>
 
-                    {/* Registration details */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
-                            {getParticipantName(registration)}
-                            <span className="text-gray-500 font-normal"> נרשם/ה לאירוע</span>
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {registration.spotsCount}{' '}
-                            {registration.spotsCount === 1 ? 'משתתף' : 'משתתפים'}
-                            {' • '}
-                            <span
-                              className={
-                                registration.status === 'CONFIRMED'
-                                  ? 'text-green-600 font-medium'
-                                  : 'text-amber-600 font-medium'
-                              }
-                            >
-                              {registration.status === 'CONFIRMED' ? 'מאושר' : 'ברשימת המתנה'}
-                            </span>
-                          </p>
+                      {/* Registration details */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {getParticipantName(registration)}
+                              <span className="text-gray-500 font-normal"> נרשם/ה לאירוע</span>
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {registration.spotsCount}{' '}
+                              {registration.spotsCount === 1 ? 'משתתף' : 'משתתפים'}
+                              {' • '}
+                              <span className={statusClass}>{statusLabel}</span>
+                            </p>
+                          </div>
+                          <span className="text-xs text-gray-400 whitespace-nowrap">
+                            {formatRelativeTime(registration.createdAt)}
+                          </span>
                         </div>
-                        <span className="text-xs text-gray-400 whitespace-nowrap">
-                          {formatRelativeTime(registration.createdAt)}
-                        </span>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
 
                 {/* Show more link if there are more registrations */}
                 {registrations.length > 5 && (
