@@ -19,7 +19,6 @@ import {
   AlertTriangle,
 } from 'lucide-react'
 import { format } from 'date-fns'
-import { useEventStream } from '@/hooks/useEventStream'
 
 // Helper function to convert Israeli phone to WhatsApp URL
 function formatWhatsAppUrl(phone: string): string | null {
@@ -49,16 +48,43 @@ interface Registration {
   createdAt: Date | string
 }
 
+interface LiveStats {
+  confirmed: number
+  waitlist: number
+  cancelled: number
+  paymentPending: number
+}
+
+interface StreamedRegistration {
+  id: string
+  status: 'CONFIRMED' | 'WAITLIST' | 'CANCELLED' | 'PAYMENT_PENDING'
+  spotsCount: number
+  phoneNumber: string
+  data: Record<string, unknown>
+  confirmationCode: string
+  createdAt: string
+}
+
 interface RegistrationsTabProps {
   eventId: string
   registrations: Registration[]
   onRegistrationUpdate: () => void
+  /**
+   * Real-time stream props — owned by the parent (EventDetailsTabbed) so the
+   * chime + document.title counter keep working when the admin is on a
+   * different tab. This tab is a *consumer* of the stream, not the producer.
+   */
+  newRegistrations?: StreamedRegistration[]
+  isConnected?: boolean
+  liveStats?: LiveStats | null
 }
 
 export default function RegistrationsTab({
   eventId,
   registrations,
   onRegistrationUpdate,
+  newRegistrations = [],
+  isConnected = false,
 }: RegistrationsTabProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<
@@ -101,8 +127,12 @@ export default function RegistrationsTab({
     return phone
   }
 
-  // Real-time updates via SSE
-  const { newRegistrations, isConnected, stats } = useEventStream(eventId, true)
+  // Real-time stream now owned by the parent (EventDetailsTabbed) and passed
+  // down as props — see the hoist in 2026-04-11 so the chime + title counter
+  // work on every tab, not just this one. This tab only consumes
+  // `newRegistrations` and `isConnected`; the `liveStats` counts are used by
+  // OverviewTab's banner, not here — local `counts` (derived from the merged
+  // list) stays the source of truth for the filter tabs below.
 
   // Merge new registrations with existing ones
   const allRegistrations = useMemo(() => {
@@ -199,23 +229,9 @@ export default function RegistrationsTab({
     }
   }, [allRegistrations])
 
-  // Prefix document.title with (N⏳) when there are PAYMENT_PENDING registrations.
-  // Admin notices this even when the tab is inactive — the title shows in the
-  // browser tab strip. Cleaned up on unmount so we don't leak the badge to
-  // other pages. Deliberately reads `counts.pending` (merged local state) not
-  // `stats?.paymentPending` so it stays in sync with what's actually rendered.
-  useEffect(() => {
-    if (counts.pending > 0) {
-      // Strip any existing (N⏳) prefix to avoid stacking across renders.
-      const base = document.title.replace(/^\(\d+⏳\)\s*/, '')
-      document.title = `(${counts.pending}⏳) ${base}`
-    } else {
-      document.title = document.title.replace(/^\(\d+⏳\)\s*/, '')
-    }
-    return () => {
-      document.title = document.title.replace(/^\(\d+⏳\)\s*/, '')
-    }
-  }, [counts.pending])
+  // NOTE: The document.title `(N⏳)` counter effect moved up to EventDetailsTabbed.
+  // Previously lived here, but it was scoped to this tab — admins on the
+  // Overview tab wouldn't see the badge. The parent now owns it.
 
   // Show success toast
   const showSuccess = (message: string) => {
@@ -224,10 +240,14 @@ export default function RegistrationsTab({
     setTimeout(() => setShowSuccessToast(false), 5000) // Increased from 3s to 5s for SSE tests
   }
 
-  // Listen for filter events from overview cards
+  // Listen for filter events from overview cards. The PAYMENT_PENDING banner
+  // in OverviewTab dispatches with `status: 'PAYMENT_PENDING'` — the type
+  // union here must include it or the banner click would be a no-op.
   useEffect(() => {
     const handleFilter = (event: Event) => {
-      const customEvent = event as CustomEvent<{ status: 'CONFIRMED' | 'WAITLIST' }>
+      const customEvent = event as CustomEvent<{
+        status: 'CONFIRMED' | 'WAITLIST' | 'CANCELLED' | 'PAYMENT_PENDING'
+      }>
       if (customEvent.detail && customEvent.detail.status) {
         setFilterStatus(customEvent.detail.status)
       }
