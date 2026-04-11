@@ -52,13 +52,33 @@ interface Event {
   currency?: string
 }
 
+interface LiveStats {
+  confirmed: number
+  waitlist: number
+  cancelled: number
+  paymentPending: number
+}
+
 interface OverviewTabProps {
   event: Event
   onEventUpdate: () => void
   onTabChange?: (tab: string) => void
+  /**
+   * Real-time poll stats from the parent's `useEventStream` hook. When present,
+   * the PAYMENT_PENDING banner prefers this value over the snapshot derived
+   * from `event.registrations` — the snapshot only refreshes on `fetchEvent()`,
+   * but the poll fires every 3s, so the banner shows up within 3 seconds of
+   * any new abandoned-payment row appearing.
+   */
+  liveStats?: LiveStats | null
 }
 
-export default function OverviewTab({ event, onEventUpdate, onTabChange }: OverviewTabProps) {
+export default function OverviewTab({
+  event,
+  onEventUpdate,
+  onTabChange,
+  liveStats,
+}: OverviewTabProps) {
   const router = useRouter()
   const { confirm, ConfirmationDialog } = useConfirmation()
 
@@ -75,7 +95,10 @@ export default function OverviewTab({ event, onEventUpdate, onTabChange }: Overv
   const confirmedCount = confirmedRegistrations.reduce((sum, reg) => sum + (reg.spotsCount || 0), 0)
   const waitlistCount = waitlistRegistrations.reduce((sum, reg) => sum + (reg.spotsCount || 0), 0)
   const cancelledCount = cancelledRegistrations.reduce((sum, reg) => sum + (reg.spotsCount || 0), 0)
-  const paymentPendingCount = paymentPendingRegistrations.length
+  // Prefer live poll count when available (updates every 3s) over the snapshot
+  // from event.registrations (only refreshes on fetchEvent). Falls back to the
+  // snapshot if the hook hasn't produced stats yet (first render / disconnected).
+  const paymentPendingCount = liveStats?.paymentPending ?? paymentPendingRegistrations.length
   const totalCapacity = event.totalCapacity || event.capacity
   const availableSpots = Math.max(0, totalCapacity - confirmedCount)
   const capacityPercent = Math.min(100, (confirmedCount / totalCapacity) * 100)

@@ -12,6 +12,7 @@ import FloatingCheckInMenu, {
 import OverviewTab from '@/components/admin/event-details/tabs/OverviewTab'
 import CompactEventHero from '@/components/admin/event-details/CompactEventHero'
 import DevFeatureLabel from '@/components/dev/DevFeatureLabel'
+import { useEventStream } from '@/hooks/useEventStream'
 
 const TabSpinner = () => (
   <div className="flex justify-center items-center h-64">
@@ -42,7 +43,7 @@ interface Registration {
   data: Record<string, unknown>
   phoneNumber: string
   spotsCount: number
-  status: 'CONFIRMED' | 'WAITLIST' | 'CANCELLED'
+  status: 'CONFIRMED' | 'WAITLIST' | 'CANCELLED' | 'PAYMENT_PENDING'
   confirmationCode: string
   createdAt: Date
 }
@@ -84,6 +85,34 @@ export default function EventDetailsTabbed() {
   const [loading, setLoading] = useState(true)
   const [checkInLink, setCheckInLink] = useState<string | null>(null)
   const tabContentRef = useRef<HTMLDivElement>(null)
+
+  // Real-time registration polling — hoisted from RegistrationsTab so the chime
+  // + document.title counter work regardless of which tab is active. The hook
+  // only starts polling once we have an eventId *and* the event has loaded,
+  // which mirrors the behavior it had when it lived inside RegistrationsTab
+  // (lazy-mounted only after the data was fetched).
+  const {
+    newRegistrations,
+    isConnected,
+    stats: liveStats,
+  } = useEventStream(eventId, !!eventId && !loading)
+
+  // Prefix document.title with (N⏳) when there are PAYMENT_PENDING registrations,
+  // so the admin sees the badge in the browser tab strip even when the tab is
+  // backgrounded or the admin is on a different page. This deliberately lives
+  // in the consumer (not the hook) so the hook stays pure of DOM side effects.
+  useEffect(() => {
+    const count = liveStats?.paymentPending ?? 0
+    if (count > 0) {
+      const base = document.title.replace(/^\(\d+⏳\)\s*/, '')
+      document.title = `(${count}⏳) ${base}`
+    } else {
+      document.title = document.title.replace(/^\(\d+⏳\)\s*/, '')
+    }
+    return () => {
+      document.title = document.title.replace(/^\(\d+⏳\)\s*/, '')
+    }
+  }, [liveStats?.paymentPending])
 
   // Check if check-in is available (same logic as CheckInTab)
   // Check-in should only show when it's the event day AND event hasn't ended
@@ -208,6 +237,7 @@ export default function EventDetailsTabbed() {
             event={event}
             onEventUpdate={fetchEvent}
             onTabChange={(tab) => setActiveTab(tab as TabId)}
+            liveStats={liveStats}
           />
         )}
         {activeTab === 'registrations' && (
@@ -215,6 +245,9 @@ export default function EventDetailsTabbed() {
             eventId={eventId}
             registrations={registrations}
             onRegistrationUpdate={fetchEvent}
+            newRegistrations={newRegistrations}
+            isConnected={isConnected}
+            liveStats={liveStats}
           />
         )}
         {activeTab === 'checkin' && <CheckInTab eventId={eventId} eventDate={event.startAt} />}
