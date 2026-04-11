@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
   output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
 
   // Fix lockfile warning by explicitly setting workspace root
-  outputFileTracingRoot: process.env.NODE_ENV === 'production' ? path.join(__dirname) : undefined,
+  outputFileTracingRoot: path.join(__dirname),
   eslint: {
     // Disable ESLint during production builds
     ignoreDuringBuilds: true,

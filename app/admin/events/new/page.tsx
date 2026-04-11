@@ -448,6 +448,7 @@ export default function NewEventPage() {
   // String inputs for better UX on number fields
   const [capacityInput, setCapacityInput] = useState('50')
   const [maxSpotsInput, setMaxSpotsInput] = useState('1')
+  const [priceInput, setPriceInput] = useState('')
 
   // Character limits
   const CHAR_LIMITS = {
@@ -509,6 +510,7 @@ export default function NewEventPage() {
       setFormData(draftData.formData)
       setCapacityInput(String(draftData.formData.capacity || 50))
       setMaxSpotsInput(String(draftData.formData.maxSpotsPerPerson || 1))
+      setPriceInput(String(draftData.formData.priceAmount || ''))
       setCurrentStep(draftData.currentStep || 0)
       setCompletedSteps(new Set(draftData.completedSteps || []))
       setShowDraftModal(false)
@@ -2175,19 +2177,31 @@ export default function NewEventPage() {
                                 </span>
                                 <input
                                   id="priceAmount"
-                                  type="number"
-                                  step="0.01"
-                                  min="0"
-                                  value={formData.priceAmount || ''}
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={priceInput}
                                   onChange={(e) => {
-                                    const value = e.target.value ? parseFloat(e.target.value) : 0
-                                    setFormData((prev) => ({
-                                      ...prev,
-                                      priceAmount: value || undefined,
-                                    }))
+                                    const raw = e.target.value.replace(/[^\d.]/g, '')
+                                    setPriceInput(raw)
+                                    const num = parseFloat(raw)
+                                    if (!isNaN(num)) {
+                                      const clamped = Math.max(0, Math.min(100000, num))
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        priceAmount: clamped || undefined,
+                                      }))
+                                    } else if (raw === '') {
+                                      setFormData((prev) => ({ ...prev, priceAmount: undefined }))
+                                    }
                                   }}
+                                  onBlur={() => {
+                                    if (priceInput !== '' && formData.priceAmount !== undefined) {
+                                      setPriceInput(formData.priceAmount.toFixed(2))
+                                    }
+                                  }}
+                                  onFocus={(e) => e.target.select()}
                                   className={inputVariants.default + ' pl-4 pr-12'}
-                                  placeholder="50.00"
+                                  placeholder="0.00"
                                 />
                               </div>
                               <p className={typography.micro + ' mt-2'}>

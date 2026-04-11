@@ -13,21 +13,24 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
     redirect('/admin/login')
   }
 
-  // Fetch event with tables
+  // Fetch event with tables (sharing-aware: each table may have N CONFIRMED regs)
   const event = await prisma.event.findUnique({
     where: { id },
     include: {
       tables: {
         orderBy: { tableOrder: 'asc' },
         include: {
-          reservation: {
+          registrations: {
+            where: { status: 'CONFIRMED' },
             select: {
               id: true,
               confirmationCode: true,
               guestsCount: true,
               phoneNumber: true,
               data: true,
+              createdAt: true,
             },
+            orderBy: { createdAt: 'asc' },
           },
         },
       },
@@ -45,15 +48,15 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
 
   // Route to appropriate edit component based on event type
   if (event.eventType === 'TABLE_BASED') {
-    // Type-cast tables to match EditEventClient's expected type
+    // Sharing-aware: pass the full registrations[] array through.
+    // Prisma's Json → unknown narrowing needs a per-row cast so the client
+    // type can treat `data` as a plain object.
     const tables = event.tables.map((table: (typeof event.tables)[number]) => ({
       ...table,
-      reservation: table.reservation
-        ? {
-            ...table.reservation,
-            data: table.reservation.data as Record<string, unknown>,
-          }
-        : null,
+      registrations: table.registrations.map((r) => ({
+        ...r,
+        data: (r.data ?? {}) as Record<string, unknown>,
+      })),
     }))
 
     return <EditEventClient eventId={event.id} eventTitle={event.title} initialTables={tables} />

@@ -13,6 +13,7 @@ export default defineConfig({
       '**/.next/**',
       '**/tests/**', // Exclude Playwright E2E tests
       '**/dist/**',
+      '**/.worktrees/**', // Exclude git worktrees — they carry stale copies
     ],
     coverage: {
       provider: 'v8',

@@ -1,20 +1,23 @@
 'use client'
 
-import { useState } from 'react'
 import { UtensilsCrossed, ListOrdered } from 'lucide-react'
 
 interface TableBoardTabsProps {
   tablesView: React.ReactNode
   waitlistView: React.ReactNode
   waitlistCount: number
+  activeTab: 'tables' | 'waitlist'
+  onTabChange: (tab: 'tables' | 'waitlist') => void
 }
 
 export default function TableBoardTabs({
   tablesView,
   waitlistView,
   waitlistCount,
+  activeTab,
+  onTabChange,
 }: TableBoardTabsProps) {
-  const [activeTab, setActiveTab] = useState<'tables' | 'waitlist'>('tables')
+  const setActiveTab = onTabChange
 
   return (
     <div className="space-y-6">

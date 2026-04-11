@@ -435,4 +435,194 @@ test.describe('Table Management - P0 Critical', () => {
       expect([200, 201, 404]).toContain(res.status())
     })
   })
+
+  // US-TBL-SHARING: Many-to-one FK — admin can place multiple regs on one table
+  //
+  // Exercises the full sharing flow introduced in the
+  // `table_registrations_many_to_one` migration:
+  //  1. Seed a table (cap=4, minOrder=2) with ONE CONFIRMED reg of 3 guests
+  //  2. Seed a 1-guest WAITLIST reg
+  //  3. POST /waitlist/[regId]/assign → partially-full table is now shared
+  //     (minOrder is bypassed because the table is not empty)
+  //  4. GET /tables → response includes the new `registrations` array shape
+  //     with BOTH regs on the same table row
+  //  5. PATCH /registrations/[regId] with { tableId: null } on the 3-guest
+  //     reg → table stays RESERVED (conditional release), solo remains
+  //  6. PATCH /registrations/[regId] with { tableId: null } on the solo →
+  //     table flips to AVAILABLE
+  test.describe('[US-TBL-SHARING] Admin shares a partially-occupied table', () => {
+    test('server: add waitlist → share, then remove each reg with correct release', async ({
+      context,
+    }) => {
+      // Fresh tenant/admin/event to isolate this scenario from cross-test noise.
+      const school = await createSchool().withName('Share Test').create()
+      const admin = await createAdmin().withSchool(school.id).create()
+      const event = await createEvent()
+        .withSchool(school.id)
+        .withEventType('TABLE_BASED')
+        .inFuture()
+        .create()
+
+      await loginViaAPI(context, admin.email, admin.password)
+
+      // Directly seed the DB — `prisma` here is the guarded client, which
+      // permits `create` on all models. Deletes happen through soft-delete
+      // fallbacks (status updates) in afterAll, not here.
+      const sharedTable = await prisma.table.create({
+        data: {
+          eventId: event.id,
+          tableNumber: 'SHARE-1',
+          tableOrder: 1,
+          capacity: 4,
+          minOrder: 2,
+          status: 'RESERVED', // table is already "open" because reg1 below is the opener
+        },
+      })
+
+      const reg1 = await prisma.registration.create({
+        data: {
+          eventId: event.id,
+          guestsCount: 3,
+          status: 'CONFIRMED',
+          confirmationCode: `SHR1-${Date.now()}`,
+          phoneNumber: '0509000001',
+          data: { name: 'Sharer Host' },
+          tableId: sharedTable.id,
+        },
+      })
+
+      const waitlistReg = await prisma.registration.create({
+        data: {
+          eventId: event.id,
+          guestsCount: 1,
+          status: 'WAITLIST',
+          waitlistPriority: 1,
+          confirmationCode: `WAIT1-${Date.now()}`,
+          phoneNumber: '0509000002',
+          data: { name: 'Solo Waitlister' },
+        },
+      })
+
+      // 1. Assign the waitlist reg onto the already-occupied table.
+      //    minOrder=2 must be BYPASSED because the table is not empty.
+      const assignRes = await context.request.post(
+        `/api/events/${event.id}/waitlist/${waitlistReg.id}/assign`,
+        { data: { tableId: sharedTable.id } }
+      )
+      expect([200, 201]).toContain(assignRes.status())
+
+      // 2. GET /tables should now return `registrations` array shape with
+      //    both regs on the same table row.
+      const tablesRes = await context.request.get(`/api/events/${event.id}/tables`)
+      expect(tablesRes.status()).toBe(200)
+      const tablesPayload = await tablesRes.json()
+      const shared = (
+        Array.isArray(tablesPayload) ? tablesPayload : (tablesPayload.tables ?? [])
+      ).find((t: any) => t.id === sharedTable.id)
+      expect(shared).toBeTruthy()
+      // New sharing-aware shape: `registrations` is an array (was `reservation`)
+      expect(Array.isArray(shared.registrations)).toBe(true)
+      expect(shared.registrations).toHaveLength(2)
+      const totalOccupied = shared.registrations.reduce(
+        (sum: number, r: any) => sum + (r.guestsCount ?? 0),
+        0
+      )
+      expect(totalOccupied).toBe(4) // 3 + 1 = table is full
+      expect(shared.status).toBe('RESERVED')
+
+      // 3. Remove reg1 (the 3-guest party) via PATCH with tableId=null.
+      //    Status stays CONFIRMED — the reg is "unassigned", not cancelled.
+      const removeFirstRes = await context.request.patch(
+        `/api/events/${event.id}/registrations/${reg1.id}`,
+        { data: { tableId: null } }
+      )
+      expect(removeFirstRes.status()).toBe(200)
+
+      // 4. Table must STILL be RESERVED — conditional release only triggers
+      //    when zero CONFIRMED regs remain on the table. The solo is still there.
+      const afterFirstRemove = await prisma.table.findUnique({
+        where: { id: sharedTable.id },
+        include: {
+          registrations: {
+            where: { status: 'CONFIRMED' },
+            select: { id: true, guestsCount: true },
+          },
+        },
+      })
+      expect(afterFirstRemove?.status).toBe('RESERVED')
+      expect(afterFirstRemove?.registrations).toHaveLength(1)
+      expect(afterFirstRemove?.registrations[0]?.guestsCount).toBe(1)
+
+      // Verify reg1 still exists + is CONFIRMED but tableless.
+      const reg1After = await prisma.registration.findUnique({ where: { id: reg1.id } })
+      expect(reg1After?.status).toBe('CONFIRMED')
+      expect(reg1After?.tableId).toBeNull()
+
+      // 5. Remove the solo — this should flip the table to AVAILABLE.
+      const removeSecondRes = await context.request.patch(
+        `/api/events/${event.id}/registrations/${waitlistReg.id}`,
+        { data: { tableId: null } }
+      )
+      expect(removeSecondRes.status()).toBe(200)
+
+      const afterSecondRemove = await prisma.table.findUnique({
+        where: { id: sharedTable.id },
+        include: {
+          registrations: { where: { status: 'CONFIRMED' }, select: { id: true } },
+        },
+      })
+      expect(afterSecondRemove?.status).toBe('AVAILABLE')
+      expect(afterSecondRemove?.registrations).toHaveLength(0)
+    })
+
+    test('server: assign to empty table below minOrder is rejected', async ({ context }) => {
+      const school = await createSchool().withName('MinOrder Guard Test').create()
+      const admin = await createAdmin().withSchool(school.id).create()
+      const event = await createEvent()
+        .withSchool(school.id)
+        .withEventType('TABLE_BASED')
+        .inFuture()
+        .create()
+
+      await loginViaAPI(context, admin.email, admin.password)
+
+      // Empty table with minOrder=2 — a solo waitlister should NOT be
+      // assignable without an explicit `force` flag.
+      const emptyTable = await prisma.table.create({
+        data: {
+          eventId: event.id,
+          tableNumber: 'EMPTY-1',
+          tableOrder: 1,
+          capacity: 4,
+          minOrder: 2,
+          status: 'AVAILABLE',
+        },
+      })
+
+      const solo = await prisma.registration.create({
+        data: {
+          eventId: event.id,
+          guestsCount: 1,
+          status: 'WAITLIST',
+          waitlistPriority: 1,
+          confirmationCode: `SOLO-${Date.now()}`,
+          phoneNumber: '0509000003',
+          data: { name: 'Solo Below MinOrder' },
+        },
+      })
+
+      const res = await context.request.post(`/api/events/${event.id}/waitlist/${solo.id}/assign`, {
+        data: { tableId: emptyTable.id },
+      })
+      // Route should reject with 400 — minOrder IS enforced on empty tables.
+      expect(res.status()).toBe(400)
+
+      // Confirm nothing was mutated.
+      const tableAfter = await prisma.table.findUnique({ where: { id: emptyTable.id } })
+      expect(tableAfter?.status).toBe('AVAILABLE')
+      const soloAfter = await prisma.registration.findUnique({ where: { id: solo.id } })
+      expect(soloAfter?.status).toBe('WAITLIST')
+      expect(soloAfter?.tableId).toBeNull()
+    })
+  })
 })

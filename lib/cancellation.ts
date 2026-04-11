@@ -20,9 +20,9 @@ export async function cancelReservation(token: string, reason?: string) {
       where: {
         eventId: decoded.eventId,
         phoneNumber: decoded.phone,
-        status: { in: ['CONFIRMED', 'WAITLIST'] }
+        status: { in: ['CONFIRMED', 'WAITLIST'] },
       },
-      include: { event: true, assignedTable: true }
+      include: { event: true, table: true },
     })
 
     if (!registration) {
@@ -34,33 +34,42 @@ export async function cancelReservation(token: string, reason?: string) {
       (new Date(registration.event.startAt).getTime() - Date.now()) / (1000 * 60 * 60)
 
     if (hoursUntilEvent < registration.event.cancellationDeadlineHours) {
-      throw new Error(`Cannot cancel less than ${registration.event.cancellationDeadlineHours} hours before event`)
+      throw new Error(
+        `Cannot cancel less than ${registration.event.cancellationDeadlineHours} hours before event`
+      )
     }
 
-    // Mark cancelled
+    // Mark cancelled (also clears tableId so this reg is no longer on the table)
     await tx.registration.update({
       where: { id: registration.id },
       data: {
         status: 'CANCELLED',
         cancelledAt: new Date(),
         cancellationReason: reason,
-        cancelledBy: 'CUSTOMER'
-      }
+        cancelledBy: 'CUSTOMER',
+        tableId: null,
+      },
     })
 
-    // Free table if table-based
-    if (registration.event.eventType === 'TABLE_BASED' && registration.assignedTable) {
-      await tx.table.update({
-        where: { id: registration.assignedTable.id },
-        data: { status: 'AVAILABLE', reservedById: null }
+    // Conditional table release (table-sharing-aware):
+    // Only flip table to AVAILABLE if no other CONFIRMED regs remain on it.
+    if (registration.event.eventType === 'TABLE_BASED' && registration.table) {
+      const remaining = await tx.registration.count({
+        where: { tableId: registration.table.id, status: 'CONFIRMED' },
       })
+      if (remaining === 0) {
+        await tx.table.update({
+          where: { id: registration.table.id },
+          data: { status: 'AVAILABLE' },
+        })
+      }
     }
 
     // Decrement counter if capacity-based
     if (registration.event.eventType === 'CAPACITY_BASED') {
       await tx.event.update({
         where: { id: registration.eventId },
-        data: { spotsReserved: { decrement: registration.spotsCount || 0 } }
+        data: { spotsReserved: { decrement: registration.spotsCount || 0 } },
       })
     }
 
@@ -78,7 +87,7 @@ export async function adminCancelReservation(registrationId: string, reason?: st
   return await prisma.$transaction(async (tx) => {
     const registration = await tx.registration.findUnique({
       where: { id: registrationId },
-      include: { event: true, assignedTable: true }
+      include: { event: true, table: true },
     })
 
     if (!registration) {
@@ -89,30 +98,37 @@ export async function adminCancelReservation(registrationId: string, reason?: st
       throw new Error('Registration already cancelled')
     }
 
-    // Mark cancelled by admin
+    // Mark cancelled by admin (also clears tableId)
     await tx.registration.update({
       where: { id: registration.id },
       data: {
         status: 'CANCELLED',
         cancelledAt: new Date(),
         cancellationReason: reason,
-        cancelledBy: 'ADMIN'
-      }
+        cancelledBy: 'ADMIN',
+        tableId: null,
+      },
     })
 
-    // Free table if table-based and confirmed
-    if (registration.event.eventType === 'TABLE_BASED' && registration.assignedTable) {
-      await tx.table.update({
-        where: { id: registration.assignedTable.id },
-        data: { status: 'AVAILABLE', reservedById: null }
+    // Conditional table release (table-sharing-aware):
+    // Only flip table to AVAILABLE if no other CONFIRMED regs remain on it.
+    if (registration.event.eventType === 'TABLE_BASED' && registration.table) {
+      const remaining = await tx.registration.count({
+        where: { tableId: registration.table.id, status: 'CONFIRMED' },
       })
+      if (remaining === 0) {
+        await tx.table.update({
+          where: { id: registration.table.id },
+          data: { status: 'AVAILABLE' },
+        })
+      }
     }
 
     // Decrement counter if capacity-based and confirmed
     if (registration.event.eventType === 'CAPACITY_BASED' && registration.status === 'CONFIRMED') {
       await tx.event.update({
         where: { id: registration.eventId },
-        data: { spotsReserved: { decrement: registration.spotsCount || 0 } }
+        data: { spotsReserved: { decrement: registration.spotsCount || 0 } },
       })
     }
 

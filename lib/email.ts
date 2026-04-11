@@ -49,7 +49,7 @@ async function sendEmail({ to, subject, html }: EmailOptions): Promise<boolean> 
       to,
       subject,
       emailId: data?.id,
-      from: FROM_EMAIL
+      from: FROM_EMAIL,
     })
     return true
   } catch (error) {
@@ -61,7 +61,11 @@ async function sendEmail({ to, subject, html }: EmailOptions): Promise<boolean> 
 /**
  * Send email verification email
  */
-export async function sendVerificationEmail(email: string, token: string, name: string): Promise<boolean> {
+export async function sendVerificationEmail(
+  email: string,
+  token: string,
+  name: string
+): Promise<boolean> {
   const verificationUrl = `${BASE_URL}/api/admin/verify-email?token=${token}`
 
   const html = `
@@ -118,7 +122,11 @@ export async function sendVerificationEmail(email: string, token: string, name: 
 /**
  * Send password reset email
  */
-export async function sendPasswordResetEmail(email: string, token: string, name: string): Promise<boolean> {
+export async function sendPasswordResetEmail(
+  email: string,
+  token: string,
+  name: string
+): Promise<boolean> {
   const resetUrl = `${BASE_URL}/admin/reset-password?token=${token}`
 
   const html = `
@@ -271,11 +279,15 @@ export async function sendRegistrationConfirmationEmail(
   const heroTitle = isWaitlist ? 'נרשמת לרשימת ההמתנה' : 'כרטיס הכניסה שלך מוכן!'
   const heroSub = isWaitlist ? 'נעדכן אותך אם יתפנה מקום' : 'הצג קוד QR זה בכניסה לאירוע'
   const codeAccent = isWaitlist ? '#f59e0b' : '#10b981'
-  const codeBg = isWaitlist ? 'linear-gradient(135deg,#fffbeb,#fef3c7)' : 'linear-gradient(135deg,#ecfdf5,#d1fae5)'
+  const codeBg = isWaitlist
+    ? 'linear-gradient(135deg,#fffbeb,#fef3c7)'
+    : 'linear-gradient(135deg,#ecfdf5,#d1fae5)'
   const codeBorder = isWaitlist ? '#f59e0b' : '#10b981'
   const codeSubText = isWaitlist ? '#92400e' : '#065f46'
   const codeBodyColor = isWaitlist ? '#fde68a' : '#6ee7b7'
-  const codeNote = isWaitlist ? 'שמור קוד זה – תוכל להיכנס עם QR זה אם יתפנה מקום' : 'הצג קוד זה לצוות האירוע לאימות מהיר'
+  const codeNote = isWaitlist
+    ? 'שמור קוד זה – תוכל להיכנס עם QR זה אם יתפנה מקום'
+    : 'הצג קוד זה לצוות האירוע לאימות מהיר'
 
   const html = `<!DOCTYPE html>
 <html dir="rtl" lang="he" xmlns="http://www.w3.org/1999/xhtml">
@@ -325,9 +337,10 @@ export async function sendRegistrationConfirmationEmail(
       <td class="cp" style="padding:32px 40px 0;">
         <p style="color:#1e293b;font-size:17px;font-weight:700;font-family:Arial,sans-serif;margin:0 0 6px;">שלום <strong>${data.name}</strong> 👋</p>
         <p style="color:#64748b;font-size:15px;font-family:Arial,sans-serif;margin:0 0 28px;line-height:1.7;">
-          ${isWaitlist
-            ? `נרשמת בהצלחה לרשימת ההמתנה לאירוע <strong>${data.eventName}</strong>. נעדכן אותך אם יתפנה מקום.`
-            : `נרשמת בהצלחה לאירוע <strong>${data.eventName}</strong>! להלן פרטי ההרשמה וכרטיס הכניסה שלך.`
+          ${
+            isWaitlist
+              ? `נרשמת בהצלחה לרשימת ההמתנה לאירוע <strong>${data.eventName}</strong>. נעדכן אותך אם יתפנה מקום.`
+              : `נרשמת בהצלחה לאירוע <strong>${data.eventName}</strong>! להלן פרטי ההרשמה וכרטיס הכניסה שלך.`
           }
         </p>
       </td>
@@ -414,14 +427,15 @@ export async function sendRegistrationConfirmationEmail(
     <!-- STATUS BANNER -->
     <tr>
       <td class="cp" style="padding:0 40px 20px;">
-        ${isWaitlist
-          ? `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fffbeb;border-right:4px solid #f59e0b;border-radius:0 10px 10px 0;">
+        ${
+          isWaitlist
+            ? `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fffbeb;border-right:4px solid #f59e0b;border-radius:0 10px 10px 0;">
               <tr><td style="padding:16px 18px;">
                 <p style="color:#92400e;font-size:14px;font-weight:700;font-family:Arial,sans-serif;margin:0 0 6px;">⏳ נמצא ברשימת המתנה</p>
                 <p style="color:#78350f;font-size:13px;font-family:Arial,sans-serif;margin:0;line-height:1.7;">אם יתפנה מקום באירוע, נעדכן אותך ותוכל להציג QR זה בכניסה.</p>
               </td></tr>
             </table>`
-          : `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#eff6ff;border-right:4px solid #3b82f6;border-radius:0 10px 10px 0;">
+            : `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#eff6ff;border-right:4px solid #3b82f6;border-radius:0 10px 10px 0;">
               <tr><td style="padding:16px 18px;">
                 <p style="color:#1e40af;font-size:14px;font-weight:700;font-family:Arial,sans-serif;margin:0 0 6px;">💡 שים לב</p>
                 <p style="color:#1e3a8a;font-size:13px;font-family:Arial,sans-serif;margin:0;line-height:1.7;">כרטיס זה הוא אישי ואינו ניתן להעברה. יש להגיע עם הכרטיס הדיגיטלי או תדפיס ממייל זה.</p>
@@ -432,15 +446,16 @@ export async function sendRegistrationConfirmationEmail(
     </tr>
 
     <!-- CANCELLATION -->
-    ${data.cancellationUrl
-      ? `<tr>
+    ${
+      data.cancellationUrl
+        ? `<tr>
           <td class="cp" style="padding:0 40px 24px;text-align:center;">
             <p style="color:#94a3b8;font-size:13px;font-family:Arial,sans-serif;margin:0;">
               נסיבות השתנו? <a href="${data.cancellationUrl}" style="color:#dc2626;text-decoration:none;font-weight:600;">לביטול ההרשמה לחצ/י כאן</a>
             </p>
           </td>
         </tr>`
-      : ''
+        : ''
     }
 
     <!-- FOOTER -->
@@ -471,9 +486,248 @@ export async function sendRegistrationConfirmationEmail(
 }
 
 /**
+ * Send a manual-payment-approved confirmation email.
+ *
+ * Sent when an admin manually approves a `PAYMENT_PENDING` registration
+ * (customer paid offline — cash, bank transfer, etc.). The wording
+ * acknowledges that payment was received offline, and delivers the same
+ * confirmation code + QR code as an online-payment confirmation so the
+ * customer has a working gate-entry ticket.
+ *
+ * Reuses the green "confirmed" visual scaffold (not the waitlist amber).
+ */
+export async function sendManualPaymentConfirmationEmail(
+  email: string,
+  data: {
+    name: string
+    eventName: string
+    eventDate: string
+    eventLocation?: string
+    confirmationCode: string
+    qrCodeImage: string // base64 data URL
+    schoolName: string
+    cancellationUrl?: string
+    amountPaid?: string
+    paymentMethod?: string
+  }
+): Promise<boolean> {
+  const heroBg = 'linear-gradient(135deg,#0f172a 0%,#1e3a5f 60%,#0f4c8a 100%)'
+  const badgeBg = '#10b981'
+  const codeBg = 'linear-gradient(135deg,#ecfdf5,#d1fae5)'
+  const codeBorder = '#10b981'
+  const codeSubText = '#065f46'
+  const codeBodyColor = '#6ee7b7'
+
+  const html = `<!DOCTYPE html>
+<html dir="rtl" lang="he" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>התשלום התקבל - ${data.eventName}</title>
+  <style>
+    body{margin:0;padding:0;background:#f1f5f9;direction:rtl;}
+    *{box-sizing:border-box;}
+    @media only screen and (max-width:600px){
+      .ew{width:100%!important;}
+      .cp{padding:20px!important;}
+      .hp{padding:32px 20px!important;}
+      .qr{width:180px!important;height:180px!important;}
+      .ct{font-size:28px!important;letter-spacing:4px!important;}
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background:#f1f5f9;direction:rtl;">
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f1f5f9;padding:32px 16px;">
+<tr><td align="center">
+
+  <table class="ew" width="600" cellpadding="0" cellspacing="0" border="0"
+         style="background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+    <!-- HERO -->
+    <tr>
+      <td class="hp" style="background:${heroBg};padding:44px 40px 36px;text-align:center;">
+        <div style="margin-bottom:20px;">
+          <span style="display:inline-block;background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.25);border-radius:12px;padding:8px 22px;">
+            <span style="color:#fff;font-size:22px;font-weight:800;font-family:Arial,sans-serif;letter-spacing:1px;">kartis</span><span style="color:#60a5fa;font-size:22px;font-weight:800;font-family:Arial,sans-serif;">.</span><span style="color:#93c5fd;font-size:22px;font-weight:800;font-family:Arial,sans-serif;">info</span>
+          </span>
+        </div>
+        <div style="margin-bottom:16px;">
+          <span style="display:inline-block;background:${badgeBg};color:#fff;font-size:13px;font-weight:700;font-family:Arial,sans-serif;padding:5px 18px;border-radius:50px;letter-spacing:0.5px;">✓ &nbsp; התשלום התקבל</span>
+        </div>
+        <h1 style="color:#fff;font-size:28px;font-weight:800;font-family:Arial,sans-serif;margin:0 0 8px;line-height:1.3;">קיבלנו את התשלום שלך!</h1>
+        <p style="color:#93c5fd;font-size:15px;font-family:Arial,sans-serif;margin:0;">הצג קוד QR זה בכניסה לאירוע</p>
+      </td>
+    </tr>
+
+    <!-- GREETING -->
+    <tr>
+      <td class="cp" style="padding:32px 40px 0;">
+        <p style="color:#1e293b;font-size:17px;font-weight:700;font-family:Arial,sans-serif;margin:0 0 6px;">שלום <strong>${data.name}</strong> 👋</p>
+        <p style="color:#64748b;font-size:15px;font-family:Arial,sans-serif;margin:0 0 28px;line-height:1.7;">
+          קיבלנו את התשלום שלך עבור <strong>${data.eventName}</strong>. להלן אישור ההרשמה וקוד הכניסה.
+        </p>
+      </td>
+    </tr>
+
+    <!-- EVENT DETAILS -->
+    <tr>
+      <td class="cp" style="padding:0 40px;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0"
+               style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;overflow:hidden;">
+          <tr>
+            <td style="background:#0f172a;padding:14px 22px;">
+              <span style="color:#93c5fd;font-size:12px;font-weight:700;font-family:Arial,sans-serif;text-transform:uppercase;letter-spacing:1px;">פרטי האירוע</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 22px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:14px;">
+                <tr>
+                  <td width="26" style="vertical-align:top;font-size:18px;">🎟️</td>
+                  <td>
+                    <div style="color:#94a3b8;font-size:11px;font-weight:700;font-family:Arial,sans-serif;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">שם האירוע</div>
+                    <div style="color:#1e293b;font-size:17px;font-weight:700;font-family:Arial,sans-serif;">${data.eventName}</div>
+                  </td>
+                </tr>
+              </table>
+              <div style="height:1px;background:#e2e8f0;margin-bottom:14px;"></div>
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td width="50%" style="padding-left:16px;border-left:1px solid #e2e8f0;vertical-align:top;">
+                    <div style="color:#94a3b8;font-size:11px;font-weight:700;font-family:Arial,sans-serif;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">📅 תאריך ושעה</div>
+                    <div style="color:#1e293b;font-size:14px;font-weight:600;font-family:Arial,sans-serif;line-height:1.5;">${data.eventDate}</div>
+                  </td>
+                  <td width="50%" style="vertical-align:top;">
+                    <div style="color:#94a3b8;font-size:11px;font-weight:700;font-family:Arial,sans-serif;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">📍 מיקום</div>
+                    <div style="color:#1e293b;font-size:14px;font-weight:600;font-family:Arial,sans-serif;line-height:1.5;">${data.eventLocation || data.schoolName}</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    ${
+      data.amountPaid
+        ? `<!-- PAYMENT ACKNOWLEDGEMENT -->
+    <tr>
+      <td class="cp" style="padding:20px 40px 0;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0"
+               style="background:#eff6ff;border-right:4px solid #3b82f6;border-radius:0 10px 10px 0;">
+          <tr><td style="padding:14px 18px;">
+            <p style="color:#1e40af;font-size:13px;font-weight:700;font-family:Arial,sans-serif;margin:0 0 4px;">💳 פרטי תשלום</p>
+            <p style="color:#1e3a8a;font-size:13px;font-family:Arial,sans-serif;margin:0;line-height:1.7;">
+              סכום ששולם: <strong>${data.amountPaid} ₪</strong>${data.paymentMethod ? ` · אמצעי: <strong>${data.paymentMethod}</strong>` : ''}
+            </p>
+          </td></tr>
+        </table>
+      </td>
+    </tr>`
+        : ''
+    }
+
+    <!-- CONFIRMATION CODE -->
+    <tr>
+      <td class="cp" style="padding:20px 40px 0;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0"
+               style="background:${codeBg};border:2px solid ${codeBorder};border-radius:14px;">
+          <tr>
+            <td style="padding:22px;text-align:center;">
+              <div style="color:${codeSubText};font-size:11px;font-weight:700;font-family:Arial,sans-serif;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">קוד אישור</div>
+              <div class="ct" style="color:#0f172a;font-size:34px;font-weight:800;letter-spacing:8px;font-family:monospace;background:#fff;border-radius:10px;padding:12px 24px;display:inline-block;border:1.5px solid ${codeBodyColor};">${data.confirmationCode}</div>
+              <div style="color:${codeSubText};font-size:13px;font-family:Arial,sans-serif;margin-top:12px;">הצג קוד זה לצוות האירוע לאימות מהיר</div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- QR CODE -->
+    <tr>
+      <td class="cp" style="padding:20px 40px;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0"
+               style="background:#0f172a;border-radius:16px;overflow:hidden;">
+          <tr>
+            <td style="padding:28px;text-align:center;">
+              <div style="color:#93c5fd;font-size:11px;font-weight:700;font-family:Arial,sans-serif;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:20px;">📱 סרוק לכניסה לאירוע</div>
+              <div style="display:inline-block;background:#fff;border-radius:12px;padding:12px;">
+                <img class="qr" src="${data.qrCodeImage}" alt="QR Code" width="200" height="200"
+                     style="display:block;border-radius:4px;" />
+              </div>
+              <div style="color:#64748b;font-size:13px;font-family:Arial,sans-serif;margin-top:18px;line-height:1.7;">
+                שמור מייל זה או צלם את קוד ה-QR<br>
+                <span style="color:#475569;font-size:12px;">הצג בכניסה לאירוע לסריקה מהירה</span>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- STATUS BANNER -->
+    <tr>
+      <td class="cp" style="padding:0 40px 20px;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ecfdf5;border-right:4px solid #10b981;border-radius:0 10px 10px 0;">
+          <tr><td style="padding:16px 18px;">
+            <p style="color:#065f46;font-size:14px;font-weight:700;font-family:Arial,sans-serif;margin:0 0 6px;">✅ ההרשמה אושרה</p>
+            <p style="color:#047857;font-size:13px;font-family:Arial,sans-serif;margin:0;line-height:1.7;">כרטיס זה הוא אישי ואינו ניתן להעברה. יש להגיע עם הכרטיס הדיגיטלי או תדפיס ממייל זה.</p>
+          </td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- CANCELLATION -->
+    ${
+      data.cancellationUrl
+        ? `<tr>
+          <td class="cp" style="padding:0 40px 24px;text-align:center;">
+            <p style="color:#94a3b8;font-size:13px;font-family:Arial,sans-serif;margin:0;">
+              נסיבות השתנו? <a href="${data.cancellationUrl}" style="color:#dc2626;text-decoration:none;font-weight:600;">לביטול ההרשמה לחצ/י כאן</a>
+            </p>
+          </td>
+        </tr>`
+        : ''
+    }
+
+    <!-- FOOTER -->
+    <tr>
+      <td style="background:#f8fafc;border-top:1.5px solid #e2e8f0;padding:24px 40px;text-align:center;">
+        <p style="color:#1e293b;font-size:15px;font-weight:700;font-family:Arial,sans-serif;margin:0 0 4px;">${data.schoolName}</p>
+        <p style="color:#94a3b8;font-size:12px;font-family:Arial,sans-serif;margin:0 0 16px;">מערכת ניהול כרטיסים על ידי kartis.info</p>
+        <div style="width:40px;height:2px;background:linear-gradient(90deg,#3b82f6,#10b981);margin:0 auto 16px;border-radius:2px;"></div>
+        <p style="color:#cbd5e1;font-size:11px;font-family:Arial,sans-serif;margin:0;line-height:1.8;">
+          מייל זה נשלח אוטומטית, אין להשיב עליו.<br>
+          © 2026 kartis.info · כל הזכויות שמורות
+        </p>
+      </td>
+    </tr>
+
+  </table>
+
+</td></tr>
+</table>
+</body>
+</html>`
+
+  return sendEmail({
+    to: email,
+    subject: `✅ התשלום התקבל - ${data.eventName}`,
+    html,
+  })
+}
+
+/**
  * Send welcome email after verification
  */
-export async function sendWelcomeEmail(email: string, name: string, schoolName: string): Promise<boolean> {
+export async function sendWelcomeEmail(
+  email: string,
+  name: string,
+  schoolName: string
+): Promise<boolean> {
   const dashboardUrl = `${BASE_URL}/admin`
 
   const html = `
@@ -558,7 +812,7 @@ export async function sendOverbookingAlertEmail(params: {
   } = params
 
   const eventUrl = `${BASE_URL}/admin/events/${eventId}?tab=registrations`
-  const overbookAmount = (currentConfirmed + attemptedSpots) - capacity
+  const overbookAmount = currentConfirmed + attemptedSpots - capacity
 
   const html = `
     <!DOCTYPE html>
@@ -688,11 +942,12 @@ export async function sendPaymentInvoiceEmail(params: {
           <p style="font-size: 36px; font-weight: bold; color: #78350f; margin: 15px 0;">
             ${formattedAmount}
           </p>
-          ${dueDate
-            ? `<p style="margin: 10px 0 0; color: #92400e; font-size: 14px;">
+          ${
+            dueDate
+              ? `<p style="margin: 10px 0 0; color: #92400e; font-size: 14px;">
                 ⏰ אנא שלם תוך 24 שעות (עד ${dueDate})
               </p>`
-            : ''
+              : ''
           }
         </div>
 
@@ -703,8 +958,9 @@ export async function sendPaymentInvoiceEmail(params: {
           </a>
         </div>
 
-        ${dueDate
-          ? `<div style="background: #fee2e2; border: 2px solid #dc2626; border-radius: 8px; padding: 15px; margin: 20px 0;">
+        ${
+          dueDate
+            ? `<div style="background: #fee2e2; border: 2px solid #dc2626; border-radius: 8px; padding: 15px; margin: 20px 0;">
               <p style="margin: 0; color: #7f1d1d; font-weight: bold;">
                 ⚠️ תשלום נדרש
               </p>
@@ -712,7 +968,7 @@ export async function sendPaymentInvoiceEmail(params: {
                 אנא השלם את התשלום במהירות האפשרית כדי לשמור על הרישום שלך. לאחר 24 שעות הרישום עשוי להתבטל.
               </p>
             </div>`
-          : `<div style="background: #dbeafe; border: 2px solid #3b82f6; border-radius: 8px; padding: 15px; margin: 20px 0;">
+            : `<div style="background: #dbeafe; border: 2px solid #3b82f6; border-radius: 8px; padding: 15px; margin: 20px 0;">
               <p style="margin: 0; color: #1e3a8a; font-weight: bold;">
                 ℹ️ השלם תשלום
               </p>

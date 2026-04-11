@@ -1,10 +1,7 @@
 import { prisma } from '@/lib/prisma'
-import TableBoardClient from './TableBoardClient'
-import TableBoardTabs from './TableBoardTabs'
-import WaitlistManager from './WaitlistManager'
 import ShareLinkCard from './ShareLinkCard'
-import TableBoardStats from './TableBoardStats'
-import { Users, Clock, UtensilsCrossed, ListOrdered } from 'lucide-react'
+import TableBoardLiveWrapper from './TableBoardLiveWrapper'
+import { Clock, UtensilsCrossed } from 'lucide-react'
 
 interface TableBoardViewProps {
   eventId: string
@@ -16,14 +13,19 @@ async function getTableBoardData(eventId: string) {
       where: { eventId },
       orderBy: { tableOrder: 'asc' },
       include: {
-        reservation: {
+        // Table-sharing: a table can have multiple CONFIRMED registrations.
+        // Ordered by creation time for a stable render order.
+        registrations: {
+          where: { status: 'CONFIRMED' },
           select: {
             id: true,
             confirmationCode: true,
             guestsCount: true,
             phoneNumber: true,
             data: true,
+            createdAt: true,
           },
+          orderBy: { createdAt: 'asc' },
         },
       },
     }),
@@ -147,7 +149,8 @@ async function getTableBoardData(eventId: string) {
     }
   })
 
-  // Compute dynamic status for each table
+  // Compute dynamic status for each table. Sharing-aware: the full
+  // `registrations[]` array flows through to the client — no legacy shim.
   const tablesWithStatus = tables.map((table) => ({
     ...table,
     hasWaitlistMatch: waitlistWithMatches.some((w) =>
@@ -179,58 +182,11 @@ export default async function TableBoardView({ eventId }: TableBoardViewProps) {
     )
   }
 
-  // Tables View
-  const tablesView = (
-    <div className="space-y-6">
-      {tables.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-12 text-center">
-          <UtensilsCrossed className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">אין שולחנות</h3>
-          <p className="text-gray-600 mb-4">טרם הוספת שולחנות לאירוע זה</p>
-          <a
-            href={`/admin/events/${eventId}/edit`}
-            className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            הוסף שולחנות
-          </a>
-        </div>
-      ) : (
-        <TableBoardClient tables={tables} eventId={eventId} />
-      )}
-
-      {stats.matchAvailable > 0 && (
-        <div className="relative overflow-hidden bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-xl shadow-sm">
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-100/20 via-transparent to-transparent pointer-events-none" />
-          <div className="relative p-4">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-                <span className="text-base">✨</span>
-              </div>
-              <div className="flex-1 min-w-0" dir="rtl">
-                <p className="text-sm font-semibold text-amber-900 mb-1">יש התאמות זמינות!</p>
-                <p className="text-xs text-amber-800">
-                  {stats.matchAvailable}{' '}
-                  {stats.matchAvailable === 1 ? 'שולחן פנוי' : 'שולחנות פנויים'} מתאימים לאורחים
-                  ברשימת ההמתנה. עבור ללשונית "רשימת המתנה" לשיבוץ.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-
-  // Waitlist View
-  const waitlistView = <WaitlistManager eventId={eventId} waitlist={waitlistWithMatches} />
-
   return (
     <div className="space-y-4" dir="rtl">
-      {/* Header with Event Info - Modernized */}
+      {/* Header with Event Info */}
       <div className="relative overflow-hidden bg-white rounded-xl border border-gray-200 shadow-sm">
-        {/* Subtle gradient background */}
         <div className="absolute inset-0 bg-gradient-to-br from-purple-50/30 via-transparent to-blue-50/20 pointer-events-none" />
-
         <div className="relative p-5">
           <h1 className="text-xl font-bold text-gray-900 mb-3 leading-tight">{event.title}</h1>
           <div className="flex flex-col gap-2 text-xs text-gray-600">
@@ -260,19 +216,21 @@ export default async function TableBoardView({ eventId }: TableBoardViewProps) {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <TableBoardStats tables={tables} waitlist={waitlistWithMatches} stats={stats} />
-
       {/* Share Link */}
       {event?.school?.slug && event?.slug && (
-        <ShareLinkCard schoolSlug={event.school.slug} eventSlug={event.slug} />
+        <ShareLinkCard
+          schoolSlug={event.school.slug}
+          eventSlug={event.slug}
+          eventTitle={event.title}
+        />
       )}
 
-      {/* Tabbed Content */}
-      <TableBoardTabs
-        tablesView={tablesView}
-        waitlistView={waitlistView}
-        waitlistCount={stats.waitlistCount}
+      {/* Live stats + tabs — all polling centralised in wrapper */}
+      <TableBoardLiveWrapper
+        eventId={eventId}
+        initialTables={tables}
+        initialWaitlist={waitlistWithMatches}
+        initialStats={stats}
       />
     </div>
   )

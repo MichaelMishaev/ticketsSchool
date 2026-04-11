@@ -16,6 +16,7 @@ import {
   Zap,
   MessageCircle,
   RotateCcw,
+  AlertTriangle,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { useEventStream } from '@/hooks/useEventStream'
@@ -197,6 +198,24 @@ export default function RegistrationsTab({
       pending: pending.reduce((sum, r) => sum + (r.spotsCount || 0), 0),
     }
   }, [allRegistrations])
+
+  // Prefix document.title with (N⏳) when there are PAYMENT_PENDING registrations.
+  // Admin notices this even when the tab is inactive — the title shows in the
+  // browser tab strip. Cleaned up on unmount so we don't leak the badge to
+  // other pages. Deliberately reads `counts.pending` (merged local state) not
+  // `stats?.paymentPending` so it stays in sync with what's actually rendered.
+  useEffect(() => {
+    if (counts.pending > 0) {
+      // Strip any existing (N⏳) prefix to avoid stacking across renders.
+      const base = document.title.replace(/^\(\d+⏳\)\s*/, '')
+      document.title = `(${counts.pending}⏳) ${base}`
+    } else {
+      document.title = document.title.replace(/^\(\d+⏳\)\s*/, '')
+    }
+    return () => {
+      document.title = document.title.replace(/^\(\d+⏳\)\s*/, '')
+    }
+  }, [counts.pending])
 
   // Show success toast
   const showSuccess = (message: string) => {
@@ -421,6 +440,26 @@ export default function RegistrationsTab({
         </div>
       )}
 
+      {/* Persistent pending-payment banner — clicking jumps to the filtered view.
+          Auto-dismisses when counts.pending drops to 0 (after admin approves
+          or registration auto-expires). */}
+      {counts.pending > 0 && (
+        <button
+          type="button"
+          onClick={() => setFilterStatus('PAYMENT_PENDING')}
+          className="w-full mb-4 flex items-center gap-3 px-5 py-4 rounded-xl bg-gradient-to-r from-yellow-100 via-amber-100 to-yellow-100 border-2 border-amber-400 shadow-md hover:shadow-lg transition-all animate-pulse focus:outline-none focus:ring-4 focus:ring-amber-500/30"
+          aria-label={`הצג ${counts.pending} הרשמות הממתינות לתשלום`}
+        >
+          <AlertTriangle className="w-6 h-6 text-amber-700 flex-shrink-0" />
+          <div className="flex-1 text-right">
+            <p className="text-base font-bold text-amber-900">
+              ⚠️ יש {counts.pending} הרשמות הממתינות לתשלום — נדרש אישור ידני
+            </p>
+            <p className="text-xs text-amber-800 mt-0.5">לחץ/י לסינון והצגת הרשימה</p>
+          </div>
+        </button>
+      )}
+
       {/* Stats grid — 4 prominent cards at a glance */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 text-center">
@@ -531,13 +570,13 @@ export default function RegistrationsTab({
             {counts.pending > 0 && (
               <button
                 onClick={() => setFilterStatus('PAYMENT_PENDING')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                className={`px-4 py-2 rounded-lg font-bold transition-all animate-pulse ring-2 ring-amber-400/60 ${
                   filterStatus === 'PAYMENT_PENDING'
-                    ? 'bg-yellow-500 text-white'
-                    : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border border-yellow-200'
+                    ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white shadow-md'
+                    : 'bg-gradient-to-r from-yellow-200 to-amber-200 text-amber-900 hover:from-yellow-300 hover:to-amber-300 border border-amber-400'
                 }`}
               >
-                ממתין לתשלום ({counts.pending})
+                ⚠️ ממתין לתשלום ({counts.pending})
               </button>
             )}
           </div>

@@ -193,24 +193,22 @@ describe('Waitlist Management (Phase 3)', () => {
         },
       })
 
-      // Manually assign to table 1
+      // Manually assign to table 1. Sharing-aware two-write pattern:
+      //   1) registration.update({ tableId })        — point reg at table
+      //   2) table.update({ status: 'RESERVED' })    — flip denormalized flag
       const result = await prisma.$transaction(async (tx) => {
-        // Update registration to CONFIRMED
         const updatedReg = await tx.registration.update({
           where: { id: waitlistReg.id },
           data: {
             status: 'CONFIRMED',
             waitlistPriority: null,
+            tableId: table1.id,
           },
         })
 
-        // Reserve table
         const updatedTable = await tx.table.update({
           where: { id: table1.id },
-          data: {
-            status: 'RESERVED',
-            reservedById: waitlistReg.id,
-          },
+          data: { status: 'RESERVED' },
         })
 
         return { registration: updatedReg, table: updatedTable }
@@ -218,13 +216,18 @@ describe('Waitlist Management (Phase 3)', () => {
 
       expect(result.registration.status).toBe('CONFIRMED')
       expect(result.registration.waitlistPriority).toBeNull()
+      expect(result.registration.tableId).toBe(table1.id)
       expect(result.table.status).toBe('RESERVED')
-      expect(result.table.reservedById).toBe(waitlistReg.id)
 
-      // Cleanup for next tests
+      // Cleanup for next tests: clear the FK from the registration first,
+      // then flip the table back to AVAILABLE (mirror of production flow).
+      await prisma.registration.update({
+        where: { id: waitlistReg.id },
+        data: { tableId: null },
+      })
       await prisma.table.update({
         where: { id: table1.id },
-        data: { status: 'AVAILABLE', reservedById: null },
+        data: { status: 'AVAILABLE' },
       })
       await prisma.registration.delete({ where: { id: waitlistReg.id } })
     })
@@ -290,9 +293,15 @@ describe('Waitlist Management (Phase 3)', () => {
         },
       })
 
+      // Sharing-aware: FK lives on Registration. Point firstReg at table2,
+      // then flip the denormalized status flag.
+      await prisma.registration.update({
+        where: { id: firstReg.id },
+        data: { tableId: table2.id },
+      })
       await prisma.table.update({
         where: { id: table2.id },
-        data: { status: 'RESERVED', reservedById: firstReg.id },
+        data: { status: 'RESERVED' },
       })
 
       // Create waitlist registration
@@ -316,10 +325,14 @@ describe('Waitlist Management (Phase 3)', () => {
 
       expect(tableStatus?.status).toBe('RESERVED')
 
-      // Cleanup
+      // Cleanup — clear the FK first, then flip the denormalized flag.
+      await prisma.registration.update({
+        where: { id: firstReg.id },
+        data: { tableId: null },
+      })
       await prisma.table.update({
         where: { id: table2.id },
-        data: { status: 'AVAILABLE', reservedById: null },
+        data: { status: 'AVAILABLE' },
       })
       await prisma.registration.delete({ where: { id: waitlistReg.id } })
       await prisma.registration.delete({ where: { id: firstReg.id } })
@@ -367,14 +380,20 @@ describe('Waitlist Management (Phase 3)', () => {
                 throw new Error('Table not available')
               }
 
+              // Sharing-aware: point the reg at the table via its new FK,
+              // then flip the denormalized Table.status flag.
               await tx.registration.update({
                 where: { id: regId },
-                data: { status: 'CONFIRMED', waitlistPriority: null },
+                data: {
+                  status: 'CONFIRMED',
+                  waitlistPriority: null,
+                  tableId,
+                },
               })
 
               await tx.table.update({
                 where: { id: tableId },
-                data: { status: 'RESERVED', reservedById: regId },
+                data: { status: 'RESERVED' },
               })
 
               return { success: true }
@@ -399,17 +418,32 @@ describe('Waitlist Management (Phase 3)', () => {
       const successCount = [result1, result2].filter((r) => r.success).length
       expect(successCount).toBe(1)
 
-      // Verify table is reserved exactly once
+      // Verify table is reserved exactly once. Sharing-aware: instead of
+      // inspecting a scalar FK on Table (which no longer exists), count the
+      // CONFIRMED registrations now pointing at the table.
       const table = await prisma.table.findUnique({
         where: { id: table3.id },
+        include: {
+          registrations: {
+            where: { status: 'CONFIRMED' },
+            select: { id: true },
+          },
+        },
       })
       expect(table?.status).toBe('RESERVED')
-      expect([waitlist1.id, waitlist2.id]).toContain(table?.reservedById)
+      expect(table?.registrations).toHaveLength(1)
+      expect([waitlist1.id, waitlist2.id]).toContain(table?.registrations[0]?.id)
 
-      // Cleanup
+      // Cleanup — clear the winning reg's FK, flip table back to AVAILABLE.
+      if (table?.registrations[0]?.id) {
+        await prisma.registration.update({
+          where: { id: table.registrations[0].id },
+          data: { tableId: null },
+        })
+      }
       await prisma.table.update({
         where: { id: table3.id },
-        data: { status: 'AVAILABLE', reservedById: null },
+        data: { status: 'AVAILABLE' },
       })
       await prisma.registration.deleteMany({
         where: { id: { in: [waitlist1.id, waitlist2.id] } },

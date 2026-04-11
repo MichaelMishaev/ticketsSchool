@@ -135,13 +135,16 @@ describe('minOrder Constraint', () => {
     // Small table is reserved (from test 1), large table is reserved (from test 2)
     // Create a scenario where only a table with high minOrder is available
 
-    // Reset tables
+    // Reset tables — sharing-aware: clear the FK on all prior regs first,
+    // then flip all tables back to AVAILABLE, then delete the regs.
+    await prisma.registration.updateMany({
+      where: { eventId: testEvent.id },
+      data: { tableId: null },
+    })
     await prisma.table.updateMany({
       where: { eventId: testEvent.id },
-      data: { status: 'AVAILABLE', reservedById: null },
+      data: { status: 'AVAILABLE' },
     })
-
-    // Delete previous registrations
     await prisma.registration.deleteMany({
       where: { eventId: testEvent.id },
     })

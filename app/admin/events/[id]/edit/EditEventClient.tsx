@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ArrowRight, Plus, Save } from 'lucide-react'
 import TableFormModal, { TableFormData } from '@/components/admin/TableFormModal'
 import TableCard from '@/components/admin/TableCard'
+import type { TableRegistration } from '@/components/admin/table-helpers'
 
 interface Table {
   id: string
@@ -13,13 +14,8 @@ interface Table {
   minOrder: number
   status: 'AVAILABLE' | 'RESERVED' | 'INACTIVE'
   tableOrder: number
-  reservation?: {
-    id: string
-    confirmationCode: string
-    guestsCount: number | null
-    phoneNumber: string | null
-    data: Record<string, unknown>
-  } | null
+  // Sharing-aware: N CONFIRMED registrations may share this table.
+  registrations: TableRegistration[]
 }
 
 interface EditEventClientProps {
@@ -103,9 +99,7 @@ export default function EditEventClient({
       }
 
       // Update local state
-      setTables((prev) =>
-        prev.map((t) => (t.id === editingTable.id ? data.table : t))
-      )
+      setTables((prev) => prev.map((t) => (t.id === editingTable.id ? data.table : t)))
       setSuccessMessage('שולחן עודכן בהצלחה')
       setTimeout(() => setSuccessMessage(null), 3000)
     } catch (err) {
@@ -171,9 +165,7 @@ export default function EditEventClient({
       }
 
       // Update local state
-      setTables((prev) =>
-        prev.map((t) => (t.id === tableId ? { ...t, status: newStatus } : t))
-      )
+      setTables((prev) => prev.map((t) => (t.id === tableId ? { ...t, status: newStatus } : t)))
 
       const message = newStatus === 'INACTIVE' ? 'שולחן סומן כרזרבה' : 'שולחן שוחרר'
       setSuccessMessage(message)
@@ -232,9 +224,7 @@ export default function EditEventClient({
 
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                עריכת שולחנות
-              </h1>
+              <h1 className="text-2xl font-bold text-gray-900">עריכת שולחנות</h1>
               <p className="text-gray-600 mt-1">{eventTitle}</p>
             </div>
 
@@ -291,7 +281,9 @@ export default function EditEventClient({
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-gray-900">{tables.length} שולחנות</div>
-                    <div className="text-sm text-gray-600">סה״כ {tables.reduce((sum, t) => sum + t.capacity, 0)} מקומות</div>
+                    <div className="text-sm text-gray-600">
+                      סה״כ {tables.reduce((sum, t) => sum + t.capacity, 0)} מקומות
+                    </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
@@ -327,11 +319,13 @@ export default function EditEventClient({
               {tables.length > 6 && (
                 <div className="border-2 border-dashed border-gray-300 bg-gray-50 rounded-lg p-6 flex flex-col items-center justify-center min-h-[200px]">
                   <div className="text-5xl font-bold text-gray-400 mb-2">+{tables.length - 6}</div>
-                  <div className="text-gray-600 text-center">
-                    שולחנות נוספים
-                  </div>
+                  <div className="text-gray-600 text-center">שולחנות נוספים</div>
                   <div className="text-sm text-gray-500 mt-2">
-                    {tables.slice(6).map(t => t.tableNumber).slice(0, 3).join(', ')}
+                    {tables
+                      .slice(6)
+                      .map((t) => t.tableNumber)
+                      .slice(0, 3)
+                      .join(', ')}
                     {tables.length > 9 && '...'}
                   </div>
                 </div>

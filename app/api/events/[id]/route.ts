@@ -85,7 +85,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           select: {
             capacity: true,
             status: true,
-            reservation: {
+            // Sharing-aware: aggregate over all CONFIRMED regs on the table
+            registrations: {
+              where: { status: 'CONFIRMED' },
               select: {
                 guestsCount: true,
                 spotsCount: true,
@@ -115,11 +117,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (event.eventType === 'TABLE_BASED') {
       totalCapacity = event.tables.reduce((sum, table) => sum + table.capacity, 0)
+      // Sum across all CONFIRMED regs per table (supports table sharing)
       totalSpotsTaken = event.tables.reduce((sum, table) => {
-        if (table.reservation) {
-          return sum + (table.reservation.guestsCount || table.reservation.spotsCount || 0)
-        }
-        return sum
+        return (
+          sum + table.registrations.reduce((n, r) => n + (r.guestsCount ?? r.spotsCount ?? 0), 0)
+        )
       }, 0)
     } else {
       // For CAPACITY_BASED events, count confirmed registrations
@@ -215,7 +217,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (data.paymentRequired !== undefined) updateData.paymentRequired = data.paymentRequired
     if (data.paymentTiming !== undefined) updateData.paymentTiming = data.paymentTiming
     if (data.pricingModel !== undefined) updateData.pricingModel = data.pricingModel
-    if (data.priceAmount !== undefined) updateData.priceAmount = data.priceAmount
+    if (data.priceAmount !== undefined)
+      updateData.priceAmount = data.priceAmount !== null ? Number(data.priceAmount) : null
     if (data.currency !== undefined) updateData.currency = data.currency
 
     const event = await prisma.event.update({

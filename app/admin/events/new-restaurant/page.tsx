@@ -783,6 +783,10 @@ export default function NewRestaurantEventPage() {
                           capacity: table.capacity,
                           minOrder: table.minOrder,
                           status: 'AVAILABLE',
+                          // Draft tables have no registrations yet —
+                          // `registrations` is required by the sharing-aware
+                          // TableCard props, so pass an empty array.
+                          registrations: [],
                         }}
                         onEdit={() => openEditModal(table)}
                         onDelete={() => handleDeleteTable(table.tempId)}

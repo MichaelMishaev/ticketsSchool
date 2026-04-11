@@ -67,6 +67,7 @@ export default function RootLayout({
     <html lang="he" dir="rtl">
       <body
         className={`${rubik.variable} ${inter.variable} ${manrope.variable} font-sans antialiased`}
+        suppressHydrationWarning
       >
         {/* IS 5568 / WCAG 2.4.1 — Skip to main content (first focusable element) */}
         <a href="#main-content" className="skip-link">

@@ -10,6 +10,7 @@ import FloatingCheckInMenu, {
   CheckInButton,
 } from '@/components/admin/event-details/FloatingCheckInMenu'
 import OverviewTab from '@/components/admin/event-details/tabs/OverviewTab'
+import CompactEventHero from '@/components/admin/event-details/CompactEventHero'
 import DevFeatureLabel from '@/components/dev/DevFeatureLabel'
 
 const TabSpinner = () => (
@@ -184,6 +185,9 @@ export default function EventDetailsTabbed() {
 
   return (
     <div className="bg-gray-50 -mx-4 -mt-4 -mb-24 sm:-mx-6 lg:-mx-8 sm:-mt-10 sm:-mb-10">
+      {/* Event Header - always visible, above sticky tabs so it never gets covered */}
+      <CompactEventHero event={event} />
+
       {/* Desktop top navigation - hidden on mobile */}
       <EventTabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 

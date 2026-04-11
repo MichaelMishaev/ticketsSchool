@@ -1,8 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { format } from 'date-fns'
+import { he } from 'date-fns/locale'
 import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin } from '@/lib/auth.server'
-import { sendOverbookingAlertEmail } from '@/lib/email'
+import { sendOverbookingAlertEmail, sendManualPaymentConfirmationEmail } from '@/lib/email'
+import { generateQRCodeImage } from '@/lib/qr-code'
 import { logger } from '@/lib/logger-v2'
+
+/**
+ * Extract a human-readable name from a registration's JSONB data column.
+ * Matches the fallback order used by the overbooking alert on line 430.
+ */
+function extractName(data: unknown): string {
+  const d = (data as Record<string, unknown>) || {}
+  const studentName = typeof d.studentName === 'string' ? d.studentName : undefined
+  const name = typeof d.name === 'string' ? d.name : undefined
+  const parentName = typeof d.parentName === 'string' ? d.parentName : undefined
+  return studentName || name || parentName || 'משתתף/ת'
+}
 
 // Type for overbooking alert data
 interface OverbookingAlertData {
@@ -45,10 +60,18 @@ export async function PATCH(
     const { id, registrationId } = await params
     const data = await request.json()
 
-    // Verify admin has access to this event's school (include title for alerts)
+    // Verify admin has access to this event's school.
+    // Also fetch fields we need for the manual-payment confirmation email
+    // (startAt, location, school name) — avoids a second DB round-trip post-commit.
     const eventCheck = await prisma.event.findUnique({
       where: { id },
-      select: { schoolId: true, title: true },
+      select: {
+        schoolId: true,
+        title: true,
+        startAt: true,
+        location: true,
+        school: { select: { name: true } },
+      },
     })
 
     if (!eventCheck) {
@@ -63,6 +86,20 @@ export async function PATCH(
       )
     }
 
+    // Reject tableId move on a non-CONFIRMED status change (nonsense semantics).
+    // Allow tableId on an isolated PATCH (no status change) or on a CONFIRMED-keeping PATCH.
+    if (data.tableId !== undefined && data.status && data.status !== 'CONFIRMED') {
+      return NextResponse.json(
+        { error: 'Cannot set tableId on a non-CONFIRMED registration' },
+        { status: 400 }
+      )
+    }
+
+    // Capture the previous status across the transaction boundary so we can
+    // detect a PAYMENT_PENDING → CONFIRMED transition AFTER the tx commits
+    // (to fire the manual-approval confirmation email outside DB locks).
+    let priorStatus: string | null = null
+
     // Use transaction to ensure atomic operation and prevent race conditions
     const registration = await prisma.$transaction(
       async (tx) => {
@@ -73,7 +110,7 @@ export async function PATCH(
             event: {
               select: { eventType: true },
             },
-            assignedTable: {
+            table: {
               select: { id: true },
             },
           },
@@ -86,6 +123,7 @@ export async function PATCH(
         // Handle status changes - check capacity if promoting to CONFIRMED
         const oldStatus = currentRegistration.status
         const newStatus = data.status
+        priorStatus = oldStatus
         const oldSpotsCount = currentRegistration.spotsCount
         const newSpotsCount = data.spotsCount ?? oldSpotsCount
 
@@ -157,16 +195,144 @@ export async function PATCH(
             }
           }
 
-          // Free table if table-based
-          if (
-            currentRegistration.event.eventType === 'TABLE_BASED' &&
-            currentRegistration.assignedTable
-          ) {
-            await tx.table.update({
-              where: { id: currentRegistration.assignedTable.id },
-              data: { status: 'AVAILABLE', reservedById: null },
+          // Conditional table release (table-sharing-aware):
+          // Only flip table to AVAILABLE if this was the last CONFIRMED reg on it.
+          if (currentRegistration.event.eventType === 'TABLE_BASED' && currentRegistration.table) {
+            const tableId = currentRegistration.table.id
+            // Clear tableId on this reg now (so the count below excludes it)
+            await tx.registration.update({
+              where: { id: registrationId },
+              data: { tableId: null },
             })
+            const remaining = await tx.registration.count({
+              where: { tableId, status: 'CONFIRMED', id: { not: registrationId } },
+            })
+            if (remaining === 0) {
+              await tx.table.update({
+                where: { id: tableId },
+                data: { status: 'AVAILABLE' },
+              })
+            }
           }
+        }
+
+        // tableId move-or-remove path (only meaningful when status is/stays CONFIRMED
+        // and the event is TABLE_BASED). Runs after the status-change branch above.
+        if (data.tableId !== undefined && currentRegistration.event.eventType === 'TABLE_BASED') {
+          const effectiveStatus = newStatus ?? oldStatus
+          if (effectiveStatus !== 'CONFIRMED') {
+            throw new Error('Cannot set tableId on a non-CONFIRMED registration')
+          }
+
+          const currentTableId = currentRegistration.table?.id ?? null
+          const targetTableId = data.tableId as string | null
+
+          if (targetTableId === null) {
+            // REMOVE FROM TABLE: clear tableId, conditionally release old table
+            if (currentTableId) {
+              await tx.registration.update({
+                where: { id: registrationId },
+                data: { tableId: null },
+              })
+              const remaining = await tx.registration.count({
+                where: { tableId: currentTableId, status: 'CONFIRMED' },
+              })
+              if (remaining === 0) {
+                await tx.table.update({
+                  where: { id: currentTableId },
+                  data: { status: 'AVAILABLE' },
+                })
+              }
+            }
+          } else if (targetTableId !== currentTableId) {
+            // MOVE: lock the target table row, capacity-check, then assign.
+            // Take an explicit FOR UPDATE lock so concurrent moves serialize
+            // cleanly on the same target row (belt-and-suspenders inside Serializable).
+            const targetRows = await tx.$queryRaw<
+              Array<{
+                id: string
+                eventId: string
+                capacity: number
+                minOrder: number
+                status: string
+                tableNumber: string
+              }>
+            >`
+              SELECT id, "eventId", capacity, "minOrder", status, "tableNumber"
+              FROM "Table"
+              WHERE id = ${targetTableId}
+              FOR UPDATE
+            `
+            const target = targetRows[0]
+            if (!target) {
+              throw new Error('Target table not found')
+            }
+            if (target.eventId !== id) {
+              throw new Error('Target table does not belong to this event')
+            }
+            if (target.status === 'INACTIVE') {
+              throw new Error(`Table ${target.tableNumber} is on hold (INACTIVE)`)
+            }
+
+            // Sum current occupants on the target (CONFIRMED only, excluding this reg
+            // in case it's somehow already attached)
+            const occupiedAgg = await tx.registration.aggregate({
+              where: {
+                tableId: targetTableId,
+                status: 'CONFIRMED',
+                id: { not: registrationId },
+              },
+              _sum: { guestsCount: true },
+            })
+            const occupied = occupiedAgg._sum.guestsCount ?? 0
+            const incoming = currentRegistration.guestsCount ?? 0
+            if (incoming < 1) {
+              throw new Error('Registration has no guest count set')
+            }
+            if (occupied + incoming > target.capacity) {
+              throw new Error(
+                `Not enough remaining seats on table ${target.tableNumber} (${target.capacity - occupied} free, ${incoming} requested)`
+              )
+            }
+            // minOrder gate: only enforced when opening an empty table
+            const isEmpty = occupied === 0
+            if (isEmpty && incoming < target.minOrder && !data.force) {
+              throw new Error(
+                `Guest count (${incoming}) is below table minimum order (${target.minOrder})`
+              )
+            }
+
+            // Point reg at the new table
+            await tx.registration.update({
+              where: { id: registrationId },
+              data: { tableId: targetTableId },
+            })
+            // Flip target table to RESERVED if we opened it
+            if (isEmpty) {
+              await tx.table.update({
+                where: { id: targetTableId },
+                data: { status: 'RESERVED' },
+              })
+            }
+
+            // Conditionally release the OLD table if we just vacated it
+            if (currentTableId) {
+              const remainingOld = await tx.registration.count({
+                where: {
+                  tableId: currentTableId,
+                  status: 'CONFIRMED',
+                  id: { not: registrationId },
+                },
+              })
+              if (remainingOld === 0) {
+                await tx.table.update({
+                  where: { id: currentTableId },
+                  data: { status: 'AVAILABLE' },
+                })
+              }
+            }
+          }
+          // If targetTableId === currentTableId → no-op (move-to-same-table)
         }
 
         // Prepare registration data update
@@ -242,6 +408,57 @@ export async function PATCH(
       }
     )
 
+    // MANUAL PAYMENT APPROVAL → send dedicated confirmation email.
+    // Runs POST-commit so Resend's network I/O doesn't hold row locks
+    // (same pattern as the overbooking alert below). Fire-and-forget:
+    // email failure must never rollback or block the 200 response.
+    if (priorStatus === 'PAYMENT_PENDING' && data.status === 'CONFIRMED') {
+      const regData = (registration.data as Record<string, unknown>) || {}
+      const recipientEmail = typeof regData.email === 'string' ? regData.email : null
+
+      if (recipientEmail) {
+        generateQRCodeImage(registration.id, id, {
+          width: 300,
+          margin: 2,
+          cancellationToken: registration.cancellationToken || undefined,
+        })
+          .then((qrCodeImage) =>
+            sendManualPaymentConfirmationEmail(recipientEmail, {
+              name: extractName(registration.data),
+              eventName: eventCheck.title,
+              eventDate: format(eventCheck.startAt, "d בMMMM yyyy 'בשעה' HH:mm", { locale: he }),
+              eventLocation: eventCheck.location ?? undefined,
+              confirmationCode: registration.confirmationCode,
+              qrCodeImage,
+              schoolName: eventCheck.school.name,
+              cancellationUrl: registration.cancellationToken
+                ? `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9000'}/cancel/${registration.cancellationToken}`
+                : undefined,
+              amountPaid: registration.amountDue?.toString(),
+            })
+          )
+          .then(() => {
+            logger.info('Manual-approval confirmation email sent', {
+              source: 'registration',
+              registrationId,
+              to: recipientEmail,
+            })
+          })
+          .catch((err) =>
+            logger.error('Failed to send manual-approval confirmation email', {
+              source: 'registration',
+              error: err,
+              registrationId,
+            })
+          )
+      } else {
+        logger.warn('Manual approval: no email on registration.data, skipping confirmation email', {
+          source: 'registration',
+          registrationId,
+        })
+      }
+    }
+
     // SAFETY CHECK: Detect if overbooking somehow occurred (shouldn't happen, but alert if it does)
     if (data.status === 'CONFIRMED') {
       try {
@@ -307,6 +524,18 @@ export async function PATCH(
 
     // Handle specific error messages (capacity validation errors)
     if (error.message.includes('Cannot promote') || error.message.includes('לא ניתן לאשר')) {
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
+
+    // Table sharing / move errors
+    if (
+      error.message.includes('Cannot set tableId') ||
+      error.message.includes('Target table') ||
+      error.message.includes('on hold') ||
+      error.message.includes('no guest count') ||
+      error.message.includes('Not enough remaining seats') ||
+      error.message.includes('below table minimum')
+    ) {
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
 

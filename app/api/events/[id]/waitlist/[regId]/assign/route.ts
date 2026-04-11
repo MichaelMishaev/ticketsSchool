@@ -19,10 +19,7 @@ export async function POST(
     const { tableId, force } = body
 
     if (!tableId) {
-      return NextResponse.json(
-        { error: 'Table ID is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Table ID is required' }, { status: 400 })
     }
 
     // Verify event belongs to admin's school (unless SUPER_ADMIN)
@@ -31,31 +28,22 @@ export async function POST(
       select: {
         id: true,
         schoolId: true,
-        eventType: true
-      }
+        eventType: true,
+      },
     })
 
     if (!event) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
     // Multi-tenant security check
     if (admin.role !== 'SUPER_ADMIN') {
       if (!admin.schoolId) {
-        return NextResponse.json(
-          { error: 'Admin must have a school assigned' },
-          { status: 403 }
-        )
+        return NextResponse.json({ error: 'Admin must have a school assigned' }, { status: 403 })
       }
 
       if (event.schoolId !== admin.schoolId) {
-        return NextResponse.json(
-          { error: 'Access denied' },
-          { status: 403 }
-        )
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
       }
     }
 
@@ -81,8 +69,8 @@ export async function POST(
             confirmationCode: true,
             phoneNumber: true,
             data: true,
-            waitlistPriority: true
-          }
+            waitlistPriority: true,
+          },
         })
 
         if (!registration) {
@@ -97,7 +85,7 @@ export async function POST(
           throw new Error(`Cannot assign registration with status: ${registration.status}`)
         }
 
-        // Fetch table
+        // Fetch table + its current CONFIRMED registrations (sharing-aware)
         const table = await tx.table.findUnique({
           where: { id: tableId },
           select: {
@@ -106,8 +94,12 @@ export async function POST(
             tableNumber: true,
             capacity: true,
             minOrder: true,
-            status: true
-          }
+            status: true,
+            registrations: {
+              where: { status: 'CONFIRMED' },
+              select: { id: true, guestsCount: true },
+            },
+          },
         })
 
         if (!table) {
@@ -118,33 +110,42 @@ export async function POST(
           throw new Error('Table does not belong to this event')
         }
 
-        if (table.status !== 'AVAILABLE') {
-          throw new Error(`Table ${table.tableNumber} is not available (status: ${table.status})`)
+        // INACTIVE = admin hold, not bookable. RESERVED = now valid (sharing allowed).
+        if (table.status === 'INACTIVE') {
+          throw new Error(`Table ${table.tableNumber} is on hold (INACTIVE)`)
         }
 
-        // Verify guest count fits table constraints
-        const guestCount = registration.guestsCount || 0
+        // Verify incoming group count
+        const incoming = registration.guestsCount || 0
+        if (incoming < 1) {
+          throw new Error('Registration has no guest count set')
+        }
 
-        // Check minimum order (can be overridden with force flag)
-        if (guestCount < table.minOrder && !force) {
+        // Shared-seat capacity check: sum existing occupants + incoming must fit
+        const occupied = table.registrations.reduce((n, r) => n + (r.guestsCount ?? 0), 0)
+        const isEmpty = table.registrations.length === 0
+
+        if (occupied + incoming > table.capacity) {
           throw new Error(
-            `Guest count (${guestCount}) is below table minimum order (${table.minOrder})`
+            `Not enough remaining seats on table ${table.tableNumber} (${table.capacity - occupied} free, ${incoming} requested)`
           )
         }
 
-        // Always enforce capacity limit (no override)
-        if (guestCount > table.capacity) {
+        // minOrder is an "open the table" gate, not a per-reg rule.
+        // Only enforced when table is currently empty; skipped when sharing.
+        if (isEmpty && incoming < table.minOrder && !force) {
           throw new Error(
-            `Guest count (${guestCount}) exceeds table capacity (${table.capacity})`
+            `Guest count (${incoming}) is below table minimum order (${table.minOrder})`
           )
         }
 
-        // Update registration to CONFIRMED
+        // Update registration to CONFIRMED and point it at the table (single write)
         const updatedRegistration = await tx.registration.update({
           where: { id: registrationId },
           data: {
             status: 'CONFIRMED',
-            waitlistPriority: null // Clear waitlist priority
+            waitlistPriority: null, // Clear waitlist priority
+            tableId: table.id,
           },
           select: {
             id: true,
@@ -152,34 +153,43 @@ export async function POST(
             status: true,
             guestsCount: true,
             phoneNumber: true,
-            data: true
-          }
+            data: true,
+          },
         })
 
-        // Reserve table
-        const updatedTable = await tx.table.update({
-          where: { id: tableId },
-          data: {
-            status: 'RESERVED',
-            reservedById: registrationId
-          },
-          select: {
-            id: true,
-            tableNumber: true,
-            capacity: true,
-            minOrder: true,
-            status: true
+        // Only flip table status to RESERVED when we opened an empty table.
+        // An already-RESERVED (shared) table stays RESERVED.
+        let updatedTable
+        if (isEmpty) {
+          updatedTable = await tx.table.update({
+            where: { id: tableId },
+            data: { status: 'RESERVED' },
+            select: {
+              id: true,
+              tableNumber: true,
+              capacity: true,
+              minOrder: true,
+              status: true,
+            },
+          })
+        } else {
+          updatedTable = {
+            id: table.id,
+            tableNumber: table.tableNumber,
+            capacity: table.capacity,
+            minOrder: table.minOrder,
+            status: table.status,
           }
-        })
+        }
 
         return {
           registration: updatedRegistration,
-          table: updatedTable
+          table: updatedTable,
         }
       },
       {
         isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-        timeout: 10000
+        timeout: 10000,
       }
     )
 
@@ -187,17 +197,14 @@ export async function POST(
       success: true,
       message: `Waitlist registration assigned to table ${result.table.tableNumber}`,
       registration: result.registration,
-      table: result.table
+      table: result.table,
     })
   } catch (error: any) {
     logger.error('Waitlist assignment error', { source: 'events', error })
 
     // Handle auth errors
     if (error.message === 'Unauthorized') {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
     // Handle business logic errors with user-friendly messages
@@ -205,15 +212,13 @@ export async function POST(
       error.message.includes('not found') ||
       error.message.includes('does not belong') ||
       error.message.includes('Cannot assign') ||
-      error.message.includes('not available') ||
+      error.message.includes('on hold') ||
+      error.message.includes('no guest count') ||
+      error.message.includes('Not enough remaining seats') ||
       error.message.includes('Guest count') ||
-      error.message.includes('below table') ||
-      error.message.includes('exceeds table')
+      error.message.includes('below table')
     ) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
     return NextResponse.json(
