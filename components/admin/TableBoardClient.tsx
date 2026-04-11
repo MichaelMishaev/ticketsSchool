@@ -1,15 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import TableCard from './TableCard'
 import DuplicateTableModal from './DuplicateTableModal'
 import TableTemplateModal from './TableTemplateModal'
 import SaveTemplateModal from './SaveTemplateModal'
 import BulkEditModal from './BulkEditModal'
+import AddRegistrationToTableModal from './AddRegistrationToTableModal'
 import { X, Plus, Sparkles, Edit3, Trash2, CheckSquare } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '../Toast'
+import { isTableEmpty, type TableRegistration } from './table-helpers'
 
 interface Table {
   id: string
@@ -18,23 +20,45 @@ interface Table {
   minOrder: number
   status: 'AVAILABLE' | 'RESERVED' | 'INACTIVE'
   hasWaitlistMatch: boolean
-  reservation?: {
-    id: string
-    confirmationCode: string
-    guestsCount: number | null
-    phoneNumber: string | null
-    data: any
-  } | null
+  // Sharing-aware: a table can host multiple CONFIRMED registrations.
+  registrations: TableRegistration[]
+}
+
+interface WaitlistEntry {
+  id: string
+  confirmationCode: string
+  guestsCount: number | null
+  phoneNumber: string | null
+  waitlistPriority: number | null
+  data: any
+  createdAt: string | Date
 }
 
 interface TableBoardClientProps {
   tables: Table[]
+  waitlist: WaitlistEntry[]
   eventId: string
+  onSwitchToWaitlist?: () => void
 }
 
-export default function TableBoardClient({ tables, eventId }: TableBoardClientProps) {
+export default function TableBoardClient({
+  tables,
+  waitlist,
+  eventId,
+  onSwitchToWaitlist,
+}: TableBoardClientProps) {
   const router = useRouter()
   const { addToast, ToastContainer } = useToast()
+
+  // Local tables state — synced from parent via useEffect when parent re-renders
+  const [localTables, setLocalTables] = useState<Table[]>(tables)
+  const isUserActiveRef = useRef(false)
+
+  // Sync when server component re-renders after router.refresh() (admin mutations)
+  useEffect(() => {
+    setLocalTables(tables)
+  }, [tables])
+
   const [cancelModal, setCancelModal] = useState<{ show: boolean; registrationId: string | null }>({
     show: false,
     registrationId: null,
@@ -56,11 +80,26 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
   const [isBulkSelectionMode, setIsBulkSelectionMode] = useState(false)
   const [showGroupedView, setShowGroupedView] = useState(true)
 
+  // Sharing-aware: modal for adding a WAITLIST or cross-table CONFIRMED reg
+  // into a specific table's remaining seats.
+  const [addRegModal, setAddRegModal] = useState<{ show: boolean; table: Table | null }>({
+    show: false,
+    table: null,
+  })
+
+  // Update ref every render so it reflects current modal/selection state (used by parent polling guard)
+  isUserActiveRef.current =
+    cancelModal.show ||
+    duplicateModal.show ||
+    bulkEditModal ||
+    isBulkSelectionMode ||
+    addRegModal.show
+
   const handleToggleHold = async (tableId: string) => {
     setTogglingHold(true)
 
     try {
-      const table = tables.find((t) => t.id === tableId)
+      const table = localTables.find((t) => t.id === tableId)
       if (!table) return
 
       const newStatus = table.status === 'INACTIVE' ? 'AVAILABLE' : 'INACTIVE'
@@ -178,7 +217,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
   }
 
   const handleSelectAll = () => {
-    const availableTableIds = tables.filter((t) => t.status !== 'RESERVED').map((t) => t.id)
+    const availableTableIds = localTables.filter((t) => t.status !== 'RESERVED').map((t) => t.id)
     setSelectedTableIds(new Set(availableTableIds))
   }
 
@@ -238,7 +277,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
   }
 
   const handleDeleteTable = async (tableId: string) => {
-    const table = tables.find((t) => t.id === tableId)
+    const table = localTables.find((t) => t.id === tableId)
     if (!table) return
 
     if (!confirm(`האם למחוק שולחן ${table.tableNumber}?`)) return
@@ -310,10 +349,58 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
     }
   }
 
+  /**
+   * Sharing-aware: place a WAITLIST reg OR move a CONFIRMED reg from another
+   * table into the target table. Routes used:
+   *   - WAITLIST source → POST /waitlist/[regId]/assign  (handles promote + attach)
+   *   - CONFIRMED source → PATCH /registrations/[regId]  (move-or-remove path)
+   *
+   * Returns true on success so the modal can close itself.
+   */
+  // Minimal shape so this callback is compatible with the modal's own `Table`
+  // type (which doesn't carry `hasWaitlistMatch`). We only actually read the
+  // id (for routing) and tableNumber (for the toast message).
+  const handleAddRegistration = async (
+    targetTable: { id: string; tableNumber: string },
+    source: { id: string; isWaitlist: boolean }
+  ): Promise<boolean> => {
+    try {
+      const url = source.isWaitlist
+        ? `/api/events/${eventId}/waitlist/${source.id}/assign`
+        : `/api/events/${eventId}/registrations/${source.id}`
+      const method = source.isWaitlist ? 'POST' : 'PATCH'
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ tableId: targetTable.id }),
+      })
+
+      if (response.ok) {
+        addToast(`✅ הוספה לשולחן ${targetTable.tableNumber}`, 'success')
+        router.refresh()
+        return true
+      }
+
+      const error = await response.json().catch(() => ({}))
+      if (response.status === 401) {
+        addToast('הפג תוקף ההתחברות. אנא התחבר מחדש.', 'error')
+        window.location.href = '/admin/login'
+        return false
+      }
+      addToast(error.error || 'שגיאה בהוספת הזמנה לשולחן', 'error')
+      return false
+    } catch (e) {
+      console.error('Error adding registration to table:', e)
+      addToast('שגיאה בהוספת הזמנה לשולחן', 'error')
+      return false
+    }
+  }
+
   // Group consecutive similar AVAILABLE tables
   const groupTables = () => {
     if (!showGroupedView) {
-      return tables.map((table) => ({
+      return localTables.map((table) => ({
         tables: [table],
         isGroup: false,
         firstTable: table,
@@ -334,7 +421,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
 
     let currentGroup: Table[] = []
 
-    tables.forEach((table) => {
+    localTables.forEach((table) => {
       if (currentGroup.length === 0) {
         currentGroup.push(table)
         return
@@ -346,8 +433,9 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
         lastTable.status === 'AVAILABLE' &&
         table.capacity === lastTable.capacity &&
         table.minOrder === lastTable.minOrder &&
-        !table.reservation &&
-        !lastTable.reservation &&
+        // Only fully-empty tables may be grouped — sharing-aware.
+        isTableEmpty(table) &&
+        isTableEmpty(lastTable) &&
         currentGroup.length < 100 // Max group size
 
       if (canGroup) {
@@ -384,7 +472,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
   return (
     <>
       {/* View Mode Toggles */}
-      {tables.length > 0 && (
+      {localTables.length > 0 && (
         <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-2">
             <button
@@ -542,7 +630,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
                 onSelect={isBulkSelectionMode ? handleTableSelection : undefined}
                 onDelete={() => handleDeleteTable(table.id)}
                 onDuplicate={(tableId) => {
-                  const selectedTable = tables.find((t) => t.id === tableId)
+                  const selectedTable = localTables.find((t) => t.id === tableId)
                   if (selectedTable) {
                     setDuplicateModal({ show: true, table: selectedTable })
                   }
@@ -550,7 +638,9 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
                 onCancel={(reservationId) => {
                   setCancelModal({ show: true, registrationId: reservationId })
                 }}
+                onAddRegistration={() => setAddRegModal({ show: true, table })}
                 onToggleHold={handleToggleHold}
+                onSwitchToWaitlist={onSwitchToWaitlist}
                 readOnly={false}
               />
             )
@@ -592,7 +682,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
         </button>
       </div>
 
-      {tables.length > 0 && (
+      {localTables.length > 0 && (
         <div className="mt-4 text-center">
           <button
             onClick={() => setSaveTemplateModal(true)}
@@ -693,7 +783,7 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
       {/* Save Template Modal */}
       <SaveTemplateModal
         show={saveTemplateModal}
-        tableCount={tables.length}
+        tableCount={localTables.length}
         onClose={() => setSaveTemplateModal(false)}
         onSave={handleSaveAsTemplate}
       />
@@ -704,6 +794,16 @@ export default function TableBoardClient({ tables, eventId }: TableBoardClientPr
         selectedCount={selectedTableIds.size}
         onClose={() => setBulkEditModal(false)}
         onConfirm={handleBulkEdit}
+      />
+
+      {/* Add Registration to Table (sharing-aware) */}
+      <AddRegistrationToTableModal
+        show={addRegModal.show}
+        table={addRegModal.table}
+        waitlist={waitlist}
+        allTables={localTables}
+        onClose={() => setAddRegModal({ show: false, table: null })}
+        onConfirm={handleAddRegistration}
       />
       <ToastContainer />
     </>

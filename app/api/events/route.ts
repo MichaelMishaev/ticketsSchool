@@ -246,7 +246,11 @@ export async function GET(request: NextRequest) {
                 eventId: true,
                 capacity: true,
                 status: true,
-                reservation: { select: { guestsCount: true, spotsCount: true } },
+                // Sharing-aware: sum occupancy across all CONFIRMED regs on the table
+                registrations: {
+                  where: { status: 'CONFIRMED' },
+                  select: { guestsCount: true, spotsCount: true },
+                },
               },
             }),
           ])
@@ -261,9 +265,10 @@ export async function GET(request: NextRequest) {
       if (!tableDataByEvent[table.eventId])
         tableDataByEvent[table.eventId] = { totalCapacity: 0, totalSpotsTaken: 0 }
       tableDataByEvent[table.eventId].totalCapacity += table.capacity
-      if (table.reservation) {
-        tableDataByEvent[table.eventId].totalSpotsTaken +=
-          table.reservation.guestsCount ?? table.reservation.spotsCount ?? 0
+      for (const r of table.registrations) {
+        // Fallback preserved from pre-sharing behavior: prefer guestsCount,
+        // fall back to spotsCount for legacy data, then 0.
+        tableDataByEvent[table.eventId].totalSpotsTaken += r.guestsCount ?? r.spotsCount ?? 0
       }
     }
 

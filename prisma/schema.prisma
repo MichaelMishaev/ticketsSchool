@@ -209,7 +209,7 @@ model Event {
 
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
-  deletedAt     DateTime?      // Soft delete - null means active, timestamp means deleted
+  deletedAt     DateTime? // Soft delete - null means active, timestamp means deleted
   registrations Registration[]
   payments      Payment[] // Event ticketing payments
 
@@ -241,7 +241,8 @@ model Registration {
 
   // Table-based events
   guestsCount      Int?
-  assignedTable    Table? @relation("TableReservation")
+  tableId          String?
+  table            Table?  @relation("TableRegistrations", fields: [tableId], references: [id], onDelete: SetNull)
   waitlistPriority Int?
 
   // Cancellation
@@ -274,6 +275,7 @@ model Registration {
   @@index([qrCode])
   @@index([paymentStatus])
   @@index([paymentIntentId])
+  @@index([tableId])
 }
 
 enum EventStatus {
@@ -305,9 +307,8 @@ model Table {
   capacity    Int // Max seats
   minOrder    Int // Min guests required
 
-  status       TableStatus   @default(AVAILABLE)
-  reservedById String?       @unique
-  reservation  Registration? @relation("TableReservation", fields: [reservedById], references: [id], onDelete: SetNull)
+  status        TableStatus    @default(AVAILABLE)
+  registrations Registration[] @relation("TableRegistrations")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

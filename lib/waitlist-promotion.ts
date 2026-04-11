@@ -19,12 +19,20 @@ export async function promoteFromWaitlist(
     try {
       return await prisma.$transaction(
         async (tx) => {
-          // Get event with type and available tables
+          // Get event with type and truly-empty AVAILABLE tables only.
+          // Belt-and-suspenders: even if a bug left a CONFIRMED reg attached to
+          // an AVAILABLE table, the inner `none` clause keeps us from filling it.
           const event = await tx.event.findUnique({
             where: { id: eventId },
             include: {
               tables: {
-                where: { status: 'AVAILABLE' },
+                where: {
+                  status: 'AVAILABLE',
+                  registrations: { none: { status: 'CONFIRMED' } },
+                },
+                include: {
+                  registrations: { where: { status: 'CONFIRMED' } },
+                },
               },
             },
           })
@@ -193,21 +201,19 @@ async function promoteTableBased(
       continue
     }
 
-    // Assign table
+    // Assign table (two-write pattern: point reg at table, then flip status)
     await tx.registration.update({
       where: { id: next.id },
       data: {
         status: 'CONFIRMED',
         waitlistPriority: null,
+        tableId: table.id,
       },
     })
 
     await tx.table.update({
       where: { id: table.id },
-      data: {
-        status: 'RESERVED',
-        reservedById: next.id,
-      },
+      data: { status: 'RESERVED' },
     })
 
     promoted.push(next.id)

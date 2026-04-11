@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   ListOrdered,
   Users,
@@ -41,6 +42,14 @@ interface WaitlistManagerProps {
 }
 
 export default function WaitlistManager({ eventId, waitlist, onAssign }: WaitlistManagerProps) {
+  const router = useRouter()
+  const [localWaitlist, setLocalWaitlist] = useState<WaitlistEntry[]>(waitlist)
+
+  // Sync when server component re-renders (after router.refresh())
+  useEffect(() => {
+    setLocalWaitlist(waitlist)
+  }, [waitlist])
+
   const [selectedEntry, setSelectedEntry] = useState<WaitlistEntry | null>(null)
   const [assigning, setAssigning] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -79,7 +88,7 @@ export default function WaitlistManager({ eventId, waitlist, onAssign }: Waitlis
           if (onAssign) {
             onAssign()
           } else {
-            window.location.reload()
+            router.refresh()
           }
         }, 1500)
       } else {
@@ -180,12 +189,12 @@ export default function WaitlistManager({ eventId, waitlist, onAssign }: Waitlis
       setSuccess(`✓ שובץ לשולחן ${data.table.tableNumber}`)
       setSelectedEntry(null)
 
-      // Reload page after 1.5 seconds to show updated state
+      // Refresh server component data after 1.5s (shows success message first)
       setTimeout(() => {
         if (onAssign) {
           onAssign()
         } else {
-          window.location.reload()
+          router.refresh()
         }
       }, 1500)
     } catch (err: any) {
@@ -196,7 +205,7 @@ export default function WaitlistManager({ eventId, waitlist, onAssign }: Waitlis
     }
   }
 
-  if (waitlist.length === 0) {
+  if (localWaitlist.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow p-12 text-center">
         <ListOrdered className="w-16 h-16 mx-auto mb-4 text-gray-400" />
@@ -226,7 +235,7 @@ export default function WaitlistManager({ eventId, waitlist, onAssign }: Waitlis
 
       {/* Waitlist Entries */}
       <div className="space-y-3">
-        {waitlist.map((entry) => (
+        {localWaitlist.map((entry) => (
           <div
             key={entry.id}
             className="relative overflow-hidden bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all"

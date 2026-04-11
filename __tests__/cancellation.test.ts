@@ -111,9 +111,17 @@ describe('Cancellation System', () => {
 
   afterAll(async () => {
     // Cleanup
-    await prisma.registration.deleteMany({ where: { eventId: { in: [futureEvent.id, soonEvent.id, tableBasedEvent.id, capacityBasedEvent.id] } } })
+    await prisma.registration.deleteMany({
+      where: {
+        eventId: { in: [futureEvent.id, soonEvent.id, tableBasedEvent.id, capacityBasedEvent.id] },
+      },
+    })
     await prisma.table.deleteMany({ where: { eventId: tableBasedEvent.id } })
-    await prisma.event.deleteMany({ where: { id: { in: [futureEvent.id, soonEvent.id, tableBasedEvent.id, capacityBasedEvent.id] } } })
+    await prisma.event.deleteMany({
+      where: {
+        id: { in: [futureEvent.id, soonEvent.id, tableBasedEvent.id, capacityBasedEvent.id] },
+      },
+    })
     await prisma.school.delete({ where: { id: testSchool.id } })
     await prisma.$disconnect()
   })
@@ -268,12 +276,18 @@ describe('Cancellation System', () => {
       const result = await cancelReservation(token)
       expect(result.success).toBe(true)
 
-      // Verify table is AVAILABLE
+      // Verify table is AVAILABLE and has no CONFIRMED regs pointing at it.
+      // Sharing-aware model: the FK now lives on Registration, so we assert
+      // via a count instead of inspecting a Table column that no longer exists.
       const tableAfter = await prisma.table.findUnique({
         where: { id: booking.table!.id },
       })
       expect(tableAfter?.status).toBe('AVAILABLE')
-      expect(tableAfter?.reservedById).toBeNull()
+
+      const remainingOnTable = await prisma.registration.count({
+        where: { tableId: booking.table!.id, status: 'CONFIRMED' },
+      })
+      expect(remainingOnTable).toBe(0)
     })
   })
 

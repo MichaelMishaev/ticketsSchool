@@ -3,7 +3,6 @@
 import { useRouter } from 'next/navigation'
 import { Trash2, CheckCircle2, Clock, AlertCircle, CreditCard, User } from 'lucide-react'
 import CheckInHeroCard from '@/components/admin/event-details/CheckInHeroCard'
-import CompactEventHero from '@/components/admin/event-details/CompactEventHero'
 import CompactShareCards from '@/components/admin/event-details/CompactShareCards'
 import { useConfirmation } from '@/hooks/useConfirmation'
 
@@ -148,9 +147,6 @@ export default function OverviewTab({ event, onEventUpdate, onTabChange }: Overv
 
   return (
     <>
-      {/* Compact Hero - Event Title, Status, Date, Location combined */}
-      <CompactEventHero event={event} />
-
       <div
         className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-6 space-y-5 overflow-x-hidden"
         dir="rtl"

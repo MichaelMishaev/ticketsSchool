@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Users, UtensilsCrossed, ListOrdered, ChevronLeft } from 'lucide-react'
 import Modal from '../Modal'
+import { tableOccupiedSpots, isTableEmpty, type TableRegistration } from './table-helpers'
 
 interface Table {
   id: string
@@ -11,7 +12,8 @@ interface Table {
   minOrder: number
   status: 'AVAILABLE' | 'RESERVED' | 'INACTIVE'
   hasWaitlistMatch?: boolean
-  reservation?: any
+  // Sharing-aware: may host multiple CONFIRMED registrations.
+  registrations: TableRegistration[]
 }
 
 interface WaitlistEntry {
@@ -98,25 +100,37 @@ export default function TableBoardStats({ tables, waitlist, stats }: TableBoardS
           title: 'שולחנות תפוסים',
           type: 'error' as const,
           items: tables.filter((t) => t.status === 'RESERVED' || t.status === 'INACTIVE'),
-          renderItem: (t: Table) => (
-            <div
-              key={t.id}
-              className="flex justify-between items-center p-3 bg-red-50/50 rounded-lg border border-red-100"
-            >
-              <div>
-                <div className="font-semibold text-red-900">שולחן {t.tableNumber}</div>
-                <div className="text-xs text-red-700 mt-1">
-                  {t.reservation ? `קוד הזמנה: ${t.reservation.confirmationCode}` : 'מוחזק (סגור)'}
+          renderItem: (t: Table) => {
+            // Sharing-aware summary: show how many regs share the table
+            // and total occupied spots. INACTIVE (empty hold) shows "מוחזק".
+            const regCount = t.registrations.length
+            const occ = tableOccupiedSpots(t)
+            const empty = isTableEmpty(t)
+            const summary = empty
+              ? 'מוחזק (סגור)'
+              : regCount === 1
+                ? `קוד: ${t.registrations[0].confirmationCode}`
+                : `${regCount} הזמנות משותפות`
+            return (
+              <div
+                key={t.id}
+                className="flex justify-between items-center p-3 bg-red-50/50 rounded-lg border border-red-100"
+              >
+                <div>
+                  <div className="font-semibold text-red-900">שולחן {t.tableNumber}</div>
+                  <div className="text-xs text-red-700 mt-1">{summary}</div>
+                </div>
+                <div className="text-right">
+                  <div className="font-medium text-red-800">{t.capacity} מקומות</div>
+                  {!empty && (
+                    <div className="text-xs text-red-600">
+                      {occ} {occ === 1 ? 'אורח' : 'אורחים'}
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="text-right">
-                <div className="font-medium text-red-800">{t.capacity} מקומות</div>
-                {t.reservation?.guestsCount && (
-                  <div className="text-xs text-red-600">{t.reservation.guestsCount} אורחים</div>
-                )}
-              </div>
-            </div>
-          ),
+            )
+          },
         }
       case 'waitlist':
         return {

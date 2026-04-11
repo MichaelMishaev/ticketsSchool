@@ -351,7 +351,7 @@ export default function RestaurantsLandingPage() {
                   <p className="font-bold text-purple-900 mb-2">🪑 כל שולחן כולל:</p>
                   <ul className="space-y-2 text-gray-700">
                     <li>
-                      • <strong>מספר שולחן</strong> - למשל "שולחן 1", "שולחן VIP"
+                      • <strong>שם שולחן</strong> - למשל "שולחן 1", "שולחן VIP"
                     </li>
                     <li>
                       • <strong>קיבולת</strong> - כמה אנשים יכולים לשבת (2, 4, 6, 8...)

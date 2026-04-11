@@ -87,7 +87,9 @@ describe('Admin Cancellation System', () => {
 
   afterAll(async () => {
     // Cleanup
-    await prisma.registration.deleteMany({ where: { eventId: { in: [capacityEvent.id, tableEvent.id] } } })
+    await prisma.registration.deleteMany({
+      where: { eventId: { in: [capacityEvent.id, tableEvent.id] } },
+    })
     await prisma.table.deleteMany({ where: { eventId: tableEvent.id } })
     await prisma.event.deleteMany({ where: { id: { in: [capacityEvent.id, tableEvent.id] } } })
     await prisma.admin.delete({ where: { id: testAdmin.id } })
@@ -235,10 +237,16 @@ describe('Admin Cancellation System', () => {
         },
       })
 
-      // Reserve table by linking registration
+      // Reserve table by linking registration. Sharing-aware: the FK lives
+      // on Registration (`tableId`), and Table carries only the denormalized
+      // status flag.
+      await prisma.registration.update({
+        where: { id: registration.id },
+        data: { tableId: table!.id },
+      })
       await prisma.table.update({
         where: { id: table!.id },
-        data: { status: 'RESERVED', reservedById: registration.id },
+        data: { status: 'RESERVED' },
       })
 
       // Verify table is reserved
@@ -247,7 +255,7 @@ describe('Admin Cancellation System', () => {
       })
       expect(tableBefore?.status).toBe('RESERVED')
 
-      // Admin cancels
+      // Admin cancels — clear the FK + cancel the reg in one update.
       await prisma.registration.update({
         where: { id: registration.id },
         data: {
@@ -255,21 +263,32 @@ describe('Admin Cancellation System', () => {
           cancelledAt: new Date(),
           cancelledBy: 'ADMIN',
           cancellationReason: 'Admin cancelled table reservation',
+          tableId: null,
         },
       })
 
-      // Free table
-      await prisma.table.update({
-        where: { id: table!.id },
-        data: { status: 'AVAILABLE', reservedById: null },
+      // Conditional release: only flip to AVAILABLE if no CONFIRMED regs
+      // remain on the table (production uses this exact pattern).
+      const remaining = await prisma.registration.count({
+        where: { tableId: table!.id, status: 'CONFIRMED' },
       })
+      if (remaining === 0) {
+        await prisma.table.update({
+          where: { id: table!.id },
+          data: { status: 'AVAILABLE' },
+        })
+      }
 
-      // Verify table is freed
+      // Verify table is freed and nothing points at it anymore.
       const tableAfter = await prisma.table.findUnique({
         where: { id: table!.id },
       })
       expect(tableAfter?.status).toBe('AVAILABLE')
-      expect(tableAfter?.reservedById).toBeNull()
+
+      const stillOnTable = await prisma.registration.count({
+        where: { tableId: table!.id, status: 'CONFIRMED' },
+      })
+      expect(stillOnTable).toBe(0)
 
       // Verify registration is cancelled
       const cancelledReg = await prisma.registration.findUnique({

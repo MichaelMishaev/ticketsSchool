@@ -22,16 +22,16 @@ export async function reserveTableForGuests(
         where: {
           eventId,
           status: 'AVAILABLE',
-          capacity: { gte: guestsCount },  // Must fit group
-          minOrder: { lte: guestsCount }   // Group meets minimum
+          capacity: { gte: guestsCount }, // Must fit group
+          minOrder: { lte: guestsCount }, // Group meets minimum
         },
-        orderBy: { capacity: 'asc' }  // SMALLEST first
+        orderBy: { capacity: 'asc' }, // SMALLEST first
       })
 
       // No table → WAITLIST
       if (!table) {
         const waitlistCount = await tx.registration.count({
-          where: { eventId, status: 'WAITLIST' }
+          where: { eventId, status: 'WAITLIST' },
         })
 
         const registration = await tx.registration.create({
@@ -43,15 +43,15 @@ export async function reserveTableForGuests(
             confirmationCode: generateConfirmationCode(),
             cancellationToken: generateCancellationToken(eventId, registrationData.phoneNumber),
             phoneNumber: registrationData.phoneNumber,
-            data: registrationData.data
-          }
+            data: registrationData.data,
+          },
         })
 
         // Generate QR code
         const qrCodeData = generateQRCodeData(registration.id, eventId)
         await tx.registration.update({
           where: { id: registration.id },
-          data: { qrCode: qrCodeData }
+          data: { qrCode: qrCodeData },
         })
 
         return { status: 'WAITLIST', registration }
@@ -66,27 +66,34 @@ export async function reserveTableForGuests(
           confirmationCode: generateConfirmationCode(),
           cancellationToken: generateCancellationToken(eventId, registrationData.phoneNumber),
           phoneNumber: registrationData.phoneNumber,
-          data: registrationData.data
-        }
+          data: registrationData.data,
+        },
       })
 
       // Generate QR code
       const qrCodeData = generateQRCodeData(registration.id, eventId)
       await tx.registration.update({
         where: { id: registration.id },
-        data: { qrCode: qrCodeData }
+        data: { qrCode: qrCodeData },
       })
 
+      // Two-write pattern: point registration at table, then flip table status.
+      // Order matters for mental correctness — a concurrent reader should never
+      // see a RESERVED table with zero registrations pointing at it.
+      await tx.registration.update({
+        where: { id: registration.id },
+        data: { tableId: table.id },
+      })
       await tx.table.update({
         where: { id: table.id },
-        data: { status: 'RESERVED', reservedById: registration.id }
+        data: { status: 'RESERVED' },
       })
 
       return { status: 'CONFIRMED', registration, table }
     },
     {
       isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-      timeout: 10000
+      timeout: 10000,
     }
   )
 }
@@ -96,9 +103,5 @@ function generateConfirmationCode(): string {
 }
 
 function generateCancellationToken(eventId: string, phone: string): string {
-  return jwt.sign(
-    { eventId, phone },
-    process.env.JWT_SECRET!,
-    { expiresIn: '30d' }
-  )
+  return jwt.sign({ eventId, phone }, process.env.JWT_SECRET!, { expiresIn: '30d' })
 }

@@ -114,11 +114,12 @@ describe('Required Contact Information', () => {
       expect(result.status).toBe('CONFIRMED')
       expect(result.registration.phoneNumber).toBe('0501234567')
 
-      // Cleanup
+      // Cleanup — deleting the registration cascades `tableId` to null via
+      // ON DELETE SET NULL, so we only need to flip the denormalized status.
       await prisma.registration.delete({ where: { id: result.registration.id } })
       await prisma.table.update({
         where: { id: tableId },
-        data: { status: 'AVAILABLE', reservedById: null },
+        data: { status: 'AVAILABLE' },
       })
     })
   })
