@@ -22,6 +22,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Clock, X, Loader2, CheckCircle } from 'lucide-react'
+import ConfirmationModal from '@/components/ui/ConfirmationModal'
 
 interface PendingRegistration {
   id: string
@@ -38,12 +39,16 @@ interface PendingPaymentsPanelProps {
   eventId: string
 }
 
+type ModalAction = { type: 'pay'; regId: string } | { type: 'cancel'; regId: string } | null
+
 export default function PendingPaymentsPanel({ eventId }: PendingPaymentsPanelProps) {
   const [pending, setPending] = useState<PendingRegistration[]>([])
   const [loading, setLoading] = useState(true)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // Which row/action is pending confirmation in the modal
+  const [pendingAction, setPendingAction] = useState<ModalAction>(null)
 
   const fetchPending = useCallback(async () => {
     try {
@@ -78,8 +83,8 @@ export default function PendingPaymentsPanel({ eventId }: PendingPaymentsPanelPr
   }, [fetchPending])
 
   const handleMarkAsPaid = async (registrationId: string) => {
-    if (!confirm('לסמן את ההזמנה כשולמה ידנית?')) return
     setConfirmingId(registrationId)
+    setPendingAction(null)
     setError(null)
     try {
       const res = await fetch(`/api/events/${eventId}/registrations/${registrationId}`, {
@@ -100,8 +105,8 @@ export default function PendingPaymentsPanel({ eventId }: PendingPaymentsPanelPr
   }
 
   const handleCancel = async (registrationId: string) => {
-    if (!confirm('לבטל את ההזמנה הממתינה לתשלום?')) return
     setCancellingId(registrationId)
+    setPendingAction(null)
     setError(null)
 
     try {
@@ -125,94 +130,120 @@ export default function PendingPaymentsPanel({ eventId }: PendingPaymentsPanelPr
     }
   }
 
+  const handleModalConfirm = () => {
+    if (!pendingAction) return
+    if (pendingAction.type === 'pay') handleMarkAsPaid(pendingAction.regId)
+    else handleCancel(pendingAction.regId)
+  }
+
   // Don't render anything when there are no pending regs — avoids a permanent
   // "0 pending" panel that adds visual noise on healthy events.
   if (loading) return null
   if (pending.length === 0) return null
 
+  const isPayModal = pendingAction?.type === 'pay'
+
   return (
-    <div
-      className="relative overflow-hidden bg-amber-50 border-2 border-amber-200 rounded-xl shadow-sm"
-      dir="rtl"
-    >
-      <div className="p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="flex-shrink-0 w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-            <Clock className="w-4 h-4 text-amber-700" />
+    <>
+      <div
+        className="relative overflow-hidden bg-amber-50 border-2 border-amber-200 rounded-xl shadow-sm"
+        dir="rtl"
+      >
+        <div className="p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="flex-shrink-0 w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+              <Clock className="w-4 h-4 text-amber-700" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold text-amber-900">
+                ⏳ {pending.length} הזמנות ממתינות לתשלום
+              </h3>
+              <p className="text-xs text-amber-800 mt-0.5">
+                המזמינים התחילו לשלם אבל לא סיימו. השולחן עדיין לא משובץ.
+              </p>
+            </div>
           </div>
-          <div className="flex-1">
-            <h3 className="text-sm font-bold text-amber-900">
-              ⏳ {pending.length} הזמנות ממתינות לתשלום
-            </h3>
-            <p className="text-xs text-amber-800 mt-0.5">
-              המזמינים התחילו לשלם אבל לא סיימו. השולחן עדיין לא משובץ.
-            </p>
-          </div>
-        </div>
 
-        {error && (
-          <div className="mb-3 p-2 bg-red-100 border border-red-200 rounded text-xs text-red-800">
-            {error}
-          </div>
-        )}
+          {error && (
+            <div className="mb-3 p-2 bg-red-100 border border-red-200 rounded text-xs text-red-800">
+              {error}
+            </div>
+          )}
 
-        <div className="space-y-2">
-          {pending.map((reg) => {
-            const guestLabel = reg.guestsCount ?? reg.spotsCount ?? '?'
-            const name =
-              (reg.data && typeof reg.data === 'object' && 'name' in reg.data
-                ? String((reg.data as Record<string, unknown>).name)
-                : null) || 'ללא שם'
-            const createdAt = new Date(reg.createdAt)
-            const minutesAgo = Math.round((Date.now() - createdAt.getTime()) / 60000)
-            return (
-              <div
-                key={reg.id}
-                className="flex items-center gap-3 bg-white rounded-lg border border-amber-200 px-3 py-2"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium text-sm text-gray-900 truncate">{name}</span>
-                    <span className="text-xs text-gray-500">
-                      {guestLabel} אורחים · קוד {reg.confirmationCode}
-                    </span>
+          <div className="space-y-2">
+            {pending.map((reg) => {
+              const guestLabel = reg.guestsCount ?? reg.spotsCount ?? '?'
+              const name =
+                (reg.data && typeof reg.data === 'object' && 'name' in reg.data
+                  ? String((reg.data as Record<string, unknown>).name)
+                  : null) || 'ללא שם'
+              const createdAt = new Date(reg.createdAt)
+              const minutesAgo = Math.round((Date.now() - createdAt.getTime()) / 60000)
+              return (
+                <div
+                  key={reg.id}
+                  className="flex items-center gap-3 bg-white rounded-lg border border-amber-200 px-3 py-2"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-sm text-gray-900 truncate">{name}</span>
+                      <span className="text-xs text-gray-500">
+                        {guestLabel} אורחים · קוד {reg.confirmationCode}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-0.5">
+                      {reg.phoneNumber ? `${reg.phoneNumber} · ` : ''}
+                      {minutesAgo < 1 ? 'עכשיו' : `לפני ${minutesAgo} דקות`}
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-500 mt-0.5">
-                    {reg.phoneNumber ? `${reg.phoneNumber} · ` : ''}
-                    {minutesAgo < 1 ? 'עכשיו' : `לפני ${minutesAgo} דקות`}
-                  </div>
+                  <button
+                    onClick={() => setPendingAction({ type: 'pay', regId: reg.id })}
+                    disabled={confirmingId === reg.id || cancellingId === reg.id}
+                    className="flex items-center gap-1 px-2 py-1 text-xs text-green-700 hover:bg-green-50 rounded border border-green-200 disabled:opacity-50"
+                    title="אשר תשלום ידני"
+                  >
+                    {confirmingId === reg.id ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <CheckCircle className="w-3 h-3" />
+                    )}
+                    <span>שולם</span>
+                  </button>
+                  <button
+                    onClick={() => setPendingAction({ type: 'cancel', regId: reg.id })}
+                    disabled={cancellingId === reg.id || confirmingId === reg.id}
+                    className="flex items-center gap-1 px-2 py-1 text-xs text-red-700 hover:bg-red-50 rounded border border-red-200 disabled:opacity-50"
+                    title="בטל הזמנה ממתינה"
+                  >
+                    {cancellingId === reg.id ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <X className="w-3 h-3" />
+                    )}
+                    <span>בטל</span>
+                  </button>
                 </div>
-                <button
-                  onClick={() => handleMarkAsPaid(reg.id)}
-                  disabled={confirmingId === reg.id || cancellingId === reg.id}
-                  className="flex items-center gap-1 px-2 py-1 text-xs text-green-700 hover:bg-green-50 rounded border border-green-200 disabled:opacity-50"
-                  title="אשר תשלום ידני"
-                >
-                  {confirmingId === reg.id ? (
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                  ) : (
-                    <CheckCircle className="w-3 h-3" />
-                  )}
-                  <span>שולם</span>
-                </button>
-                <button
-                  onClick={() => handleCancel(reg.id)}
-                  disabled={cancellingId === reg.id || confirmingId === reg.id}
-                  className="flex items-center gap-1 px-2 py-1 text-xs text-red-700 hover:bg-red-50 rounded border border-red-200 disabled:opacity-50"
-                  title="בטל הזמנה ממתינה"
-                >
-                  {cancellingId === reg.id ? (
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                  ) : (
-                    <X className="w-3 h-3" />
-                  )}
-                  <span>בטל</span>
-                </button>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
       </div>
-    </div>
+
+      <ConfirmationModal
+        isOpen={pendingAction !== null}
+        onClose={() => setPendingAction(null)}
+        onConfirm={handleModalConfirm}
+        title={isPayModal ? 'אישור תשלום ידני' : 'ביטול הזמנה'}
+        description={
+          isPayModal
+            ? 'לסמן את ההזמנה כשולמה ידנית? השולחן יוקצה אוטומטית.'
+            : 'לבטל את ההזמנה הממתינה לתשלום? פעולה זו אינה הפיכה.'
+        }
+        confirmText={isPayModal ? 'כן, שולם' : 'כן, בטל'}
+        cancelText="חזור"
+        variant={isPayModal ? 'info' : 'danger'}
+        loading={confirmingId === pendingAction?.regId || cancellingId === pendingAction?.regId}
+      />
+    </>
   )
 }
