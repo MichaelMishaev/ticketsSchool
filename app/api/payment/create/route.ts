@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Clean up stale PAYMENT_PENDING registrations older than 30 min (abandoned payment sessions)
-    await prisma.registration.updateMany({
+    const staleCleanup = await prisma.registration.updateMany({
       where: {
         eventId: event.id,
         phoneNumber: phoneNumber,
@@ -169,6 +169,11 @@ export async function POST(request: NextRequest) {
         createdAt: { lt: new Date(Date.now() - 30 * 60 * 1000) },
       },
       data: { status: 'CANCELLED' },
+    })
+    paymentLogger.info('[PAYMENT_PENDING_TRACE] Stale PAYMENT_PENDING cleanup', {
+      eventId: event.id,
+      phoneNumber,
+      staleCancelled: staleCleanup.count,
     })
 
     // Check for duplicate registration (same phone number, not cancelled)
@@ -180,12 +185,23 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    paymentLogger.info('[PAYMENT_PENDING_TRACE] Duplicate check', {
+      eventId: event.id,
+      phoneNumber,
+      existingFound: !!existingRegistration,
+      existingStatus: existingRegistration?.status ?? null,
+      existingId: existingRegistration?.id ?? null,
+    })
+
     if (existingRegistration) {
       if (existingRegistration.status === 'PAYMENT_PENDING') {
         // Fresh PAYMENT_PENDING = customer abandoned the payment page — cancel it and allow retry
         await prisma.registration.update({
           where: { id: existingRegistration.id },
           data: { status: 'CANCELLED' },
+        })
+        paymentLogger.info('[PAYMENT_PENDING_TRACE] Cancelled prior PAYMENT_PENDING (retry path)', {
+          registrationId: existingRegistration.id,
         })
       } else {
         // CONFIRMED / WAITLIST — genuine duplicate, reject
@@ -294,6 +310,14 @@ export async function POST(request: NextRequest) {
             payerPhone: encryptPhone(phoneNumber), // ENCRYPT
             payerName: registrationData.name, // Name stays plaintext (less sensitive)
           },
+        })
+
+        paymentLogger.info('[PAYMENT_PENDING_TRACE] Created PAYMENT_PENDING registration', {
+          registrationId: registration.id,
+          eventId: event.id,
+          phoneNumber,
+          status: registration.status,
+          createdAt: registration.createdAt.toISOString(),
         })
 
         return {
