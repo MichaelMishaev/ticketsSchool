@@ -21,7 +21,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
-import { Clock, X, Loader2 } from 'lucide-react'
+import { Clock, X, Loader2, CheckCircle } from 'lucide-react'
 
 interface PendingRegistration {
   id: string
@@ -42,6 +42,7 @@ export default function PendingPaymentsPanel({ eventId }: PendingPaymentsPanelPr
   const [pending, setPending] = useState<PendingRegistration[]>([])
   const [loading, setLoading] = useState(true)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
+  const [confirmingId, setConfirmingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const fetchPending = useCallback(async () => {
@@ -75,6 +76,28 @@ export default function PendingPaymentsPanel({ eventId }: PendingPaymentsPanelPr
       clearInterval(pollTimer)
     }
   }, [fetchPending])
+
+  const handleMarkAsPaid = async (registrationId: string) => {
+    if (!confirm('לסמן את ההזמנה כשולמה ידנית?')) return
+    setConfirmingId(registrationId)
+    setError(null)
+    try {
+      const res = await fetch(`/api/events/${eventId}/registrations/${registrationId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'CONFIRMED' }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Failed to confirm')
+      }
+      setPending((prev) => prev.filter((r) => r.id !== registrationId))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
+    } finally {
+      setConfirmingId(null)
+    }
+  }
 
   const handleCancel = async (registrationId: string) => {
     if (!confirm('לבטל את ההזמנה הממתינה לתשלום?')) return
@@ -160,8 +183,21 @@ export default function PendingPaymentsPanel({ eventId }: PendingPaymentsPanelPr
                   </div>
                 </div>
                 <button
+                  onClick={() => handleMarkAsPaid(reg.id)}
+                  disabled={confirmingId === reg.id || cancellingId === reg.id}
+                  className="flex items-center gap-1 px-2 py-1 text-xs text-green-700 hover:bg-green-50 rounded border border-green-200 disabled:opacity-50"
+                  title="אשר תשלום ידני"
+                >
+                  {confirmingId === reg.id ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <CheckCircle className="w-3 h-3" />
+                  )}
+                  <span>שולם</span>
+                </button>
+                <button
                   onClick={() => handleCancel(reg.id)}
-                  disabled={cancellingId === reg.id}
+                  disabled={cancellingId === reg.id || confirmingId === reg.id}
                   className="flex items-center gap-1 px-2 py-1 text-xs text-red-700 hover:bg-red-50 rounded border border-red-200 disabled:opacity-50"
                   title="בטל הזמנה ממתינה"
                 >

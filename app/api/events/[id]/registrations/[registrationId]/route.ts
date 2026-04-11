@@ -6,6 +6,7 @@ import { getCurrentAdmin } from '@/lib/auth.server'
 import { sendOverbookingAlertEmail, sendManualPaymentConfirmationEmail } from '@/lib/email'
 import { generateQRCodeImage } from '@/lib/qr-code'
 import { logger } from '@/lib/logger-v2'
+import { findSmallestFitTable } from '@/lib/table-assignment'
 
 /**
  * Extract a human-readable name from a registration's JSONB data column.
@@ -67,6 +68,7 @@ export async function PATCH(
       where: { id },
       select: {
         schoolId: true,
+        eventType: true,
         title: true,
         startAt: true,
         location: true,
@@ -99,6 +101,8 @@ export async function PATCH(
     // detect a PAYMENT_PENDING → CONFIRMED transition AFTER the tx commits
     // (to fire the manual-approval confirmation email outside DB locks).
     let priorStatus: string | null = null
+    // Track the table assigned during manual approval (TABLE_BASED events).
+    let manualApprovalAssignedTableId: string | null = null
 
     // Use transaction to ensure atomic operation and prevent race conditions
     const registration = await prisma.$transaction(
@@ -370,6 +374,39 @@ export async function PATCH(
           updateData.amountPaid = currentRegistration.amountDue // Mark full amount as paid
         }
 
+        // TABLE_BASED: assign a table when manually approving PAYMENT_PENDING → CONFIRMED.
+        // Uses the same Smallest Fit Algorithm as the automated payment callback route.
+        // If no table fits, fall back to WAITLIST so the admin can see and handle it manually.
+        if (
+          oldStatus === 'PAYMENT_PENDING' &&
+          newStatus === 'CONFIRMED' &&
+          eventCheck.eventType === 'TABLE_BASED'
+        ) {
+          const guestsCount = currentRegistration.guestsCount ?? 0
+          const table = await findSmallestFitTable(tx, id, guestsCount)
+
+          if (table) {
+            updateData.tableId = table.id
+            manualApprovalAssignedTableId = table.id
+          } else {
+            // No table available — demote to WAITLIST so the admin can assign manually
+            logger.warn(
+              'Manual approval: no available table fits guest count — falling back to WAITLIST',
+              {
+                source: 'registration',
+                registrationId,
+                guestsCount,
+              }
+            )
+            updateData.status = 'WAITLIST'
+            updateData.paymentStatus = 'COMPLETED' // payment is still captured
+            const waitlistCount = await tx.registration.count({
+              where: { eventId: id, status: 'WAITLIST' },
+            })
+            updateData.waitlistPriority = waitlistCount + 1
+          }
+        }
+
         // If cancelling, record cancellation details
         if (newStatus === 'CANCELLED' && oldStatus !== 'CANCELLED') {
           updateData.cancelledAt = new Date()
@@ -397,6 +434,14 @@ export async function PATCH(
               yaadPayTransactionId: `MANUAL-${Date.now()}`,
               completedAt: new Date(),
             },
+          })
+        }
+
+        // Flip the newly assigned table to RESERVED (two-write pattern: reg first, then table)
+        if (manualApprovalAssignedTableId) {
+          await tx.table.update({
+            where: { id: manualApprovalAssignedTableId },
+            data: { status: 'RESERVED' },
           })
         }
 
