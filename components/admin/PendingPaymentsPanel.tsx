@@ -20,9 +20,11 @@
  * holding tables while payments pend would create a DoS surface.
  */
 
-import { useState, useEffect, useCallback } from 'react'
-import { Clock, X, Loader2, CheckCircle } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { Clock, X, Loader2, CheckCircle, RotateCcw } from 'lucide-react'
 import ConfirmationModal from '@/components/ui/ConfirmationModal'
+
+const UNDO_TTL_MS = 5000
 
 interface PendingRegistration {
   id: string
@@ -41,14 +43,30 @@ interface PendingPaymentsPanelProps {
 
 type ModalAction = { type: 'pay'; regId: string } | { type: 'cancel'; regId: string } | null
 
+interface UndoState {
+  regId: string
+  reg: PendingRegistration
+  /** seconds remaining (counts down from 5) */
+  secondsLeft: number
+  restoringId: string | null
+}
+
 export default function PendingPaymentsPanel({ eventId }: PendingPaymentsPanelProps) {
   const [pending, setPending] = useState<PendingRegistration[]>([])
   const [loading, setLoading] = useState(true)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  // Which row/action is pending confirmation in the modal
   const [pendingAction, setPendingAction] = useState<ModalAction>(null)
+  const [undo, setUndo] = useState<UndoState | null>(null)
+  const undoTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const clearUndoTimer = () => {
+    if (undoTimerRef.current) {
+      clearInterval(undoTimerRef.current)
+      undoTimerRef.current = null
+    }
+  }
 
   const fetchPending = useCallback(async () => {
     try {
@@ -82,6 +100,57 @@ export default function PendingPaymentsPanel({ eventId }: PendingPaymentsPanelPr
     }
   }, [fetchPending])
 
+  // Cleanup undo timer on unmount
+  useEffect(() => () => clearUndoTimer(), [])
+
+  const startUndoCountdown = (reg: PendingRegistration) => {
+    clearUndoTimer()
+    setUndo({ regId: reg.id, reg, secondsLeft: Math.ceil(UNDO_TTL_MS / 1000), restoringId: null })
+
+    undoTimerRef.current = setInterval(() => {
+      setUndo((prev) => {
+        if (!prev) return null
+        const next = prev.secondsLeft - 1
+        if (next <= 0) {
+          clearUndoTimer()
+          // Timer expired — permanently remove from list
+          setPending((p) => p.filter((r) => r.id !== prev.regId))
+          return null
+        }
+        return { ...prev, secondsLeft: next }
+      })
+    }, 1000)
+  }
+
+  const handleUndoCancel = async () => {
+    if (!undo) return
+    clearUndoTimer()
+    const { regId, reg } = undo
+    setUndo((prev) => (prev ? { ...prev, restoringId: regId } : null))
+    setError(null)
+
+    try {
+      const res = await fetch(`/api/events/${eventId}/registrations/${regId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'PAYMENT_PENDING' }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Failed to restore')
+      }
+      // Restore the row
+      setPending((prev) => {
+        if (prev.find((r) => r.id === regId)) return prev
+        return [reg, ...prev]
+      })
+      setUndo(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
+      setUndo(null)
+    }
+  }
+
   const handleMarkAsPaid = async (registrationId: string) => {
     setConfirmingId(registrationId)
     setPendingAction(null)
@@ -110,8 +179,6 @@ export default function PendingPaymentsPanel({ eventId }: PendingPaymentsPanelPr
     setError(null)
 
     try {
-      // PATCH the reg to CANCELLED — the registrations PATCH route handles
-      // PAYMENT_PENDING → CANCELLED transitions without touching spotsReserved.
       const res = await fetch(`/api/events/${eventId}/registrations/${registrationId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -121,8 +188,12 @@ export default function PendingPaymentsPanel({ eventId }: PendingPaymentsPanelPr
         const data = await res.json().catch(() => ({}))
         throw new Error(data.error || 'Failed to cancel')
       }
-      // Optimistic: remove from local state; next poll will reconcile anyway.
-      setPending((prev) => prev.filter((r) => r.id !== registrationId))
+      // Hide the row and start undo countdown instead of removing immediately
+      const reg = pending.find((r) => r.id === registrationId)
+      if (reg) {
+        setPending((prev) => prev.filter((r) => r.id !== registrationId))
+        startUndoCountdown(reg)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
@@ -136,12 +207,11 @@ export default function PendingPaymentsPanel({ eventId }: PendingPaymentsPanelPr
     else handleCancel(pendingAction.regId)
   }
 
-  // Don't render anything when there are no pending regs — avoids a permanent
-  // "0 pending" panel that adds visual noise on healthy events.
-  if (loading) return null
-  if (pending.length === 0) return null
-
   const isPayModal = pendingAction?.type === 'pay'
+
+  // Don't render anything when there are no pending regs AND no undo toast
+  if (loading) return null
+  if (pending.length === 0 && !undo) return null
 
   return (
     <>
@@ -167,6 +237,26 @@ export default function PendingPaymentsPanel({ eventId }: PendingPaymentsPanelPr
           {error && (
             <div className="mb-3 p-2 bg-red-100 border border-red-200 rounded text-xs text-red-800">
               {error}
+            </div>
+          )}
+
+          {/* Undo toast — shown after a cancel, before the countdown expires */}
+          {undo && (
+            <div className="mb-2 flex items-center gap-3 bg-gray-800 text-white rounded-lg px-3 py-2 text-sm">
+              <span className="flex-1 text-xs">ההזמנה בוטלה</span>
+              <button
+                onClick={handleUndoCancel}
+                disabled={undo.restoringId !== null}
+                className="flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-white text-gray-800
+                           rounded hover:bg-gray-100 disabled:opacity-50 transition-colors"
+              >
+                {undo.restoringId ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <RotateCcw className="w-3 h-3" />
+                )}
+                <span>בטל פעולה ({undo.secondsLeft})</span>
+              </button>
             </div>
           )}
 
@@ -237,7 +327,7 @@ export default function PendingPaymentsPanel({ eventId }: PendingPaymentsPanelPr
         description={
           isPayModal
             ? 'לסמן את ההזמנה כשולמה ידנית? השולחן יוקצה אוטומטית.'
-            : 'לבטל את ההזמנה הממתינה לתשלום? פעולה זו אינה הפיכה.'
+            : 'לבטל את ההזמנה הממתינה לתשלום? תוכל לבטל את הפעולה תוך 5 שניות.'
         }
         confirmText={isPayModal ? 'כן, שולם' : 'כן, בטל'}
         cancelText="חזור"
