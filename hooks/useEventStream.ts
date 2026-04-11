@@ -101,6 +101,10 @@ export function useEventStream(eventId: string, enabled: boolean = true): UseEve
       try {
         const res = await fetch(`/api/events/${eventId}/registrations`)
         if (!res.ok) {
+          console.warn('[PAYMENT_PENDING_TRACE][useEventStream] poll fetch !ok', {
+            eventId,
+            httpStatus: res.status,
+          })
           if (isMounted) setIsConnected(false)
           return
         }
@@ -121,10 +125,24 @@ export function useEventStream(eventId: string, enabled: boolean = true): UseEve
         ).length
         setStats({ confirmed, waitlist, cancelled, paymentPending })
 
+        console.log('[PAYMENT_PENDING_TRACE][useEventStream] poll stats', {
+          eventId,
+          total: registrations.length,
+          confirmed,
+          waitlist,
+          cancelled,
+          paymentPending,
+          firstPoll: !initializedRef.current,
+          pendingIds: registrations.filter((r) => r.status === 'PAYMENT_PENDING').map((r) => r.id),
+        })
+
         // On first poll, just record the known IDs (don't show them as "new")
         if (!initializedRef.current) {
           knownIdsRef.current = new Set(registrations.map((r: Registration) => r.id))
           initializedRef.current = true
+          console.log('[PAYMENT_PENDING_TRACE][useEventStream] initialized known IDs', {
+            count: knownIdsRef.current.size,
+          })
           return
         }
 
@@ -149,9 +167,16 @@ export function useEventStream(eventId: string, enabled: boolean = true): UseEve
           // a regular confirmation also arrived in the same poll — admin
           // attention should escalate, not dilute.
           const hasPending = brandNew.some((r: Registration) => r.status === 'PAYMENT_PENDING')
+          console.log('[PAYMENT_PENDING_TRACE][useEventStream] brand-new detected', {
+            brandNewCount: brandNew.length,
+            brandNewStatuses: brandNew.map((r) => r.status),
+            brandNewIds: brandNew.map((r) => r.id),
+            chime: hasPending ? 'pending' : 'normal',
+          })
           playChime(hasPending ? 'pending' : 'normal')
         }
-      } catch {
+      } catch (err) {
+        console.error('[PAYMENT_PENDING_TRACE][useEventStream] poll threw', err)
         if (isMounted) setIsConnected(false)
       }
     }

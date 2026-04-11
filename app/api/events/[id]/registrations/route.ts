@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentAdmin } from '@/lib/auth.server'
+import { logger } from '@/lib/logger-v2'
 
 /**
  * Lightweight registrations list endpoint for real-time polling.
@@ -58,13 +59,35 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       },
     })
 
+    // [PAYMENT_PENDING_TRACE] Log status breakdown on every poll — admins hit this every 3s
+    const breakdown: Record<string, number> = {}
+    for (const r of registrations) {
+      breakdown[r.status] = (breakdown[r.status] ?? 0) + 1
+    }
+    logger.info('[PAYMENT_PENDING_TRACE] Polling endpoint returned', {
+      source: 'registrations-poll',
+      eventId,
+      adminId: admin.adminId,
+      total: registrations.length,
+      statusBreakdown: breakdown,
+      statusFilter,
+      hasSearchQuery: !!searchQuery,
+      paymentPendingIds: registrations
+        .filter((r) => r.status === 'PAYMENT_PENDING')
+        .map((r) => r.id),
+    })
+
     return NextResponse.json({
       registrations: registrations.map((r) => ({
         ...r,
         createdAt: r.createdAt.toISOString(),
       })),
     })
-  } catch {
+  } catch (error) {
+    logger.error('[PAYMENT_PENDING_TRACE] Polling endpoint error', {
+      source: 'registrations-poll',
+      error,
+    })
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
