@@ -5,6 +5,7 @@ import TableBoardStats from './TableBoardStats'
 import TableBoardClient from './TableBoardClient'
 import TableBoardTabs from './TableBoardTabs'
 import WaitlistManager from './WaitlistManager'
+import PendingPaymentsPanel from './PendingPaymentsPanel'
 import type { TableRegistration } from './table-helpers'
 
 interface Table {
@@ -187,6 +188,9 @@ export default function TableBoardLiveWrapper({
   return (
     <div className="space-y-4">
       <TableBoardStats tables={localTables} waitlist={localWaitlist} stats={liveStats} />
+
+      {/* Pending payments — only renders when there's at least one PAYMENT_PENDING */}
+      <PendingPaymentsPanel eventId={eventId} />
 
       {liveStats.matchAvailable > 0 && (
         <div className="relative overflow-hidden bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-xl shadow-sm">

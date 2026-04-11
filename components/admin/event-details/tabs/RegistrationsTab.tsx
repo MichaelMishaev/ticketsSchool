@@ -196,14 +196,9 @@ export default function RegistrationsTab({
       })
     }
 
-    // Exclude PAYMENT_PENDING from "all" view — they are not real registrations yet
-    if (filterStatus === 'all') {
-      filtered = filtered.filter((r) => r.status !== 'PAYMENT_PENDING')
-    }
-
-    // Sort: CONFIRMED, WAITLIST, CANCELLED, PAYMENT_PENDING last (abandoned payment attempts)
+    // Sort: CONFIRMED, WAITLIST, PAYMENT_PENDING (needs attention), CANCELLED
     filtered = filtered.sort((a, b) => {
-      const statusOrder = { CONFIRMED: 0, WAITLIST: 1, CANCELLED: 2, PAYMENT_PENDING: 3 }
+      const statusOrder = { CONFIRMED: 0, WAITLIST: 1, PAYMENT_PENDING: 2, CANCELLED: 3 }
       return statusOrder[a.status] - statusOrder[b.status]
     })
 

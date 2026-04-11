@@ -22,6 +22,7 @@ import {
   UtensilsCrossed,
   Ban,
   FormInput,
+  CreditCard,
 } from 'lucide-react'
 
 interface TableDataWithId extends TableFormData {
@@ -54,7 +55,15 @@ export default function NewRestaurantEventPage() {
   // Step 4 data (Registration Fields)
   const [fieldsSchema, setFieldsSchema] = useState<FieldSchema[]>(defaultFields)
 
-  // Step 5 data (Cancellation)
+  // Step 5 data (Payment)
+  // paymentRequired=false means FREE (no charge); paymentTiming=UPFRONT is the
+  // only timing currently supported for table-based events, so we pin it.
+  const [paymentRequired, setPaymentRequired] = useState(false)
+  const [pricingModel, setPricingModel] = useState<'PER_GUEST' | 'FIXED_PRICE'>('PER_GUEST')
+  const [priceAmount, setPriceAmount] = useState<number | undefined>(undefined)
+  const [priceInput, setPriceInput] = useState('')
+
+  // Step 6 data (Cancellation)
   const [allowCancellation, setAllowCancellation] = useState(true)
   const [deadlineHours, setDeadlineHours] = useState(2)
   const [deadlineHoursInput, setDeadlineHoursInput] = useState('2')
@@ -65,6 +74,7 @@ export default function NewRestaurantEventPage() {
     { id: 'timing', title: 'תזמון', description: 'תאריכים ושעות' },
     { id: 'tables', title: 'שולחנות', description: 'ניהול שולחנות' },
     { id: 'fields', title: 'שדות רישום', description: 'מידע מהלקוחות' },
+    { id: 'payment', title: 'תשלום', description: 'מחיר והזמנה' },
     { id: 'cancellation', title: 'ביטולים', description: 'מדיניות ביטול' },
   ]
 
@@ -113,7 +123,11 @@ export default function NewRestaurantEventPage() {
         const hasPhone = fieldsSchema.some((f) => f.name === 'phone' && f.required)
         const hasName = fieldsSchema.some((f) => f.name === 'name' && f.required)
         return hasPhone && hasName
-      case 4: // Cancellation
+      case 4: // Payment
+        // If charging, a positive price is required. Otherwise (FREE) always valid.
+        if (!paymentRequired) return true
+        return priceAmount !== undefined && priceAmount > 0
+      case 5: // Cancellation
         return true // Optional settings
       default:
         return true
@@ -144,6 +158,9 @@ export default function NewRestaurantEventPage() {
           break
         case 3: // Registration Fields
           addToast('חובה לכלול שדות "שם מלא" ו"טלפון" כשדות חובה', 'error')
+          break
+        case 4: // Payment
+          addToast('יש להזין מחיר תקין גדול מ-0', 'error')
           break
         default:
           addToast('אנא השלם את כל השדות הנדרשים', 'error')
@@ -414,6 +431,13 @@ export default function NewRestaurantEventPage() {
           capacity: 0, // Not used for table-based, but required by schema
           maxSpotsPerPerson: 1, // Not used for table-based
           fieldsSchema: fieldsSchema, // Custom registration fields with required phone + name
+          // Payment — TABLE_BASED currently only supports UPFRONT timing so
+          // we pin it here. If paymentRequired=false we leave it FREE.
+          paymentRequired,
+          paymentTiming: paymentRequired ? 'UPFRONT' : 'OPTIONAL',
+          pricingModel: paymentRequired ? pricingModel : 'FREE',
+          priceAmount: paymentRequired ? priceAmount : null,
+          currency: 'ILS',
         }),
       })
 
@@ -852,6 +876,174 @@ export default function NewRestaurantEventPage() {
         )
 
       case 4:
+        return (
+          <motion.div
+            key="step-payment"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-6"
+          >
+            <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-200">
+              <div className="flex items-center gap-2 mb-6">
+                <CreditCard className="w-6 h-6 text-purple-600" />
+                <h2 className="text-xl font-bold text-gray-900">תשלום והזמנה</h2>
+              </div>
+
+              <p className="text-sm text-gray-600 mb-6">
+                בחר האם לגבות תשלום מראש מהמזמינים. התשלום יתבצע דרך HYP לפני ששולחן משובץ;
+                אם אין שולחן פנוי שמתאים, ההזמנה תועבר לרשימת המתנה עם תשלום בוצע ותוכל לשבץ
+                ידנית מאוחר יותר.
+              </p>
+
+              <div className="space-y-4 mb-6">
+                {/* FREE card */}
+                <label
+                  className={`block border-2 rounded-xl p-4 cursor-pointer transition-all ${
+                    !paymentRequired
+                      ? 'border-purple-500 bg-purple-50 shadow-sm'
+                      : 'border-gray-200 bg-white hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="radio"
+                      name="restaurantPaymentMode"
+                      checked={!paymentRequired}
+                      onChange={() => setPaymentRequired(false)}
+                      className="mt-1 w-5 h-5 text-purple-600"
+                    />
+                    <div className="flex-1">
+                      <div className="font-bold text-gray-900">חינם (ללא תשלום)</div>
+                      <div className="text-sm text-gray-600 mt-1">
+                        ההזמנה תתבצע ללא חיוב. שולחן ישובץ אוטומטית בזמן ההזמנה.
+                      </div>
+                    </div>
+                  </div>
+                </label>
+
+                {/* UPFRONT card */}
+                <label
+                  className={`block border-2 rounded-xl p-4 cursor-pointer transition-all ${
+                    paymentRequired
+                      ? 'border-purple-500 bg-purple-50 shadow-sm'
+                      : 'border-gray-200 bg-white hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="radio"
+                      name="restaurantPaymentMode"
+                      checked={paymentRequired}
+                      onChange={() => setPaymentRequired(true)}
+                      className="mt-1 w-5 h-5 text-purple-600"
+                    />
+                    <div className="flex-1">
+                      <div className="font-bold text-gray-900">
+                        תשלום מראש (UPFRONT)
+                      </div>
+                      <div className="text-sm text-gray-600 mt-1">
+                        המזמין מופנה ל-HYP לתשלום לפני ששולחן משובץ. אם אין שולחן פנוי, ההזמנה
+                        נכנסת לרשימת המתנה עם תשלום בוצע.
+                      </div>
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              {/* Pricing model + price input — only when charging */}
+              {paymentRequired && (
+                <div className="space-y-4 border-t border-gray-200 pt-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      מודל תמחור
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setPricingModel('PER_GUEST')}
+                        className={`px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all ${
+                          pricingModel === 'PER_GUEST'
+                            ? 'border-purple-500 bg-purple-50 text-purple-900'
+                            : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                        }`}
+                      >
+                        מחיר לאורח
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPricingModel('FIXED_PRICE')}
+                        className={`px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all ${
+                          pricingModel === 'FIXED_PRICE'
+                            ? 'border-purple-500 bg-purple-50 text-purple-900'
+                            : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                        }`}
+                      >
+                        מחיר קבוע להזמנה
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      {pricingModel === 'PER_GUEST'
+                        ? 'המחיר יוכפל במספר האורחים בהזמנה (לדוגמה: 100 ₪ × 4 אורחים = 400 ₪).'
+                        : 'מחיר קבוע לכל הזמנה, ללא תלות במספר האורחים.'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="restaurantPriceAmount"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      מחיר {pricingModel === 'PER_GUEST' ? 'לאורח' : 'להזמנה'}{' '}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-lg text-gray-500 pointer-events-none">
+                        ₪
+                      </span>
+                      <input
+                        id="restaurantPriceAmount"
+                        type="text"
+                        inputMode="decimal"
+                        value={priceInput}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/[^\d.]/g, '')
+                          setPriceInput(raw)
+                          const num = parseFloat(raw)
+                          if (!isNaN(num)) {
+                            const clamped = Math.max(0, Math.min(100000, num))
+                            setPriceAmount(clamped || undefined)
+                          } else if (raw === '') {
+                            setPriceAmount(undefined)
+                          }
+                        }}
+                        onBlur={() => {
+                          if (priceInput !== '' && priceAmount !== undefined) {
+                            setPriceInput(priceAmount.toFixed(2))
+                          }
+                        }}
+                        onFocus={handleNumberFocus}
+                        className="w-full pl-4 pr-12 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-gray-900 bg-white"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    {priceAmount !== undefined && priceAmount > 0 && (
+                      <div className="mt-3 bg-green-50 border-2 border-green-200 rounded-lg p-3">
+                        <p className="text-sm text-green-800 font-medium">
+                          💰 מחיר מוצג:{' '}
+                          <span className="text-lg">₪{priceAmount.toFixed(2)}</span>
+                          {pricingModel === 'PER_GUEST' && ' לאורח'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )
+
+      case 5:
         return (
           <motion.div
             key="step-cancellation"

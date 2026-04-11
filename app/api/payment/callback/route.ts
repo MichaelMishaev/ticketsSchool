@@ -7,6 +7,7 @@ import { format } from 'date-fns'
 import { he } from 'date-fns/locale'
 import { Decimal } from '@prisma/client/runtime/library'
 import { paymentLogger } from '@/lib/logger-v2'
+import { findSmallestFitTable } from '@/lib/table-assignment'
 
 /**
  * Parse callback parameters from GET (query string) or POST (form body) request.
@@ -271,8 +272,9 @@ async function handleCallback(request: NextRequest) {
             },
           })
 
-          // CRITICAL: Check capacity BEFORE finalizing registration
-          // Fetch current event state within transaction for atomic capacity check
+          // CRITICAL: Check capacity / table availability BEFORE finalizing
+          // registration. Fetch current event state inside the transaction so
+          // the scarce-resource check (capacity spots OR table) is atomic.
           const currentEvent = await tx.event.findUnique({
             where: { id: payment.eventId },
             select: { capacity: true, spotsReserved: true, eventType: true },
@@ -282,14 +284,16 @@ async function handleCallback(request: NextRequest) {
             throw new Error('Event not found in transaction')
           }
 
-          // Determine final registration status based on capacity (CAPACITY_BASED events only)
-          // PAYMENT_PENDING is the new initial state; treat it (and CANCELLED) as needing evaluation
+          // Determine final registration status. PAYMENT_PENDING is the new
+          // initial state; treat it (and CANCELLED) as "needs evaluation".
           let finalStatus: 'CONFIRMED' | 'WAITLIST' =
             payment.registration.status === 'PAYMENT_PENDING' ||
             payment.registration.status === 'CANCELLED'
               ? 'CONFIRMED'
               : (payment.registration.status as 'CONFIRMED' | 'WAITLIST')
           let shouldIncrementSpots = false
+          let assignedTableId: string | null = null
+          let waitlistPriority: number | null = null
 
           if (currentEvent.eventType === 'CAPACITY_BASED') {
             const spotsAvailable = currentEvent.capacity - currentEvent.spotsReserved
@@ -303,23 +307,76 @@ async function handleCallback(request: NextRequest) {
               finalStatus = 'WAITLIST'
               shouldIncrementSpots = false
             }
+          } else if (currentEvent.eventType === 'TABLE_BASED') {
+            // TABLE_BASED: the scarce resource is a table, not a spots counter.
+            // We deliberately did NOT pre-assign a table in /api/payment/create —
+            // multiple paying users could legitimately race for the same table,
+            // and the callback (inside a Serializable tx) is where the winner
+            // is decided. Losers fall back to WAITLIST with paymentStatus=COMPLETED
+            // so the money is captured and admins can manually re-assign.
+            const guestsCount = payment.registration.guestsCount ?? 0
+            if (guestsCount < 1) {
+              throw new Error('TABLE_BASED registration missing guestsCount')
+            }
+
+            const table = await findSmallestFitTable(tx, payment.eventId, guestsCount)
+
+            if (table) {
+              finalStatus = 'CONFIRMED'
+              assignedTableId = table.id
+              // Flip table status *after* the registration update below.
+              // Two-write ordering matches lib/table-assignment.ts so concurrent
+              // readers never see a RESERVED table with zero registrations.
+            } else {
+              finalStatus = 'WAITLIST'
+              // Assign waitlist priority (append to end of queue)
+              const waitlistCount = await tx.registration.count({
+                where: { eventId: payment.eventId, status: 'WAITLIST' },
+              })
+              waitlistPriority = waitlistCount + 1
+              paymentLogger.warn(
+                '[TABLE_PAYMENT] No smallest-fit table — moving paid reg to WAITLIST',
+                {
+                  registrationId: payment.registrationId,
+                  eventId: payment.eventId,
+                  guestsCount,
+                  waitlistPriority,
+                }
+              )
+            }
           }
 
-          // Update registration payment status and final status
+          // Update registration payment status and final status. For TABLE_BASED
+          // hits, include tableId + (if waitlisted) waitlistPriority in the same
+          // write so the DB never reflects a half-applied assignment.
           const updatedRegistration = await tx.registration.update({
             where: { id: payment.registrationId },
             data: {
               paymentStatus: 'COMPLETED',
               amountPaid: validation.amount || payment.amount,
-              status: finalStatus, // May change to WAITLIST if capacity exceeded
+              status: finalStatus, // May change to WAITLIST if capacity/table exhausted
+              ...(assignedTableId !== null ? { tableId: assignedTableId } : {}),
+              ...(waitlistPriority !== null ? { waitlistPriority } : {}),
             },
           })
 
-          // Atomically increment event.spotsReserved ONLY if confirmed
+          // Atomically increment event.spotsReserved ONLY for CAPACITY_BASED.
+          // TABLE_BASED events use `tableId` as the scarce-resource marker —
+          // spotsReserved is meaningless for them and must not be touched.
           if (shouldIncrementSpots) {
             await tx.event.update({
               where: { id: payment.eventId },
               data: { spotsReserved: { increment: updatedRegistration.spotsCount } },
+            })
+          }
+
+          // TABLE_BASED: flip table to RESERVED *after* the registration update
+          // above. The Serializable isolation level guarantees no other paying
+          // user can have claimed this table in between.
+          if (assignedTableId) {
+            await tx.table.update({
+              where: { id: assignedTableId },
+              data: { status: 'RESERVED' },
             })
           }
 

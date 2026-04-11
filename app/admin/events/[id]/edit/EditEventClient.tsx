@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowRight, Plus, Save } from 'lucide-react'
+import { ArrowRight, Plus, Save, CreditCard } from 'lucide-react'
 import TableFormModal, { TableFormData } from '@/components/admin/TableFormModal'
 import TableCard from '@/components/admin/TableCard'
 import type { TableRegistration } from '@/components/admin/table-helpers'
@@ -18,16 +18,28 @@ interface Table {
   registrations: TableRegistration[]
 }
 
+// Pricing model for table events. FIXED_PRICE charges per reservation;
+// PER_GUEST multiplies by guestsCount at payment time.
+type PricingModel = 'FREE' | 'FIXED_PRICE' | 'PER_GUEST'
+
+interface InitialPayment {
+  paymentRequired: boolean
+  pricingModel: PricingModel
+  priceAmount: number | null
+}
+
 interface EditEventClientProps {
   eventId: string
   eventTitle: string
   initialTables: Table[]
+  initialPayment: InitialPayment
 }
 
 export default function EditEventClient({
   eventId,
   eventTitle,
   initialTables,
+  initialPayment,
 }: EditEventClientProps) {
   const router = useRouter()
   const [tables, setTables] = useState<Table[]>(initialTables)
@@ -36,6 +48,73 @@ export default function EditEventClient({
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  // ─── Payment settings state ──────────────────────────────────────────────
+  // Keep a local copy of the last saved value so the "dirty" check can
+  // disable the Save button when nothing changed. We intentionally do NOT
+  // bundle payment saves into the table CRUD handlers — it's a separate
+  // PATCH to /api/events/[id] so admins can save payment independently.
+  const [paymentRequired, setPaymentRequired] = useState(initialPayment.paymentRequired)
+  const [pricingModel, setPricingModel] = useState<'PER_GUEST' | 'FIXED_PRICE'>(
+    initialPayment.pricingModel === 'FIXED_PRICE' ? 'FIXED_PRICE' : 'PER_GUEST'
+  )
+  const [priceAmount, setPriceAmount] = useState<number | undefined>(
+    initialPayment.priceAmount ?? undefined
+  )
+  const [priceInput, setPriceInput] = useState(
+    initialPayment.priceAmount != null ? initialPayment.priceAmount.toFixed(2) : ''
+  )
+  const [savedPayment, setSavedPayment] = useState<InitialPayment>(initialPayment)
+  const [isSavingPayment, setIsSavingPayment] = useState(false)
+
+  // Dirty check — enables the Save button only when something actually changed.
+  const paymentIsDirty =
+    paymentRequired !== savedPayment.paymentRequired ||
+    (paymentRequired &&
+      (pricingModel !==
+        (savedPayment.pricingModel === 'FIXED_PRICE' ? 'FIXED_PRICE' : 'PER_GUEST') ||
+        (priceAmount ?? null) !== savedPayment.priceAmount))
+
+  const paymentIsValid = !paymentRequired || (priceAmount !== undefined && priceAmount > 0)
+
+  const handleSavePayment = async () => {
+    if (!paymentIsValid) {
+      setError('יש להזין מחיר תקין גדול מ-0')
+      return
+    }
+    setIsSavingPayment(true)
+    setError(null)
+
+    try {
+      const body = {
+        paymentRequired,
+        // TABLE_BASED currently only supports UPFRONT when charging, else OPTIONAL/FREE
+        paymentTiming: paymentRequired ? 'UPFRONT' : 'OPTIONAL',
+        pricingModel: paymentRequired ? pricingModel : 'FREE',
+        priceAmount: paymentRequired ? priceAmount : null,
+      }
+      const response = await fetch(`/api/events/${eventId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to save payment settings')
+      }
+      setSavedPayment({
+        paymentRequired,
+        pricingModel: paymentRequired ? pricingModel : 'FREE',
+        priceAmount: paymentRequired ? (priceAmount ?? null) : null,
+      })
+      setSuccessMessage('הגדרות התשלום נשמרו בהצלחה')
+      setTimeout(() => setSuccessMessage(null), 3000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
+    } finally {
+      setIsSavingPayment(false)
+    }
+  }
 
   // Add new table
   const handleAddTable = async (formData: TableFormData) => {
@@ -257,6 +336,129 @@ export default function EditEventClient({
             <p className="text-green-800 text-sm">{successMessage}</p>
           </div>
         )}
+
+        {/* Payment Settings Card */}
+        <div className="mb-6 bg-white shadow rounded-xl p-6 border border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-purple-600" />
+              <h2 className="text-lg font-bold text-gray-900">הגדרות תשלום</h2>
+            </div>
+            <button
+              onClick={handleSavePayment}
+              disabled={!paymentIsDirty || !paymentIsValid || isSavingPayment}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+            >
+              <Save className="w-4 h-4" />
+              {isSavingPayment ? 'שומר...' : 'שמור תשלום'}
+            </button>
+          </div>
+
+          <p className="text-sm text-gray-600 mb-4">
+            כאשר התשלום מופעל, המזמינים יופנו ל-HYP לתשלום לפני ששולחן משובץ. אם אין שולחן פנוי,
+            ההזמנה תועבר לרשימת המתנה עם תשלום בוצע.
+          </p>
+
+          <div className="space-y-3 mb-4">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="radio"
+                name="paymentMode"
+                checked={!paymentRequired}
+                onChange={() => setPaymentRequired(false)}
+                className="w-4 h-4 text-purple-600"
+              />
+              <span className="text-sm text-gray-900">חינם (ללא תשלום)</span>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="radio"
+                name="paymentMode"
+                checked={paymentRequired}
+                onChange={() => setPaymentRequired(true)}
+                className="w-4 h-4 text-purple-600"
+              />
+              <span className="text-sm text-gray-900">תשלום מראש (UPFRONT)</span>
+            </label>
+          </div>
+
+          {paymentRequired && (
+            <div className="space-y-4 border-t border-gray-200 pt-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-2">מודל תמחור</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPricingModel('PER_GUEST')}
+                    className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
+                      pricingModel === 'PER_GUEST'
+                        ? 'border-purple-500 bg-purple-50 text-purple-900'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    מחיר לאורח
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPricingModel('FIXED_PRICE')}
+                    className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
+                      pricingModel === 'FIXED_PRICE'
+                        ? 'border-purple-500 bg-purple-50 text-purple-900'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    מחיר קבוע להזמנה
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="editPriceAmount"
+                  className="block text-xs font-medium text-gray-700 mb-2"
+                >
+                  מחיר {pricingModel === 'PER_GUEST' ? 'לאורח' : 'להזמנה'}{' '}
+                  <span className="text-red-500">*</span>
+                </label>
+                <div className="relative max-w-xs">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                    ₪
+                  </span>
+                  <input
+                    id="editPriceAmount"
+                    type="text"
+                    inputMode="decimal"
+                    value={priceInput}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^\d.]/g, '')
+                      setPriceInput(raw)
+                      const num = parseFloat(raw)
+                      if (!isNaN(num)) {
+                        const clamped = Math.max(0, Math.min(100000, num))
+                        setPriceAmount(clamped || undefined)
+                      } else if (raw === '') {
+                        setPriceAmount(undefined)
+                      }
+                    }}
+                    onBlur={() => {
+                      if (priceInput !== '' && priceAmount !== undefined) {
+                        setPriceInput(priceAmount.toFixed(2))
+                      }
+                    }}
+                    className="w-full pl-4 pr-10 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-gray-900 bg-white text-sm"
+                    placeholder="0.00"
+                  />
+                </div>
+                {priceAmount !== undefined && priceAmount > 0 && (
+                  <p className="text-xs text-gray-600 mt-2">
+                    מחיר מוצג: <span className="font-bold">₪{priceAmount.toFixed(2)}</span>
+                    {pricingModel === 'PER_GUEST' && ' לאורח'}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Tables Grid */}
         {tables.length === 0 ? (
