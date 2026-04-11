@@ -52,6 +52,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         id: true,
         status: true,
         spotsCount: true,
+        // TABLE_BASED events use guestsCount. PAYMENT_PENDING panel consumes
+        // this for TABLE events where spotsCount is null.
+        guestsCount: true,
         phoneNumber: true,
         data: true,
         confirmationCode: true,

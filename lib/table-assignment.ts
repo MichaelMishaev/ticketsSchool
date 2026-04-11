@@ -1,6 +1,38 @@
 import { prisma, Prisma } from '@/lib/prisma'
+import type { PrismaClient } from '@prisma/client'
 import jwt from 'jsonwebtoken'
 import { generateQRCodeData } from '@/lib/qr-code'
+
+/**
+ * Shared transaction type that accepts either a full PrismaClient or a
+ * transactional tx client. Used so both the public register path and the
+ * payment callback path can find a smallest-fit table using the same
+ * source-of-truth query.
+ */
+type TxClient = Prisma.TransactionClient | PrismaClient
+
+/**
+ * Find the smallest AVAILABLE table that fits `guestsCount` and whose
+ * minOrder is met. Returns null when nothing fits.
+ *
+ * SMALLEST_FIT ordering intentionally picks the tightest-capacity table so
+ * large tables stay available for larger parties. `minOrder` is only a gate
+ * for empty tables — this function assumes the caller wants to allocate a
+ * whole empty table (public booking & paid flows), which is consistent with
+ * `reserveTableForGuests`. Admins who want to share an already-occupied
+ * table go through a different code path.
+ */
+export async function findSmallestFitTable(tx: TxClient, eventId: string, guestsCount: number) {
+  return tx.table.findFirst({
+    where: {
+      eventId,
+      status: 'AVAILABLE',
+      capacity: { gte: guestsCount }, // Must fit the group
+      minOrder: { lte: guestsCount }, // Group meets the table's minimum
+    },
+    orderBy: { capacity: 'asc' }, // SMALLEST first
+  })
+}
 
 export async function reserveTableForGuests(
   eventId: string,
@@ -17,16 +49,10 @@ export async function reserveTableForGuests(
 
   return await prisma.$transaction(
     async (tx) => {
-      // Find smallest fitting table (SMALLEST_FIT)
-      const table = await tx.table.findFirst({
-        where: {
-          eventId,
-          status: 'AVAILABLE',
-          capacity: { gte: guestsCount }, // Must fit group
-          minOrder: { lte: guestsCount }, // Group meets minimum
-        },
-        orderBy: { capacity: 'asc' }, // SMALLEST first
-      })
+      // Find smallest fitting table (SMALLEST_FIT) via shared helper so
+      // this query stays identical between the public register path and
+      // the payment callback path.
+      const table = await findSmallestFitTable(tx, eventId, guestsCount)
 
       // No table → WAITLIST
       if (!table) {

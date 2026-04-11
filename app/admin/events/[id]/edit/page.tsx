@@ -59,7 +59,23 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
       })),
     }))
 
-    return <EditEventClient eventId={event.id} eventTitle={event.title} initialTables={tables} />
+    // Payment settings for the upfront-payment UI card. TABLE_BASED events
+    // currently only support UPFRONT timing (or FREE), so the client pins
+    // paymentTiming when paymentRequired flips on.
+    const initialPayment = {
+      paymentRequired: event.paymentRequired,
+      pricingModel: event.pricingModel,
+      priceAmount: event.priceAmount ? Number(event.priceAmount) : null,
+    }
+
+    return (
+      <EditEventClient
+        eventId={event.id}
+        eventTitle={event.title}
+        initialTables={tables}
+        initialPayment={initialPayment}
+      />
+    )
   } else {
     // CAPACITY_BASED event - edit event details
     // Convert dates to datetime-local format for form inputs

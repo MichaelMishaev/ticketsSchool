@@ -6,6 +6,7 @@ import { Decimal } from '@prisma/client/runtime/library'
 import { rateLimit } from '@/lib/rate-limiter'
 import { encryptPhone, encryptEmail } from '@/lib/encryption'
 import { paymentLogger } from '@/lib/logger-v2'
+import { findSmallestFitTable } from '@/lib/table-assignment'
 
 const paymentLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
@@ -150,6 +151,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'האירוע חינמי, תשלום לא נדרש' }, { status: 400 })
     } else {
       return NextResponse.json({ error: 'מודל תמחור לא תקין' }, { status: 400 })
+    }
+
+    // TABLE_BASED advisory feasibility check — before charging the user,
+    // verify at least one AVAILABLE table can fit the requested guest count.
+    // This is ADVISORY (not race-safe): two users can pass the check
+    // concurrently, then one wins the table at callback time and the other
+    // is moved to WAITLIST with paymentStatus=COMPLETED. The point is to
+    // reject obviously-hopeless attempts (event with 0 tables, or party of
+    // 10 when max capacity is 4) so the guest isn't billed for nothing.
+    if (event.eventType === 'TABLE_BASED') {
+      const guestsCount = Number(registrationData.guestsCount)
+      if (!guestsCount || guestsCount < 1) {
+        return NextResponse.json({ error: 'מספר אורחים לא תקין' }, { status: 400 })
+      }
+
+      const feasibleTable = await findSmallestFitTable(prisma, event.id, guestsCount)
+      if (!feasibleTable) {
+        paymentLogger.warn('[TABLE_PAYMENT] Feasibility check failed — no fitting table', {
+          eventId: event.id,
+          guestsCount,
+        })
+        return NextResponse.json(
+          { error: 'אין כרגע שולחן פנוי שמתאים למספר האורחים המבוקש' },
+          { status: 400 }
+        )
+      }
     }
 
     // Normalize phone number (Israeli format)
