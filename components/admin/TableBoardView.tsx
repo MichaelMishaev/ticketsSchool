@@ -71,8 +71,11 @@ async function getTableBoardData(eventId: string) {
   const waitlistWithMatches = waitlist.map((entry, index) => {
     const guestCount = entry.guestsCount || 0
 
-    // Show all tables that fit within capacity (admin can override minimum with confirmation)
-    const matchingTables = availableTables.filter((table) => guestCount <= table.capacity)
+    // Only match tables where guest count satisfies both minOrder (empty table gate) and capacity.
+    // AVAILABLE tables are always empty, so minOrder is always enforced here.
+    const matchingTables = availableTables.filter(
+      (table) => guestCount >= table.minOrder && guestCount <= table.capacity
+    )
 
     // Best table is the one that meets minimum AND has closest capacity (best fit)
     let bestTable: (typeof matchingTables)[0] | null = null
@@ -88,13 +91,7 @@ async function getTableBoardData(eventId: string) {
           return gapA - gapB // Smallest gap first (best fit)
         })
 
-      bestTable =
-        sortedTables[0] ||
-        matchingTables.sort((a, b) => {
-          const gapA = a.capacity - guestCount
-          const gapB = b.capacity - guestCount
-          return gapA - gapB
-        })[0] // Fallback to best fit if none meet minimum
+      bestTable = sortedTables[0] || null
 
       // Check if this table is a better fit for a higher-priority entry
       // If so, don't recommend it to this entry
@@ -106,8 +103,8 @@ async function getTableBoardData(eventId: string) {
           const higherPriorityEntry = waitlist[i]
           const higherGuestCount = higherPriorityEntry.guestsCount || 0
 
-          // Check if this table fits the higher-priority entry
-          if (higherGuestCount <= bestTable.capacity) {
+          // Check if this table fits the higher-priority entry (minOrder + capacity)
+          if (higherGuestCount >= bestTable.minOrder && higherGuestCount <= bestTable.capacity) {
             const higherGap = bestTable.capacity - higherGuestCount
 
             // If higher-priority entry has a better or equal fit, don't recommend this table

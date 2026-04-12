@@ -61,7 +61,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       ...table,
       hasWaitlistMatch:
         table.status === 'AVAILABLE' &&
-        waitlistRegistrations.some((w) => (w.guestsCount ?? 0) <= table.capacity),
+        waitlistRegistrations.some((w) => {
+          const guests = w.guestsCount ?? 0
+          return guests >= table.minOrder && guests <= table.capacity
+        }),
     }))
 
     return NextResponse.json({ tables: tablesWithDerived })
