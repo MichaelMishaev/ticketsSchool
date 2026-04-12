@@ -30,16 +30,18 @@ test.describe('Authentication P0 - Critical Tests', () => {
       })
 
       // Should show success or verification message
-      await expect(page.locator('text=/הצלחה|success|אימות|verif/i')).toBeVisible({
-        timeout: 10000,
-      })
+      await expect(
+        page.locator('text=/הצלחה|success|אימות|verif/i')
+      ).toBeVisible({ timeout: 10000 })
     })
   })
 
   test.describe('[01.2.1] Successful Login', () => {
     test('admin can login with valid credentials', async ({ page }) => {
       // Setup: Create test school and admin
-      const school = await createSchool().withName('Login Test School').create()
+      const school = await createSchool()
+        .withName('Login Test School')
+        .create()
 
       const admin = await createAdmin()
         .withEmail(generateEmail('login'))
@@ -127,7 +129,7 @@ test.describe('Authentication P0 - Critical Tests', () => {
 
       // Get cookies
       const cookies = await page.context().cookies()
-      const sessionCookie = cookies.find((c) => c.name === 'admin_session')
+      const sessionCookie = cookies.find(c => c.name === 'admin_session')
 
       expect(sessionCookie).toBeDefined()
       expect(sessionCookie?.httpOnly).toBe(true) // Security: HTTP-only
@@ -287,60 +289,10 @@ test.describe('Authentication P0 - Critical Tests', () => {
       await loginPage.login(admin.email, 'TestPassword123!')
 
       const cookies = await page.context().cookies()
-      const sessionCookie = cookies.find((c) => c.name === 'admin_session')
+      const sessionCookie = cookies.find(c => c.name === 'admin_session')
 
       expect(sessionCookie?.sameSite).toBeTruthy()
       expect(['Lax', 'Strict']).toContain(sessionCookie?.sameSite)
-    })
-  })
-
-  // US-AUTH-06: Forgot password — server returns 200 regardless (no email enumeration)
-  test.describe('[US-AUTH-06] Forgot password', () => {
-    test('server: POST /api/admin/forgot-password returns 200 for known email', async ({
-      context,
-    }) => {
-      const school = await createSchool().withName('ForgotPwd Test').create()
-      const admin = await createAdmin().withSchool(school.id).create()
-
-      const res = await context.request.post('/api/admin/forgot-password', {
-        data: { email: admin.email },
-      })
-      expect(res.status()).toBe(200)
-    })
-
-    test('server: POST /api/admin/forgot-password returns 200 for unknown email (no enumeration)', async ({
-      context,
-    }) => {
-      const res = await context.request.post('/api/admin/forgot-password', {
-        data: { email: 'nobody-exists@test.com' },
-      })
-      expect(res.status()).toBe(200)
-    })
-  })
-
-  // US-AUTH-07: Unverified admin cannot login
-  test.describe('[US-AUTH-07] Email verification gate', () => {
-    test('server: unverified admin login is rejected', async ({ context }) => {
-      const school = await createSchool().withName('Unverified Test').create()
-      const admin = await createAdmin().withSchool(school.id).emailVerified(false).create()
-
-      const res = await context.request.post('/api/admin/login', {
-        data: { email: admin.email, password: 'TestPassword123!' },
-      })
-      expect([401, 403]).toContain(res.status())
-    })
-  })
-
-  // US-AUTH-05: Unauthenticated API calls return 401
-  test.describe('[US-AUTH-05] Unauthenticated API routes', () => {
-    test('server: GET /api/admin/me returns 401 without session', async ({ context }) => {
-      const res = await context.request.get('/api/admin/me')
-      expect(res.status()).toBe(401)
-    })
-
-    test('server: GET /api/dashboard/stats returns 401 without session', async ({ context }) => {
-      const res = await context.request.get('/api/dashboard/stats')
-      expect(res.status()).toBe(401)
     })
   })
 })

@@ -48,18 +48,18 @@ export default function CompactShareCards({
       {/* Compact Share Cards - Side by side on desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4" dir="rtl">
         {/* Registration Share Card - Compact */}
-        <div className="group relative h-full">
+        <div className="group relative">
           {/* Gradient accent line */}
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-t-xl" />
 
-          <div className="relative h-full bg-white rounded-xl border-2 border-gray-200/80 shadow-md flex flex-col pt-1 hover:shadow-xl transition-all duration-300 overflow-hidden">
-            <div className="p-5 flex flex-col h-full">
-              {/* Header (flex-1 to push buttons to the bottom) */}
-              <div className="flex-1 flex items-start gap-3 mb-4">
+          <div className="relative bg-white rounded-xl border-2 border-gray-200/80 shadow-md overflow-hidden pt-1 hover:shadow-xl transition-all duration-300">
+            <div className="p-5">
+              {/* Header */}
+              <div className="flex items-center gap-3 mb-4">
                 <div className="p-2 bg-blue-50 rounded-lg border border-blue-200 flex-shrink-0">
                   <Users className="w-5 h-5 text-blue-600" />
                 </div>
-                <div className="flex-1 min-w-0 pt-0.5">
+                <div className="flex-1 min-w-0">
                   <h3 className="text-base font-bold text-gray-900">קישור הרשמה</h3>
                   <p className="text-xs text-gray-600">שתף כדי שמשתתפים יירשמו</p>
                 </div>
@@ -101,41 +101,27 @@ export default function CompactShareCards({
         </div>
 
         {/* Check-In Share Card - Compact */}
-        <div className="group relative h-full">
+        <div className="group relative">
           {/* Gradient accent line */}
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 via-cyan-500 to-emerald-500 rounded-t-xl" />
 
-          <div className="relative h-full bg-white rounded-xl border-2 border-gray-200/80 shadow-md flex flex-col pt-1 hover:shadow-xl transition-all duration-300 overflow-hidden">
+          <div className="relative bg-white rounded-xl border-2 border-gray-200/80 shadow-md overflow-hidden pt-1 hover:shadow-xl transition-all duration-300">
             {loading ? (
-              <div className="p-5 animate-pulse flex flex-col h-full justify-center">
+              <div className="p-5 animate-pulse">
                 <div className="h-6 bg-gray-200 rounded w-32 mb-3" />
                 <div className="h-4 bg-gray-100 rounded w-48 mb-4" />
-                <div className="h-10 bg-gray-100 rounded-lg mt-auto" />
+                <div className="h-10 bg-gray-100 rounded-lg" />
               </div>
             ) : (
-              <div className="p-5 flex flex-col h-full">
-                {/* Header (flex-1 to push buttons to the bottom) */}
-                <div className="flex-1 flex items-start gap-3 mb-4">
-                  <div className="p-2 bg-teal-50 rounded-lg border border-teal-200 flex-shrink-0 mt-1">
+              <div className="p-5">
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-teal-50 rounded-lg border border-teal-200 flex-shrink-0">
                     <UserCheck className="w-5 h-5 text-teal-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                      <h3 className="text-base font-bold text-gray-900 leading-none">
-                        קישור סריקת כרטיסים
-                      </h3>
-                      <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-bold rounded-md border border-amber-200 leading-none shadow-sm whitespace-nowrap">
-                        לא חובה (רשות)
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-gray-600 leading-tight mb-2">
-                      שתף את הקישור רק במקרה שבו אדם אחר יסרוק קודי QR בכניסה לאירוע או יסמן ידנית
-                      מי הגיע.
-                    </p>
-                    <div className="inline-flex items-center gap-1.5 bg-teal-50 text-teal-700 text-[10.5px] font-medium px-2 py-1 rounded-md border border-teal-100 mt-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-teal-500 flex-shrink-0" />
-                      שימו לב: עמוד הסריקה ייפתח לפעילות רק ביום האירוע
-                    </div>
+                    <h3 className="text-base font-bold text-gray-900"> קישור אישורי הגעה</h3>
+                    <p className="text-xs text-gray-600">שלח לאדם שיבדוק נוכחות</p>
                   </div>
                 </div>
 

@@ -3,11 +3,10 @@
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import { MessageSquare, Trash2, Check, Eye, X, Shield } from 'lucide-react'
-import DevFeatureLabel from '@/components/dev/DevFeatureLabel'
 import { useRouter } from 'next/navigation'
 
 type Feedback = {
-  id: string
+  id: string 
   message: string
   email: string | null
   status: 'PENDING' | 'REVIEWED' | 'RESOLVED' | 'DISMISSED'
@@ -307,7 +306,6 @@ export default function AdminFeedbackPage() {
           ))}
         </div>
       )}
-      <DevFeatureLabel feature="feedback" />
     </div>
   )
 }

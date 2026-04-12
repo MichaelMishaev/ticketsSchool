@@ -1,123 +1,101 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
-import { logger } from '@/lib/logger-v2'
+import { getCurrentAdmin } from '@/lib/auth.server'
 
-// POST /api/events/[id]/tables/save-as-template - Save current tables as template
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const admin = await getCurrentAdmin()
+  if (!admin) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { id: eventId } = await params
+
   try {
-    const { id } = await params
-    const admin = await requireAdmin()
-
-    if (!admin.schoolId) {
-      return NextResponse.json(
-        { error: 'Admin must have a school assigned' },
-        { status: 403 }
-      )
-    }
-
-    // Verify event exists and admin has access
+    // Verify event + school access
     const event = await prisma.event.findUnique({
-      where: { id }
+      where: { id: eventId },
+      select: { id: true, schoolId: true },
     })
 
     if (!event) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
-    // Multi-tenant security
-    if (admin.role !== 'SUPER_ADMIN' && event.schoolId !== admin.schoolId) {
-      return NextResponse.json(
-        { error: 'Access denied' },
-        { status: 403 }
-      )
-    }
-
-    const body = await request.json()
-    const { name, description } = body
-
-    if (!name) {
-      return NextResponse.json(
-        { error: 'Missing required field: name' },
-        { status: 400 }
-      )
+    if (admin.role !== 'SUPER_ADMIN' && admin.schoolId !== event.schoolId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     // Fetch all tables for this event
     const tables = await prisma.table.findMany({
-      where: { eventId: id, status: { not: 'RESERVED' } }, // Exclude reserved tables
+      where: { eventId },
       orderBy: { tableOrder: 'asc' },
       select: {
         tableNumber: true,
         capacity: true,
-        minOrder: true
-      }
+        minOrder: true,
+      },
     })
 
     if (tables.length === 0) {
       return NextResponse.json(
         { error: 'No tables to save as template' },
-        { status: 400 }
+        { status: 422 }
       )
     }
 
-    // Group by configuration (capacity + minOrder)
-    const configMap = new Map<string, { capacity: number; minOrder: number; count: number; namePattern: string }>()
+    // Validate request body
+    const body = await request.json()
+    const { name, description } = body
 
-    tables.forEach(table => {
-      const key = `${table.capacity}-${table.minOrder}`
-      const existing = configMap.get(key)
+    if (!name || typeof name !== 'string' || name.trim() === '') {
+      return NextResponse.json({ error: 'name is required' }, { status: 400 })
+    }
 
-      if (existing) {
-        existing.count++
+    // Build config: group tables by (capacity, minOrder) pairs
+    const groupMap = new Map<
+      string,
+      { tableNumber: string; capacity: number; minOrder: number; count: number }
+    >()
+
+    for (const table of tables) {
+      const key = `${table.capacity}:${table.minOrder}`
+      if (groupMap.has(key)) {
+        groupMap.get(key)!.count += 1
       } else {
-        // Extract pattern from table number (e.g., "שולחן 5" → "שולחן {n}")
-        const numberMatch = table.tableNumber.match(/\d+/)
-        const namePattern = numberMatch
-          ? table.tableNumber.replace(/\d+/, '{n}')
-          : '{n}'
-
-        configMap.set(key, {
+        groupMap.set(key, {
+          tableNumber: table.tableNumber,
           capacity: table.capacity,
           minOrder: table.minOrder,
           count: 1,
-          namePattern
         })
       }
-    })
+    }
 
-    const config = Array.from(configMap.values())
+    const config = Array.from(groupMap.values())
 
-    // Create template
+    // SUPER_ADMIN uses event's schoolId, regular admin uses their own schoolId
+    const ownerSchoolId = admin.role === 'SUPER_ADMIN' ? event.schoolId : (admin.schoolId as string)
+
     const template = await prisma.tableTemplate.create({
       data: {
-        schoolId: admin.schoolId,
-        name,
-        description: description || null,
+        schoolId: ownerSchoolId,
+        name: name.trim(),
+        description: description ?? null,
         config,
-        isPublic: false
-      }
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+      },
     })
 
-    return NextResponse.json({
-      success: true,
-      template: {
-        id: template.id,
-        name: template.name,
-        tableCount: tables.length
-      }
-    }, { status: 201 })
+    return NextResponse.json({ template })
   } catch (error) {
-    logger.error('Failed to save template', { source: 'tables', error })
-    return NextResponse.json(
-      { error: 'Failed to save template' },
-      { status: 500 }
-    )
+    console.error('Error saving tables as template:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

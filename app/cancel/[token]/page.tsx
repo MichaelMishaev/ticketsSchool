@@ -12,7 +12,7 @@ interface CancellationData {
   registration?: {
     id: string
     confirmationCode: string
-    status: 'CONFIRMED' | 'WAITLIST' | 'PAYMENT_PENDING'
+    status: 'CONFIRMED' | 'WAITLIST'
     guestsCount: number | null
     spotsCount: number | null
     phoneNumber: string | null
@@ -57,7 +57,7 @@ export default function CancellationPage() {
       } catch (error) {
         setData({
           canCancel: false,
-          error: 'Failed to load cancellation details',
+          error: 'Failed to load cancellation details'
         })
       } finally {
         setLoading(false)
@@ -83,7 +83,7 @@ export default function CancellationPage() {
       const response = await fetch(`/api/cancel/${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: reason || undefined }),
+        body: JSON.stringify({ reason: reason || undefined })
       })
 
       const result = await response.json()
@@ -95,7 +95,7 @@ export default function CancellationPage() {
         setErrorModal({
           isOpen: true,
           title: 'שגיאה בביטול',
-          message: result.error || 'לא ניתן לבטל את ההזמנה. אנא נסה שוב.',
+          message: result.error || 'לא ניתן לבטל את ההזמנה. אנא נסה שוב.'
         })
         setSubmitting(false)
       }
@@ -103,7 +103,7 @@ export default function CancellationPage() {
       setErrorModal({
         isOpen: true,
         title: 'שגיאת חיבור',
-        message: 'שגיאה בביטול ההזמנה. אנא בדוק את החיבור לאינטרנט ונסה שוב.',
+        message: 'שגיאה בביטול ההזמנה. אנא בדוק את החיבור לאינטרנט ונסה שוב.'
       })
       setSubmitting(false)
     }
@@ -128,8 +128,12 @@ export default function CancellationPage() {
         <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
           <div className="mb-6">
             <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">ההזמנה בוטלה בהצלחה</h1>
-            <p className="text-gray-600">קיבלנו את ביטול ההזמנה שלך</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              ההזמנה בוטלה בהצלחה
+            </h1>
+            <p className="text-gray-600">
+              קיבלנו את ביטול ההזמנה שלך
+            </p>
           </div>
 
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
@@ -157,7 +161,9 @@ export default function CancellationPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4" dir="rtl">
         <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
           <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">לא ניתן לבטל הזמנה</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            לא ניתן לבטל הזמנה
+          </h1>
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
             <p className="text-red-800">{data?.error}</p>
           </div>
@@ -201,7 +207,7 @@ export default function CancellationPage() {
                     month: 'long',
                     day: 'numeric',
                     hour: '2-digit',
-                    minute: '2-digit',
+                    minute: '2-digit'
                   })}
                 </p>
               </div>
@@ -218,16 +224,11 @@ export default function CancellationPage() {
               <Ticket className="w-5 h-5 text-gray-600 mt-1 flex-shrink-0" />
               <div>
                 <p className="text-gray-700">
-                  קוד אישור:{' '}
-                  <span className="font-mono font-semibold">{registration?.confirmationCode}</span>
+                  קוד אישור: <span className="font-mono font-semibold">{registration?.confirmationCode}</span>
                 </p>
                 <p className="text-sm text-gray-600">
                   סטטוס:{' '}
-                  <span
-                    className={
-                      registration?.status === 'CONFIRMED' ? 'text-green-600' : 'text-amber-600'
-                    }
-                  >
+                  <span className={registration?.status === 'CONFIRMED' ? 'text-green-600' : 'text-amber-600'}>
                     {registration?.status === 'CONFIRMED' ? 'מאושר' : 'רשימת המתנה'}
                   </span>
                 </p>
@@ -245,7 +246,9 @@ export default function CancellationPage() {
 
             <div className="flex items-start gap-3">
               <Clock className="w-5 h-5 text-gray-600 mt-1 flex-shrink-0" />
-              <p className="text-gray-700">זמן עד תחילת האירוע: {data.hoursUntilEvent} שעות</p>
+              <p className="text-gray-700">
+                זמן עד תחילת האירוע: {data.hoursUntilEvent} שעות
+              </p>
             </div>
           </div>
 
@@ -270,15 +273,7 @@ export default function CancellationPage() {
             {/* Reason (optional or required) */}
             <div>
               <label htmlFor="reason" className="block text-sm font-medium text-gray-700 mb-2">
-                סיבת ביטול{' '}
-                {event?.requireCancellationReason && (
-                  <>
-                    <span className="text-red-600" aria-hidden="true">
-                      *
-                    </span>
-                    <span className="sr-only"> (שדה חובה)</span>
-                  </>
-                )}
+                סיבת ביטול {event?.requireCancellationReason && <span className="text-red-600">*</span>}
               </label>
               <textarea
                 id="reason"
@@ -286,13 +281,11 @@ export default function CancellationPage() {
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 required={event?.requireCancellationReason}
-                aria-required={event?.requireCancellationReason ?? false}
-                aria-describedby="reason-hint"
                 rows={4}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
                 placeholder="למה אתה מבטל את ההזמנה? (אופציונלי)"
               />
-              <p id="reason-hint" className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-gray-500">
                 {event?.requireCancellationReason
                   ? 'נא לציין סיבת ביטול'
                   : 'ציון סיבה עוזר לנו לשפר את השירות'}

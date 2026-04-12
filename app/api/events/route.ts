@@ -110,53 +110,6 @@ async function generateUniqueSlug(title: string, schoolId: string): Promise<stri
   return uniqueSlug
 }
 
-const ALLOWED_FIELD_TYPES = [
-  'text',
-  'select',
-  'number',
-  'phone',
-  'email',
-  'checkbox',
-  'textarea',
-  'date',
-] as const
-
-/**
- * Validate fieldsSchema before storing in the database.
- * Returns true if valid, false otherwise.
- */
-function validateFieldsSchema(schema: unknown): boolean {
-  if (schema === null || schema === undefined) return true
-  if (!Array.isArray(schema)) return false
-
-  for (const field of schema) {
-    if (typeof field !== 'object' || field === null) return false
-
-    const f = field as Record<string, unknown>
-
-    // id: non-empty string, alphanumeric + underscores only
-    if (typeof f.id !== 'string' || !/^[a-zA-Z0-9_]+$/.test(f.id)) return false
-
-    // type: must be one of the allowed values
-    if (typeof f.type !== 'string' || !(ALLOWED_FIELD_TYPES as readonly string[]).includes(f.type))
-      return false
-
-    // label: non-empty string
-    if (typeof f.label !== 'string' || f.label.trim() === '') return false
-
-    // required: must be boolean
-    if (typeof f.required !== 'boolean') return false
-
-    // options: required for select fields, must be non-empty array of strings
-    if (f.type === 'select') {
-      if (!Array.isArray(f.options) || f.options.length === 0) return false
-      if (!f.options.every((o: unknown) => typeof o === 'string')) return false
-    }
-  }
-
-  return true
-}
-
 export async function GET(request: NextRequest) {
   try {
     // Get current admin session
@@ -193,100 +146,69 @@ export async function GET(request: NextRequest) {
       // If no schoolId param, SUPER_ADMIN sees all schools
     }
 
-    // Step 1: Slim event select (no registration/table includes)
     const events = await prisma.event.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        slug: true,
-        title: true,
-        description: true,
-        gameType: true,
-        location: true,
-        startAt: true,
-        endAt: true,
-        capacity: true,
-        maxSpotsPerPerson: true,
-        status: true,
-        deletedAt: true,
-        eventType: true,
-        spotsReserved: true,
-        fieldsSchema: true,
-        paymentRequired: true,
-        paymentTiming: true,
-        pricingModel: true,
-        priceAmount: true,
-        currency: true,
-        allowCancellation: true,
-        cancellationDeadlineHours: true,
-        requireCancellationReason: true,
-        schoolId: true,
-        createdAt: true,
-        updatedAt: true,
-        _count: { select: { registrations: true } },
-        school: { select: { id: true, name: true, slug: true } },
+      include: {
+        school: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        _count: {
+          select: { registrations: true },
+        },
+        registrations: {
+          where: {
+            status: 'CONFIRMED',
+          },
+          select: {
+            spotsCount: true,
+          },
+        },
+        tables: {
+          select: {
+            capacity: true,
+            status: true,
+            reservation: {
+              select: {
+                guestsCount: true,
+                spotsCount: true,
+              },
+            },
+          },
+        },
       },
     })
 
-    const eventIds = events.map((e) => e.id)
-
-    // Step 2: Parallel aggregations (only if there are events)
-    const [regGroups, tableRows] =
-      eventIds.length > 0
-        ? await Promise.all([
-            prisma.registration.groupBy({
-              by: ['eventId'],
-              where: { eventId: { in: eventIds }, status: 'CONFIRMED' },
-              _sum: { spotsCount: true },
-            }),
-            prisma.table.findMany({
-              where: { eventId: { in: eventIds } },
-              select: {
-                eventId: true,
-                capacity: true,
-                status: true,
-                // Sharing-aware: sum occupancy across all CONFIRMED regs on the table
-                registrations: {
-                  where: { status: 'CONFIRMED' },
-                  select: { guestsCount: true, spotsCount: true },
-                },
-              },
-            }),
-          ])
-        : [[], []]
-
-    // Build lookups
-    const confirmedSpotsByEvent: Record<string, number> = {}
-    for (const g of regGroups) confirmedSpotsByEvent[g.eventId] = g._sum.spotsCount ?? 0
-
-    const tableDataByEvent: Record<string, { totalCapacity: number; totalSpotsTaken: number }> = {}
-    for (const table of tableRows) {
-      if (!tableDataByEvent[table.eventId])
-        tableDataByEvent[table.eventId] = { totalCapacity: 0, totalSpotsTaken: 0 }
-      tableDataByEvent[table.eventId].totalCapacity += table.capacity
-      for (const r of table.registrations) {
-        // Fallback preserved from pre-sharing behavior: prefer guestsCount,
-        // fall back to spotsCount for legacy data, then 0.
-        tableDataByEvent[table.eventId].totalSpotsTaken += r.guestsCount ?? r.spotsCount ?? 0
-      }
-    }
-
-    // Step 3: Map response — same shape as before
+    // Calculate total spots taken and table capacity for each event
     const eventsWithSpots = events.map((event) => {
-      let totalSpotsTaken: number
-      let totalCapacity: number
+      let totalSpotsTaken = 0
+      let totalCapacity = event.capacity
 
+      // For TABLE_BASED events, count guests from reserved tables
       if (event.eventType === 'TABLE_BASED') {
-        const td = tableDataByEvent[event.id] ?? { totalCapacity: 0, totalSpotsTaken: 0 }
-        totalCapacity = td.totalCapacity
-        totalSpotsTaken = td.totalSpotsTaken
+        totalCapacity = event.tables.reduce((sum, table) => sum + table.capacity, 0)
+        totalSpotsTaken = event.tables.reduce((sum, table) => {
+          if (table.reservation) {
+            return sum + (table.reservation.guestsCount || table.reservation.spotsCount || 0)
+          }
+          return sum
+        }, 0)
       } else {
-        totalCapacity = event.capacity
-        totalSpotsTaken = confirmedSpotsByEvent[event.id] ?? 0
+        // For CAPACITY_BASED events, count confirmed registrations
+        totalSpotsTaken = event.registrations.reduce((sum, reg) => sum + reg.spotsCount, 0)
       }
 
-      return { ...event, totalSpotsTaken, totalCapacity }
+      // Remove registrations and tables arrays from response and add calculated values
+      const { registrations, tables, ...eventData } = event
+      return {
+        ...eventData,
+        totalSpotsTaken,
+        totalCapacity,
+      }
     })
 
     return NextResponse.json(eventsWithSpots)
@@ -347,7 +269,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    let endAt: Date | null = null
+    let endAt = null
     if (data.endAt) {
       endAt = new Date(data.endAt)
       if (isNaN(endAt.getTime())) {
@@ -373,11 +295,6 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         )
       }
-    }
-
-    // Validate fieldsSchema structure before storing
-    if (!validateFieldsSchema(data.fieldsSchema)) {
-      return NextResponse.json({ error: 'Invalid fields schema structure' }, { status: 400 })
     }
 
     // Generate unique slug from event title

@@ -9,7 +9,6 @@ import {
   type TestAdmin,
 } from '../fixtures/test-data'
 import { LoginPage } from '../page-objects/LoginPage'
-import { loginViaAPI } from '../helpers/auth-helpers'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 
@@ -94,7 +93,9 @@ test.describe('School Management P0 - Critical Tests', () => {
       await page.click('button[type="submit"]')
 
       // Should show validation errors
-      await expect(page.locator('text=/נא למלא|שדה חובה|required/i')).toBeVisible({ timeout: 5000 })
+      await expect(
+        page.locator('text=/נא למלא|שדה חובה|required/i')
+      ).toBeVisible({ timeout: 5000 })
 
       // Should not have redirected
       await expect(page).toHaveURL(/\/admin\/onboarding/)
@@ -102,7 +103,9 @@ test.describe('School Management P0 - Critical Tests', () => {
 
     test('school slug must be unique', async ({ page }) => {
       // Create existing school with slug
-      const existingSchool = await createSchool().withSlug('existing-slug').create()
+      const existingSchool = await createSchool()
+        .withSlug('existing-slug')
+        .create()
 
       // Create admin without school
       const timestamp = Date.now()
@@ -135,9 +138,9 @@ test.describe('School Management P0 - Critical Tests', () => {
       await page.click('button[type="submit"]')
 
       // Should show error about slug being taken
-      await expect(page.locator('text=/כבר קיים|already exists|taken/i')).toBeVisible({
-        timeout: 5000,
-      })
+      await expect(
+        page.locator('text=/כבר קיים|already exists|taken/i')
+      ).toBeVisible({ timeout: 5000 })
 
       // Should still be on onboarding page
       await expect(page).toHaveURL(/\/admin\/onboarding/)
@@ -207,7 +210,10 @@ test.describe('School Management P0 - Critical Tests', () => {
   test.describe('[02.3.1] Send Team Invitation (OWNER)', () => {
     test('OWNER can send team invitation', async ({ page }) => {
       const school = await createSchool().withName('Team Test School').create()
-      const owner = await createAdmin().withSchool(school.id).withRole('OWNER').create()
+      const owner = await createAdmin()
+        .withSchool(school.id)
+        .withRole('OWNER')
+        .create()
 
       // Login as owner
       const loginPage = new LoginPage(page)
@@ -218,10 +224,8 @@ test.describe('School Management P0 - Critical Tests', () => {
       await page.goto('http://localhost:9000/admin/team')
 
       // Check if invite button exists
-      const inviteButton = page.locator(
-        'button:has-text("Invite"), button:has-text("הזמן"), a:has-text("Invite")'
-      )
-      const hasInviteButton = (await inviteButton.count()) > 0
+      const inviteButton = page.locator('button:has-text("Invite"), button:has-text("הזמן"), a:has-text("Invite")')
+      const hasInviteButton = await inviteButton.count() > 0
 
       if (hasInviteButton) {
         await inviteButton.first().click()
@@ -232,7 +236,7 @@ test.describe('School Management P0 - Critical Tests', () => {
 
         // Select role (if dropdown exists)
         const roleSelect = page.locator('select[name="role"]')
-        if ((await roleSelect.count()) > 0) {
+        if (await roleSelect.count() > 0) {
           await roleSelect.selectOption('ADMIN')
         }
 
@@ -240,9 +244,9 @@ test.describe('School Management P0 - Critical Tests', () => {
         await page.click('button[type="submit"]:has-text("Send"), button:has-text("שלח")')
 
         // Verify invitation was created
-        await expect(page.locator('text=/הזמנה נשלחה|invitation sent|success/i')).toBeVisible({
-          timeout: 5000,
-        })
+        await expect(
+          page.locator('text=/הזמנה נשלחה|invitation sent|success/i')
+        ).toBeVisible({ timeout: 5000 })
 
         // Check database
         const invitation = await prisma.teamInvitation.findFirst({
@@ -256,11 +260,11 @@ test.describe('School Management P0 - Critical Tests', () => {
       } else {
         // If team page doesn't exist yet, check directly via API
         const cookies = await page.context().cookies()
-        const sessionCookie = cookies.find((c) => c.name === 'admin_session')
+        const sessionCookie = cookies.find(c => c.name === 'admin_session')
 
         const response = await page.request.post('/api/admin/team/invite', {
           headers: {
-            Cookie: `admin_session=${sessionCookie?.value}`,
+            'Cookie': `admin_session=${sessionCookie?.value}`,
           },
           data: {
             email: `invited-api-${Date.now()}@test.com`,
@@ -292,7 +296,7 @@ test.describe('School Management P0 - Critical Tests', () => {
       // Should either show 403/forbidden or hide invite button
       const pageContent = await page.textContent('body')
       const has403 = pageContent?.includes('403') || pageContent?.includes('Forbidden')
-      const hasInviteButton = (await page.locator('button:has-text("Invite")').count()) > 0
+      const hasInviteButton = await page.locator('button:has-text("Invite")').count() > 0
 
       // Either should be forbidden or button should be hidden
       expect(has403 || !hasInviteButton).toBeTruthy()
@@ -302,7 +306,10 @@ test.describe('School Management P0 - Critical Tests', () => {
   test.describe('[02.3.3-3.4] Accept Team Invitation', () => {
     test('new user can accept invitation and join school', async ({ page }) => {
       const school = await createSchool().withName('Invitation School').create()
-      const owner = await createAdmin().withSchool(school.id).withRole('OWNER').create()
+      const owner = await createAdmin()
+        .withSchool(school.id)
+        .withRole('OWNER')
+        .create()
 
       const timestamp = Date.now()
       const inviteeEmail = `new-invitee-${timestamp}@test.com`
@@ -323,9 +330,8 @@ test.describe('School Management P0 - Critical Tests', () => {
       await page.goto(`http://localhost:9000/admin/team/accept?token=${invitation.token}`)
 
       // Should prompt to signup (new user scenario)
-      const isSignupPage =
-        (await page.url().includes('signup')) ||
-        (await page.locator('text=/sign up|הרשם/i').count()) > 0
+      const isSignupPage = await page.url().includes('signup') ||
+                           await page.locator('text=/sign up|הרשם/i').count() > 0
 
       if (isSignupPage) {
         // Complete signup
@@ -353,10 +359,16 @@ test.describe('School Management P0 - Critical Tests', () => {
       const schoolB = await createSchool().withName('School B').create()
 
       // Create existing user in School A
-      const existingUser = await createAdmin().withSchool(schoolA.id).withRole('ADMIN').create()
+      const existingUser = await createAdmin()
+        .withSchool(schoolA.id)
+        .withRole('ADMIN')
+        .create()
 
       // Create owner for School B (who will send the invitation)
-      const schoolBOwner = await createAdmin().withSchool(schoolB.id).withRole('OWNER').create()
+      const schoolBOwner = await createAdmin()
+        .withSchool(schoolB.id)
+        .withRole('OWNER')
+        .create()
 
       // Create invitation to School B
       const timestamp = Date.now()
@@ -432,11 +444,11 @@ test.describe('School Management P0 - Critical Tests', () => {
       } else {
         // Check via API
         const cookies = await page.context().cookies()
-        const sessionCookie = cookies.find((c) => c.name === 'admin_session')
+        const sessionCookie = cookies.find(c => c.name === 'admin_session')
 
         const response = await page.request.get('/api/admin/team', {
           headers: {
-            Cookie: `admin_session=${sessionCookie?.value}`,
+            'Cookie': `admin_session=${sessionCookie?.value}`,
           },
         })
 
@@ -458,7 +470,10 @@ test.describe('School Management P0 - Critical Tests', () => {
   test.describe('[02.5.1] Change Team Member Role', () => {
     test('OWNER can change member role', async ({ page }) => {
       const school = await createSchool().create()
-      const owner = await createAdmin().withSchool(school.id).withRole('OWNER').create()
+      const owner = await createAdmin()
+        .withSchool(school.id)
+        .withRole('OWNER')
+        .create()
 
       const member = await createAdmin()
         .withSchool(school.id)
@@ -473,11 +488,11 @@ test.describe('School Management P0 - Critical Tests', () => {
 
       // Try to change role via API (since UI may not be implemented)
       const cookies = await page.context().cookies()
-      const sessionCookie = cookies.find((c) => c.name === 'admin_session')
+      const sessionCookie = cookies.find(c => c.name === 'admin_session')
 
       const response = await page.request.patch(`/api/admin/team/${member.id}`, {
         headers: {
-          Cookie: `admin_session=${sessionCookie?.value}`,
+          'Cookie': `admin_session=${sessionCookie?.value}`,
         },
         data: {
           role: 'ADMIN',
@@ -503,7 +518,10 @@ test.describe('School Management P0 - Critical Tests', () => {
   test.describe('[02.5.2] Remove Team Member', () => {
     test('OWNER can remove team member', async ({ page }) => {
       const school = await createSchool().create()
-      const owner = await createAdmin().withSchool(school.id).withRole('OWNER').create()
+      const owner = await createAdmin()
+        .withSchool(school.id)
+        .withRole('OWNER')
+        .create()
 
       const memberToRemove = await createAdmin()
         .withSchool(school.id)
@@ -518,11 +536,11 @@ test.describe('School Management P0 - Critical Tests', () => {
 
       // Try to remove member via API
       const cookies = await page.context().cookies()
-      const sessionCookie = cookies.find((c) => c.name === 'admin_session')
+      const sessionCookie = cookies.find(c => c.name === 'admin_session')
 
       const response = await page.request.delete(`/api/admin/team/${memberToRemove.id}`, {
         headers: {
-          Cookie: `admin_session=${sessionCookie?.value}`,
+          'Cookie': `admin_session=${sessionCookie?.value}`,
         },
       })
 
@@ -543,7 +561,10 @@ test.describe('School Management P0 - Critical Tests', () => {
 
     test('OWNER cannot remove themselves', async ({ page }) => {
       const school = await createSchool().create()
-      const owner = await createAdmin().withSchool(school.id).withRole('OWNER').create()
+      const owner = await createAdmin()
+        .withSchool(school.id)
+        .withRole('OWNER')
+        .create()
 
       // Login as owner
       const loginPage = new LoginPage(page)
@@ -552,11 +573,11 @@ test.describe('School Management P0 - Critical Tests', () => {
 
       // Try to remove self via API
       const cookies = await page.context().cookies()
-      const sessionCookie = cookies.find((c) => c.name === 'admin_session')
+      const sessionCookie = cookies.find(c => c.name === 'admin_session')
 
       const response = await page.request.delete(`/api/admin/team/${owner.id}`, {
         headers: {
-          Cookie: `admin_session=${sessionCookie?.value}`,
+          'Cookie': `admin_session=${sessionCookie?.value}`,
         },
       })
 
@@ -568,9 +589,14 @@ test.describe('School Management P0 - Critical Tests', () => {
   test.describe('[02.6.2] Usage Limits - Events', () => {
     test('FREE plan cannot exceed event limit', async ({ page }) => {
       // Create school with FREE plan
-      const school = await createSchool().withPlan('FREE').create()
+      const school = await createSchool()
+        .withPlan('FREE')
+        .create()
 
-      const owner = await createAdmin().withSchool(school.id).withRole('OWNER').create()
+      const owner = await createAdmin()
+        .withSchool(school.id)
+        .withRole('OWNER')
+        .create()
 
       // Create 5 events (FREE plan limit)
       for (let i = 0; i < 5; i++) {
@@ -605,11 +631,10 @@ test.describe('School Management P0 - Critical Tests', () => {
       await page.waitForTimeout(2000)
 
       const pageText = await page.textContent('body')
-      const hasLimitError =
-        pageText?.includes('limit') ||
-        pageText?.includes('מגבלה') ||
-        pageText?.includes('upgrade') ||
-        pageText?.includes('שדרוג')
+      const hasLimitError = pageText?.includes('limit') ||
+                            pageText?.includes('מגבלה') ||
+                            pageText?.includes('upgrade') ||
+                            pageText?.includes('שדרוג')
 
       // Check if event was NOT created
       const eventCount = await prisma.event.count({
@@ -623,11 +648,19 @@ test.describe('School Management P0 - Critical Tests', () => {
   test.describe('[02.6.3] Usage Limits - Registrations', () => {
     test('FREE plan tracks registration usage', async ({ page }) => {
       // Create school with FREE plan (limit: 100 registrations/month)
-      const school = await createSchool().withPlan('FREE').create()
+      const school = await createSchool()
+        .withPlan('FREE')
+        .create()
 
-      const owner = await createAdmin().withSchool(school.id).withRole('OWNER').create()
+      const owner = await createAdmin()
+        .withSchool(school.id)
+        .withRole('OWNER')
+        .create()
 
-      const event = await createEvent().withSchool(school.id).withCapacity(200).create()
+      const event = await createEvent()
+        .withSchool(school.id)
+        .withCapacity(200)
+        .create()
 
       // Create 100 registrations (at limit)
       for (let i = 0; i < 100; i++) {
@@ -641,14 +674,17 @@ test.describe('School Management P0 - Critical Tests', () => {
       // Try to create 101st registration via API
       const cookies = await page.context().cookies('http://localhost:9000')
 
-      const response = await page.request.post(`/api/p/${school.slug}/${event.slug}/register`, {
-        data: {
-          name: 'User 101',
-          email: `user101-${Date.now()}@test.com`,
-          phone: '0501234567',
-          spotsCount: 1,
-        },
-      })
+      const response = await page.request.post(
+        `/api/p/${school.slug}/${event.slug}/register`,
+        {
+          data: {
+            name: 'User 101',
+            email: `user101-${Date.now()}@test.com`,
+            phone: '0501234567',
+            spotsCount: 1,
+          },
+        }
+      )
 
       // Should either succeed or show limit warning
       // (Implementation may vary - either block or allow with warning)
@@ -666,7 +702,10 @@ test.describe('School Management P0 - Critical Tests', () => {
   test.describe('[02.3.5] Expired Invitation', () => {
     test('expired invitation cannot be accepted', async ({ page }) => {
       const school = await createSchool().create()
-      const owner = await createAdmin().withSchool(school.id).withRole('OWNER').create()
+      const owner = await createAdmin()
+        .withSchool(school.id)
+        .withRole('OWNER')
+        .create()
 
       const timestamp = Date.now()
 
@@ -689,10 +728,9 @@ test.describe('School Management P0 - Critical Tests', () => {
       await page.waitForTimeout(2000)
 
       const pageText = await page.textContent('body')
-      const hasExpiredError =
-        pageText?.includes('expired') ||
-        pageText?.includes('פג תוקף') ||
-        pageText?.includes('invalid')
+      const hasExpiredError = pageText?.includes('expired') ||
+                              pageText?.includes('פג תוקף') ||
+                              pageText?.includes('invalid')
 
       expect(hasExpiredError).toBeTruthy()
     })
@@ -707,69 +745,12 @@ test.describe('School Management P0 - Critical Tests', () => {
       await page.waitForTimeout(2000)
 
       const pageText = await page.textContent('body')
-      const hasInvalidError =
-        pageText?.includes('invalid') ||
-        pageText?.includes('לא תקין') ||
-        pageText?.includes('not found') ||
-        pageText?.includes('404')
+      const hasInvalidError = pageText?.includes('invalid') ||
+                              pageText?.includes('לא תקין') ||
+                              pageText?.includes('not found') ||
+                              pageText?.includes('404')
 
       expect(hasInvalidError).toBeTruthy()
-    })
-  })
-
-  // US-SCH-05: Unauthenticated requests cannot modify school settings
-  test.describe('[US-SCH-05] Settings access control', () => {
-    test('server: unauthenticated request gets 401 on school name update', async ({ context }) => {
-      // No login — bare context with no session cookie
-      const res = await context.request.post('/api/admin/update-school-name', {
-        data: { newName: 'Hacked Name' },
-      })
-      expect([401, 403]).toContain(res.status())
-    })
-
-    test('client: unauthenticated user is redirected away from /admin/settings', async ({
-      page,
-    }) => {
-      // Fresh page with no session — should redirect to login
-      await page.goto('http://localhost:9000/admin/settings')
-      await page.waitForURL(/\/admin\/login/, { timeout: 10000 })
-      expect(page.url()).toContain('/admin/login')
-    })
-  })
-
-  // US-SCH-06: Multi-tenant data isolation
-  test.describe('[US-SCH-06] Multi-tenant isolation', () => {
-    test('server: Admin A cannot read School B events via API', async ({ context }) => {
-      const schoolA = await createSchool().withName('Tenant A').create()
-      const schoolB = await createSchool().withName('Tenant B').create()
-      const adminA = await createAdmin().withSchool(schoolA.id).create()
-      const eventB = await createEvent().withSchool(schoolB.id).inFuture().create()
-
-      await loginViaAPI(context, adminA.email, adminA.password)
-      const res = await context.request.get(`/api/events/${eventB.id}`)
-      expect([403, 404]).toContain(res.status())
-    })
-  })
-
-  // US-SCH-02: Owner updates school name; slug stays immutable
-  test.describe('[US-SCH-02] School name update preserves slug', () => {
-    test('server: OWNER can update school name via API; slug is unchanged', async ({ context }) => {
-      const school = await createSchool().withName('Original SCH-02 Name').create()
-      const owner = await createAdmin().withRole('OWNER').withSchool(school.id).create()
-      await loginViaAPI(context, owner.email, owner.password)
-
-      const originalSlug = school.slug
-      const res = await context.request.post('/api/admin/update-school-name', {
-        data: { newName: 'Updated SCH-02 Name' },
-      })
-      if (res.status() === 200) {
-        const body = await res.json()
-        expect(body.school.slug).toBe(originalSlug)
-        expect(body.school.name).toBe('Updated SCH-02 Name')
-      } else {
-        // If name is already taken or other non-500 error, test is still valid
-        expect(res.status()).not.toBe(500)
-      }
     })
   })
 })

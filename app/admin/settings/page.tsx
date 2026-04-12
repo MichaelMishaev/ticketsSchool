@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import DevFeatureLabel from '@/components/dev/DevFeatureLabel'
 
 interface School {
   id: string
@@ -238,7 +237,6 @@ export default function SettingsPage() {
           <li>• המשתמשים שלך יראו את השם החדש מיד</li>
         </ul>
       </div>
-      <DevFeatureLabel feature="school-settings" />
     </div>
   )
 }

@@ -10,11 +10,7 @@ interface ShareLinkCardProps {
   eventTitle?: string
 }
 
-export default function ShareLinkCard({
-  schoolSlug,
-  eventSlug,
-  eventTitle = '',
-}: ShareLinkCardProps) {
+export default function ShareLinkCard({ schoolSlug, eventSlug, eventTitle = '' }: ShareLinkCardProps) {
   const [copied, setCopied] = useState(false)
   const [shareModalOpen, setShareModalOpen] = useState(false)
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
@@ -53,9 +49,7 @@ export default function ShareLinkCard({
               </button>
               <h3 className="text-sm font-semibold text-gray-900">קישור לשיתוף</h3>
             </div>
-            <p className="text-xs text-gray-600 text-right">
-              שתף קישור זה עם אנשים כדי שיוכלו להירשם לאירוע
-            </p>
+            <p className="text-xs text-gray-600 text-right">שתף קישור זה עם אנשים כדי שיוכלו להירשם לאירוע</p>
           </div>
 
           {/* Compact URL display */}

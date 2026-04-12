@@ -1,22 +1,11 @@
 'use client'
 
-import {
-  Calendar,
-  Users,
-  Clock,
-  TrendingUp,
-  ChevronLeft,
-  Loader2,
-  Sparkles,
-  Ticket,
-  UtensilsCrossed,
-} from 'lucide-react'
+import { Calendar, Users, Clock, TrendingUp, ChevronLeft, Loader2, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import DrilldownModal from '@/components/DrilldownModal'
 import CreateEventDropdown from '@/components/CreateEventDropdown'
-import DevFeatureLabel from '@/components/dev/DevFeatureLabel'
 
 interface AdminInfo {
   role: 'SUPER_ADMIN' | 'OWNER' | 'ADMIN' | 'MANAGER'
@@ -145,10 +134,10 @@ export default function AdminDashboard() {
       const statsData = await statsResponse.json()
       const events = await eventsResponse.json()
 
-      if (!statsData.error) setStats(statsData)
+      setStats(statsData)
 
       // Get recent events (last 5)
-      if (Array.isArray(events)) setRecentEvents(events.slice(0, 5))
+      setRecentEvents(events.slice(0, 5))
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
     } finally {
@@ -447,17 +436,6 @@ export default function AdminDashboard() {
                         <p className="text-xs text-gray-500">
                           {format(new Date(event.startAt), 'dd/MM/yyyy HH:mm')}
                         </p>
-                        {event.eventType === 'TABLE_BASED' ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                            <UtensilsCrossed className="h-3 w-3" />
-                            שולחנות
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
-                            <Ticket className="h-3 w-3" />
-                            כרטיסים
-                          </span>
-                        )}
                         {event.school && (
                           <>
                             <span className="text-xs text-gray-400">•</span>
@@ -503,7 +481,6 @@ export default function AdminDashboard() {
         data={modalData.data}
         type={modalData.type}
       />
-      <DevFeatureLabel feature="analytics" />
     </div>
   )
 }

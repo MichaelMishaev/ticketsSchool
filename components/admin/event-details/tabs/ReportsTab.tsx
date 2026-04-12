@@ -225,56 +225,42 @@ export default function ReportsTab({ eventId }: ReportsTabProps) {
       </div>
 
       {/* Key Metrics Dashboard */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        {/* Total Registered */}
-        <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center">
-              <Users className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-3xl font-bold text-gray-800">{metrics.totalRegistrations}</span>
-          </div>
-          <h3 className="text-sm font-semibold text-gray-800 mb-0.5">נרשמו</h3>
-          <p className="text-xs text-gray-600">
-            {metrics.confirmedCount} מאושרים
-          </p>
-        </div>
-
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {/* Conversion Rate */}
-        <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-xl p-5">
+        <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-xl p-6">
           <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-white" />
+            <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
+              <TrendingUp className="w-6 h-6 text-white" />
             </div>
             <span className="text-3xl font-bold text-green-700">{metrics.conversionRate}%</span>
           </div>
-          <h3 className="text-sm font-semibold text-green-900 mb-0.5">שיעור המרה</h3>
+          <h3 className="text-sm font-semibold text-green-900 mb-1">שיעור המרה</h3>
           <p className="text-xs text-green-700">
-            מתוך {metrics.totalRegistrations} הרשמות
+            {metrics.confirmedCount} מאושרים מתוך {metrics.totalRegistrations} הרשמות
           </p>
         </div>
 
         {/* Average Registration Time */}
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-5">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-6">
           <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
-              <Clock className="w-5 h-5 text-white" />
+            <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
+              <Clock className="w-6 h-6 text-white" />
             </div>
             <span className="text-3xl font-bold text-blue-700">{metrics.avgDaysBeforeEvent}</span>
           </div>
-          <h3 className="text-sm font-semibold text-blue-900 mb-0.5">ימים לפני האירוע</h3>
-          <p className="text-xs text-blue-700">זמן ממוצע להרשמה</p>
+          <h3 className="text-sm font-semibold text-blue-900 mb-1">זמן ממוצע להרשמה</h3>
+          <p className="text-xs text-blue-700">ימים לפני האירוע</p>
         </div>
 
         {/* Capacity Fill Rate */}
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-xl p-5">
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-xl p-6">
           <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
-              <BarChart3 className="w-5 h-5 text-white" />
+            <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
+              <Users className="w-6 h-6 text-white" />
             </div>
             <span className="text-3xl font-bold text-purple-700">{metrics.fillRate}%</span>
           </div>
-          <h3 className="text-sm font-semibold text-purple-900 mb-0.5">תפוסה</h3>
+          <h3 className="text-sm font-semibold text-purple-900 mb-1">תפוסה</h3>
           <p className="text-xs text-purple-700">
             {metrics.spotsConfirmed} מתוך {event.capacity} מקומות
           </p>

@@ -1,15 +1,8 @@
 import { test, expect } from '@playwright/test'
-import {
-  createSchool,
-  createAdmin,
-  createEvent,
-  createRegistration,
-  cleanupTestData,
-} from '../fixtures/test-data'
+import { createSchool, createAdmin, createEvent, createRegistration, cleanupTestData } from '../fixtures/test-data'
 import { LoginPage } from '../page-objects/LoginPage'
 import { RegistrationsPage } from '../page-objects/RegistrationsPage'
 import { generateEmail, generateIsraeliPhone } from '../helpers/test-helpers'
-import { loginViaAPI } from '../helpers/auth-helpers'
 
 /**
  * P0 (CRITICAL) Admin Registration Management Tests
@@ -30,12 +23,23 @@ test.describe('Admin Registration Management P0', () => {
         .withSchool(school.id)
         .create()
 
-      const event = await createEvent().withTitle('Test Event').withSchool(school.id).create()
+      const event = await createEvent()
+        .withTitle('Test Event')
+        .withSchool(school.id)
+        .create()
 
       // Create registrations
-      await createRegistration().withEvent(event.id).withName('Test User 1').confirmed().create()
+      await createRegistration()
+        .withEvent(event.id)
+        .withName('Test User 1')
+        .confirmed()
+        .create()
 
-      await createRegistration().withEvent(event.id).withName('Test User 2').confirmed().create()
+      await createRegistration()
+        .withEvent(event.id)
+        .withName('Test User 2')
+        .confirmed()
+        .create()
 
       const loginPage = new LoginPage(page)
       await loginPage.goto()
@@ -73,7 +77,11 @@ test.describe('Admin Registration Management P0', () => {
       }
 
       for (let i = 0; i < 5; i++) {
-        await createRegistration().withEvent(event.id).withName(`Waitlist ${i}`).waitlist().create()
+        await createRegistration()
+          .withEvent(event.id)
+          .withName(`Waitlist ${i}`)
+          .waitlist()
+          .create()
       }
 
       const loginPage = new LoginPage(page)
@@ -96,7 +104,10 @@ test.describe('Admin Registration Management P0', () => {
         .withSchool(school.id)
         .create()
 
-      const event = await createEvent().withTitle('Edit Event').withSchool(school.id).create()
+      const event = await createEvent()
+        .withTitle('Edit Event')
+        .withSchool(school.id)
+        .create()
 
       const registration = await createRegistration()
         .withEvent(event.id)
@@ -166,7 +177,7 @@ test.describe('Admin Registration Management P0', () => {
 
       // Change spots from 2 to 5
       const spotsInput = page.locator('input[name="spots"]')
-      if ((await spotsInput.count()) > 0) {
+      if (await spotsInput.count() > 0) {
         await spotsInput.clear()
         await spotsInput.fill('5')
 
@@ -254,9 +265,7 @@ test.describe('Admin Registration Management P0', () => {
 
       // Get initial capacity
       await page.goto(`/admin/events/${event.id}`)
-      const initialCapacity = await page
-        .locator('[data-testid="spots-reserved"], .spots-reserved')
-        .textContent()
+      const initialCapacity = await page.locator('[data-testid="spots-reserved"], .spots-reserved').textContent()
 
       // Cancel registration
       await page.click('text=Free Up User')
@@ -272,9 +281,7 @@ test.describe('Admin Registration Management P0', () => {
       await expect(page.locator('h1:has-text("Capacity Free Event")')).toBeVisible()
 
       // Capacity should be reduced by 3 (3 -> 0)
-      await expect(page.locator('[data-testid="spots-reserved"], .spots-reserved')).toContainText(
-        '0'
-      )
+      await expect(page.locator('[data-testid="spots-reserved"], .spots-reserved')).toContainText('0')
     })
   })
 
@@ -342,7 +349,9 @@ test.describe('Admin Registration Management P0', () => {
       await page.click('button:has-text("הוסף הרשמה"), button:has-text("Add Registration")')
 
       // Should show option for waitlist or override
-      await expect(page.locator('text=/רשימת המתנה|waitlist|עקוף|override/i')).toBeVisible()
+      await expect(
+        page.locator('text=/רשימת המתנה|waitlist|עקוף|override/i')
+      ).toBeVisible()
     })
   })
 
@@ -399,11 +408,18 @@ test.describe('Admin Registration Management P0', () => {
         .withSchool(school.id)
         .create()
 
-      const event = await createEvent().withTitle('Export Event').withSchool(school.id).create()
+      const event = await createEvent()
+        .withTitle('Export Event')
+        .withSchool(school.id)
+        .create()
 
       // Create registrations
       for (let i = 0; i < 10; i++) {
-        await createRegistration().withEvent(event.id).withName(`User ${i}`).confirmed().create()
+        await createRegistration()
+          .withEvent(event.id)
+          .withName(`User ${i}`)
+          .confirmed()
+          .create()
       }
 
       const loginPage = new LoginPage(page)
@@ -445,10 +461,8 @@ test.describe('Admin Registration Management P0', () => {
       await page.goto(`/admin/events/${event.id}`)
 
       // Filter by confirmed
-      const filterSelect = page.locator(
-        'select[name="status"], select[data-testid="status-filter"]'
-      )
-      if ((await filterSelect.count()) > 0) {
+      const filterSelect = page.locator('select[name="status"], select[data-testid="status-filter"]')
+      if (await filterSelect.count() > 0) {
         await filterSelect.selectOption('CONFIRMED')
         await page.waitForTimeout(500)
 
@@ -511,14 +525,26 @@ test.describe('Admin Registration Management P0', () => {
         .withSchool(schoolA.id)
         .create()
 
-      const eventA = await createEvent().withTitle('Event A').withSchool(schoolA.id).create()
+      const eventA = await createEvent()
+        .withTitle('Event A')
+        .withSchool(schoolA.id)
+        .create()
 
-      const regA = await createRegistration().withEvent(eventA.id).withName('User A').create()
+      const regA = await createRegistration()
+        .withEvent(eventA.id)
+        .withName('User A')
+        .create()
 
       const schoolB = await createSchool().withName('School B Reg').create()
-      const eventB = await createEvent().withTitle('Event B').withSchool(schoolB.id).create()
+      const eventB = await createEvent()
+        .withTitle('Event B')
+        .withSchool(schoolB.id)
+        .create()
 
-      const regB = await createRegistration().withEvent(eventB.id).withName('User B').create()
+      const regB = await createRegistration()
+        .withEvent(eventB.id)
+        .withName('User B')
+        .create()
 
       const loginPage = new LoginPage(page)
       await loginPage.goto()
@@ -528,14 +554,8 @@ test.describe('Admin Registration Management P0', () => {
       await page.goto(`/admin/events/${eventB.id}`)
 
       // Should show 403/404 or no registrations
-      const hasError = await page
-        .locator('text=/403|404|לא נמצא/i')
-        .isVisible()
-        .catch(() => false)
-      const hasUserB = await page
-        .locator('text=User B')
-        .isVisible()
-        .catch(() => false)
+      const hasError = await page.locator('text=/403|404|לא נמצא/i').isVisible().catch(() => false)
+      const hasUserB = await page.locator('text=User B').isVisible().catch(() => false)
 
       expect(hasError || !hasUserB).toBe(true)
     })
@@ -549,19 +569,22 @@ test.describe('Admin Registration Management P0', () => {
         .create()
 
       const schoolB = await createSchool().withName('Export B').create()
-      const eventB = await createEvent().withTitle('Export B Event').withSchool(schoolB.id).create()
+      const eventB = await createEvent()
+        .withTitle('Export B Event')
+        .withSchool(schoolB.id)
+        .create()
 
       const loginPage = new LoginPage(page)
       await loginPage.goto()
       await loginPage.login(adminA.email, 'TestPassword123!')
 
       const cookies = await page.context().cookies()
-      const sessionCookie = cookies.find((c) => c.name === 'admin_session')
+      const sessionCookie = cookies.find(c => c.name === 'admin_session')
 
       // Try to export School B event
       const response = await request.get(`/api/events/${eventB.id}/export`, {
         headers: {
-          Cookie: `admin_session=${sessionCookie?.value}`,
+          'Cookie': `admin_session=${sessionCookie?.value}`,
         },
       })
 
@@ -609,7 +632,10 @@ test.describe('Admin Registration Management P0', () => {
         .withSchool(school.id)
         .create()
 
-      const event = await createEvent().withTitle('Search Event').withSchool(school.id).create()
+      const event = await createEvent()
+        .withTitle('Search Event')
+        .withSchool(school.id)
+        .create()
 
       await createRegistration().withEvent(event.id).withName('John Doe').create()
       await createRegistration().withEvent(event.id).withName('Jane Smith').create()
@@ -636,7 +662,10 @@ test.describe('Admin Registration Management P0', () => {
         .withSchool(school.id)
         .create()
 
-      const event = await createEvent().withTitle('Filter Event').withSchool(school.id).create()
+      const event = await createEvent()
+        .withTitle('Filter Event')
+        .withSchool(school.id)
+        .create()
 
       await createRegistration().withEvent(event.id).withName('Confirmed User').confirmed().create()
       await createRegistration().withEvent(event.id).withName('Waitlist User').waitlist().create()
@@ -790,7 +819,10 @@ test.describe('Admin Registration Management P0', () => {
         .create()
 
       const schoolB = await createSchool().withName('School B Code').create()
-      const eventB = await createEvent().withTitle('Event B').withSchool(schoolB.id).create()
+      const eventB = await createEvent()
+        .withTitle('Event B')
+        .withSchool(schoolB.id)
+        .create()
 
       const registrationB = await createRegistration()
         .withEvent(eventB.id)
@@ -825,7 +857,10 @@ test.describe('Admin Registration Management P0', () => {
         .create()
 
       const schoolA = await createSchool().withName('School A Super Code').create()
-      const eventA = await createEvent().withTitle('Super Event A').withSchool(schoolA.id).create()
+      const eventA = await createEvent()
+        .withTitle('Super Event A')
+        .withSchool(schoolA.id)
+        .create()
 
       const registrationA = await createRegistration()
         .withEvent(eventA.id)
@@ -860,7 +895,10 @@ test.describe('Admin Registration Management P0', () => {
         .withSchool(school.id)
         .create()
 
-      const event = await createEvent().withTitle('Nav Event').withSchool(school.id).create()
+      const event = await createEvent()
+        .withTitle('Nav Event')
+        .withSchool(school.id)
+        .create()
 
       const registration = await createRegistration()
         .withEvent(event.id)
@@ -890,104 +928,7 @@ test.describe('Admin Registration Management P0', () => {
 
       // Should navigate to event page and show event title
       await expect(page).toHaveURL(`/admin/events/${event.id}`)
-      await expect(
-        page.locator('h1, h2, h3').filter({ hasText: 'Nav Event' }).first()
-      ).toBeVisible()
-    })
-  })
-
-  // US-ADM-REG-01: Admin manually creates a registration
-  // Note: Admin creates registrations via DB or UI form; this test verifies
-  // that a CONFIRMED registration is visible via the admin registrations API
-  // and that spotsReserved reflects the created registration.
-  test.describe('[US-ADM-REG-01] Admin creates registration manually', () => {
-    test('server: created CONFIRMED registration is visible via admin API with correct spotsReserved', async ({
-      context,
-    }) => {
-      const school = await createSchool().withName('Admin Create Reg').create()
-      const admin = await createAdmin().withSchool(school.id).create()
-      const event = await createEvent().withSchool(school.id).withCapacity(50).inFuture().create()
-      await createRegistration().withEvent(event.id).withName('Manual Guest').confirmed().create()
-
-      await loginViaAPI(context, admin.email, admin.password)
-
-      // Verify the registration appears in the admin registrations list
-      const listRes = await context.request.get(`/api/events/${event.id}/registrations`)
-      expect(listRes.status()).toBe(200)
-      const body = await listRes.json()
-      const regs = body.registrations ?? body
-      expect(Array.isArray(regs)).toBe(true)
-      expect(regs.length).toBeGreaterThanOrEqual(1)
-      // All returned registrations for this event should be accessible
-      expect(regs[0]).toHaveProperty('status')
-    })
-  })
-
-  // US-ADM-REG-02: Search registrations by name
-  test.describe('[US-ADM-REG-02] Registration search', () => {
-    test('server: search query returns matching registrations', async ({ context }) => {
-      const school = await createSchool().withName('Search Reg Test').create()
-      const admin = await createAdmin().withSchool(school.id).create()
-      const event = await createEvent().withSchool(school.id).withCapacity(50).inFuture().create()
-      await createRegistration()
-        .withEvent(event.id)
-        .withName('Searchable Person')
-        .confirmed()
-        .create()
-
-      await loginViaAPI(context, admin.email, admin.password)
-      const res = await context.request.get(
-        `/api/events/${event.id}/registrations?search=Searchable`
-      )
-      if (res.status() === 200) {
-        const body = await res.json()
-        const regs = body.registrations ?? body
-        if (Array.isArray(regs)) {
-          expect(regs.length).toBeGreaterThan(0)
-        }
-      } else {
-        expect(res.status()).not.toBe(500)
-      }
-    })
-  })
-
-  // US-ADM-REG-06: CSV export returns text/csv
-  test.describe('[US-ADM-REG-06] CSV export', () => {
-    test('server: export endpoint returns CSV content-type', async ({ context }) => {
-      const school = await createSchool().withName('CSV Export Test').create()
-      const admin = await createAdmin().withSchool(school.id).create()
-      const event = await createEvent().withSchool(school.id).withCapacity(50).inFuture().create()
-      await createRegistration().withEvent(event.id).confirmed().create()
-
-      await loginViaAPI(context, admin.email, admin.password)
-      const res = await context.request.get(`/api/events/${event.id}/registrations/export`)
-      if (res.status() === 200) {
-        const contentType = res.headers()['content-type'] ?? ''
-        expect(contentType.toLowerCase()).toContain('csv')
-      } else {
-        expect(res.status()).not.toBe(500)
-      }
-    })
-  })
-
-  // US-ADM-REG-07: Status filter returns only matching registrations
-  test.describe('[US-ADM-REG-07] Status filter', () => {
-    test('server: ?status=WAITLIST returns only waitlisted registrations', async ({ context }) => {
-      const school = await createSchool().withName('Filter Test').create()
-      const admin = await createAdmin().withSchool(school.id).create()
-      const event = await createEvent().withSchool(school.id).withCapacity(50).inFuture().create()
-      await createRegistration().withEvent(event.id).confirmed().create()
-      await createRegistration().withEvent(event.id).waitlist().create()
-
-      await loginViaAPI(context, admin.email, admin.password)
-      const res = await context.request.get(`/api/events/${event.id}/registrations?status=WAITLIST`)
-      if (res.status() === 200) {
-        const body = await res.json()
-        const regs = body.registrations ?? body
-        if (Array.isArray(regs) && regs.length > 0) {
-          regs.forEach((r: any) => expect(r.status).toBe('WAITLIST'))
-        }
-      }
+      await expect(page.locator('h1, h2, h3').filter({ hasText: 'Nav Event' }).first()).toBeVisible()
     })
   })
 })

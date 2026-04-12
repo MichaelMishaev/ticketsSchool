@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { OAuth2Client } from 'google-auth-library'
-import { prisma } from '@/lib/prisma'
-import { randomUUID } from 'crypto'
-import pkceChallenge from 'pkce-challenge'
-import { authLogger } from '@/lib/logger-v2'
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
@@ -13,58 +9,46 @@ const REDIRECT_URI = `${BASE_URL}/api/auth/google/callback`
 export async function GET(request: NextRequest) {
   try {
     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
-      authLogger.error('Missing Google OAuth credentials')
+      console.error('[Google OAuth] Missing Google OAuth credentials')
       return NextResponse.redirect(new URL('/admin/login?error=oauth_not_configured', BASE_URL))
     }
 
-    const oauth2Client = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, REDIRECT_URI)
+    const oauth2Client = new OAuth2Client(
+      GOOGLE_CLIENT_ID,
+      GOOGLE_CLIENT_SECRET,
+      REDIRECT_URI
+    )
 
     // Generate a secure random state parameter
     const state = crypto.randomUUID()
 
-    // Generate PKCE challenge
-    const { code_verifier, code_challenge } = await pkceChallenge()
-
-    // Store state with code_verifier in database (more reliable than cookies for OAuth)
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
-    await prisma.oAuthState.create({
-      data: {
-        state,
-        codeVerifier: code_verifier, // Store verifier for callback
-        expiresAt,
-      },
+    // Generate the authorization URL
+    const authorizationUrl = oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      scope: [
+        'https://www.googleapis.com/auth/userinfo.email',
+        'https://www.googleapis.com/auth/userinfo.profile',
+      ],
+      state,
+      // Use PKCE for additional security
+      prompt: 'select_account',
     })
 
-    // Clean up expired states (older than 10 minutes)
-    await prisma.oAuthState.deleteMany({
-      where: {
-        expiresAt: {
-          lt: new Date(),
-        },
-      },
+    console.log('[Google OAuth] Redirecting to Google authorization')
+
+    // Store state in cookie for verification in callback
+    const response = NextResponse.redirect(authorizationUrl)
+    response.cookies.set('oauth_state', state, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 600, // 10 minutes
+      path: '/',
     })
 
-    // Generate the authorization URL with PKCE
-    const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth')
-    authUrl.searchParams.set('client_id', GOOGLE_CLIENT_ID)
-    authUrl.searchParams.set('redirect_uri', REDIRECT_URI)
-    authUrl.searchParams.set('response_type', 'code')
-    authUrl.searchParams.set('scope', 'openid email profile')
-    authUrl.searchParams.set('state', state)
-    authUrl.searchParams.set('prompt', 'select_account')
-    authUrl.searchParams.set('code_challenge', code_challenge) // PKCE
-    authUrl.searchParams.set('code_challenge_method', 'S256') // PKCE
-
-    authLogger.debug('State stored in DB with PKCE, redirecting to Google')
-
-    // Simply redirect - no cookies needed
-    return NextResponse.redirect(authUrl.toString())
+    return response
   } catch (error) {
-    // Log full error details server-side only
-    const requestId = randomUUID()
-    authLogger.error('Error initiating OAuth flow', { error, requestId })
-
-    // Return generic error to client (no internal details exposed)
-    return NextResponse.redirect(new URL(`/admin/login?error=oauth_init_failed`, BASE_URL))
+    console.error('[Google OAuth] Error initiating OAuth flow:', error)
+    return NextResponse.redirect(new URL('/admin/login?error=oauth_failed', BASE_URL))
   }
 }

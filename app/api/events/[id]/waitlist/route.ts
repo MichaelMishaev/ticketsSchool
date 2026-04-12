@@ -1,135 +1,173 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/auth.server'
-import { logger } from '@/lib/logger-v2'
+import { getCurrentAdmin } from '@/lib/auth.server'
 
-/**
- * GET /api/events/[id]/waitlist
- * Get waitlist registrations with matching available tables
- * Admin only - requires schoolId verification
- */
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+interface AvailableTable {
+  id: string
+  tableNumber: string
+  capacity: number
+  minOrder: number
+  registrations: Array<{ id: string; guestsCount: number | null }>
+}
+
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const admin = await getCurrentAdmin()
+  if (!admin) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { id: eventId } = await params
+
   try {
-    const admin = await requireAdmin()
-    const { id: eventId } = await params
-
-    // Verify event belongs to admin's school (unless SUPER_ADMIN)
+    // Verify event + school access
     const event = await prisma.event.findUnique({
       where: { id: eventId },
-      select: {
-        id: true,
-        schoolId: true,
-        eventType: true,
-        title: true,
-      },
+      select: { id: true, schoolId: true },
     })
 
     if (!event) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
-    // Multi-tenant security check
-    if (admin.role !== 'SUPER_ADMIN') {
-      if (!admin.schoolId) {
-        return NextResponse.json({ error: 'Admin must have a school assigned' }, { status: 403 })
-      }
-
-      if (event.schoolId !== admin.schoolId) {
-        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
-      }
+    if (admin.role !== 'SUPER_ADMIN' && admin.schoolId !== event.schoolId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Only table-based events have waitlist management
-    if (event.eventType !== 'TABLE_BASED') {
-      return NextResponse.json(
-        { error: 'Waitlist management is only for table-based events' },
-        { status: 400 }
-      )
-    }
-
-    // Fetch waitlist and available tables in parallel
-    const [waitlistRegistrations, availableTables] = await Promise.all([
+    // Fetch waitlist + available tables in parallel
+    const [waitlistEntries, availableTables] = await Promise.all([
       prisma.registration.findMany({
-        where: {
-          eventId,
-          status: 'WAITLIST',
-        },
+        where: { eventId, status: 'WAITLIST' },
         orderBy: { waitlistPriority: 'asc' },
         select: {
           id: true,
           confirmationCode: true,
           guestsCount: true,
           phoneNumber: true,
-          data: true,
           waitlistPriority: true,
+          data: true,
           createdAt: true,
         },
       }),
       prisma.table.findMany({
-        where: {
-          eventId,
-          status: 'AVAILABLE',
-        },
-        orderBy: { tableOrder: 'asc' },
+        where: { eventId, status: 'AVAILABLE' },
         select: {
           id: true,
           tableNumber: true,
           capacity: true,
           minOrder: true,
-          tableOrder: true,
+          registrations: {
+            where: { status: 'CONFIRMED' },
+            select: { id: true, guestsCount: true },
+          },
         },
       }),
     ])
 
-    // Compute matching tables for each waitlist entry
-    const waitlistWithMatches = waitlistRegistrations.map((registration) => {
-      const guestCount = registration.guestsCount || 0
+    // Track which table has been "claimed" as bestTable by a higher-priority entry
+    // Maps tableId → index of entry that claimed it
+    const claimedBestTables = new Map<string, number>()
 
-      // Find all tables that could fit this party
-      const matchingTables = availableTables.filter(
-        (table) => guestCount >= table.minOrder && guestCount <= table.capacity
-      )
+    const waitlist = waitlistEntries.map((entry, entryIndex) => {
+      const guestCount = entry.guestsCount ?? 0
 
-      // Find the best (smallest fitting) table
-      const bestTable =
-        matchingTables.length > 0 ? matchingTables.sort((a, b) => a.capacity - b.capacity)[0] : null
+      // Compute occupied spots for each table (sharing-aware)
+      const tablesWithOccupancy = availableTables.map((table) => {
+        const occupied = table.registrations.reduce(
+          (sum, r) => sum + (r.guestsCount ?? 0),
+          0
+        )
+        const remaining = Math.max(0, table.capacity - occupied)
+        return { ...table, occupied, remaining }
+      })
 
-      return {
-        ...registration,
-        matchingTables: matchingTables.map((t) => ({
+      // matchingTables: can fit the guest (capacity check only)
+      const matchingTables = tablesWithOccupancy
+        .filter((t) => guestCount <= t.remaining)
+        .map((t) => ({
           id: t.id,
           tableNumber: t.tableNumber,
           capacity: t.capacity,
           minOrder: t.minOrder,
-        })),
-        bestTable: bestTable
-          ? {
-              id: bestTable.id,
-              tableNumber: bestTable.tableNumber,
-              capacity: bestTable.capacity,
-            }
-          : null,
-        hasMatch: matchingTables.length > 0,
+        }))
+
+      const hasMatch = matchingTables.length > 0
+
+      if (!hasMatch) {
+        return {
+          id: entry.id,
+          confirmationCode: entry.confirmationCode,
+          guestsCount: entry.guestsCount,
+          phoneNumber: entry.phoneNumber,
+          waitlistPriority: entry.waitlistPriority,
+          data: entry.data,
+          createdAt: entry.createdAt.toISOString(),
+          matchingTables: [],
+          bestTable: null,
+          hasMatch: false,
+        }
+      }
+
+      // Candidates that meet minOrder — sort by smallest gap
+      const meetsMinOrder = tablesWithOccupancy
+        .filter((t) => guestCount <= t.remaining && guestCount >= t.minOrder)
+        .sort((a, b) => (a.remaining - guestCount) - (b.remaining - guestCount))
+
+      // Fallback: all matching, sort by smallest gap
+      const allMatching = tablesWithOccupancy
+        .filter((t) => guestCount <= t.remaining)
+        .sort((a, b) => (a.remaining - guestCount) - (b.remaining - guestCount))
+
+      const candidateList = meetsMinOrder.length > 0 ? meetsMinOrder : allMatching
+
+      // Priority-aware deduplication: skip tables already claimed by higher-priority entry
+      // with equal or better fit
+      let bestTableData: { id: string; tableNumber: string; capacity: number } | null = null
+
+      for (const candidate of candidateList) {
+        const claimedBy = claimedBestTables.get(candidate.id)
+        if (claimedBy === undefined) {
+          // Unclaimed — take it
+          claimedBestTables.set(candidate.id, entryIndex)
+          bestTableData = {
+            id: candidate.id,
+            tableNumber: candidate.tableNumber,
+            capacity: candidate.capacity,
+          }
+          break
+        }
+        // Already claimed by a higher-priority entry — try next candidate
+      }
+
+      // If all candidates are claimed, fall back to first candidate (no strict dedup on display)
+      if (!bestTableData && candidateList.length > 0) {
+        const first = candidateList[0]
+        bestTableData = {
+          id: first.id,
+          tableNumber: first.tableNumber,
+          capacity: first.capacity,
+        }
+      }
+
+      return {
+        id: entry.id,
+        confirmationCode: entry.confirmationCode,
+        guestsCount: entry.guestsCount,
+        phoneNumber: entry.phoneNumber,
+        waitlistPriority: entry.waitlistPriority,
+        data: entry.data,
+        createdAt: entry.createdAt.toISOString(),
+        matchingTables,
+        bestTable: bestTableData,
+        hasMatch: true,
       }
     })
 
-    return NextResponse.json({
-      waitlist: waitlistWithMatches,
-      stats: {
-        totalWaitlist: waitlistRegistrations.length,
-        withMatches: waitlistWithMatches.filter((w) => w.hasMatch).length,
-        withoutMatches: waitlistWithMatches.filter((w) => !w.hasMatch).length,
-        availableTables: availableTables.length,
-      },
-    })
-  } catch (error: any) {
-    logger.error('Waitlist fetch error', { source: 'events', error })
-
-    // Handle auth errors
-    if (error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    }
-
-    return NextResponse.json({ error: 'Failed to fetch waitlist' }, { status: 500 })
+    return NextResponse.json({ waitlist })
+  } catch (error) {
+    console.error('Error fetching waitlist:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

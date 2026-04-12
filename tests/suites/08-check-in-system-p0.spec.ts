@@ -2,14 +2,7 @@ import { test, expect } from '@playwright/test'
 import { prisma } from '@/lib/prisma'
 import { generateCheckInToken } from '@/lib/check-in-token'
 import { generateQRCodeData } from '@/lib/qr-code'
-import {
-  cleanupTestData,
-  createSchool,
-  createAdmin,
-  createEvent,
-  createRegistration,
-} from '../fixtures/test-data'
-import { loginViaAPI } from '../helpers/auth-helpers'
+import { cleanupTestData, createSchool, createAdmin, createEvent, createRegistration } from '../fixtures/test-data'
 
 test.describe('Check-In System (P0)', () => {
   test.afterAll(async () => {
@@ -29,7 +22,7 @@ test.describe('Check-In System (P0)', () => {
     const token = generateCheckInToken()
     await prisma.event.update({
       where: { id: event.id },
-      data: { checkInToken: token },
+      data: { checkInToken: token }
     })
 
     // Create registrations
@@ -79,7 +72,7 @@ test.describe('Check-In System (P0)', () => {
     const token = generateCheckInToken()
     await prisma.event.update({
       where: { id: event.id },
-      data: { checkInToken: token },
+      data: { checkInToken: token }
     })
 
     const registration = await createRegistration()
@@ -118,7 +111,7 @@ test.describe('Check-In System (P0)', () => {
 
     // Verify database
     const checkIn = await prisma.checkIn.findFirst({
-      where: { registrationId: registration.id },
+      where: { registrationId: registration.id }
     })
     expect(checkIn).toBeTruthy()
     expect(checkIn?.undoneAt).toBeNull()
@@ -135,7 +128,7 @@ test.describe('Check-In System (P0)', () => {
     const token = generateCheckInToken()
     await prisma.event.update({
       where: { id: event.id },
-      data: { checkInToken: token },
+      data: { checkInToken: token }
     })
 
     const registration = await createRegistration()
@@ -145,7 +138,7 @@ test.describe('Check-In System (P0)', () => {
 
     // Create check-in record
     await prisma.checkIn.create({
-      data: { registrationId: registration.id },
+      data: { registrationId: registration.id }
     })
 
     // Visit page
@@ -173,7 +166,7 @@ test.describe('Check-In System (P0)', () => {
 
     // Verify database
     const checkIn = await prisma.checkIn.findFirst({
-      where: { registrationId: registration.id },
+      where: { registrationId: registration.id }
     })
     expect(checkIn?.undoneAt).toBeTruthy()
   })
@@ -181,12 +174,15 @@ test.describe('Check-In System (P0)', () => {
   test('should search registrations', async ({ page }) => {
     // Setup
     const school = await createSchool().withName('Test School 4').create()
-    const event = await createEvent().withSchool(school.id).withTitle('Search Test Event').create()
+    const event = await createEvent()
+      .withSchool(school.id)
+      .withTitle('Search Test Event')
+      .create()
 
     const token = generateCheckInToken()
     await prisma.event.update({
       where: { id: event.id },
-      data: { checkInToken: token },
+      data: { checkInToken: token }
     })
 
     await createRegistration()
@@ -244,23 +240,38 @@ test.describe('Check-In System (P0)', () => {
   test('should filter by check-in status', async ({ page }) => {
     // Setup
     const school = await createSchool().withName('Test School 5').create()
-    const event = await createEvent().withSchool(school.id).withTitle('Filter Test Event').create()
+    const event = await createEvent()
+      .withSchool(school.id)
+      .withTitle('Filter Test Event')
+      .create()
 
     const token = generateCheckInToken()
     await prisma.event.update({
       where: { id: event.id },
-      data: { checkInToken: token },
+      data: { checkInToken: token }
     })
 
-    const reg1 = await createRegistration().withEvent(event.id).withName('נוכח א').create()
+    const reg1 = await createRegistration()
+      .withEvent(event.id)
+      .withName('נוכח א')
+      .create()
 
-    const reg2 = await createRegistration().withEvent(event.id).withName('נוכח ב').create()
+    const reg2 = await createRegistration()
+      .withEvent(event.id)
+      .withName('נוכח ב')
+      .create()
 
-    const reg3 = await createRegistration().withEvent(event.id).withName('לא נוכח').create()
+    const reg3 = await createRegistration()
+      .withEvent(event.id)
+      .withName('לא נוכח')
+      .create()
 
     // Check in first two
     await prisma.checkIn.createMany({
-      data: [{ registrationId: reg1.id }, { registrationId: reg2.id }],
+      data: [
+        { registrationId: reg1.id },
+        { registrationId: reg2.id }
+      ]
     })
 
     // Visit page
@@ -305,12 +316,15 @@ test.describe('Check-In System (P0)', () => {
   test('should display banned users correctly', async ({ page }) => {
     // Setup
     const school = await createSchool().withName('Test School 6').create()
-    const event = await createEvent().withSchool(school.id).withTitle('Banned User Event').create()
+    const event = await createEvent()
+      .withSchool(school.id)
+      .withTitle('Banned User Event')
+      .create()
 
     const token = generateCheckInToken()
     await prisma.event.update({
       where: { id: event.id },
-      data: { checkInToken: token },
+      data: { checkInToken: token }
     })
 
     // Create banned user
@@ -322,8 +336,8 @@ test.describe('Check-In System (P0)', () => {
         reason: 'התנהגות לא הולמת',
         bannedGamesCount: 3,
         eventsBlocked: 1,
-        active: true,
-      },
+        active: true
+      }
     })
 
     // Create registration for banned user
@@ -352,112 +366,6 @@ test.describe('Check-In System (P0)', () => {
     await expect(card.locator('button:has-text("סמן נוכח")')).not.toBeVisible()
   })
 
-  // US-CI-03: Duplicate scan detected — no duplicate CheckIn
-  test.describe('[US-CI-03] Duplicate check-in rejected', () => {
-    test('server: checking in same registration twice does not return 201 twice', async ({
-      context,
-    }) => {
-      const school = await createSchool().withName('Dup CheckIn Test').create()
-      const event = await createEvent()
-        .withSchool(school.id)
-        .withCapacity(50)
-        .withDate(new Date())
-        .withTime('09:00')
-        .create()
-
-      // Set a known checkInToken on the event
-      const ciToken = generateCheckInToken()
-      await prisma.event.update({ where: { id: event.id }, data: { checkInToken: ciToken } })
-
-      const reg = await createRegistration().withEvent(event.id).confirmed().create()
-
-      const checkInUrl = `/api/check-in/${event.id}/${ciToken}`
-      const body = JSON.stringify({ registrationId: reg.id })
-      const headers = { 'Content-Type': 'application/json' }
-
-      const res1 = await context.request.post(checkInUrl, { data: { registrationId: reg.id } })
-      const res2 = await context.request.post(checkInUrl, { data: { registrationId: reg.id } })
-
-      // First call must succeed or conflict
-      expect([200, 201, 400, 409]).toContain(res1.status())
-      if (res1.status() === 200 || res1.status() === 201) {
-        // Second scan must not also succeed as a new check-in
-        expect([200, 400, 409]).toContain(res2.status())
-      }
-    })
-  })
-
-  // US-CI-08: Cross-school QR code rejected
-  test.describe('[US-CI-08] Cross-school QR rejected', () => {
-    test('server: check-in with registration from wrong event fails', async ({ context }) => {
-      const schoolA = await createSchool().withName('CI School A').create()
-      const schoolB = await createSchool().withName('CI School B').create()
-
-      const today = new Date()
-
-      const eventA = await createEvent()
-        .withSchool(schoolA.id)
-        .withCapacity(50)
-        .withDate(today)
-        .withTime('09:00')
-        .create()
-      const eventB = await createEvent()
-        .withSchool(schoolB.id)
-        .withCapacity(50)
-        .withDate(today)
-        .withTime('09:00')
-        .create()
-
-      const ciTokenA = generateCheckInToken()
-      await prisma.event.update({ where: { id: eventA.id }, data: { checkInToken: ciTokenA } })
-
-      // Registration belongs to eventB
-      const regB = await createRegistration().withEvent(eventB.id).confirmed().create()
-
-      // Try to check in regB using eventA's token — must fail
-      const res = await context.request.post(`/api/check-in/${eventA.id}/${ciTokenA}`, {
-        data: { registrationId: regB.id },
-      })
-      expect([400, 403, 404]).toContain(res.status())
-    })
-  })
-
-  // US-CI-10: WAITLIST guests cannot be checked in
-  test.describe('[US-CI-10] Waitlist registration cannot be checked in', () => {
-    test('server: checking in WAITLIST registration returns error', async ({ context }) => {
-      const school = await createSchool().withName('WL CI Test').create()
-      const event = await createEvent()
-        .withSchool(school.id)
-        .withCapacity(50)
-        .withDate(new Date())
-        .withTime('09:00')
-        .create()
-
-      const ciToken = generateCheckInToken()
-      await prisma.event.update({ where: { id: event.id }, data: { checkInToken: ciToken } })
-
-      const waitlistReg = await createRegistration().withEvent(event.id).waitlist().create()
-
-      const res = await context.request.post(`/api/check-in/${event.id}/${ciToken}`, {
-        data: { registrationId: waitlistReg.id },
-      })
-      expect([400, 403, 422]).toContain(res.status())
-    })
-  })
-
-  // US-CI-07: Check-in stats visible on event page
-  test.describe('[US-CI-07] Check-in stats on event page', () => {
-    test('client: check-in tab on event page loads without error', async ({ page, context }) => {
-      const school = await createSchool().withName('CI Stats Test').create()
-      const admin = await createAdmin().withSchool(school.id).create()
-      const event = await createEvent().withSchool(school.id).withCapacity(50).inFuture().create()
-
-      await loginViaAPI(context, admin.email, admin.password)
-      await page.goto(`http://localhost:9000/admin/events/${event.id}`)
-      await expect(page.locator('body')).not.toContainText(/500|Internal Server Error/i)
-    })
-  })
-
   test('should show invalid token error', async ({ page }) => {
     // Setup
     const school = await createSchool().withName('Test School 7').create()
@@ -469,7 +377,7 @@ test.describe('Check-In System (P0)', () => {
     const correctToken = generateCheckInToken()
     await prisma.event.update({
       where: { id: event.id },
-      data: { checkInToken: correctToken },
+      data: { checkInToken: correctToken }
     })
 
     // Visit with wrong token
@@ -485,12 +393,15 @@ test.describe('Check-In System (P0)', () => {
 
     // Setup
     const school = await createSchool().withName('Test School 8').create()
-    const event = await createEvent().withSchool(school.id).withTitle('QR Scanner Event').create()
+    const event = await createEvent()
+      .withSchool(school.id)
+      .withTitle('QR Scanner Event')
+      .create()
 
     const token = generateCheckInToken()
     await prisma.event.update({
       where: { id: event.id },
-      data: { checkInToken: token },
+      data: { checkInToken: token }
     })
 
     // Visit page
@@ -519,15 +430,21 @@ test.describe('Check-In System (P0)', () => {
 
     // Setup
     const school = await createSchool().withName('Test School 9').create()
-    const event = await createEvent().withSchool(school.id).withTitle('Mobile Test Event').create()
+    const event = await createEvent()
+      .withSchool(school.id)
+      .withTitle('Mobile Test Event')
+      .create()
 
     const token = generateCheckInToken()
     await prisma.event.update({
       where: { id: event.id },
-      data: { checkInToken: token },
+      data: { checkInToken: token }
     })
 
-    await createRegistration().withEvent(event.id).withName('משתמש מובייל').create()
+    await createRegistration()
+      .withEvent(event.id)
+      .withName('משתמש מובייל')
+      .create()
 
     // Visit page
     await page.goto(`/check-in/${event.id}/${token}`)

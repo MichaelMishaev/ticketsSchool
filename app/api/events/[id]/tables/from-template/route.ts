@@ -1,152 +1,116 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
-import { logger } from '@/lib/logger-v2'
+import { getCurrentAdmin } from '@/lib/auth.server'
 
-// POST /api/events/[id]/tables/from-template - Create tables from template
+interface TemplateConfigItem {
+  tableNumber: string
+  capacity: number
+  minOrder: number
+  count?: number
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const admin = await getCurrentAdmin()
+  if (!admin) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { id: eventId } = await params
+
   try {
-    const { id } = await params
-    const admin = await requireAdmin()
-
-    // Verify event exists and admin has access
-    const event = await prisma.event.findUnique({
-      where: { id }
-    })
-
-    if (!event) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      )
-    }
-
-    // Multi-tenant security
-    if (admin.role !== 'SUPER_ADMIN') {
-      if (!admin.schoolId) {
-        return NextResponse.json(
-          { error: 'Admin must have a school assigned' },
-          { status: 403 }
-        )
-      }
-      if (event.schoolId !== admin.schoolId) {
-        return NextResponse.json(
-          { error: 'Access denied' },
-          { status: 403 }
-        )
-      }
-    }
-
     const body = await request.json()
     const { templateId } = body
 
     if (!templateId) {
-      return NextResponse.json(
-        { error: 'Missing required field: templateId' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'templateId is required' }, { status: 400 })
     }
 
-    // Fetch template
+    // Fetch template — must exist AND be public or belong to admin's school
     const template = await prisma.tableTemplate.findUnique({
-      where: { id: templateId }
+      where: { id: templateId },
     })
 
     if (!template) {
-      return NextResponse.json(
-        { error: 'Template not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Template not found' }, { status: 404 })
     }
 
-    // Verify access to template (own school or public)
     if (!template.isPublic && template.schoolId !== admin.schoolId) {
-      return NextResponse.json(
-        { error: 'Access denied to template' },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Get max table order
-    const maxOrderTable = await prisma.table.findFirst({
-      where: { eventId: id },
-      orderBy: { tableOrder: 'desc' },
-      select: { tableOrder: true, tableNumber: true }
+    // Verify event exists + school access
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
+      select: { id: true, schoolId: true },
     })
 
-    const maxOrder = maxOrderTable?.tableOrder ?? 0
+    if (!event) {
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+    }
 
-    // Extract highest number from existing tables for smart naming
-    const existingTables = await prisma.table.findMany({
-      where: { eventId: id },
-      select: { tableNumber: true }
+    if (admin.role !== 'SUPER_ADMIN' && admin.schoolId !== event.schoolId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Parse config
+    const config = template.config as TemplateConfigItem[]
+    if (!Array.isArray(config) || config.length === 0) {
+      return NextResponse.json({ error: 'Template has no valid config' }, { status: 422 })
+    }
+
+    // Get current max tableOrder for this event
+    const maxOrderResult = await prisma.table.aggregate({
+      where: { eventId },
+      _max: { tableOrder: true },
     })
+    let currentOrder = maxOrderResult._max.tableOrder ?? 0
 
-    const existingNumbers = existingTables
-      .map(t => {
-        const match = t.tableNumber.match(/\d+/)
-        return match ? parseInt(match[0], 10) : 0
-      })
-      .filter(n => n > 0)
-
-    let nextNumber = existingNumbers.length > 0
-      ? Math.max(...existingNumbers) + 1
-      : 1
-
-    // Build tables from template config
-    const config = template.config as any[]
-    const tablesToCreate: { eventId: string; tableNumber: string; capacity: number; minOrder: number; tableOrder: number; status: string }[] = []
-    let orderCounter = maxOrder
+    // Build all tables to create
+    const tablesToCreate: Array<{
+      eventId: string
+      tableNumber: string
+      tableOrder: number
+      capacity: number
+      minOrder: number
+      status: 'AVAILABLE'
+    }> = []
 
     for (const item of config) {
-      const { capacity, minOrder, count, namePattern } = item
+      const count = item.count && item.count > 1 ? item.count : 1
 
       for (let i = 0; i < count; i++) {
-        orderCounter++
-        const tableNumber = namePattern
-          ? namePattern.replace('{n}', String(nextNumber))
-          : `${nextNumber}`
+        currentOrder += 1
+        const tableNumber = count === 1 ? item.tableNumber : `${item.tableNumber}-${i + 1}`
 
         tablesToCreate.push({
-          eventId: id,
+          eventId,
           tableNumber,
-          capacity,
-          minOrder,
-          tableOrder: orderCounter,
-          status: 'AVAILABLE' as const
+          tableOrder: currentOrder,
+          capacity: item.capacity,
+          minOrder: item.minOrder,
+          status: 'AVAILABLE',
         })
-
-        nextNumber++
       }
     }
 
-    // Create all tables
-    const result = await prisma.table.createMany({
-      data: tablesToCreate
-    })
-
-    // Increment template usage counter
-    await prisma.tableTemplate.update({
-      where: { id: templateId },
-      data: { timesUsed: { increment: 1 } }
-    })
+    // Create all tables + increment timesUsed atomically
+    await prisma.$transaction([
+      prisma.table.createMany({ data: tablesToCreate }),
+      prisma.tableTemplate.update({
+        where: { id: templateId },
+        data: { timesUsed: { increment: 1 } },
+      }),
+    ])
 
     return NextResponse.json({
-      success: true,
-      count: result.count,
-      template: {
-        id: template.id,
-        name: template.name
-      }
-    }, { status: 201 })
+      count: tablesToCreate.length,
+      template: { name: template.name },
+    })
   } catch (error) {
-    logger.error('Failed to create tables from template', { source: 'tables', error })
-    return NextResponse.json(
-      { error: 'Failed to create tables from template' },
-      { status: 500 }
-    )
+    console.error('Error creating tables from template:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

@@ -1,5 +1,6 @@
 'use client'
 
+
 import { UtensilsCrossed, ListOrdered } from 'lucide-react'
 
 interface TableBoardTabsProps {

@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test'
  * CRITICAL: Multi-Tenant Data Isolation Tests
  *
  * These tests verify that School A cannot access School B's data.
- * This is the MOST IMPORTANT security feature of kartis.info.
+ * This is the MOST IMPORTANT security feature of TicketCap.
  *
  * Test Strategy:
  * 1. Create two schools with test data
@@ -17,25 +17,27 @@ import { test, expect } from '@playwright/test'
 const BASE_URL = process.env.BASE_URL || 'http://localhost:9000'
 
 test.describe('Multi-Tenant Data Isolation - CRITICAL', () => {
+
   // Test users for different schools
   const schoolAAdmin = {
     email: 'admin-school-a@test.com',
     password: 'TestPassword123!',
-    schoolSlug: 'school-a-test',
+    schoolSlug: 'school-a-test'
   }
 
   const schoolBAdmin = {
     email: 'admin-school-b@test.com',
     password: 'TestPassword123!',
-    schoolSlug: 'school-b-test',
+    schoolSlug: 'school-b-test'
   }
 
   const superAdmin = {
     email: 'super@ticketcap.com',
-    password: 'SuperPassword123!',
+    password: 'SuperPassword123!'
   }
 
   test.describe('Event Isolation', () => {
+
     test('School A admin can only see School A events', async ({ page }) => {
       // Login as School A admin
       await page.goto(`${BASE_URL}/admin/login`)
@@ -49,9 +51,7 @@ test.describe('Multi-Tenant Data Isolation - CRITICAL', () => {
       await page.goto(`${BASE_URL}/admin/events`)
 
       // Get all event cards/rows
-      const events = await page
-        .locator('[data-testid="event-item"], .event-card, tr[data-event-id]')
-        .all()
+      const events = await page.locator('[data-testid="event-item"], .event-card, tr[data-event-id]').all()
 
       // Verify each event belongs to School A
       for (const event of events) {
@@ -86,10 +86,7 @@ test.describe('Multi-Tenant Data Isolation - CRITICAL', () => {
 
       // Should show error or redirect
       const url = page.url()
-      const hasError = await page
-        .locator('text=לא נמצא, text=אין הרשאה, text=שגיאה')
-        .isVisible()
-        .catch(() => false)
+      const hasError = await page.locator('text=לא נמצא, text=אין הרשאה, text=שגיאה').isVisible().catch(() => false)
 
       expect(hasError || !url.includes(schoolBEventId)).toBeTruthy()
 
@@ -118,6 +115,7 @@ test.describe('Multi-Tenant Data Isolation - CRITICAL', () => {
   })
 
   test.describe('Registration Isolation', () => {
+
     test('School A admin can only see School A registrations', async ({ page }) => {
       await page.goto(`${BASE_URL}/admin/login`)
       await page.fill('input[type="email"]', schoolAAdmin.email)
@@ -133,9 +131,7 @@ test.describe('Multi-Tenant Data Isolation - CRITICAL', () => {
       await firstEvent.click()
 
       // Should see registrations for this event
-      const registrations = await page
-        .locator('[data-testid="registration-item"], .registration-row')
-        .all()
+      const registrations = await page.locator('[data-testid="registration-item"], .registration-row').all()
 
       // Verify each registration belongs to School A event
       for (const registration of registrations) {
@@ -157,15 +153,15 @@ test.describe('Multi-Tenant Data Isolation - CRITICAL', () => {
 
       // Get session cookie
       const cookies = await page.context().cookies()
-      const sessionCookie = cookies.find((c) => c.name === 'admin_session')
+      const sessionCookie = cookies.find(c => c.name === 'admin_session')
 
       // Try to export School B event registrations
       const schoolBEventId = 'school-b-event-123'
 
       const response = await request.get(`${BASE_URL}/api/events/${schoolBEventId}/export`, {
         headers: {
-          Cookie: `admin_session=${sessionCookie?.value}`,
-        },
+          'Cookie': `admin_session=${sessionCookie?.value}`
+        }
       })
 
       // Should be forbidden or not found
@@ -176,6 +172,7 @@ test.describe('Multi-Tenant Data Isolation - CRITICAL', () => {
   })
 
   test.describe('API Endpoint Isolation', () => {
+
     test('GET /api/events returns only current school events', async ({ request, page }) => {
       // Login to get session
       await page.goto(`${BASE_URL}/admin/login`)
@@ -187,13 +184,13 @@ test.describe('Multi-Tenant Data Isolation - CRITICAL', () => {
 
       // Get session cookie
       const cookies = await page.context().cookies()
-      const sessionCookie = cookies.find((c) => c.name === 'admin_session')
+      const sessionCookie = cookies.find(c => c.name === 'admin_session')
 
       // Call events API
       const response = await request.get(`${BASE_URL}/api/events`, {
         headers: {
-          Cookie: `admin_session=${sessionCookie?.value}`,
-        },
+          'Cookie': `admin_session=${sessionCookie?.value}`
+        }
       })
 
       expect(response.ok()).toBeTruthy()
@@ -220,13 +217,13 @@ test.describe('Multi-Tenant Data Isolation - CRITICAL', () => {
       await page.waitForURL(`${BASE_URL}/admin`)
 
       const cookies = await page.context().cookies()
-      const sessionCookie = cookies.find((c) => c.name === 'admin_session')
+      const sessionCookie = cookies.find(c => c.name === 'admin_session')
 
       // Try to create event for School B (by manipulating schoolId)
       const response = await request.post(`${BASE_URL}/api/events`, {
         headers: {
-          Cookie: `admin_session=${sessionCookie?.value}`,
-          'Content-Type': 'application/json',
+          'Cookie': `admin_session=${sessionCookie?.value}`,
+          'Content-Type': 'application/json'
         },
         data: {
           title: 'Malicious Event',
@@ -235,8 +232,8 @@ test.describe('Multi-Tenant Data Isolation - CRITICAL', () => {
           startDate: '2025-12-25',
           startTime: '18:00',
           schoolId: 'school-b-id', // Try to create for different school
-          location: 'Test Location',
-        },
+          location: 'Test Location'
+        }
       })
 
       // Should either:
@@ -266,15 +263,15 @@ test.describe('Multi-Tenant Data Isolation - CRITICAL', () => {
       await page.waitForURL(`${BASE_URL}/admin`)
 
       const cookies = await page.context().cookies()
-      const sessionCookie = cookies.find((c) => c.name === 'admin_session')
+      const sessionCookie = cookies.find(c => c.name === 'admin_session')
 
       // Try to delete School B event
       const schoolBEventId = 'school-b-event-123'
 
       const response = await request.delete(`${BASE_URL}/api/events/${schoolBEventId}`, {
         headers: {
-          Cookie: `admin_session=${sessionCookie?.value}`,
-        },
+          'Cookie': `admin_session=${sessionCookie?.value}`
+        }
       })
 
       // Should be forbidden or not found
@@ -285,6 +282,7 @@ test.describe('Multi-Tenant Data Isolation - CRITICAL', () => {
   })
 
   test.describe('Dashboard Stats Isolation', () => {
+
     test('Dashboard shows only current school statistics', async ({ page }) => {
       // Login as School A admin
       await page.goto(`${BASE_URL}/admin/login`)
@@ -300,12 +298,8 @@ test.describe('Multi-Tenant Data Isolation - CRITICAL', () => {
       // Check that stats don't include other schools' data
       // (This would require knowing total system stats vs school stats)
 
-      const totalEvents = await page
-        .locator('[data-testid="total-events"], .stat-events')
-        .textContent()
-      const totalRegistrations = await page
-        .locator('[data-testid="total-registrations"], .stat-registrations')
-        .textContent()
+      const totalEvents = await page.locator('[data-testid="total-events"], .stat-events').textContent()
+      const totalRegistrations = await page.locator('[data-testid="total-registrations"], .stat-registrations').textContent()
 
       console.log(`School A Dashboard: ${totalEvents} events, ${totalRegistrations} registrations`)
 
@@ -316,6 +310,7 @@ test.describe('Multi-Tenant Data Isolation - CRITICAL', () => {
   })
 
   test.describe('Session Security', () => {
+
     test('Cannot hijack another school session by cookie manipulation', async ({ browser }) => {
       // This test verifies that JWT tokens contain schoolId and can't be manipulated
 
@@ -335,7 +330,7 @@ test.describe('Multi-Tenant Data Isolation - CRITICAL', () => {
 
       // Get School A session cookie
       const cookies1 = await context1.cookies()
-      const schoolACookie = cookies1.find((c) => c.name === 'admin_session')
+      const schoolACookie = cookies1.find(c => c.name === 'admin_session')
 
       // Try to use School A's cookie in context2 (should still show School A data, not School B)
       await context2.addCookies([schoolACookie!])
