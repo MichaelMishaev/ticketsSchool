@@ -1,90 +1,88 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
-import { logger } from '@/lib/logger-v2'
+import { getCurrentAdmin } from '@/lib/auth.server'
 
-// DELETE /api/events/[id]/tables/bulk-delete - Delete multiple tables at once
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const admin = await getCurrentAdmin()
+  if (!admin) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { id: eventId } = await params
+
+  let body: { tableIds?: unknown }
   try {
-    const { id } = await params
-    const admin = await requireAdmin()
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
 
-    // Verify event exists and admin has access
-    const event = await prisma.event.findUnique({
-      where: { id },
-    })
+  const { tableIds } = body
 
-    if (!event) {
-      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
-    }
+  if (
+    !Array.isArray(tableIds) ||
+    tableIds.length === 0 ||
+    !tableIds.every((id) => typeof id === 'string')
+  ) {
+    return NextResponse.json(
+      { error: 'tableIds must be a non-empty array of strings' },
+      { status: 400 }
+    )
+  }
 
-    // Multi-tenant security
+  try {
+    // Verify school access
     if (admin.role !== 'SUPER_ADMIN') {
-      if (!admin.schoolId) {
-        return NextResponse.json({ error: 'Admin must have a school assigned' }, { status: 403 })
+      const event = await prisma.event.findUnique({
+        where: { id: eventId },
+        select: { schoolId: true },
+      })
+
+      if (!event) {
+        return NextResponse.json({ error: 'Event not found' }, { status: 404 })
       }
-      if (event.schoolId !== admin.schoolId) {
-        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+
+      if (admin.schoolId !== event.schoolId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     }
 
-    const body = await request.json()
-    const { tableIds } = body
-
-    // Validation
-    if (!Array.isArray(tableIds) || tableIds.length === 0) {
-      return NextResponse.json({ error: 'tableIds must be a non-empty array' }, { status: 400 })
-    }
-
-    // Verify all tables belong to this event and are not reserved
-    const tablesToDelete = await prisma.table.findMany({
-      where: {
-        id: { in: tableIds },
-        eventId: id,
+    // Fetch all tables in the IDs set that belong to this event, including their CONFIRMED registration counts
+    const tables = await prisma.table.findMany({
+      where: { id: { in: tableIds as string[] }, eventId },
+      select: {
+        id: true,
+        tableNumber: true,
+        registrations: {
+          where: { status: 'CONFIRMED' },
+          select: { id: true },
+        },
       },
     })
 
-    if (tablesToDelete.length !== tableIds.length) {
-      return NextResponse.json(
-        { error: 'Some tables not found or do not belong to this event' },
-        { status: 404 }
-      )
-    }
-
-    // Defense-in-depth: count actual CONFIRMED occupants per table.
-    // Source of truth is the registration rows, not the table.status flag.
-    const occupiedRegs = await prisma.registration.groupBy({
-      by: ['tableId'],
-      where: { tableId: { in: tableIds }, status: 'CONFIRMED' },
-      _count: { _all: true },
-    })
-    if (occupiedRegs.length > 0) {
-      const occupiedTableIds = new Set(occupiedRegs.map((r) => r.tableId))
-      const blocked = tablesToDelete.filter((t) => occupiedTableIds.has(t.id))
+    // Check for tables with active (CONFIRMED) registrations
+    const blockedTables = tables.filter((t) => t.registrations.length > 0)
+    if (blockedTables.length > 0) {
       return NextResponse.json(
         {
-          error: `Cannot delete tables with active registrations: ${blocked.map((t) => t.tableNumber).join(', ')}`,
+          error: 'Cannot delete tables with active registrations',
+          tableNumbers: blockedTables.map((t) => t.tableNumber),
         },
-        { status: 400 }
+        { status: 422 }
       )
     }
 
-    // Perform bulk delete
+    // Delete all tables that passed the check and belong to this event
+    const eligibleIds = tables.map((t) => t.id)
     const result = await prisma.table.deleteMany({
-      where: {
-        id: { in: tableIds },
-      },
+      where: { id: { in: eligibleIds }, eventId },
     })
 
-    return NextResponse.json({
-      success: true,
-      count: result.count,
-    })
+    return NextResponse.json({ count: result.count })
   } catch (error) {
-    logger.error('Failed to bulk delete tables', { source: 'tables', error })
-    return NextResponse.json({ error: 'Failed to bulk delete tables' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to delete tables' }, { status: 500 })
   }
 }

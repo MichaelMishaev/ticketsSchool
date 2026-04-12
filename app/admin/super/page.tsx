@@ -26,7 +26,6 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import Modal from '@/components/Modal'
-import DevFeatureLabel from '@/components/dev/DevFeatureLabel'
 
 interface EventStats {
   id: string
@@ -1346,7 +1345,6 @@ export default function SuperAdminDashboard() {
           </div>
         )}
       </Modal>
-      <DevFeatureLabel feature="super-admin" />
     </div>
   )
 }

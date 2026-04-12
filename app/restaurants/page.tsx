@@ -13,10 +13,13 @@ import {
   Shield,
   Star,
   Zap,
+  TrendingUp,
   BarChart3,
   Phone,
   MessageCircle,
   Ticket,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 
 export default function RestaurantsLandingPage() {
@@ -66,9 +69,7 @@ export default function RestaurantsLandingPage() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 sm:px-5 py-2.5 rounded-full shadow-lg border border-purple-100">
               <UtensilsCrossed className="w-5 h-5 text-purple-600" />
-              <span className="text-xs sm:text-sm font-bold text-gray-900">
-                מערכת הזמנת מקומות מתקדמת
-              </span>
+              <span className="text-xs sm:text-sm font-bold text-gray-900">מערכת הזמנת מקומות מתקדמת</span>
             </div>
 
             {/* Main Headline */}
@@ -157,10 +158,7 @@ export default function RestaurantsLandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-5xl font-black mb-6 text-gray-900">
-              איך זה עובד?{' '}
-              <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                פשוט מאוד
-              </span>
+              איך זה עובד? <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">פשוט מאוד</span>
             </h2>
             <p className="text-lg sm:text-xl text-gray-600">4 צעדים ואתם מוכנים לקבל הזמנות</p>
           </div>
@@ -198,9 +196,7 @@ export default function RestaurantsLandingPage() {
             ].map((item, idx) => (
               <div key={idx} className="relative">
                 <div className="bg-gradient-to-br from-purple-50 to-white border-2 border-purple-200 rounded-3xl p-8 text-center hover:shadow-2xl hover:border-purple-300 transition-all duration-300 hover:-translate-y-2">
-                  <div
-                    className={`w-16 h-16 bg-gradient-to-br ${item.color} text-white rounded-2xl flex items-center justify-center text-2xl font-black mx-auto mb-6 shadow-xl`}
-                  >
+                  <div className={`w-16 h-16 bg-gradient-to-br ${item.color} text-white rounded-2xl flex items-center justify-center text-2xl font-black mx-auto mb-6 shadow-xl`}>
                     {item.step}
                   </div>
                   <div className="flex justify-center mb-4 text-purple-600">{item.icon}</div>
@@ -220,9 +216,7 @@ export default function RestaurantsLandingPage() {
             <h2 className="text-3xl sm:text-5xl font-black mb-6">
               <span className="text-gray-900">תכונות מתקדמות</span>
               <br />
-              <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                לניהול הזמנות מקומות
-              </span>
+              <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">לניהול הזמנות מקומות</span>
             </h2>
           </div>
 
@@ -231,8 +225,7 @@ export default function RestaurantsLandingPage() {
               {
                 icon: <UtensilsCrossed className="w-10 h-10" />,
                 title: 'ניהול מקומות ישיבה גמיש',
-                description:
-                  'הגדירו מספר מקום, קיבולת, מינימום הזמנה וסדר תפיסה. שליטה מלאה על הסידור במקום',
+                description: 'הגדירו מספר מקום, קיבולת, מינימום הזמנה וסדר תפיסה. שליטה מלאה על הסידור במקום',
                 color: 'from-purple-500 to-purple-600',
                 bgColor: 'bg-purple-50',
                 image: '/restaurants/italian-restaurant.jpg',
@@ -240,8 +233,7 @@ export default function RestaurantsLandingPage() {
               {
                 icon: <Users className="w-10 h-10" />,
                 title: 'רשימת המתנה אוטומטית',
-                description:
-                  'כשכל השולחנות תפוסים, לקוחות נכנסים אוטומטית לרשימת המתנה. המערכת מנהלת את ההמתנה בצורה חכמה',
+                description: 'כשכל השולחנות תפוסים, לקוחות נכנסים אוטומטית לרשימת המתנה. המערכת מנהלת את ההמתנה בצורה חכמה',
                 color: 'from-pink-500 to-pink-600',
                 bgColor: 'bg-pink-50',
                 image: '/restaurants/japanese-restaurant.jpg',
@@ -249,8 +241,7 @@ export default function RestaurantsLandingPage() {
               {
                 icon: <Phone className="w-10 h-10" />,
                 title: 'שדות מידע מותאמים',
-                description:
-                  'אספו את המידע שאתם צריכים: טלפון, כמות סועדים, העדפות תפריט, אלרגיות ועוד. בניית טופס מותאם אישית',
+                description: 'אספו את המידע שאתם צריכים: טלפון, כמות סועדים, העדפות תפריט, אלרגיות ועוד. בניית טופס מותאם אישית',
                 color: 'from-purple-600 to-purple-700',
                 bgColor: 'bg-purple-50',
                 image: '/restaurants/french-bistro.jpg',
@@ -258,8 +249,7 @@ export default function RestaurantsLandingPage() {
               {
                 icon: <BarChart3 className="w-10 h-10" />,
                 title: 'דוחות ומעקב בזמן אמת',
-                description:
-                  'ראו בזמן אמת כמה שולחנות תפוסים, מי הזמין, מי ממתין. ניהול מלא ושליטה מקיפה',
+                description: 'ראו בזמן אמת כמה שולחנות תפוסים, מי הזמין, מי ממתין. ניהול מלא ושליטה מקיפה',
                 color: 'from-red-500 to-red-600',
                 bgColor: 'bg-red-50',
                 image: '/restaurants/steakhouse.jpg',
@@ -267,8 +257,7 @@ export default function RestaurantsLandingPage() {
               {
                 icon: <MessageCircle className="w-10 h-10" />,
                 title: 'התראות ואישורים אוטומטיים',
-                description:
-                  'לקוחות מקבלים אישור הזמנה עם קוד ייחודי. אפשרות לשלוח תזכורות לפני האירוע',
+                description: 'לקוחות מקבלים אישור הזמנה עם קוד ייחודי. אפשרות לשלוח תזכורות לפני האירוע',
                 color: 'from-green-500 to-green-600',
                 bgColor: 'bg-green-50',
                 image: '/restaurants/mediterranean-cafe.jpg',
@@ -276,8 +265,7 @@ export default function RestaurantsLandingPage() {
               {
                 icon: <Shield className="w-10 h-10" />,
                 title: 'מדיניות ביטול חכמה',
-                description:
-                  'הגדירו מדיניות ביטול עם זמן מינימלי, אפשרות לדרוש סיבת ביטול, ושחרור שולחנות אוטומטי',
+                description: 'הגדירו מדיניות ביטול עם זמן מינימלי, אפשרות לדרוש סיבת ביטול, ושחרור שולחנות אוטומטי',
                 color: 'from-blue-500 to-blue-600',
                 bgColor: 'bg-blue-50',
                 image: '/restaurants/asian-fusion.jpg',
@@ -297,18 +285,14 @@ export default function RestaurantsLandingPage() {
                     sizes="(max-width: 768px) 100vw, 33vw"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-                  <div
-                    className={`absolute top-4 right-4 w-12 h-12 bg-gradient-to-br ${feature.color} rounded-xl flex items-center justify-center text-white shadow-lg`}
-                  >
+                  <div className={`absolute top-4 right-4 w-12 h-12 bg-gradient-to-br ${feature.color} rounded-xl flex items-center justify-center text-white shadow-lg`}>
                     {feature.icon}
                   </div>
                 </div>
 
                 {/* Feature Content */}
                 <div className="p-6">
-                  <h3 className="text-xl font-bold mb-3 text-gray-900 text-right">
-                    {feature.title}
-                  </h3>
+                  <h3 className="text-xl font-bold mb-3 text-gray-900 text-right">{feature.title}</h3>
                   <p className="text-gray-600 leading-relaxed text-right">{feature.description}</p>
                 </div>
               </div>
@@ -324,9 +308,7 @@ export default function RestaurantsLandingPage() {
             <h2 className="text-3xl sm:text-5xl font-black mb-6">
               <span className="text-gray-900">איך מערכת ההזמנות</span>
               <br />
-              <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                עובדת בפועל?
-              </span>
+              <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">עובדת בפועל?</span>
             </h2>
             <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
               הבנת המערכת תעזור לכם לנצל אותה בצורה המיטבית
@@ -350,26 +332,18 @@ export default function RestaurantsLandingPage() {
                 <div className="bg-purple-50 rounded-xl p-4 border-2 border-purple-200">
                   <p className="font-bold text-purple-900 mb-2">🪑 כל שולחן כולל:</p>
                   <ul className="space-y-2 text-gray-700">
-                    <li>
-                      • <strong>שם שולחן</strong> - למשל "שולחן 1", "שולחן VIP"
-                    </li>
-                    <li>
-                      • <strong>קיבולת</strong> - כמה אנשים יכולים לשבת (2, 4, 6, 8...)
-                    </li>
-                    <li>
-                      • <strong>מינימום הזמנה</strong> - סכום מינימלי בש"ח (אופציונלי)
-                    </li>
-                    <li>
-                      • <strong>סדר תפיסה</strong> - באיזה סדר השולחנות מוצגים ללקוחות
-                    </li>
+                    <li>• <strong>מספר שולחן</strong> - למשל "שולחן 1", "שולחן VIP"</li>
+                    <li>• <strong>קיבולת</strong> - כמה אנשים יכולים לשבת (2, 4, 6, 8...)</li>
+                    <li>• <strong>מינימום הזמנה</strong> - סכום מינימלי בש"ח (אופציונלי)</li>
+                    <li>• <strong>סדר תפיסה</strong> - באיזה סדר השולחנות מוצגים ללקוחות</li>
                   </ul>
                 </div>
 
                 <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border-2 border-green-200">
                   <p className="font-bold text-green-900 mb-2">✅ היתרון:</p>
                   <p className="text-gray-700">
-                    לקוחות רואים בדיוק איזה שולחנות פנויים וכמה אנשים יכולים לשבת. זה יותר ברור
-                    ומקצועי מאשר "נשארו 10 מקומות".
+                    לקוחות רואים בדיוק איזה שולחנות פנויים וכמה אנשים יכולים לשבת.
+                    זה יותר ברור ומקצועי מאשר "נשארו 10 מקומות".
                   </p>
                 </div>
               </div>
@@ -389,33 +363,23 @@ export default function RestaurantsLandingPage() {
 
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center text-pink-700 font-bold flex-shrink-0">
-                    1
-                  </div>
+                  <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center text-pink-700 font-bold flex-shrink-0">1</div>
                   <p className="text-gray-700">לקוח נכנס לקישור ההזמנה שלכם</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center text-pink-700 font-bold flex-shrink-0">
-                    2
-                  </div>
+                  <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center text-pink-700 font-bold flex-shrink-0">2</div>
                   <p className="text-gray-700">רואה רשימה של שולחנות פנויים עם קיבולת</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center text-pink-700 font-bold flex-shrink-0">
-                    3
-                  </div>
+                  <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center text-pink-700 font-bold flex-shrink-0">3</div>
                   <p className="text-gray-700">בוחר שולחן מתאים (לפי גודל החבורה)</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center text-pink-700 font-bold flex-shrink-0">
-                    4
-                  </div>
+                  <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center text-pink-700 font-bold flex-shrink-0">4</div>
                   <p className="text-gray-700">ממלא פרטים (טלפון, כמות סועדים, העדפות)</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center text-pink-700 font-bold flex-shrink-0">
-                    5
-                  </div>
+                  <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center text-pink-700 font-bold flex-shrink-0">5</div>
                   <p className="text-gray-700">לוחץ "אישור" ומקבל קוד הזמנה ייחודי</p>
                 </div>
 
@@ -512,27 +476,19 @@ export default function RestaurantsLandingPage() {
                 <div className="space-y-3 text-right">
                   <div className="flex items-start gap-3">
                     <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
-                    <p className="text-gray-700">
-                      לקוח מזמין שולחן דרך הקישור → בוחר שולחן פנוי ומאשר
-                    </p>
+                    <p className="text-gray-700">לקוח מזמין שולחן דרך הקישור → בוחר שולחן פנוי ומאשר</p>
                   </div>
                   <div className="flex items-start gap-3">
                     <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
-                    <p className="text-gray-700">
-                      השולחן מסומן כתפוס אוטומטית + קוד אישור ייחודי נשלח ללקוח
-                    </p>
+                    <p className="text-gray-700">השולחן מסומן כתפוס אוטומטית + קוד אישור ייחודי נשלח ללקוח</p>
                   </div>
                   <div className="flex items-start gap-3">
                     <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
-                    <p className="text-gray-700">
-                      כשכל 10 השולחנות תפוסים → לקוחות נוספים נכנסים לרשימת המתנה
-                    </p>
+                    <p className="text-gray-700">כשכל 10 השולחנות תפוסים → לקוחות נוספים נכנסים לרשימת המתנה</p>
                   </div>
                   <div className="flex items-start gap-3">
                     <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
-                    <p className="text-gray-700">
-                      אם לקוח מבטל → אתם יכולים לקדם מרשימת ההמתנה בלחיצה
-                    </p>
+                    <p className="text-gray-700">אם לקוח מבטל → אתם יכולים לקדם מרשימת ההמתנה בלחיצה</p>
                   </div>
                 </div>
               </div>
@@ -556,8 +512,12 @@ export default function RestaurantsLandingPage() {
           <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 sm:p-12 border border-green-200">
             <div className="text-center mb-8">
               <MessageCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
-              <h2 className="text-3xl sm:text-4xl font-black text-gray-900 mb-4">יש שאלות?</h2>
-              <p className="text-lg text-gray-700">דברו איתנו ישירות בוואטסאפ - נשמח לעזור!</p>
+              <h2 className="text-3xl sm:text-4xl font-black text-gray-900 mb-4">
+                יש שאלות?
+              </h2>
+              <p className="text-lg text-gray-700">
+                דברו איתנו ישירות בוואטסאפ - נשמח לעזור!
+              </p>
             </div>
 
             <a
@@ -586,7 +546,9 @@ export default function RestaurantsLandingPage() {
       {/* Final CTA */}
       <section className="py-32 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-purple-600 via-pink-600 to-red-600 text-white">
         <div className="max-w-5xl mx-auto text-center">
-          <h2 className="text-4xl sm:text-6xl font-black mb-8">מוכנים להתחיל?</h2>
+          <h2 className="text-4xl sm:text-6xl font-black mb-8">
+            מוכנים להתחיל?
+          </h2>
           <p className="text-xl sm:text-2xl mb-12 opacity-95">
             הצטרפו לעסקים שכבר מנהלים הזמנות מקומות בצורה מקצועית עם kartis.info
           </p>
@@ -625,16 +587,10 @@ export default function RestaurantsLandingPage() {
             <Link href="/admin/signup" className="text-gray-400 hover:text-white transition-colors">
               הרשמה
             </Link>
-            <Link
-              href="/admin/events/new-restaurant"
-              className="text-gray-400 hover:text-white transition-colors"
-            >
+            <Link href="/admin/events/new-restaurant" className="text-gray-400 hover:text-white transition-colors">
               צור אירוע
             </Link>
-            <a
-              href="https://wa.me/972555020829"
-              className="text-gray-400 hover:text-white transition-colors"
-            >
+            <a href="https://wa.me/972555020829" className="text-gray-400 hover:text-white transition-colors">
               צור קשר
             </a>
           </div>
@@ -645,19 +601,10 @@ export default function RestaurantsLandingPage() {
       {/* Animations */}
       <style jsx>{`
         @keyframes blob {
-          0%,
-          100% {
-            transform: translate(0, 0) scale(1);
-          }
-          25% {
-            transform: translate(20px, -50px) scale(1.1);
-          }
-          50% {
-            transform: translate(-20px, 20px) scale(0.9);
-          }
-          75% {
-            transform: translate(50px, 50px) scale(1.05);
-          }
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          25% { transform: translate(20px, -50px) scale(1.1); }
+          50% { transform: translate(-20px, 20px) scale(0.9); }
+          75% { transform: translate(50px, 50px) scale(1.05); }
         }
         .animate-blob {
           animation: blob 7s infinite;

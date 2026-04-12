@@ -236,7 +236,7 @@ model Registration {
   spotsCount       Int                @default(1)
   status           RegistrationStatus @default(CONFIRMED)
   confirmationCode String             @unique
-  phoneNumber      String? // Made optional to match production data
+  phoneNumber      String?
   email            String?
 
   // Table-based events

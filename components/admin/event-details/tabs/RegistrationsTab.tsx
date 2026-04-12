@@ -16,9 +16,9 @@ import {
   Zap,
   MessageCircle,
   RotateCcw,
-  AlertTriangle,
 } from 'lucide-react'
 import { format } from 'date-fns'
+import { useEventStream } from '@/hooks/useEventStream'
 
 // Helper function to convert Israeli phone to WhatsApp URL
 function formatWhatsAppUrl(phone: string): string | null {
@@ -43,59 +43,28 @@ interface Registration {
   data: Record<string, any>
   phoneNumber: string
   spotsCount: number
-  status: 'CONFIRMED' | 'WAITLIST' | 'CANCELLED' | 'PAYMENT_PENDING'
+  status: 'CONFIRMED' | 'WAITLIST' | 'CANCELLED'
   confirmationCode: string
   createdAt: Date | string
-}
-
-interface LiveStats {
-  confirmed: number
-  waitlist: number
-  cancelled: number
-  paymentPending: number
-}
-
-interface StreamedRegistration {
-  id: string
-  status: 'CONFIRMED' | 'WAITLIST' | 'CANCELLED' | 'PAYMENT_PENDING'
-  spotsCount: number
-  phoneNumber: string
-  data: Record<string, unknown>
-  confirmationCode: string
-  createdAt: string
 }
 
 interface RegistrationsTabProps {
   eventId: string
   registrations: Registration[]
   onRegistrationUpdate: () => void
-  /**
-   * Real-time stream props — owned by the parent (EventDetailsTabbed) so the
-   * chime + document.title counter keep working when the admin is on a
-   * different tab. This tab is a *consumer* of the stream, not the producer.
-   */
-  newRegistrations?: StreamedRegistration[]
-  isConnected?: boolean
-  liveStats?: LiveStats | null
 }
 
 export default function RegistrationsTab({
   eventId,
   registrations,
   onRegistrationUpdate,
-  newRegistrations = [],
-  isConnected = false,
 }: RegistrationsTabProps) {
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterStatus, setFilterStatus] = useState<
-    'all' | 'CONFIRMED' | 'WAITLIST' | 'CANCELLED' | 'PAYMENT_PENDING'
-  >('all')
+  const [filterStatus, setFilterStatus] = useState<'all' | 'CONFIRMED' | 'WAITLIST' | 'CANCELLED'>(
+    'all'
+  )
   const [expandedRow, setExpandedRow] = useState<string | null>(null)
   const [cancelModal, setCancelModal] = useState<{ show: boolean; registrationId: string | null }>({
-    show: false,
-    registrationId: null,
-  })
-  const [deleteModal, setDeleteModal] = useState<{ show: boolean; registrationId: string | null }>({
     show: false,
     registrationId: null,
   })
@@ -127,12 +96,8 @@ export default function RegistrationsTab({
     return phone
   }
 
-  // Real-time stream now owned by the parent (EventDetailsTabbed) and passed
-  // down as props — see the hoist in 2026-04-11 so the chime + title counter
-  // work on every tab, not just this one. This tab only consumes
-  // `newRegistrations` and `isConnected`; the `liveStats` counts are used by
-  // OverviewTab's banner, not here — local `counts` (derived from the merged
-  // list) stays the source of truth for the filter tabs below.
+  // Real-time updates via SSE
+  const { newRegistrations, isConnected, stats } = useEventStream(eventId, true)
 
   // Merge new registrations with existing ones
   const allRegistrations = useMemo(() => {
@@ -196,9 +161,9 @@ export default function RegistrationsTab({
       })
     }
 
-    // Sort: CONFIRMED, WAITLIST, PAYMENT_PENDING (needs attention), CANCELLED
+    // Sort: CONFIRMED first, then WAITLIST, then CANCELLED
     filtered = filtered.sort((a, b) => {
-      const statusOrder = { CONFIRMED: 0, WAITLIST: 1, PAYMENT_PENDING: 2, CANCELLED: 3 }
+      const statusOrder = { CONFIRMED: 1, WAITLIST: 2, CANCELLED: 3 }
       return statusOrder[a.status] - statusOrder[b.status]
     })
 
@@ -210,23 +175,14 @@ export default function RegistrationsTab({
     const confirmed = allRegistrations.filter((r) => r.status === 'CONFIRMED')
     const waitlist = allRegistrations.filter((r) => r.status === 'WAITLIST')
     const cancelled = allRegistrations.filter((r) => r.status === 'CANCELLED')
-    const pending = allRegistrations.filter((r) => r.status === 'PAYMENT_PENDING')
 
     return {
-      // "all" excludes PAYMENT_PENDING — they are not confirmed participants
-      all: allRegistrations
-        .filter((r) => r.status !== 'PAYMENT_PENDING')
-        .reduce((sum, r) => sum + (r.spotsCount || 0), 0),
+      all: allRegistrations.reduce((sum, r) => sum + (r.spotsCount || 0), 0),
       confirmed: confirmed.reduce((sum, r) => sum + (r.spotsCount || 0), 0),
       waitlist: waitlist.reduce((sum, r) => sum + (r.spotsCount || 0), 0),
       cancelled: cancelled.reduce((sum, r) => sum + (r.spotsCount || 0), 0),
-      pending: pending.reduce((sum, r) => sum + (r.spotsCount || 0), 0),
     }
   }, [allRegistrations])
-
-  // NOTE: The document.title `(N⏳)` counter effect moved up to EventDetailsTabbed.
-  // Previously lived here, but it was scoped to this tab — admins on the
-  // Overview tab wouldn't see the badge. The parent now owns it.
 
   // Show success toast
   const showSuccess = (message: string) => {
@@ -235,14 +191,10 @@ export default function RegistrationsTab({
     setTimeout(() => setShowSuccessToast(false), 5000) // Increased from 3s to 5s for SSE tests
   }
 
-  // Listen for filter events from overview cards. The PAYMENT_PENDING banner
-  // in OverviewTab dispatches with `status: 'PAYMENT_PENDING'` — the type
-  // union here must include it or the banner click would be a no-op.
+  // Listen for filter events from overview cards
   useEffect(() => {
     const handleFilter = (event: Event) => {
-      const customEvent = event as CustomEvent<{
-        status: 'CONFIRMED' | 'WAITLIST' | 'CANCELLED' | 'PAYMENT_PENDING'
-      }>
+      const customEvent = event as CustomEvent<{ status: 'CONFIRMED' | 'WAITLIST' }>
       if (customEvent.detail && customEvent.detail.status) {
         setFilterStatus(customEvent.detail.status)
       }
@@ -290,10 +242,7 @@ export default function RegistrationsTab({
         const error = await response.json()
 
         // Check if error is due to capacity (supports both English and Hebrew messages)
-        if (
-          error.error &&
-          (error.error.includes('Cannot promote') || error.error.includes('לא ניתן לאשר'))
-        ) {
+        if (error.error && (error.error.includes('Cannot promote') || error.error.includes('לא ניתן לאשר'))) {
           // Event is full - offer to add to waitlist
           const addToWaitlist = confirm(
             `האירוע מלא! ${error.error}\n\nהאם להוסיף את ההרשמה לרשימת המתנה במקום?`
@@ -359,20 +308,16 @@ export default function RegistrationsTab({
   }
 
   // Delete registration
-  const handleConfirmDelete = async () => {
-    if (!deleteModal.registrationId) return
+  const handleDeleteRegistration = async (registrationId: string) => {
+    if (!confirm('האם למחוק הרשמה זו לצמיתות? פעולה זו אינה ניתנת לביטול.')) return
 
     try {
-      const response = await fetch(
-        `/api/events/${eventId}/registrations/${deleteModal.registrationId}`,
-        {
-          method: 'DELETE',
-        }
-      )
+      const response = await fetch(`/api/events/${eventId}/registrations/${registrationId}`, {
+        method: 'DELETE',
+      })
       if (response.ok) {
         showSuccess('ההרשמה נמחקה')
         onRegistrationUpdate()
-        setDeleteModal({ show: false, registrationId: null })
       } else {
         const error = await response.json()
         alert(error.error || 'שגיאה במחיקת ההרשמה')
@@ -431,13 +376,6 @@ export default function RegistrationsTab({
             בוטל
           </span>
         )
-      case 'PAYMENT_PENDING':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-800 text-xs font-bold rounded-full shadow-sm ring-1 ring-yellow-300/50">
-            <div className="w-2 h-2 bg-gradient-to-br from-yellow-500 to-amber-500 rounded-full animate-pulse shadow-sm"></div>
-            ממתין לתשלום
-          </span>
-        )
       default:
         return null
     }
@@ -454,46 +392,6 @@ export default function RegistrationsTab({
           </div>
         </div>
       )}
-
-      {/* Persistent pending-payment banner — clicking jumps to the filtered view.
-          Auto-dismisses when counts.pending drops to 0 (after admin approves
-          or registration auto-expires). */}
-      {counts.pending > 0 && (
-        <button
-          type="button"
-          onClick={() => setFilterStatus('PAYMENT_PENDING')}
-          className="w-full mb-4 flex items-center gap-3 px-5 py-4 rounded-xl bg-gradient-to-r from-yellow-100 via-amber-100 to-yellow-100 border-2 border-amber-400 shadow-md hover:shadow-lg transition-all animate-pulse focus:outline-none focus:ring-4 focus:ring-amber-500/30"
-          aria-label={`הצג ${counts.pending} הרשמות הממתינות לתשלום`}
-        >
-          <AlertTriangle className="w-6 h-6 text-amber-700 flex-shrink-0" />
-          <div className="flex-1 text-right">
-            <p className="text-base font-bold text-amber-900">
-              ⚠️ יש {counts.pending} הרשמות הממתינות לתשלום — נדרש אישור ידני
-            </p>
-            <p className="text-xs text-amber-800 mt-0.5">לחץ/י לסינון והצגת הרשימה</p>
-          </div>
-        </button>
-      )}
-
-      {/* Stats grid — 4 prominent cards at a glance */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 text-center">
-          <p className="text-2xl font-bold text-gray-900">{counts.all}</p>
-          <p className="text-xs text-gray-500 mt-0.5">{'סה"כ'}</p>
-        </div>
-        <div className="bg-green-50 rounded-xl border border-green-200 shadow-sm p-4 text-center">
-          <p className="text-2xl font-bold text-green-700">{counts.confirmed}</p>
-          <p className="text-xs text-green-600 mt-0.5">מאושרים</p>
-        </div>
-        <div className="bg-amber-50 rounded-xl border border-amber-200 shadow-sm p-4 text-center">
-          <p className="text-2xl font-bold text-amber-700">{counts.waitlist}</p>
-          <p className="text-xs text-amber-600 mt-0.5">המתנה</p>
-        </div>
-        <div className="bg-red-50 rounded-xl border border-red-200 shadow-sm p-4 text-center">
-          <p className="text-2xl font-bold text-red-600">{counts.cancelled}</p>
-          <p className="text-xs text-red-500 mt-0.5">בוטלו</p>
-        </div>
-      </div>
 
       {/* Header - Improved layout */}
       <div className="mb-6">
@@ -582,18 +480,6 @@ export default function RegistrationsTab({
             >
               המתנה ({counts.waitlist})
             </button>
-            {counts.pending > 0 && (
-              <button
-                onClick={() => setFilterStatus('PAYMENT_PENDING')}
-                className={`px-4 py-2 rounded-lg font-bold transition-all animate-pulse ring-2 ring-amber-400/60 ${
-                  filterStatus === 'PAYMENT_PENDING'
-                    ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white shadow-md'
-                    : 'bg-gradient-to-r from-yellow-200 to-amber-200 text-amber-900 hover:from-yellow-300 hover:to-amber-300 border border-amber-400'
-                }`}
-              >
-                ⚠️ ממתין לתשלום ({counts.pending})
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -633,9 +519,7 @@ export default function RegistrationsTab({
                       ? 'bg-gradient-to-b from-green-500 to-emerald-500'
                       : registration.status === 'WAITLIST'
                         ? 'bg-gradient-to-b from-amber-500 to-orange-500'
-                        : registration.status === 'PAYMENT_PENDING'
-                          ? 'bg-gradient-to-b from-yellow-400 to-amber-500'
-                          : 'bg-gradient-to-b from-red-500 to-rose-500'
+                        : 'bg-gradient-to-b from-red-500 to-rose-500'
                   }`}
                 />
 
@@ -850,9 +734,7 @@ export default function RegistrationsTab({
                                 ? 'מאושר'
                                 : registration.status === 'WAITLIST'
                                   ? 'רשימת המתנה'
-                                  : registration.status === 'PAYMENT_PENDING'
-                                    ? 'ממתין לתשלום'
-                                    : 'בוטל'}
+                                  : 'בוטל'}
                             </span>
                           </div>
 
@@ -898,20 +780,6 @@ export default function RegistrationsTab({
                             </button>
                           )}
 
-                          {/* Manual approval for pending payment (e.g. paid by phone/cash) */}
-                          {registration.status === 'PAYMENT_PENDING' && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handlePromoteToConfirmed(registration.id)
-                              }}
-                              className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-yellow-500 to-amber-500 text-white rounded-xl font-bold hover:from-yellow-600 hover:to-amber-600 active:scale-95 transition-all shadow-md hover:shadow-lg"
-                            >
-                              <UserCheck className="w-4 h-4" />
-                              <span>אישור ידני</span>
-                            </button>
-                          )}
-
                           {/* Restore Cancelled */}
                           {registration.status === 'CANCELLED' && (
                             <button
@@ -927,25 +795,24 @@ export default function RegistrationsTab({
                           )}
 
                           {/* Cancel Registration */}
-                          {registration.status !== 'CANCELLED' &&
-                            registration.status !== 'PAYMENT_PENDING' && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setCancelModal({ show: true, registrationId: registration.id })
-                                }}
-                                className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold hover:from-amber-600 hover:to-orange-600 active:scale-95 transition-all shadow-md hover:shadow-lg"
-                              >
-                                <Ban className="w-4 h-4" />
-                                <span>בטל הרשמה</span>
-                              </button>
-                            )}
+                          {registration.status !== 'CANCELLED' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setCancelModal({ show: true, registrationId: registration.id })
+                              }}
+                              className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold hover:from-amber-600 hover:to-orange-600 active:scale-95 transition-all shadow-md hover:shadow-lg"
+                            >
+                              <Ban className="w-4 h-4" />
+                              <span>בטל הרשמה</span>
+                            </button>
+                          )}
 
                           {/* Delete Registration */}
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
-                              setDeleteModal({ show: true, registrationId: registration.id })
+                              handleDeleteRegistration(registration.id)
                             }}
                             className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl font-bold hover:from-red-600 hover:to-rose-600 active:scale-95 transition-all shadow-md hover:shadow-lg"
                           >
@@ -1025,51 +892,6 @@ export default function RegistrationsTab({
                   setCancelModal({ show: false, registrationId: null })
                   setCancelReason('')
                 }}
-                className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors focus:outline-none focus:ring-4 focus:ring-gray-300"
-              >
-                ביטול
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Delete Modal */}
-      {deleteModal.show && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-          dir="rtl"
-        >
-          <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 animate-[fadeIn_200ms_ease-out] relative">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-900 border-b border-gray-100 pb-2 w-full text-right flex items-center gap-2">
-                <Trash2 className="w-5 h-5 text-red-500" />
-                מחיקת הרשמה
-              </h2>
-              <button
-                onClick={() => setDeleteModal({ show: false, registrationId: null })}
-                className="p-1 hover:bg-gray-100 rounded-lg transition-colors absolute top-4 left-4"
-                aria-label="סגור"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <p className="text-base text-gray-700 mb-6 text-right">
-              האם למחוק הרשמה זו לצמיתות? <br />
-              <span className="text-red-600 font-semibold mt-2 inline-block">
-                פעולה זו אינה ניתנת לביטול.
-              </span>
-            </p>
-
-            <div className="flex gap-3">
-              <button
-                onClick={handleConfirmDelete}
-                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors focus:outline-none focus:ring-4 focus:ring-red-500/20"
-              >
-                מחק לצמיתות
-              </button>
-              <button
-                onClick={() => setDeleteModal({ show: false, registrationId: null })}
                 className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors focus:outline-none focus:ring-4 focus:ring-gray-300"
               >
                 ביטול

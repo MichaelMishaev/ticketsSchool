@@ -7,10 +7,10 @@ import DuplicateTableModal from './DuplicateTableModal'
 import TableTemplateModal from './TableTemplateModal'
 import SaveTemplateModal from './SaveTemplateModal'
 import BulkEditModal from './BulkEditModal'
-import AddRegistrationToTableModal from './AddRegistrationToTableModal'
 import { X, Plus, Sparkles, Edit3, Trash2, CheckSquare } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '../Toast'
+import AddRegistrationToTableModal from './AddRegistrationToTableModal'
 import { isTableEmpty, type TableRegistration } from './table-helpers'
 
 interface Table {
@@ -20,7 +20,6 @@ interface Table {
   minOrder: number
   status: 'AVAILABLE' | 'RESERVED' | 'INACTIVE'
   hasWaitlistMatch: boolean
-  // Sharing-aware: a table can host multiple CONFIRMED registrations.
   registrations: TableRegistration[]
 }
 
@@ -41,12 +40,7 @@ interface TableBoardClientProps {
   onSwitchToWaitlist?: () => void
 }
 
-export default function TableBoardClient({
-  tables,
-  waitlist,
-  eventId,
-  onSwitchToWaitlist,
-}: TableBoardClientProps) {
+export default function TableBoardClient({ tables, waitlist, eventId, onSwitchToWaitlist }: TableBoardClientProps) {
   const router = useRouter()
   const { addToast, ToastContainer } = useToast()
 
@@ -80,8 +74,7 @@ export default function TableBoardClient({
   const [isBulkSelectionMode, setIsBulkSelectionMode] = useState(false)
   const [showGroupedView, setShowGroupedView] = useState(true)
 
-  // Sharing-aware: modal for adding a WAITLIST or cross-table CONFIRMED reg
-  // into a specific table's remaining seats.
+  // Sharing-aware: modal for adding a WAITLIST or cross-table CONFIRMED reg into a table's seats
   const [addRegModal, setAddRegModal] = useState<{ show: boolean; table: Table | null }>({
     show: false,
     table: null,
@@ -89,11 +82,7 @@ export default function TableBoardClient({
 
   // Update ref every render so it reflects current modal/selection state (used by parent polling guard)
   isUserActiveRef.current =
-    cancelModal.show ||
-    duplicateModal.show ||
-    bulkEditModal ||
-    isBulkSelectionMode ||
-    addRegModal.show
+    cancelModal.show || duplicateModal.show || bulkEditModal || isBulkSelectionMode || addRegModal.show
 
   const handleToggleHold = async (tableId: string) => {
     setTogglingHold(true)
@@ -350,51 +339,65 @@ export default function TableBoardClient({
   }
 
   /**
-   * Sharing-aware: place a WAITLIST reg OR move a CONFIRMED reg from another
-   * table into the target table. Routes used:
-   *   - WAITLIST source → POST /waitlist/[regId]/assign  (handles promote + attach)
-   *   - CONFIRMED source → PATCH /registrations/[regId]  (move-or-remove path)
-   *
-   * Returns true on success so the modal can close itself.
+   * Seat a WAITLIST reg (POST /waitlist/[id]/assign) or move a CONFIRMED reg
+   * from another table (PATCH /registrations/[id]). Returns true on success.
    */
-  // Minimal shape so this callback is compatible with the modal's own `Table`
-  // type (which doesn't carry `hasWaitlistMatch`). We only actually read the
-  // id (for routing) and tableNumber (for the toast message).
   const handleAddRegistration = async (
     targetTable: { id: string; tableNumber: string },
-    source: { id: string; isWaitlist: boolean }
+    source: { id: string; isWaitlist: boolean; force?: boolean }
   ): Promise<boolean> => {
     try {
       const url = source.isWaitlist
         ? `/api/events/${eventId}/waitlist/${source.id}/assign`
         : `/api/events/${eventId}/registrations/${source.id}`
       const method = source.isWaitlist ? 'POST' : 'PATCH'
-      const response = await fetch(url, {
+      const body: Record<string, unknown> = { tableId: targetTable.id }
+      if (source.isWaitlist && source.force) body.force = true
+      const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ tableId: targetTable.id }),
+        body: JSON.stringify(body),
       })
-
-      if (response.ok) {
+      if (res.ok) {
         addToast(`✅ הוספה לשולחן ${targetTable.tableNumber}`, 'success')
         router.refresh()
         return true
       }
-
-      const error = await response.json().catch(() => ({}))
-      if (response.status === 401) {
+      const err = await res.json().catch(() => ({}))
+      if (res.status === 401) {
         addToast('הפג תוקף ההתחברות. אנא התחבר מחדש.', 'error')
         window.location.href = '/admin/login'
         return false
       }
-      addToast(error.error || 'שגיאה בהוספת הזמנה לשולחן', 'error')
+      addToast(err.error || 'שגיאה בהוספת הזמנה לשולחן', 'error')
       return false
-    } catch (e) {
-      console.error('Error adding registration to table:', e)
+    } catch {
       addToast('שגיאה בהוספת הזמנה לשולחן', 'error')
       return false
     }
+  }
+
+  /**
+   * Admin direct registration: create a brand-new CONFIRMED guest on a table.
+   * Throws on failure so ManualAddForm can display the server error inline.
+   */
+  const handleManualAdd = async (
+    targetTable: { id: string; tableNumber: string },
+    data: { name: string; phone: string; guestsCount: number }
+  ): Promise<boolean> => {
+    const res = await fetch(`/api/events/${eventId}/registrations`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tableId: targetTable.id, ...data }),
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err.error ?? 'שגיאה בהוספת האורח')
+    }
+    addToast(`✅ האורח נוסף לשולחן ${targetTable.tableNumber}`, 'success')
+    router.refresh()
+    return true
   }
 
   // Group consecutive similar AVAILABLE tables
@@ -433,7 +436,6 @@ export default function TableBoardClient({
         lastTable.status === 'AVAILABLE' &&
         table.capacity === lastTable.capacity &&
         table.minOrder === lastTable.minOrder &&
-        // Only fully-empty tables may be grouped — sharing-aware.
         isTableEmpty(table) &&
         isTableEmpty(lastTable) &&
         currentGroup.length < 100 // Max group size
@@ -638,9 +640,9 @@ export default function TableBoardClient({
                 onCancel={(reservationId) => {
                   setCancelModal({ show: true, registrationId: reservationId })
                 }}
-                onAddRegistration={() => setAddRegModal({ show: true, table })}
                 onToggleHold={handleToggleHold}
                 onSwitchToWaitlist={onSwitchToWaitlist}
+                onAddRegistration={() => setAddRegModal({ show: true, table })}
                 readOnly={false}
               />
             )
@@ -795,8 +797,7 @@ export default function TableBoardClient({
         onClose={() => setBulkEditModal(false)}
         onConfirm={handleBulkEdit}
       />
-
-      {/* Add Registration to Table (sharing-aware) */}
+      {/* Add Registration / Manual Add Modal */}
       <AddRegistrationToTableModal
         show={addRegModal.show}
         table={addRegModal.table}
@@ -804,7 +805,9 @@ export default function TableBoardClient({
         allTables={localTables}
         onClose={() => setAddRegModal({ show: false, table: null })}
         onConfirm={handleAddRegistration}
+        onManualAdd={handleManualAdd}
       />
+
       <ToastContainer />
     </>
   )

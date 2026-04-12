@@ -84,30 +84,14 @@ describe('table-assignment.ts - SMALLEST_FIT Algorithm', () => {
         })
       )
 
-      // Sharing-aware two-write pattern:
-      //   1) registration.update({ data: { tableId } })   — point reg at table
-      //   2) table.update({ data: { status: 'RESERVED' }}) — flip denormalized flag
-      // The FK now lives on Registration; Table no longer carries reservedById.
-      expect(mockTx.registration.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id: 'reg-123' },
-          data: expect.objectContaining({
-            tableId: 'table-4',
-          }),
-        })
-      )
+      // Verify table status updated to RESERVED
       expect(mockTx.table.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 'table-4' },
           data: expect.objectContaining({
             status: 'RESERVED',
+            reservedById: 'reg-123',
           }),
-        })
-      )
-      // And the old shape must NOT appear anywhere.
-      expect(mockTx.table.update).not.toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({ reservedById: expect.anything() }),
         })
       )
     })

@@ -166,7 +166,7 @@ async function generateTicketImage(
     ctx.fillStyle = '#1e3a8a'
     ctx.font = 'bold 20px Arial, sans-serif'
     ctx.textAlign = 'center'
-
+    
     const messageLines = wrapText(ctx, message, width - 60)
     messageLines.forEach((line) => {
       ctx.fillText(line, width / 2, yPos)
@@ -323,9 +323,7 @@ function SuccessContent() {
         {/* Special Message */}
         {message && (
           <div className="bg-blue-50 rounded-xl p-6 mb-6 border-2 border-blue-200">
-            <p className="text-blue-900 text-center font-bold text-lg leading-relaxed whitespace-pre-wrap">
-              {message}
-            </p>
+            <p className="text-blue-900 text-center font-bold text-lg leading-relaxed whitespace-pre-wrap">{message}</p>
           </div>
         )}
 

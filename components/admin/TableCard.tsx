@@ -1,23 +1,7 @@
 'use client'
 
-import {
-  Edit2,
-  Trash2,
-  ChevronUp,
-  ChevronDown,
-  Users,
-  UserCheck,
-  Ban,
-  Copy,
-  ArrowLeft,
-  Plus,
-} from 'lucide-react'
-import {
-  isTableEmpty,
-  tableOccupiedSpots,
-  tableRemainingSpots,
-  type TableRegistration,
-} from './table-helpers'
+import { Edit2, Trash2, ChevronUp, ChevronDown, Users, UserCheck, Ban, Copy, ArrowLeft, Plus } from 'lucide-react'
+import { tableOccupiedSpots, tableRemainingSpots, type TableRegistration } from './table-helpers'
 
 interface TableCardProps {
   table: {
@@ -26,7 +10,6 @@ interface TableCardProps {
     capacity: number
     minOrder: number
     status: 'AVAILABLE' | 'RESERVED' | 'INACTIVE'
-    // Sharing-aware: N CONFIRMED registrations may share this table.
     registrations: TableRegistration[]
   }
   hasWaitlistMatch?: boolean
@@ -35,12 +18,11 @@ interface TableCardProps {
   onEdit?: () => void
   onDelete?: () => void
   onDuplicate?: (tableId: string) => void
-  /** Removes a single registration from this table (sends it back to waitlist). */
   onCancel?: (reservationId: string) => void
-  /** Opens the add-registration modal for this table. */
-  onAddRegistration?: () => void
   onToggleHold?: (tableId: string) => void
   onSwitchToWaitlist?: () => void
+  onAddRegistration?: () => void
+  onAddToTable?: (tableId: string) => void
   onMoveUp?: () => void
   onMoveDown?: () => void
   readOnly?: boolean
@@ -55,16 +37,14 @@ export default function TableCard({
   onDelete,
   onDuplicate,
   onCancel,
-  onAddRegistration,
   onToggleHold,
   onSwitchToWaitlist,
+  onAddRegistration,
+  onAddToTable,
   onMoveUp,
   onMoveDown,
-  readOnly = false,
+  readOnly = false
 }: TableCardProps) {
-  // Sharing-aware derived values. Empty = no CONFIRMED regs. The card
-  // should render differently for empty/partial/full tables.
-  const empty = isTableEmpty(table)
   const occupied = tableOccupiedSpots(table)
   const remaining = tableRemainingSpots(table)
   // Status configuration
@@ -75,7 +55,7 @@ export default function TableCard({
       borderColor: 'border-red-500',
       textColor: 'text-red-700',
       icon: '🔴',
-      label: 'תפוס',
+      label: 'תפוס'
     },
     AVAILABLE: hasWaitlistMatch
       ? {
@@ -84,7 +64,7 @@ export default function TableCard({
           borderColor: 'border-amber-500',
           textColor: 'text-amber-700',
           icon: '🟡',
-          label: 'פנוי - יש התאמה',
+          label: 'פנוי - יש התאמה'
         }
       : {
           color: 'green',
@@ -92,7 +72,7 @@ export default function TableCard({
           borderColor: 'border-green-500',
           textColor: 'text-green-700',
           icon: '🟢',
-          label: 'פנוי',
+          label: 'פנוי'
         },
     INACTIVE: {
       color: 'orange',
@@ -100,8 +80,8 @@ export default function TableCard({
       borderColor: 'border-orange-400',
       textColor: 'text-orange-700',
       icon: '🟠',
-      label: 'רזרבה (מוחזק)',
-    },
+      label: 'רזרבה (מוחזק)'
+    }
   }
 
   const status = statusConfig[table.status]
@@ -132,7 +112,9 @@ export default function TableCard({
       {/* Header */}
       <div className="flex justify-between items-start mb-3">
         <div>
-          <h3 className="font-bold text-lg text-gray-900">שולחן {table.tableNumber}</h3>
+          <h3 className="font-bold text-lg text-gray-900">
+            שולחן {table.tableNumber}
+          </h3>
           <div className={`text-sm font-medium ${status.textColor} flex items-center gap-1 mt-1`}>
             <span>{status.icon}</span>
             <span>{status.label}</span>
@@ -162,9 +144,7 @@ export default function TableCard({
                 <Edit2 className="w-4 h-4 text-gray-600" />
               </button>
             )}
-            {/* Sharing-aware: delete is only allowed when the table has no
-                CONFIRMED registrations — the server enforces this too. */}
-            {onDelete && empty && (
+            {onDelete && table.registrations.length === 0 && (
               <button
                 onClick={onDelete}
                 className="p-2 hover:bg-white rounded transition-colors"
@@ -194,9 +174,8 @@ export default function TableCard({
         </div>
       </div>
 
-      {/* Toggle Hold/Reserve Button — only for tables without registrations.
-          Sharing-aware: a partially-occupied table can't be put on hold. */}
-      {!readOnly && onToggleHold && empty && (
+      {/* Toggle Hold/Reserve Button (for AVAILABLE or INACTIVE tables without actual reservations) */}
+      {!readOnly && onToggleHold && table.status !== 'RESERVED' && table.registrations.length === 0 && (
         <button
           onClick={() => onToggleHold(table.id)}
           className={`w-full mb-3 flex items-center justify-center gap-2 px-3 py-2 rounded-md transition-colors text-sm font-medium ${
@@ -219,68 +198,64 @@ export default function TableCard({
         </button>
       )}
 
-      {/* Sharing-aware reservation list. A table can host N CONFIRMED regs. */}
-      {!empty && (
-        <div className="bg-white rounded-md p-3 text-sm mb-3 space-y-2">
-          {/* Occupancy header */}
-          <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-            <div className="font-semibold text-gray-900">
-              {occupied}/{table.capacity} מקומות תפוסים
+      {/* Registrations — supports multiple per table (sharing model) */}
+      {table.registrations.length > 0 && (
+        <div className="space-y-2 mb-3">
+          {table.registrations.length > 1 && (
+            <div className="text-xs font-medium text-gray-600 px-1">
+              {table.registrations.length} הזמנות / {occupied} אורחים
             </div>
-            <div className="text-xs text-gray-500">
-              {table.registrations.length} {table.registrations.length === 1 ? 'הזמנה' : 'הזמנות'}
+          )}
+          {table.registrations.map((reg) => (
+            <div key={reg.id} className="bg-white rounded-md p-3 text-sm space-y-1">
+              {(reg.data as any)?.name && (
+                <div className="font-semibold text-gray-900">{(reg.data as any).name}</div>
+              )}
+              <div className="text-xs text-gray-500">קוד: {reg.confirmationCode}</div>
+              {reg.guestsCount != null && (
+                <div className="text-gray-700">אורחים: {reg.guestsCount}</div>
+              )}
+              {reg.phoneNumber && (
+                <div className="text-gray-600">טלפון: {reg.phoneNumber}</div>
+              )}
+              {!readOnly && onCancel && (
+                <button
+                  onClick={() => onCancel(reg.id)}
+                  className="w-full mt-2 flex items-center justify-center gap-2 px-3 py-2 bg-red-50 text-red-700 rounded-md hover:bg-red-100 transition-colors text-sm font-medium"
+                >
+                  <Ban className="w-4 h-4" />
+                  <span>הסר מהשולחן</span>
+                </button>
+              )}
             </div>
-          </div>
-
-          {/* Per-registration rows */}
-          {table.registrations.map((r) => {
-            const name = (r.data as Record<string, unknown> | null)?.name as string | undefined
-            return (
-              <div key={r.id} className="flex items-start justify-between gap-2 py-1">
-                <div className="min-w-0 flex-1">
-                  <div className="font-mono text-xs text-gray-800 truncate">
-                    {r.confirmationCode}
-                  </div>
-                  <div className="text-xs text-gray-600 mt-0.5">
-                    {r.guestsCount ?? 0} {r.guestsCount === 1 ? 'אורח' : 'אורחים'}
-                    {name ? ` · ${name}` : ''}
-                  </div>
-                  {r.phoneNumber && <div className="text-xs text-gray-500">{r.phoneNumber}</div>}
-                </div>
-                {!readOnly && onCancel && (
-                  <button
-                    onClick={() => onCancel(r.id)}
-                    className="flex-shrink-0 p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
-                    aria-label="הסר הזמנה מהשולחן"
-                    title="הסר מהשולחן"
-                  >
-                    <Ban className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            )
-          })}
+          ))}
         </div>
       )}
 
-      {/* Add-registration affordance. Only when the table has room AND is
-          not a hard admin hold. Uses the shared helpers to decide visibility. */}
-      {!readOnly && onAddRegistration && remaining > 0 && table.status !== 'INACTIVE' && (
+      {/* Add registration button — shown when table has remaining capacity */}
+      {!readOnly && onAddRegistration && table.status !== 'INACTIVE' && remaining > 0 && (
         <button
           onClick={onAddRegistration}
-          className="w-full mb-3 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+          className="w-full mb-3 flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors text-sm font-medium"
         >
           <Plus className="w-4 h-4" />
-          <span>
-            הוסף הזמנה ({remaining} {remaining === 1 ? 'מקום פנוי' : 'מקומות פנויים'})
-          </span>
+          <span>הוסף הזמנה</span>
+        </button>
+      )}
+      {/* onAddToTable button — alternative handler via tableId */}
+      {!readOnly && onAddToTable && !onAddRegistration && table.status !== 'INACTIVE' && (
+        <button
+          onClick={() => onAddToTable(table.id)}
+          className="w-full mb-3 flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors text-sm font-medium"
+        >
+          <Plus className="w-4 h-4" />
+          <span>הוסף הזמנה</span>
         </button>
       )}
 
       {/* Waitlist Match Badge — clickable when handler available */}
-      {hasWaitlistMatch &&
-        table.status === 'AVAILABLE' &&
-        (onSwitchToWaitlist ? (
+      {hasWaitlistMatch && table.status === 'AVAILABLE' && (
+        onSwitchToWaitlist ? (
           <button
             onClick={onSwitchToWaitlist}
             className="w-full mb-3 group flex items-center justify-between gap-2 px-3 py-2.5 bg-amber-100 hover:bg-amber-200 active:scale-[0.98] border border-amber-300 hover:border-amber-400 rounded-md text-xs text-amber-800 transition-all duration-150 cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-1"
@@ -299,7 +274,8 @@ export default function TableCard({
               <span className="font-medium">יש אורחים ברשימת המתנה שמתאימים לשולחן זה</span>
             </div>
           </div>
-        ))}
+        )
+      )}
 
       {/* Reorder Buttons */}
       {!readOnly && (onMoveUp || onMoveDown) && (

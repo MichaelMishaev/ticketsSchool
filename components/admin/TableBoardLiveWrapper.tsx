@@ -5,8 +5,15 @@ import TableBoardStats from './TableBoardStats'
 import TableBoardClient from './TableBoardClient'
 import TableBoardTabs from './TableBoardTabs'
 import WaitlistManager from './WaitlistManager'
-import PendingPaymentsPanel from './PendingPaymentsPanel'
-import type { TableRegistration } from './table-helpers'
+
+interface TableRegistration {
+  id: string
+  confirmationCode: string
+  guestsCount: number | null
+  phoneNumber: string | null
+  data: unknown
+  createdAt: string | Date
+}
 
 interface Table {
   id: string
@@ -15,7 +22,6 @@ interface Table {
   minOrder: number
   status: 'AVAILABLE' | 'RESERVED' | 'INACTIVE'
   hasWaitlistMatch: boolean
-  // Sharing-aware: one table may host N CONFIRMED registrations.
   registrations: TableRegistration[]
 }
 
@@ -175,22 +181,12 @@ export default function TableBoardLiveWrapper({
       .length,
   }
 
-  const tablesView = (
-    <TableBoardClient
-      tables={localTables}
-      waitlist={localWaitlist}
-      eventId={eventId}
-      onSwitchToWaitlist={switchToWaitlist}
-    />
-  )
+  const tablesView = <TableBoardClient tables={localTables} waitlist={localWaitlist} eventId={eventId} onSwitchToWaitlist={switchToWaitlist} />
   const waitlistView = <WaitlistManager eventId={eventId} waitlist={localWaitlist} />
 
   return (
     <div className="space-y-4">
       <TableBoardStats tables={localTables} waitlist={localWaitlist} stats={liveStats} />
-
-      {/* Pending payments — only renders when there's at least one PAYMENT_PENDING */}
-      <PendingPaymentsPanel eventId={eventId} />
 
       {liveStats.matchAvailable > 0 && (
         <div className="relative overflow-hidden bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-xl shadow-sm">
@@ -204,8 +200,8 @@ export default function TableBoardLiveWrapper({
                 <p className="text-sm font-semibold text-amber-900 mb-1">יש התאמות זמינות!</p>
                 <p className="text-xs text-amber-800">
                   {liveStats.matchAvailable}{' '}
-                  {liveStats.matchAvailable === 1 ? 'שולחן פנוי' : 'שולחנות פנויים'} מתאימים לאורחים
-                  ברשימת ההמתנה. עבור ללשונית &quot;רשימת המתנה&quot; לשיבוץ.
+                  {liveStats.matchAvailable === 1 ? 'שולחן פנוי' : 'שולחנות פנויים'} מתאימים
+                  לאורחים ברשימת ההמתנה. עבור ללשונית &quot;רשימת המתנה&quot; לשיבוץ.
                 </p>
               </div>
             </div>

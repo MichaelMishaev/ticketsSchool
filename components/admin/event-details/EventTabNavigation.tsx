@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { LayoutGrid, Users, ClipboardCheck, BarChart3 } from 'lucide-react'
 
 export type TabId = 'overview' | 'registrations' | 'checkin' | 'reports'
@@ -40,13 +41,28 @@ const tabs: Tab[] = [
 ]
 
 interface EventTabNavigationProps {
+  eventId: string
   activeTab: TabId
   onTabChange: (tab: TabId) => void
 }
 
-export default function EventTabNavigation({ activeTab, onTabChange }: EventTabNavigationProps) {
+export default function EventTabNavigation({
+  eventId,
+  activeTab,
+  onTabChange,
+}: EventTabNavigationProps) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [touchStart, setTouchStart] = useState<number | null>(null)
   const tabListRef = useRef<HTMLDivElement>(null)
+
+  // Handle URL query param changes
+  useEffect(() => {
+    const urlTab = searchParams.get('tab') as TabId | null
+    if (urlTab && tabs.find((t) => t.id === urlTab)) {
+      onTabChange(urlTab)
+    }
+  }, [searchParams, onTabChange])
 
   // Keyboard navigation
   useEffect(() => {
@@ -113,6 +129,11 @@ export default function EventTabNavigation({ activeTab, onTabChange }: EventTabN
 
   const handleTabChange = (tab: TabId) => {
     onTabChange(tab)
+
+    // Update URL with query param
+    const newParams = new URLSearchParams(searchParams.toString())
+    newParams.set('tab', tab)
+    router.push(`/admin/events/${eventId}?${newParams.toString()}`, { scroll: false })
   }
 
   return (
@@ -120,19 +141,11 @@ export default function EventTabNavigation({ activeTab, onTabChange }: EventTabN
       ref={tabListRef}
       role="tablist"
       aria-label="ניהול אירוע - קטגוריות"
-      className="hidden md:block sticky top-0 z-40 shadow-sm relative backdrop-blur-md transition-all duration-300"
+      className="hidden md:block border-b border-gray-200 bg-white sticky top-0 z-40 shadow-sm"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      style={{
-        backgroundImage:
-          'linear-gradient(rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.95)), url("https://images.unsplash.com/photo-1557682250-33bd709cbe85?auto=format&fit=crop&q=80&w=2000")',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-      }}
     >
-      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex -mb-px overflow-x-auto hide-scrollbar" dir="rtl">
           {tabs.map((tab) => {
             const Icon = tab.icon
@@ -151,13 +164,13 @@ export default function EventTabNavigation({ activeTab, onTabChange }: EventTabN
                 onClick={() => handleTabChange(tab.id)}
                 className={`
                   inline-flex items-center gap-2 px-6 py-4 md:py-2.5 font-medium text-sm
-                  transition-all duration-300 whitespace-nowrap rounded-t-lg mt-1
+                  transition-colors duration-200 whitespace-nowrap
                   focus:outline-none focus:ring-2 focus:ring-gray-400/20 focus:z-10
-                  min-h-[48px] border-b-[3px]
+                  min-h-[48px] border-b-2
                   ${
                     isActive
-                      ? 'border-blue-600 text-blue-700 bg-white/90'
-                      : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-white/40'
+                      ? 'border-gray-900 text-gray-900 bg-gray-50'
+                      : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                   }
                 `}
               >

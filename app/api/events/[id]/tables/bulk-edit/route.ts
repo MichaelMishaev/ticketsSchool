@@ -1,146 +1,118 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/auth.server'
 import { prisma } from '@/lib/prisma'
-import { logger } from '@/lib/logger-v2'
+import { getCurrentAdmin } from '@/lib/auth.server'
 
-// PATCH /api/events/[id]/tables/bulk-edit - Edit multiple tables at once
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const admin = await getCurrentAdmin()
+  if (!admin) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { id: eventId } = await params
+
+  let body: { tableIds?: unknown; updates?: unknown }
   try {
-    const { id } = await params
-    const admin = await requireAdmin()
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
 
-    // Verify event exists and admin has access
-    const event = await prisma.event.findUnique({
-      where: { id }
-    })
+  const { tableIds, updates } = body
 
-    if (!event) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      )
-    }
-
-    // Multi-tenant security
-    if (admin.role !== 'SUPER_ADMIN') {
-      if (!admin.schoolId) {
-        return NextResponse.json(
-          { error: 'Admin must have a school assigned' },
-          { status: 403 }
-        )
-      }
-      if (event.schoolId !== admin.schoolId) {
-        return NextResponse.json(
-          { error: 'Access denied' },
-          { status: 403 }
-        )
-      }
-    }
-
-    const body = await request.json()
-    const { tableIds, updates } = body
-
-    // Validation
-    if (!Array.isArray(tableIds) || tableIds.length === 0) {
-      return NextResponse.json(
-        { error: 'tableIds must be a non-empty array' },
-        { status: 400 }
-      )
-    }
-
-    if (!updates || typeof updates !== 'object') {
-      return NextResponse.json(
-        { error: 'updates must be an object' },
-        { status: 400 }
-      )
-    }
-
-    // Validate updates
-    const allowedFields = ['capacity', 'minOrder', 'status']
-    const updateData: any = {}
-
-    for (const [key, value] of Object.entries(updates)) {
-      if (!allowedFields.includes(key)) {
-        return NextResponse.json(
-          { error: `Invalid update field: ${key}` },
-          { status: 400 }
-        )
-      }
-
-      if (key === 'capacity' && (typeof value !== 'number' || value < 1)) {
-        return NextResponse.json(
-          { error: 'capacity must be a number >= 1' },
-          { status: 400 }
-        )
-      }
-
-      if (key === 'minOrder' && (typeof value !== 'number' || value < 1)) {
-        return NextResponse.json(
-          { error: 'minOrder must be a number >= 1' },
-          { status: 400 }
-        )
-      }
-
-      if (key === 'status' && !['AVAILABLE', 'RESERVED', 'INACTIVE'].includes(value as string)) {
-        return NextResponse.json(
-          { error: 'status must be AVAILABLE, RESERVED, or INACTIVE' },
-          { status: 400 }
-        )
-      }
-
-      updateData[key] = value
-    }
-
-    // Verify all tables belong to this event
-    const tablesToUpdate = await prisma.table.findMany({
-      where: {
-        id: { in: tableIds },
-        eventId: id
-      }
-    })
-
-    if (tablesToUpdate.length !== tableIds.length) {
-      return NextResponse.json(
-        { error: 'Some tables not found or do not belong to this event' },
-        { status: 404 }
-      )
-    }
-
-    // Prevent invalid capacity/minOrder combinations
-    if (updateData.capacity !== undefined || updateData.minOrder !== undefined) {
-      for (const table of tablesToUpdate) {
-        const finalCapacity = updateData.capacity ?? table.capacity
-        const finalMinOrder = updateData.minOrder ?? table.minOrder
-
-        if (finalMinOrder > finalCapacity) {
-          return NextResponse.json(
-            { error: `minOrder cannot exceed capacity for table ${table.tableNumber}` },
-            { status: 400 }
-          )
-        }
-      }
-    }
-
-    // Perform bulk update
-    const result = await prisma.table.updateMany({
-      where: {
-        id: { in: tableIds }
-      },
-      data: updateData
-    })
-
-    return NextResponse.json({
-      success: true,
-      count: result.count
-    })
-  } catch (error) {
-    logger.error('Failed to bulk edit tables', { source: 'tables', error })
+  // Validate tableIds
+  if (
+    !Array.isArray(tableIds) ||
+    tableIds.length === 0 ||
+    !tableIds.every((id) => typeof id === 'string')
+  ) {
     return NextResponse.json(
-      { error: 'Failed to bulk edit tables' },
-      { status: 500 }
+      { error: 'tableIds must be a non-empty array of strings' },
+      { status: 400 }
     )
+  }
+
+  // Validate updates
+  if (
+    typeof updates !== 'object' ||
+    updates === null ||
+    Array.isArray(updates)
+  ) {
+    return NextResponse.json(
+      { error: 'updates must be an object' },
+      { status: 400 }
+    )
+  }
+
+  const updateData = updates as Record<string, unknown>
+  const hasCapacity = 'capacity' in updateData && updateData.capacity !== undefined
+  const hasMinOrder = 'minOrder' in updateData && updateData.minOrder !== undefined
+
+  if (!hasCapacity && !hasMinOrder) {
+    return NextResponse.json(
+      { error: 'updates must contain at least one of: capacity, minOrder' },
+      { status: 400 }
+    )
+  }
+
+  if (hasCapacity && (typeof updateData.capacity !== 'number' || updateData.capacity < 1)) {
+    return NextResponse.json(
+      { error: 'capacity must be a positive number' },
+      { status: 400 }
+    )
+  }
+
+  if (hasMinOrder && (typeof updateData.minOrder !== 'number' || updateData.minOrder < 1)) {
+    return NextResponse.json(
+      { error: 'minOrder must be a positive number' },
+      { status: 400 }
+    )
+  }
+
+  try {
+    // Verify school access
+    if (admin.role !== 'SUPER_ADMIN') {
+      const event = await prisma.event.findUnique({
+        where: { id: eventId },
+        select: { schoolId: true },
+      })
+
+      if (!event) {
+        return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+      }
+
+      if (admin.schoolId !== event.schoolId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    }
+
+    // Verify all tableIds belong to this event
+    const existingTables = await prisma.table.findMany({
+      where: { id: { in: tableIds as string[] }, eventId },
+      select: { id: true },
+    })
+
+    if (existingTables.length !== tableIds.length) {
+      return NextResponse.json(
+        { error: 'One or more tables not found or do not belong to this event' },
+        { status: 404 }
+      )
+    }
+
+    // Build the update payload
+    const updatePayload: { capacity?: number; minOrder?: number } = {}
+    if (hasCapacity) updatePayload.capacity = updateData.capacity as number
+    if (hasMinOrder) updatePayload.minOrder = updateData.minOrder as number
+
+    const result = await prisma.table.updateMany({
+      where: { id: { in: tableIds as string[] }, eventId },
+      data: updatePayload,
+    })
+
+    return NextResponse.json({ count: result.count })
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to update tables' }, { status: 500 })
   }
 }

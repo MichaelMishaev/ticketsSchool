@@ -880,7 +880,7 @@ Shlomi sees a full workshop. Everyone got a fair shot.
         descriptionHe:
           'מתי צריך אירועים מבוססי שולחנות? שרה מנהלת אולם חתונות ולמדה את זה בדרך הקשה',
         category: 'table-management',
-        type: 'ADVANCED',
+        type: 'UPDATED',
         roles: ['ADMIN', 'OWNER'],
         difficulty: 'intermediate',
         keywords: [
@@ -895,7 +895,7 @@ Shlomi sees a full workshop. Everyone got a fair shot.
           'חתונה',
           'קיבולת',
         ],
-        lastUpdated: '2026-01-10',
+        lastUpdated: '2026-04-11',
         content: `# Tables vs Capacity - Sarah's Wedding Hall Dilemma
 
 **Meet Sarah - Wedding Hall Manager:**
@@ -1109,9 +1109,10 @@ Need to change 40 tables?
 - Example: 8 people, 10 people, 12 people
 
 **2. Minimum Order**
-- Minimum people required to book this table
-- Example: Table seats 8, minimum 4 people
-- Prevents: Someone booking 8-seat table for just 1 person
+- Minimum people required to **open** (first-book) this table
+- Example: Table seats 8, minimum 4 people → first group must be ≥4 people
+- Once at least one CONFIRMED registration exists at the table, this rule is lifted — additional groups only need to fit within remaining capacity
+- Prevents: Someone booking an 8-seat table for just 1 person (empty-table gate only)
 
 **3. Status**
 - **AVAILABLE** - Anyone can book it
@@ -2342,6 +2343,198 @@ A: No. Templates are like a copy-paste tool. Once applied, the tables belong to 
         content: `# Change 40 Tables at Once - The VIP Section Story\n\n**Meet Eli - Concert Venue Manager**\n\n"We're hosting a big concert this Friday. I already created 80 tables (regular + VIP). Then my boss tells me:\n\n'Eli, the VIP tables (Tables 1-40) need a minimum order of 8 people now, not 6. Corporate policy changed.'\n\nI looked at the screen... 40 tables to edit... this will take 45 minutes... 😫"\n\n## The Old Way (Don't do this!)\n\n❌ **Manual editing (45 minutes of clicking):**\n1. Click on Table 1 → Change min order 6→8 → Save\n2. Click on Table 2 → Change min order 6→8 → Save\n3. Click on Table 3 → Change min order 6→8 → Save\n4. ...repeat 37 more times...\n5. By Table 20, you're making mistakes\n6. By Table 30, you want to quit\n7. Finally done at Table 40 💀\n\n## The New Way (30 seconds!)\n\n✅ **Bulk edit magic:**\n\n**Step 1: Select the tables**\n- Click checkbox on Table 1 (VIP)\n- Click checkbox on Table 2 (VIP)\n- Or... click "Select Range: Tables 1-40"\n- All 40 VIP tables now highlighted in blue\n- Counter shows: "40 tables selected"\n\n**Step 2: Click "Edit Selected"**\n- Button appears at bottom: "Edit 40 tables"\n- Click it → popup appears\n\n**Step 3: Change what you need**\n- Popup shows:\n  - Capacity: [leave empty to keep current]\n  - Minimum Order: [8]\n  - Status: [leave empty to keep current]\n- Enter "8" in Minimum Order field\n- Click "Apply to 40 tables"\n\n**Step 4: Done!**\n- ✅ All 40 tables updated in 2 seconds\n- System shows: "40 tables updated successfully"\n- You saved 44 minutes and 30 seconds!\n\n## Real Scenarios\n\n### Scenario 1: Last-Minute Venue Change\n\n**The problem:**\nFriday morning, 4 hours before concert:\n- Fire marshal says: "Capacity reduced from 10 to 8 per table"\n- You have 80 tables total\n- Need to change capacity on ALL of them\n- Concert starts in 4 hours\n\n**The panic:**\n- If you edit manually: 80 tables × 40 seconds = 53 minutes\n- You have other tasks to do!\n- Can't afford to spend an hour clicking\n\n**The solution:**\n1. Click "Select All" → 80 tables selected\n2. Click "Edit Selected"\n3. Change capacity to 8\n4. Click "Apply to 80 tables"\n5. **Done in 15 seconds!**\n\n**Eli's reaction:**\n"I literally said 'wow' out loud. Saved 52 minutes before a major event. That time went to checking sound equipment instead."\n\n### Scenario 2: Delete Wrong Tables\n\n**The problem:**\n- Created 50 tables for Wedding A\n- Created 50 tables for Wedding B (same event by accident!)\n- Need to delete the duplicate 50 tables\n- Don't want to click 50 times\n\n**The solution:**\n1. Select the duplicate tables (Tables 51-100)\n2. Click "Delete Selected"\n3. System checks: "Are these tables reserved?"\n4. If yes → Shows which ones are reserved (can't delete)\n5. If no → "Delete 50 tables permanently?"\n6. Click "Yes, delete 50 tables"\n7. **Gone in 10 seconds!**\n\n**Protection feature:**\n- System WON'T let you delete tables with reservations\n- If Tables 51-55 have reservations, you'll see:\n  - "Cannot delete 5 tables: they have reservations"\n  - "Can delete 45 tables: they're empty"\n- Prevents accidental deletion of paid tables!\n\n## The Complete Workflow\n\n**Part 1: Selecting Tables**\n\n**Option A - Select one by one:**\n- Click checkbox on Table 1\n- Click checkbox on Table 2\n- Click checkbox on Table 3\n- Works for small selections\n\n**Option B - Select range:**\n- Click "Select Range"\n- Enter "1-40" (Tables 1 through 40)\n- Click "Select" → All 40 selected\n- Best for consecutive tables\n\n**Option C - Select all:**\n- Click "Select All" at top\n- All tables in the event selected\n- Best for global changes (capacity, status)\n\n**Part 2: Editing Tables**\n\n**What you can change:**\n- **Capacity:** Change max people per table\n- **Minimum Order:** Change minimum people required\n- **Status:** Change AVAILABLE ↔ RESERVED ↔ INACTIVE\n\n**How it works:**\n1. Select tables (using any method above)\n2. Click "Edit Selected" button\n3. Popup shows 3 fields (leave empty = keep current)\n4. Fill what you want to change\n5. Click "Apply to X tables"\n6. System updates all selected tables\n7. See success message: "X tables updated"\n\n**Part 3: Deleting Tables**\n\n**Safety first:**\n1. Select tables to delete\n2. Click "Delete Selected"\n3. System checks for reservations\n4. Shows warning: "Delete X tables permanently?"\n5. Lists which tables CAN'T be deleted (have reservations)\n6. You confirm: "Yes, delete X tables"\n7. Tables deleted (except reserved ones)\n\n## Calculations: Time Saved\n\n**Editing 40 VIP tables:**\n- Manual: 40 tables × 1 minute = 40 minutes\n- Bulk edit: 30 seconds\n- **Saved: 39.5 minutes per event**\n\n**Deleting 50 duplicate tables:**\n- Manual: 50 tables × 30 seconds = 25 minutes\n- Bulk delete: 15 seconds\n- **Saved: 24 minutes 45 seconds**\n\n**Changing capacity on 80 tables (emergency):**\n- Manual: 80 tables × 40 seconds = 53 minutes\n- Bulk edit: 20 seconds\n- **Saved: 52 minutes 40 seconds**\n\n**Eli's concert venue (monthly):**\n- 8 concerts per month\n- Average 2 bulk changes per concert (VIP sections, last-minute adjustments)\n- Average time saved: 30 minutes per change\n- **Monthly savings: 8 concerts × 2 changes × 30 min = 8 hours!**\n\n## Practical Tips\n\n**Before bulk editing:**\n- ✅ Double-check your selection count (is "40 tables selected" correct?)\n- ✅ Use filters to narrow down selection (status: AVAILABLE)\n- ✅ Test on 2-3 tables first if unsure\n\n**When bulk editing:**\n- Leave fields empty that you don't want to change\n- System keeps current values for empty fields\n- Only fill what needs updating\n\n**When bulk deleting:**\n- System protects reserved tables (can't delete)\n- You'll see which ones are protected\n- Confirmation required (no accidental deletes)\n\n## Common Questions\n\n**Q: What if I select the wrong tables?**\nA: Click "Deselect All" and start over. Nothing changes until you click "Apply"\n\n**Q: Can I undo a bulk edit?**\nA: No undo button, but you can bulk edit again to revert changes\n\n**Q: What if some tables have reservations and I try to delete?**\nA: System blocks deletion of reserved tables and shows you which ones are protected\n\n**Q: Can I change different values for different tables?**\nA: No, bulk edit applies same change to all. For different values, edit individually\n\n**Q: What's the maximum number of tables I can select?**\nA: No limit! Select 100, 200, even 500 tables at once\n\n## Success Stories\n\n**Eli's concert venue:**\n- Before: 53 minutes to change 80 tables (emergency)\n- After: 20 seconds with bulk edit\n- **Mood change: Panic → Relief**\n- "I had time to check sound equipment instead of clicking buttons"\n\n**Sarah's wedding hall:**\n- Before: 40 minutes to delete duplicate tables\n- After: 15 seconds with bulk delete\n- **Saved: 39 minutes 45 seconds**\n- "I thought I'd be there all morning. Done before my coffee cooled!"\n\n**David's sports club:**\n- Before: Changes to VIP section took 35 minutes each event\n- After: 25 seconds with bulk edit\n- Over 10 events: **Saved 5.8 hours**\n- "That's 5.8 hours I spent coaching instead of clicking"\n\n---\n\n**The bottom line:** Bulk edit turns 40 minutes of repetitive clicking into 30 seconds of smart selection. Your time is valuable - use it for planning great events, not clicking "Save" 40 times!`,
         contentHe: `# שנה 40 שולחנות בבת אחת - סיפור קטע ה-VIP\n\n**הכירו את אלי - מנהל אולם הופעות**\n\n"אנחנו מארחים הופעה גדולה ביום שישי. כבר יצרתי 80 שולחנות (רגיל + VIP). ואז הבוס שלי אומר לי:\n\n'אלי, שולחנות ה-VIP (שולחנות 1-40) צריכים הזמנה מינימלית של 8 אנשים עכשיו, לא 6. המדיניות של החברה השתנתה.'\n\nהסתכלתי על המסך... 40 שולחנות לערוך... זה ייקח 45 דקות... 😫"\n\n## הדרך הישנה (אל תעשו את זה!)\n\n❌ **עריכה ידנית (45 דקות של לחיצות):**\n1. לחץ על שולחן 1 → שנה מינימום 6→8 → שמור\n2. לחץ על שולחן 2 → שנה מינימום 6→8 → שמור\n3. לחץ על שולחן 3 → שנה מינימום 6→8 → שמור\n4. ...חזור 37 פעמים נוספות...\n5. בשולחן 20, אתה מתחיל לעשות טעויות\n6. בשולחן 30, אתה רוצה להתפטר\n7. סוף סוף גמרת בשולחן 40 💀\n\n## הדרך החדשה (30 שניות!)\n\n✅ **קסם עריכה מרובה:**\n\n**שלב 1: בחר את השולחנות**\n- לחץ על תיבת הסימון בשולחן 1 (VIP)\n- לחץ על תיבת הסימון בשולחן 2 (VIP)\n- או... לחץ על "בחר טווח: שולחנות 1-40"\n- כל 40 שולחנות ה-VIP מסומנים כעת בכחול\n- המונה מציג: "40 שולחנות נבחרו"\n\n**שלב 2: לחץ על "ערוך נבחרים"**\n- כפתור מופיע בתחתית: "ערוך 40 שולחנות"\n- לחץ עליו → חלון קופץ מופיע\n\n**שלב 3: שנה מה שצריך**\n- החלון הקופץ מציג:\n  - קיבולת: [השאר ריק כדי לשמור את הנוכחי]\n  - הזמנה מינימלית: [8]\n  - סטטוס: [השאר ריק כדי לשמור את הנוכחי]\n- הזן "8" בשדה הזמנה מינימלית\n- לחץ על "החל על 40 שולחנות"\n\n**שלב 4: סיימת!**\n- ✅ כל 40 השולחנות עודכנו ב-2 שניות\n- המערכת מציגה: "40 שולחנות עודכנו בהצלחה"\n- חסכת 44 דקות ו-30 שניות!\n\n## תרחישים אמיתיים\n\n### תרחיש 1: שינוי אולם ברגע האחרון\n\n**הבעיה:**\nיום שישי בבוקר, 4 שעות לפני ההופעה:\n- מפקח הכבאות אומר: "קיבולת מופחתת מ-10 ל-8 לכל שולחן"\n- יש לך 80 שולחנות בסך הכל\n- צריך לשנות את הקיבולת על כולם\n- ההופעה מתחילה בעוד 4 שעות\n\n**הפאניקה:**\n- אם תערוך ידנית: 80 שולחנות × 40 שניות = 53 דקות\n- יש לך משימות אחרות לעשות!\n- לא יכול להרשות לעצמך לבזבז שעה על לחיצות\n\n**הפתרון:**\n1. לחץ על "בחר הכל" → 80 שולחנות נבחרו\n2. לחץ על "ערוך נבחרים"\n3. שנה קיבולת ל-8\n4. לחץ על "החל על 80 שולחנות"\n5. **סיימת ב-15 שניות!**\n\n**תגובת אלי:**\n"ממש אמרתי 'וואו' בקול רם. חסכתי 52 דקות לפני אירוע גדול. הזמן הזה הלך לבדיקת ציוד הסאונד במקום."\n\n### תרחיש 2: מחק שולחנות שגויים\n\n**הבעיה:**\n- יצרת 50 שולחנות לחתונה א'\n- יצרת 50 שולחנות לחתונה ב' (אותו אירוע בטעות!)\n- צריך למחוק את 50 השולחנות המשוכפלים\n- לא רוצה ללחוץ 50 פעמים\n\n**הפתרון:**\n1. בחר את השולחנות המשוכפלים (שולחנות 51-100)\n2. לחץ על "מחק נבחרים"\n3. המערכת בודקת: "האם השולחנות האלה שמורים?"\n4. אם כן → מראה אילו שמורים (לא ניתן למחוק)\n5. אם לא → "למחוק 50 שולחנות לצמיתות?"\n6. לחץ על "כן, מחק 50 שולחנות"\n7. **נעלמו ב-10 שניות!**\n\n**תכונת הגנה:**\n- המערכת לא תאפשר לך למחוק שולחנות עם הזמנות\n- אם לשולחנות 51-55 יש הזמנות, תראה:\n  - "לא ניתן למחוק 5 שולחנות: יש להם הזמנות"\n  - "ניתן למחוק 45 שולחנות: הם ריקים"\n- מונע מחיקה בטעות של שולחנות ששולמו!\n\n## התהליך המלא\n\n**חלק 1: בחירת שולחנות**\n\n**אפשרות א' - בחר אחד אחד:**\n- לחץ על תיבת הסימון בשולחן 1\n- לחץ על תיבת הסימון בשולחן 2\n- לחץ על תיבת הסימון בשולחן 3\n- עובד לבחירות קטנות\n\n**אפשרות ב' - בחר טווח:**\n- לחץ על "בחר טווח"\n- הזן "1-40" (שולחנות 1 עד 40)\n- לחץ על "בחר" → כל 40 נבחרו\n- הכי טוב לשולחנות רצופים\n\n**אפשרות ג' - בחר הכל:**\n- לחץ על "בחר הכל" בראש\n- כל השולחנות באירוע נבחרו\n- הכי טוב לשינויים גלובליים (קיבולת, סטטוס)\n\n**חלק 2: עריכת שולחנות**\n\n**מה אפשר לשנות:**\n- **קיבולת:** שנה מקסימום אנשים לשולחן\n- **הזמנה מינימלית:** שנה מינימום אנשים נדרש\n- **סטטוס:** שנה זמין ↔ שמור ↔ לא פעיל\n\n**איך זה עובד:**\n1. בחר שולחנות (בכל שיטה למעלה)\n2. לחץ על כפתור "ערוך נבחרים"\n3. חלון קופץ מציג 3 שדות (השאר ריק = שמור נוכחי)\n4. מלא מה שאתה רוצה לשנות\n5. לחץ על "החל על X שולחנות"\n6. המערכת מעדכנת את כל השולחנות הנבחרים\n7. ראה הודעת הצלחה: "X שולחנות עודכנו"\n\n**חלק 3: מחיקת שולחנות**\n\n**בטיחות קודם:**\n1. בחר שולחנות למחיקה\n2. לחץ על "מחק נבחרים"\n3. המערכת בודקת הזמנות\n4. מציגה אזהרה: "למחוק X שולחנות לצמיתות?"\n5. מציגה אילו שולחנות לא ניתן למחוק (יש הזמנות)\n6. אתה מאשר: "כן, מחק X שולחנות"\n7. שולחנות נמחקים (חוץ משמורים)\n\n## חישובים: זמן שנחסך\n\n**עריכת 40 שולחנות VIP:**\n- ידני: 40 שולחנות × 1 דקה = 40 דקות\n- עריכה מרובה: 30 שניות\n- **נחסך: 39.5 דקות לכל אירוע**\n\n**מחיקת 50 שולחנות משוכפלים:**\n- ידני: 50 שולחנות × 30 שניות = 25 דקות\n- מחיקה מרובה: 15 שניות\n- **נחסך: 24 דקות 45 שניות**\n\n**שינוי קיבולת על 80 שולחנות (חירום):**\n- ידני: 80 שולחנות × 40 שניות = 53 דקות\n- עריכה מרובה: 20 שניות\n- **נחסך: 52 דקות 40 שניות**\n\n**אולם ההופעות של אלי (חודשי):**\n- 8 הופעות לחודש\n- ממוצע 2 שינויים מרובים להופעה (קטעי VIP, התאמות רגע אחרון)\n- ממוצע זמן נחסך: 30 דקות לשינוי\n- **חיסכון חודשי: 8 הופעות × 2 שינויים × 30 דק' = 8 שעות!**\n\n## טיפים מעשיים\n\n**לפני עריכה מרובה:**\n- ✅ בדוק פעמיים את מספר הבחירות (האם "40 שולחנות נבחרו" נכון?)\n- ✅ השתמש בסינונים לצמצום הבחירה (סטטוס: זמין)\n- ✅ נסה על 2-3 שולחנות קודם אם לא בטוח\n\n**בזמן עריכה מרובה:**\n- השאר שדות ריקים שאתה לא רוצה לשנות\n- המערכת שומרת ערכים נוכחיים לשדות ריקים\n- מלא רק מה שצריך עדכון\n\n**בזמן מחיקה מרובה:**\n- המערכת מגנה על שולחנות שמורים (לא ניתן למחוק)\n- תראה אילו מוגנים\n- נדרש אישור (אין מחיקות בטעות)\n\n## שאלות נפוצות\n\n**ש: מה אם בחרתי את השולחנות הלא נכונים?**\nת: לחץ על "בטל בחירת הכל" והתחל מחדש. שום דבר לא משתנה עד שתלחץ על "החל"\n\n**ש: האם אפשר לבטל עריכה מרובה?**\nת: אין כפתור ביטול, אבל אפשר לערוך מרובה שוב כדי להחזיר שינויים\n\n**ש: מה אם לחלק מהשולחנות יש הזמנות ואני מנסה למחוק?**\nת: המערכת חוסמת מחיקה של שולחנות שמורים ומראה לך אילו מוגנים\n\n**ש: האם אפשר לשנות ערכים שונים לשולחנות שונים?**\nת: לא, עריכה מרובה מחילה אותו שינוי על הכל. לערכים שונים, ערוך בנפרד\n\n**ש: מה המספר המקסימלי של שולחנות שאפשר לבחור?**\nת: אין הגבלה! בחר 100, 200, אפילו 500 שולחנות בבת אחת\n\n## סיפורי הצלחה\n\n**אולם ההופעות של אלי:**\n- לפני: 53 דקות לשנות 80 שולחנות (חירום)\n- אחרי: 20 שניות עם עריכה מרובה\n- **שינוי מצב רוח: פאניקה → הקלה**\n- "היה לי זמן לבדוק ציוד סאונד במקום ללחוץ על כפתורים"\n\n**אולם החתונות של שרה:**\n- לפני: 40 דקות למחוק שולחנות משוכפלים\n- אחרי: 15 שניות עם מחיקה מרובה\n- **נחסך: 39 דקות 45 שניות**\n- "חשבתי שאהיה שם כל הבוקר. סיימתי לפני שהקפה התקרר!"\n\n**מועדון הספורט של דוד:**\n- לפני: שינויים בקטע VIP לקחו 35 דקות לכל אירוע\n- אחרי: 25 שניות עם עריכה מרובה\n- על פני 10 אירועים: **נחסך 5.8 שעות**\n- "זה 5.8 שעות שביליתי באימון במקום בלחיצות"\n\n---\n\n**השורה התחתונה:** עריכה מרובה הופכת 40 דקות של לחיצות חוזרות ל-30 שניות של בחירה חכמה. הזמן שלך יקר - השתמש בו לתכנון אירועים מעולים, לא ללחוץ על "שמור" 40 פעמים!`,
         relatedFeatures: ['duplicate-tables', 'table-management'],
+      },
+
+      {
+        id: 'table-sharing',
+        title: 'Sharing a Table — Add Multiple Groups to One Table',
+        titleHe: 'שיתוף שולחן — הוספת קבוצות מרובות לשולחן אחד',
+        description:
+          'Admins can seat multiple separate registrations at the same table, filling empty seats without wasting capacity',
+        descriptionHe:
+          'מנהלים יכולים להושיב מספר הרשמות נפרדות באותו שולחן, למלא מקומות פנויים ללא בזבוז קיבולת',
+        category: 'table-management',
+        type: 'NEW',
+        roles: ['ADMIN', 'OWNER'],
+        difficulty: 'intermediate',
+        keywords: [
+          'share',
+          'table sharing',
+          'multiple groups',
+          'add to table',
+          'partial table',
+          'שיתוף שולחן',
+          'קבוצות מרובות',
+          'הוסף לשולחן',
+          'שולחן חלקי',
+        ],
+        lastUpdated: '2026-04-11',
+        content: `# Sharing a Table — Add Multiple Groups to One Table
+
+## The Problem Before This Feature
+
+**Meet Dana — School Event Coordinator:**
+
+"We had a fundraiser dinner. 30 tables of 10 seats each = 300 spots. A family of 3 registered and got Table 12 (10 seats). Now Table 12 shows RESERVED and the 7 empty seats are just... gone. No one else can book them.
+
+We ended up with 15 tables with 4–6 empty seats each, while 20 families on the waitlist couldn't get in. That's 70 wasted spots!"
+
+## The Solution: Table Sharing
+
+Admins can now add additional registrations to an already-occupied table, filling empty seats one group at a time.
+
+## How It Works
+
+### The "Open the Table" Gate
+
+When a table is **empty**, the system enforces the Minimum Order:
+- Table capacity: 10 seats, minimum order: 4
+- First registration must bring at least 4 people
+- This prevents a solo guest from "claiming" a table for 10
+
+Once **any CONFIRMED registration** exists on the table, the gate opens:
+- Subsequent registrations only need to fit within **remaining capacity**
+- The minimum order check is **skipped** for additional groups
+- This allows you to fill the remaining 6 seats with groups of any size
+
+### Adding a Registration to a Table
+
+**Step 1:** Open the Table Board for your event (Admin → Event → Table Board tab)
+
+**Step 2:** Click on a table that has available seats (status: RESERVED, some seats free)
+
+**Step 3:** Click **"Add Registration"** in the table detail panel
+
+**Step 4:** Fill in the guest's details:
+- Phone number
+- Guest count (must fit within remaining capacity)
+- Any custom fields your event requires
+
+**Step 5:** Click **"Add to Table"** → The registration is created as CONFIRMED and immediately placed at this table
+
+**Step 6:** The table occupancy updates instantly: "Table 12: 3+4 = 7/10 seats taken"
+
+## What Guests See
+
+Each registration at a shared table gets its own:
+- ✅ Unique confirmation code
+- ✅ Confirmation email showing their table number
+- ✅ QR code for check-in
+
+The table simply shows multiple confirmation codes when scanned at the door.
+
+## Table Release on Cancellation
+
+If one registration at a shared table cancels:
+- The table **stays RESERVED** (other groups are still there)
+- Remaining registrations are untouched
+- Table only flips back to AVAILABLE when **zero** CONFIRMED registrations remain
+
+## Dana's Result
+
+After enabling table sharing:
+- The 3-person family still got Table 12
+- Dana added a family of 4 and a couple (2) manually to Table 12
+- Table 12: 3 + 4 + 2 = 9/10 seats, one seat left over
+- Zero wasted capacity
+- 20 waitlisted families reassigned to shared tables in 15 minutes
+
+## Who Can Use This?
+
+Table sharing is an **admin-only** capability:
+- ✅ ADMIN / OWNER can add registrations to any table
+- ❌ Guests registering online still pick a whole AVAILABLE table
+- ❌ MANAGER role cannot add to existing tables
+
+## Important Notes
+
+- You cannot add to a table marked INACTIVE
+- You cannot exceed the table's total capacity
+- Each added registration counts separately in your registration list and exports`,
+
+        contentHe: `# שיתוף שולחן — הוספת קבוצות מרובות לשולחן אחד
+
+## הבעיה לפני הפיצ'ר הזה
+
+**הכירו את דנה — רכזת אירועי בית ספר:**
+
+"היה לנו ערב גיוס כספים. 30 שולחנות של 10 מקומות כל אחד = 300 מקומות. משפחה של 3 נרשמה וקיבלה שולחן 12 (10 מקומות). עכשיו שולחן 12 מציג RESERVED ו-7 המקומות הפנויים פשוט... נעלמו. אף אחד אחר לא יכול להזמין אותם.
+
+בסופו של דבר היו לנו 15 שולחנות עם 4–6 מקומות פנויים בכל אחד, בעוד 20 משפחות ברשימת ההמתנה לא הצליחו להיכנס. זה 70 מקומות מבוזבזים!"
+
+## הפתרון: שיתוף שולחן
+
+מנהלים יכולים עכשיו להוסיף הרשמות נוספות לשולחן כבר תפוס, למלא מקומות פנויים קבוצה אחר קבוצה.
+
+## איך זה עובד
+
+### שער "פתיחת השולחן"
+
+כשהשולחן **ריק**, המערכת אוכפת את ההזמנה המינימלית:
+- קיבולת השולחן: 10 מקומות, הזמנה מינימלית: 4
+- ההרשמה הראשונה חייבת להביא לפחות 4 אנשים
+- זה מונע מאורח בודד "לתפוס" שולחן ל-10
+
+ברגע שקיימת **הרשמה CONFIRMED אחת לפחות** בשולחן, השער נפתח:
+- הרשמות נוספות צריכות רק להתאים ל**קיבולת הנותרת**
+- בדיקת ההזמנה המינימלית **מדולגת** לקבוצות נוספות
+- זה מאפשר לכם למלא את 6 המקומות הנותרים בקבוצות בכל גודל
+
+### הוספת הרשמה לשולחן
+
+**שלב 1:** פתחו את לוח השולחנות לאירוע שלכם (אדמין → אירוע → לשונית לוח שולחנות)
+
+**שלב 2:** לחצו על שולחן עם מקומות פנויים (סטטוס: RESERVED, חלק מהמקומות פנויים)
+
+**שלב 3:** לחצו על **"הוסף הרשמה"** בפאנל פרטי השולחן
+
+**שלב 4:** מלאו את פרטי האורח:
+- מספר טלפון
+- מספר אורחים (חייב להתאים לקיבולת הנותרת)
+- כל שדות מותאמים שהאירוע שלכם דורש
+
+**שלב 5:** לחצו על **"הוסף לשולחן"** → ההרשמה נוצרת כ-CONFIRMED ומוצבת מיד בשולחן זה
+
+**שלב 6:** תפוסת השולחן מתעדכנת מיד: "שולחן 12: 3+4 = 7/10 מקומות תפוסים"
+
+## מה האורחים רואים
+
+כל הרשמה בשולחן משותף מקבלת:
+- ✅ קוד אישור ייחודי משלה
+- ✅ מייל אישור המציג את מספר השולחן שלהם
+- ✅ קוד QR לצ'ק-אין
+
+השולחן פשוט מציג מספר קודי אישור כשנסרקים בכניסה.
+
+## שחרור שולחן בביטול
+
+אם הרשמה אחת בשולחן משותף מבטלת:
+- השולחן **נשאר RESERVED** (קבוצות אחרות עדיין שם)
+- הרשמות נותרות לא נפגעות
+- השולחן חוזר ל-AVAILABLE רק כאשר **אפס** הרשמות CONFIRMED נותרות
+
+## תוצאת דנה
+
+אחרי הפעלת שיתוף שולחן:
+- המשפחה של 3 עדיין קיבלה שולחן 12
+- דנה הוסיפה משפחה של 4 וזוג (2) ידנית לשולחן 12
+- שולחן 12: 3 + 4 + 2 = 9/10 מקומות, מקום אחד נותר
+- אפס קיבולת מבוזבזת
+- 20 משפחות מרשימת ההמתנה שובצו מחדש לשולחנות משותפים ב-15 דקות
+
+## מי יכול להשתמש בזה?
+
+שיתוף שולחן הוא יכולת **אדמין בלבד**:
+- ✅ ADMIN / OWNER יכולים להוסיף הרשמות לכל שולחן
+- ❌ אורחים שנרשמים אונליין עדיין בוחרים שולחן AVAILABLE שלם
+- ❌ תפקיד MANAGER לא יכול להוסיף לשולחנות קיימים
+
+## הערות חשובות
+
+- לא ניתן להוסיף לשולחן המסומן INACTIVE
+- לא ניתן לחרוג מהקיבולת הכוללת של השולחן
+- כל הרשמה שנוספת נספרת בנפרד ברשימת ההרשמות ובייצואים שלכם`,
+        relatedFeatures: ['table-based-events', 'pending-payments-panel'],
       },
     ],
   },
@@ -3830,7 +4023,7 @@ In real-time, you'll see the new registration appear in your event's registratio
           'Ghost registrations, PAYMENT_PENDING status, and how the system handles payment failures',
         descriptionHe: 'הרשמות רפאים, סטטוס PAYMENT_PENDING, ואיך המערכת מטפלת בכשלי תשלום',
         category: 'payments',
-        type: 'ADVANCED',
+        type: 'UPDATED',
         roles: ['ADMIN', 'OWNER'],
         difficulty: 'intermediate',
         keywords: [
@@ -3843,7 +4036,7 @@ In real-time, you'll see the new registration appear in your event's registratio
           'הרשמת רפאים',
           'שגיאה',
         ],
-        lastUpdated: '2026-04-06',
+        lastUpdated: '2026-04-11',
         content: `# Payment Didn't Go Through? Here's What To Do
 
 ## Understanding the Problem
@@ -3873,9 +4066,9 @@ TicketCap handles this automatically:
 
 In the registrations list, you may occasionally see PAYMENT_PENDING entries. This is normal — it means someone is in the middle of paying right now, or they gave up.
 
-**You don't need to do anything.** The system handles cleanup.
+**For regular (capacity-based) events, you don't need to do anything.** The system handles cleanup.
 
-## When to Act
+## When to Act — Capacity-Based Events
 
 Contact the person manually if:
 - They message you saying "I tried to pay but something went wrong"
@@ -3886,6 +4079,16 @@ Contact the person manually if:
 1. Verify their entry is in PAYMENT_PENDING (not CONFIRMED)
 2. Ask them to try the registration link again from the beginning
 3. Suggest they try a different card or browser
+
+## Table-Based Events — Use the Pending Payments Panel
+
+For **table-based paid events**, there is a dedicated admin panel:
+- Open the event → Table Board tab → look for the **Pending Payments** section
+- It lists every registration stuck in PAYMENT_PENDING
+- You can **manually mark as paid** (e.g., cash collected, bank transfer confirmed)
+- Or **cancel** with a 5-second undo window
+
+See the "Pending Payments Panel" feature for full details.
 
 ## Pro Tip
 
@@ -3922,9 +4125,9 @@ TicketCap מטפל בזה אוטומטית:
 
 ברשימת ההרשמות, ייתכן שתראו לפעמים רשומות PAYMENT_PENDING. זה נורמלי — זה אומר שמישהו באמצע תשלום עכשיו, או שהם ויתרו.
 
-**אתם לא צריכים לעשות כלום.** המערכת מטפלת בניקיון.
+**לאירועים רגילים (מבוססי קיבולת), אתם לא צריכים לעשות כלום.** המערכת מטפלת בניקיון.
 
-## מתי לפעול
+## מתי לפעול — אירועים מבוססי קיבולת
 
 צרו קשר עם האדם ידנית אם:
 - הם שלחו הודעה לאמר "ניסיתי לשלם אך משהו השתבש"
@@ -3936,12 +4139,166 @@ TicketCap מטפל בזה אוטומטית:
 2. בקשו מהם לנסות את קישור ההרשמה שוב מהתחלה
 3. הציעו להם לנסות כרטיס אחר או דפדפן אחר
 
+## אירועים מבוססי שולחנות — השתמשו בפאנל התשלומים הממתינים
+
+לאירועי שולחן בתשלום יש **פאנל אדמין ייעודי**:
+- פתחו את האירוע → לשונית לוח שולחנות → חפשו את קטע **תשלומים ממתינים**
+- הוא מציג כל הרשמה שנתקעת ב-PAYMENT_PENDING
+- תוכלו **לאשר ידנית כשולם** (למשל, מזומן נגבה, העברה בנקאית אושרה)
+- או **לבטל** עם חלון ביטול של 5 שניות
+
+ראו את הפיצ'ר "פאנל תשלומים ממתינים" לפרטים מלאים.
+
 ## טיפ מקצועי
 
 אם אתם רואים הרבה רשומות PAYMENT_PENDING שמצטברות, ייתכן שזה מציין:
 - מחיר האירוע שלכם נראה גבוה לנרשמים (הם נוטשים בתשלום)
 - בעיה טכנית עם דף התשלום (צרו קשר עם תמיכה)`,
-        relatedFeatures: ['paid-events', 'payment-flow', 'cancel-registration'],
+        relatedFeatures: ['paid-events', 'payment-flow', 'cancel-registration', 'pending-payments-panel'],
+      },
+
+      {
+        id: 'pending-payments-panel',
+        title: 'Pending Payments Panel — Track & Act on Incomplete Table Payments',
+        titleHe: 'פאנל תשלומים ממתינים — מעקב ופעולה על תשלומי שולחן שלא הושלמו',
+        description:
+          'For table-based events with upfront payment: a dedicated panel shows who started paying but never finished, with options to manually confirm or cancel',
+        descriptionHe:
+          'לאירועים מבוססי שולחנות עם תשלום מראש: פאנל ייעודי מציג מי התחיל לשלם אך לא סיים, עם אפשרויות לאשר ידנית או לבטל',
+        category: 'payments',
+        type: 'NEW',
+        roles: ['ADMIN', 'OWNER'],
+        difficulty: 'intermediate',
+        keywords: [
+          'pending payment',
+          'table payment',
+          'manual pay',
+          'confirm payment',
+          'payment panel',
+          'תשלום ממתין',
+          'תשלום שולחן',
+          'אישור ידני',
+          'פאנל תשלום',
+        ],
+        lastUpdated: '2026-04-11',
+        content: `# Pending Payments Panel — Track & Act on Incomplete Table Payments
+
+## Why This Panel Exists
+
+Table-based paid events work differently from regular paid events. When a guest registers for a table-based event:
+
+1. They select a table and fill in details
+2. They're redirected to HYP (the payment gateway) to pay upfront
+3. **If they pay** → confirmed, table assigned automatically
+4. **If they abandon the payment** → a PAYMENT_PENDING registration is created with no table assigned yet
+
+Since these pending registrations have **no table**, they don't appear on the Table Board. Without the Pending Payments Panel, there'd be no way for admins to spot them.
+
+## Where to Find It
+
+The panel appears as a collapsible section on the **Table Board tab** for table-based paid events. It's separate from the main table grid.
+
+## What the Panel Shows
+
+Each entry displays:
+- Guest's phone number
+- Number of guests requested
+- Confirmation code
+- How long ago they started (e.g., "3 minutes ago")
+
+## Admin Actions
+
+For each pending registration you have two options:
+
+### ✅ Manual Pay (Mark as Paid)
+Use this when:
+- The guest called you to say "I paid by bank transfer" or "card was glitchy but money left my account"
+- You collected cash on-site and want to confirm them
+
+**What happens:**
+1. Click **"Mark as Paid"** → confirmation modal appears
+2. Confirm → the registration becomes CONFIRMED
+3. The system automatically assigns the best available table (smallest-fit algorithm)
+4. Guest appears on the Table Board immediately
+
+### ❌ Cancel
+Use this when the guest clearly abandoned (no contact, no payment):
+
+**What happens:**
+1. Click **"Cancel"** → confirmation modal appears
+2. Confirm → the registration is cancelled
+3. **5-second undo window:** A toast notification appears with a countdown. If you made a mistake, click **"Undo"** within 5 seconds to restore the registration
+4. After 5 seconds → permanently cancelled, spot released
+
+## Important Design Principle
+
+PAYMENT_PENDING registrations **do not hold table capacity**. This is intentional:
+- If pending regs reserved tables, an attacker could flood your event with fake pending regs and DoS your capacity
+- The trade-off: two admins could theoretically confirm the same pending reg to the same table simultaneously — the system handles this with Serializable transactions
+
+## Polling
+
+The panel refreshes every 5 seconds (slower than the 3s table board — pending payments are less urgent than live confirmed bookings).`,
+
+        contentHe: `# פאנל תשלומים ממתינים — מעקב ופעולה על תשלומי שולחן שלא הושלמו
+
+## למה הפאנל הזה קיים
+
+אירועי שולחן בתשלום עובדים אחרת מאירועי תשלום רגילים. כשאורח נרשם לאירוע מבוסס שולחנות:
+
+1. הוא בוחר שולחן וממלא פרטים
+2. הוא מופנה ל-HYP (שער התשלום) לתשלום מראש
+3. **אם הוא משלם** → מאושר, שולחן מוקצה אוטומטית
+4. **אם הוא עוזב את התשלום** → נוצרת הרשמת PAYMENT_PENDING ללא שולחן מוקצה
+
+מכיוון שהרשמות ממתינות אלו **אין להן שולחן**, הן לא מופיעות בלוח השולחנות. ללא פאנל התשלומים הממתינים, לא היה למנהלים דרך לזהות אותן.
+
+## איפה למצוא אותו
+
+הפאנל מופיע כקטע מתכווץ בלשונית **לוח השולחנות** לאירועים מבוססי שולחנות בתשלום. הוא נפרד מרשת השולחנות הראשית.
+
+## מה הפאנל מציג
+
+כל רשומה מציגה:
+- מספר טלפון האורח
+- מספר האורחים שנדרש
+- קוד אישור
+- כמה זמן עבר מאז שהתחילו (למשל, "לפני 3 דקות")
+
+## פעולות אדמין
+
+לכל הרשמה ממתינה יש שתי אפשרויות:
+
+### ✅ תשלום ידני (סמן כשולם)
+השתמשו בזה כאשר:
+- האורח התקשר לאמר "שילמתי בהעברה בנקאית" או "הכרטיס היה בעייתי אבל הכסף יצא"
+- גביתם מזומן במקום ורוצים לאשר אותם
+
+**מה קורה:**
+1. לחצו על **"סמן כשולם"** → מופיע מודל אישור
+2. אשרו → ההרשמה הופכת ל-CONFIRMED
+3. המערכת מקצה אוטומטית את השולחן הזמין הטוב ביותר (אלגוריתם smallest-fit)
+4. האורח מופיע בלוח השולחנות מיד
+
+### ❌ ביטול
+השתמשו בזה כאשר האורח ברור שנטש (אין קשר, אין תשלום):
+
+**מה קורה:**
+1. לחצו על **"בטל"** → מופיע מודל אישור
+2. אשרו → ההרשמה מבוטלת
+3. **חלון ביטול של 5 שניות:** מופיעה הודעת טוסט עם ספירה לאחור. אם טעיתם, לחצו **"בטל פעולה"** תוך 5 שניות לשחזור ההרשמה
+4. אחרי 5 שניות → מבוטל לצמיתות, מקום משוחרר
+
+## עיקרון עיצוב חשוב
+
+הרשמות PAYMENT_PENDING **לא מחזיקות קיבולת שולחן**. זה מכוון:
+- אם הרשמות ממתינות היו שומרות שולחנות, תוקף יכול להציף את האירוע שלכם בהרשמות ממתינות מזויפות ולבצע DoS על הקיבולת
+- הפשרה: שני מנהלים יכולים תיאורטית לאשר אותה הרשמה ממתינה לאותו שולחן בו זמנית — המערכת מטפלת בזה עם טרנזקציות Serializable
+
+## סקרינג
+
+הפאנל מתרענן כל 5 שניות (איטי יותר מ-3 שניות של לוח השולחנות — תשלומים ממתינים פחות דחופים מהזמנות מאושרות בזמן אמת).`,
+        relatedFeatures: ['paid-events', 'failed-payments', 'table-sharing'],
       },
     ],
   },

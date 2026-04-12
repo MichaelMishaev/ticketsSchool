@@ -251,21 +251,6 @@ export class EventBuilder {
     return this
   }
 
-  withEventType(eventType: 'CAPACITY_BASED' | 'TABLE_BASED') {
-    this.data.eventType = eventType
-    return this
-  }
-
-  withStatus(status: 'OPEN' | 'PAUSED' | 'CLOSED') {
-    this.data.status = status
-    return this
-  }
-
-  withCancellationDeadlineHours(hours: number) {
-    this.data.cancellationDeadlineHours = hours
-    return this
-  }
-
   inFuture() {
     const tomorrow = new Date()
     tomorrow.setDate(tomorrow.getDate() + 1)
@@ -420,9 +405,7 @@ export class RegistrationBuilder {
       this.data.email = `test-user-${uniqueId}@test.com`
     }
     if (!this.data.phone) {
-      this.data.phone = `050${Math.floor(Math.random() * 10000000)
-        .toString()
-        .padStart(7, '0')}`
+      this.data.phone = `050${Math.floor(Math.random() * 10000000).toString().padStart(7, '0')}`
     }
     if (!this.data.eventId) {
       throw new Error('Registration must have an eventId')

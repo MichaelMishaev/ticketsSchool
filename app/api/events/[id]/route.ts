@@ -1,247 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentAdmin, requireSchoolAccess } from '@/lib/auth.server'
-import { logger } from '@/lib/logger-v2'
 
-const ALLOWED_FIELD_TYPES = [
-  'text',
-  'select',
-  'number',
-  'phone',
-  'email',
-  'checkbox',
-  'textarea',
-  'date',
-] as const
-
-/**
- * Validate fieldsSchema before storing in the database.
- * Returns true if valid, false otherwise.
- */
-function validateFieldsSchema(schema: unknown): boolean {
-  if (schema === null || schema === undefined) return true
-  if (!Array.isArray(schema)) return false
-
-  for (const field of schema) {
-    if (typeof field !== 'object' || field === null) return false
-
-    const f = field as Record<string, unknown>
-
-    // id: non-empty string, alphanumeric + underscores only
-    if (typeof f.id !== 'string' || !/^[a-zA-Z0-9_]+$/.test(f.id)) return false
-
-    // type: must be one of the allowed values
-    if (typeof f.type !== 'string' || !(ALLOWED_FIELD_TYPES as readonly string[]).includes(f.type))
-      return false
-
-    // label: non-empty string
-    if (typeof f.label !== 'string' || f.label.trim() === '') return false
-
-    // required: must be boolean
-    if (typeof f.required !== 'boolean') return false
-
-    // options: required for select fields, must be non-empty array of strings
-    if (f.type === 'select') {
-      if (!Array.isArray(f.options) || f.options.length === 0) return false
-      if (!f.options.every((o: unknown) => typeof o === 'string')) return false
-    }
-  }
-
-  return true
-}
-
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    // Require authentication
-    const admin = await getCurrentAdmin()
-    if (!admin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { id } = await params
-
-    // Auto-cancel stale PAYMENT_PENDING registrations (older than 30 minutes)
-    // This covers HYP auth errors where the callback URL is never reached
-    const cutoff = new Date(Date.now() - 30 * 60 * 1000)
-    const staleResult = await prisma.registration.updateMany({
-      where: {
-        eventId: id,
-        status: 'PAYMENT_PENDING',
-        createdAt: { lt: cutoff },
-      },
-      data: {
-        status: 'CANCELLED',
-        paymentStatus: 'FAILED',
-      },
-    })
-    if (staleResult.count > 0) {
-      logger.info('[PAYMENT_PENDING_TRACE] Main event GET auto-cancelled stale PAYMENT_PENDING', {
-        source: 'events',
-        eventId: id,
-        cancelledCount: staleResult.count,
-        cutoff: cutoff.toISOString(),
-      })
-    }
-
+    const { id } = await params;
     const event = await prisma.event.findUnique({
       where: { id },
       include: {
-        school: true,
         registrations: {
-          orderBy: { createdAt: 'desc' },
-        },
-        tables: {
-          select: {
-            capacity: true,
-            status: true,
-            // Sharing-aware: aggregate over all CONFIRMED regs on the table
-            registrations: {
-              where: { status: 'CONFIRMED' },
-              select: {
-                guestsCount: true,
-                spotsCount: true,
-              },
-            },
-          },
-        },
-      },
+          orderBy: { createdAt: 'desc' }
+        }
+      }
     })
 
-    // Check if event exists and is not soft-deleted
-    if (!event || event.deletedAt !== null) {
-      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
-    }
-
-    // Check school access (all roles except SUPER_ADMIN must match schoolId)
-    if (admin.role !== 'SUPER_ADMIN' && admin.schoolId !== event.schoolId) {
+    if (!event) {
       return NextResponse.json(
-        { error: "Forbidden: No access to this school's events" },
-        { status: 403 }
+        { error: 'Event not found' },
+        { status: 404 }
       )
     }
 
-    // Calculate total capacity and spots taken for TABLE_BASED events
-    let totalCapacity = event.capacity
-    let totalSpotsTaken = 0
-
-    if (event.eventType === 'TABLE_BASED') {
-      totalCapacity = event.tables.reduce((sum, table) => sum + table.capacity, 0)
-      // Sum across all CONFIRMED regs per table (supports table sharing)
-      totalSpotsTaken = event.tables.reduce((sum, table) => {
-        return (
-          sum + table.registrations.reduce((n, r) => n + (r.guestsCount ?? r.spotsCount ?? 0), 0)
-        )
-      }, 0)
-    } else {
-      // For CAPACITY_BASED events, count confirmed registrations
-      totalSpotsTaken = event.registrations
-        .filter((r) => r.status === 'CONFIRMED')
-        .reduce((sum, reg) => sum + (reg.spotsCount || 0), 0)
-    }
-
-    // Add totalCapacity and totalSpotsTaken to response
-    const { tables, ...eventData } = event
-    return NextResponse.json({
-      ...eventData,
-      totalCapacity,
-      totalSpotsTaken,
-    })
+    return NextResponse.json(event)
   } catch (error) {
-    logger.error('Error fetching event', { source: 'events', error })
-    return NextResponse.json({ error: 'Failed to fetch event' }, { status: 500 })
+    console.error('Error fetching event:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch event' },
+      { status: 500 }
+    )
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    // Require authentication
-    const admin = await getCurrentAdmin()
-    if (!admin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { id } = await params
+    const { id } = await params;
     const data = await request.json()
-
-    // Check event exists and get school
-    const existingEvent = await prisma.event.findUnique({
-      where: { id },
-      select: { schoolId: true, spotsReserved: true },
-    })
-
-    if (!existingEvent) {
-      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
-    }
-
-    // Check school access (all roles except SUPER_ADMIN must match schoolId)
-    if (admin.role !== 'SUPER_ADMIN' && admin.schoolId !== existingEvent.schoolId) {
-      return NextResponse.json(
-        { error: "Forbidden: No access to this school's events" },
-        { status: 403 }
-      )
-    }
-
-    const updateData: any = {}
-
-    // Update all provided fields
-    if (data.title !== undefined) updateData.title = data.title
-    if (data.description !== undefined) updateData.description = data.description
-    if (data.gameType !== undefined) updateData.gameType = data.gameType
-    if (data.location !== undefined) updateData.location = data.location
-
-    // Handle datetime fields
-    if (data.startAt !== undefined) {
-      updateData.startAt = new Date(data.startAt)
-    }
-    if (data.endAt !== undefined) {
-      updateData.endAt = data.endAt ? new Date(data.endAt) : null
-    }
-    if (data.capacity !== undefined) {
-      const newCapacity = parseInt(data.capacity)
-      if (newCapacity < existingEvent.spotsReserved) {
-        return NextResponse.json(
-          {
-            error: `Cannot reduce capacity below current confirmed count (${existingEvent.spotsReserved} spots reserved)`,
-          },
-          { status: 400 }
-        )
-      }
-      updateData.capacity = newCapacity
-    }
-    if (data.maxSpotsPerPerson !== undefined)
-      updateData.maxSpotsPerPerson = parseInt(data.maxSpotsPerPerson)
-    if (data.fieldsSchema !== undefined) {
-      if (!validateFieldsSchema(data.fieldsSchema)) {
-        return NextResponse.json({ error: 'Invalid fields schema structure' }, { status: 400 })
-      }
-      updateData.fieldsSchema = data.fieldsSchema
-    }
-    if (data.conditions !== undefined) updateData.conditions = data.conditions
-    if (data.requireAcceptance !== undefined) updateData.requireAcceptance = data.requireAcceptance
-    if (data.completionMessage !== undefined) updateData.completionMessage = data.completionMessage
-    if (data.coverImage !== undefined) updateData.coverImage = data.coverImage
-    if (data.status !== undefined) updateData.status = data.status
-
-    // Payment settings (Tier 2: Event Ticketing - YaadPay)
-    if (data.paymentRequired !== undefined) updateData.paymentRequired = data.paymentRequired
-    if (data.paymentTiming !== undefined) updateData.paymentTiming = data.paymentTiming
-    if (data.pricingModel !== undefined) updateData.pricingModel = data.pricingModel
-    if (data.priceAmount !== undefined)
-      updateData.priceAmount = data.priceAmount !== null ? Number(data.priceAmount) : null
-    if (data.currency !== undefined) updateData.currency = data.currency
 
     const event = await prisma.event.update({
       where: { id },
-      data: updateData,
-      include: {
-        school: true,
-      },
+      data: {
+        status: data.status,
+        ...(data.title && { title: data.title }),
+        ...(data.description && { description: data.description }),
+        ...(data.capacity && { capacity: data.capacity }),
+        ...(data.completionMessage !== undefined && { completionMessage: data.completionMessage }),
+      }
     })
 
     return NextResponse.json(event)
   } catch (error) {
-    logger.error('Error updating event', { source: 'events', error })
-    return NextResponse.json({ error: 'Failed to update event' }, { status: 500 })
+    console.error('Error updating event:', error)
+    return NextResponse.json(
+      { error: 'Failed to update event' },
+      { status: 500 }
+    )
   }
 }
 
@@ -250,57 +67,17 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Require authentication
-    const admin = await getCurrentAdmin()
-    if (!admin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { id } = await params
-
-    // Check if event exists and get registration count + school
-    const event = await prisma.event.findUnique({
-      where: { id },
-      select: {
-        schoolId: true,
-        _count: {
-          select: { registrations: true },
-        },
-      },
+    const { id } = await params;
+    await prisma.event.delete({
+      where: { id }
     })
 
-    if (!event) {
-      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
-    }
-
-    // Check school access (all roles except SUPER_ADMIN must match schoolId)
-    if (admin.role !== 'SUPER_ADMIN' && admin.schoolId !== event.schoolId) {
-      return NextResponse.json(
-        { error: "Forbidden: No access to this school's events" },
-        { status: 403 }
-      )
-    }
-
-    // Only allow deletion of events with no registrations (temp events)
-    if (event._count.registrations > 0) {
-      return NextResponse.json(
-        {
-          error:
-            'Cannot delete event with existing registrations. Please remove all registrations first.',
-        },
-        { status: 400 }
-      )
-    }
-
-    // Soft delete - set deletedAt timestamp instead of hard delete
-    await prisma.event.update({
-      where: { id },
-      data: { deletedAt: new Date() },
-    })
-
-    return NextResponse.json({ success: true, message: 'Event archived successfully' })
+    return NextResponse.json({ success: true })
   } catch (error) {
-    logger.error('Error deleting event', { source: 'events', error })
-    return NextResponse.json({ error: 'Failed to delete event' }, { status: 500 })
+    console.error('Error deleting event:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete event' },
+      { status: 500 }
+    )
   }
 }

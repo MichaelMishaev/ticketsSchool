@@ -1,100 +1,112 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getCurrentAdmin } from '@/lib/auth.server'
 import { prisma, Prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/auth.server'
-import { logger } from '@/lib/logger-v2'
 
-/**
- * POST /api/events/[id]/waitlist/[regId]/assign
- * Manually assign waitlist registration to a specific table
- * Admin only - requires schoolId verification
- */
+interface AssignRouteParams {
+  params: Promise<{ id: string; regId: string }>
+}
+
+interface AssignBody {
+  tableId?: string
+  force?: boolean
+}
+
+interface KnownError {
+  statusCode: number
+  message?: string
+  [key: string]: unknown
+}
+
+function isKnownError(err: unknown): err is KnownError {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'statusCode' in err &&
+    typeof (err as KnownError).statusCode === 'number'
+  )
+}
+
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string; regId: string }> }
-) {
+  { params }: AssignRouteParams
+): Promise<NextResponse> {
+  // 1. Auth
+  const admin = await getCurrentAdmin()
+  if (!admin) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // 2. Parse params
+  const { id: eventId, regId } = await params
+
+  // 3. Parse body
+  let body: AssignBody
   try {
-    const admin = await requireAdmin()
-    const { id: eventId, regId: registrationId } = await params
-    const body = await request.json()
-    const { tableId, force } = body
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
 
-    if (!tableId) {
-      return NextResponse.json({ error: 'Table ID is required' }, { status: 400 })
-    }
+  const { tableId, force = false } = body
 
-    // Verify event belongs to admin's school (unless SUPER_ADMIN)
-    const event = await prisma.event.findUnique({
-      where: { id: eventId },
-      select: {
-        id: true,
-        schoolId: true,
-        eventType: true,
-      },
-    })
+  if (!tableId) {
+    return NextResponse.json({ error: 'tableId is required' }, { status: 400 })
+  }
 
-    if (!event) {
-      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
-    }
-
-    // Multi-tenant security check
-    if (admin.role !== 'SUPER_ADMIN') {
-      if (!admin.schoolId) {
-        return NextResponse.json({ error: 'Admin must have a school assigned' }, { status: 403 })
-      }
-
-      if (event.schoolId !== admin.schoolId) {
-        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
-      }
-    }
-
-    // Only table-based events have table assignment
-    if (event.eventType !== 'TABLE_BASED') {
-      return NextResponse.json(
-        { error: 'Table assignment is only for table-based events' },
-        { status: 400 }
-      )
-    }
-
-    // Perform assignment in transaction
-    const result = await prisma.$transaction(
+  // 4. Transaction (Serializable isolation)
+  try {
+    const updatedRegistration = await prisma.$transaction(
       async (tx) => {
-        // Fetch registration
-        const registration = await tx.registration.findUnique({
-          where: { id: registrationId },
-          select: {
-            id: true,
-            eventId: true,
-            status: true,
-            guestsCount: true,
-            confirmationCode: true,
-            phoneNumber: true,
-            data: true,
-            waitlistPriority: true,
-          },
+        // a. Fetch event
+        const event = await tx.event.findUnique({
+          where: { id: eventId },
+          select: { schoolId: true, eventType: true },
         })
 
+        if (!event) {
+          throw { statusCode: 404, message: 'Event not found' }
+        }
+
+        // b. School access check
+        if (admin.role !== 'SUPER_ADMIN' && admin.schoolId !== event.schoolId) {
+          throw { statusCode: 403 }
+        }
+
+        // c. Validate event type
+        if (event.eventType !== 'TABLE_BASED') {
+          throw {
+            statusCode: 422,
+            message: 'Only supported for table-based events',
+          }
+        }
+
+        // d. Fetch the waitlist registration
+        const registration = await tx.registration.findUnique({
+          where: { id: regId },
+          select: { id: true, status: true, guestsCount: true, eventId: true },
+        })
+
+        // e. Validate registration
         if (!registration) {
-          throw new Error('Registration not found')
+          throw { statusCode: 404, message: 'Registration not found' }
         }
-
         if (registration.eventId !== eventId) {
-          throw new Error('Registration does not belong to this event')
+          throw {
+            statusCode: 400,
+            message: 'Registration does not belong to this event',
+          }
         }
-
         if (registration.status !== 'WAITLIST') {
-          throw new Error(`Cannot assign registration with status: ${registration.status}`)
+          throw {
+            statusCode: 422,
+            message: `Registration status must be WAITLIST, got ${registration.status}`,
+          }
         }
 
-        // Fetch table + its current CONFIRMED registrations (sharing-aware)
+        // f. Fetch target table with its CONFIRMED registrations
         const table = await tx.table.findUnique({
           where: { id: tableId },
-          select: {
-            id: true,
-            eventId: true,
-            tableNumber: true,
-            capacity: true,
-            minOrder: true,
-            status: true,
+          include: {
             registrations: {
               where: { status: 'CONFIRMED' },
               select: { id: true, guestsCount: true },
@@ -102,128 +114,89 @@ export async function POST(
           },
         })
 
+        // g. Validate table exists and belongs to eventId
         if (!table) {
-          throw new Error('Table not found')
+          throw { statusCode: 404, message: 'Table not found' }
         }
-
         if (table.eventId !== eventId) {
-          throw new Error('Table does not belong to this event')
-        }
-
-        // INACTIVE = admin hold, not bookable. RESERVED = now valid (sharing allowed).
-        if (table.status === 'INACTIVE') {
-          throw new Error(`Table ${table.tableNumber} is on hold (INACTIVE)`)
-        }
-
-        // Verify incoming group count
-        const incoming = registration.guestsCount || 0
-        if (incoming < 1) {
-          throw new Error('Registration has no guest count set')
-        }
-
-        // Shared-seat capacity check: sum existing occupants + incoming must fit
-        const occupied = table.registrations.reduce((n, r) => n + (r.guestsCount ?? 0), 0)
-        const isEmpty = table.registrations.length === 0
-
-        if (occupied + incoming > table.capacity) {
-          throw new Error(
-            `Not enough remaining seats on table ${table.tableNumber} (${table.capacity - occupied} free, ${incoming} requested)`
-          )
-        }
-
-        // minOrder is an "open the table" gate, not a per-reg rule.
-        // Only enforced when table is currently empty; skipped when sharing.
-        if (isEmpty && incoming < table.minOrder && !force) {
-          throw new Error(
-            `Guest count (${incoming}) is below table minimum order (${table.minOrder})`
-          )
-        }
-
-        // Update registration to CONFIRMED and point it at the table (single write)
-        const updatedRegistration = await tx.registration.update({
-          where: { id: registrationId },
-          data: {
-            status: 'CONFIRMED',
-            waitlistPriority: null, // Clear waitlist priority
-            tableId: table.id,
-          },
-          select: {
-            id: true,
-            confirmationCode: true,
-            status: true,
-            guestsCount: true,
-            phoneNumber: true,
-            data: true,
-          },
-        })
-
-        // Only flip table status to RESERVED when we opened an empty table.
-        // An already-RESERVED (shared) table stays RESERVED.
-        let updatedTable
-        if (isEmpty) {
-          updatedTable = await tx.table.update({
-            where: { id: tableId },
-            data: { status: 'RESERVED' },
-            select: {
-              id: true,
-              tableNumber: true,
-              capacity: true,
-              minOrder: true,
-              status: true,
-            },
-          })
-        } else {
-          updatedTable = {
-            id: table.id,
-            tableNumber: table.tableNumber,
-            capacity: table.capacity,
-            minOrder: table.minOrder,
-            status: table.status,
+          throw {
+            statusCode: 400,
+            message: 'Table does not belong to this event',
           }
         }
 
-        return {
-          registration: updatedRegistration,
-          table: updatedTable,
+        // h. Check table status
+        if (table.status === 'INACTIVE') {
+          throw { statusCode: 422, message: 'Table is inactive' }
         }
+
+        // i. Compute occupied seats
+        const occupied = table.registrations.reduce(
+          (sum, r) => sum + (r.guestsCount ?? 0),
+          0
+        )
+
+        // j. Incoming guests
+        const incoming = registration.guestsCount ?? 0
+
+        // k. Capacity check (always enforced)
+        if (occupied + incoming > table.capacity) {
+          const remaining = table.capacity - occupied
+          throw {
+            statusCode: 422,
+            message: `Not enough capacity. Remaining: ${remaining}`,
+            remaining,
+          }
+        }
+
+        // l. minOrder check (only when table is empty and force is not set)
+        if (
+          table.registrations.length === 0 &&
+          incoming < table.minOrder &&
+          !force
+        ) {
+          throw {
+            statusCode: 422,
+            message: `Minimum order is ${table.minOrder}`,
+            minOrder: table.minOrder,
+          }
+        }
+
+        // m. Update registration: confirm it and assign to table
+        const updated = await tx.registration.update({
+          where: { id: regId },
+          data: {
+            status: 'CONFIRMED',
+            tableId: tableId,
+            waitlistPriority: null,
+          },
+        })
+
+        // n. Flip table to RESERVED if it was AVAILABLE
+        if (table.status === 'AVAILABLE') {
+          await tx.table.update({
+            where: { id: tableId },
+            data: { status: 'RESERVED' },
+          })
+        }
+
+        // o. Return updated registration
+        return updated
       },
-      {
-        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-        timeout: 10000,
-      }
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
     )
 
-    return NextResponse.json({
-      success: true,
-      message: `Waitlist registration assigned to table ${result.table.tableNumber}`,
-      registration: result.registration,
-      table: result.table,
-    })
-  } catch (error: any) {
-    logger.error('Waitlist assignment error', { source: 'events', error })
-
-    // Handle auth errors
-    if (error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    return NextResponse.json(updatedRegistration, { status: 200 })
+  } catch (err: unknown) {
+    if (isKnownError(err)) {
+      const { statusCode, message, ...extras } = err
+      return NextResponse.json(
+        { error: message ?? 'Request failed', ...extras },
+        { status: statusCode }
+      )
     }
 
-    // Handle business logic errors with user-friendly messages
-    if (
-      error.message.includes('not found') ||
-      error.message.includes('does not belong') ||
-      error.message.includes('Cannot assign') ||
-      error.message.includes('on hold') ||
-      error.message.includes('no guest count') ||
-      error.message.includes('Not enough remaining seats') ||
-      error.message.includes('Guest count') ||
-      error.message.includes('below table')
-    ) {
-      return NextResponse.json({ error: error.message }, { status: 400 })
-    }
-
-    return NextResponse.json(
-      { error: 'Failed to assign waitlist registration to table' },
-      { status: 500 }
-    )
+    console.error('[waitlist/assign] Unexpected error:', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

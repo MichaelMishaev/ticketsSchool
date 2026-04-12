@@ -1,9 +1,9 @@
 /**
  * Shared types + helpers for the admin table board.
  *
- * The data model is **sharing-aware**: a single `Table` can host multiple
- * CONFIRMED `Registration`s (after the 2026-04-11 FK flip from 1:1 to many-to-one).
- * These helpers abstract over `table.registrations[]` so every consumer
+ * The data model is sharing-aware: a single Table can host multiple
+ * CONFIRMED Registrations (after the 2026-04-11 FK flip from 1:1 to many-to-one).
+ * These helpers abstract over table.registrations[] so every consumer
  * computes occupancy the same way.
  */
 
@@ -32,8 +32,7 @@ export const isTableEmpty = (t: { registrations: TableRegistration[] }): boolean
 
 /**
  * Total seats occupied on a table across all CONFIRMED registrations.
- * Missing `guestsCount` is treated as 0 (shouldn't happen in TABLE_BASED
- * events but the field is nullable in the schema for historical reasons).
+ * Missing guestsCount is treated as 0 (nullable in schema for historical reasons).
  */
 export const tableOccupiedSpots = (t: { registrations: TableRegistration[] }): number =>
   t.registrations.reduce((sum, r) => sum + (r.guestsCount ?? 0), 0)

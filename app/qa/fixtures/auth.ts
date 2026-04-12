@@ -1,9 +1,7 @@
-/* eslint-disable react-hooks/rules-of-hooks */
 import { test as base, Page } from '@playwright/test'
 
 /**
  * Authentication helper functions for tests
- * Note: Playwright fixtures use `use` which is not a React Hook
  */
 
 export interface AuthFixtures {
@@ -77,7 +75,7 @@ export const test = base.extend<AuthFixtures>({
     // This will be configured per test with specific school admin credentials
     await use(page)
     await context.close()
-  },
+  }
 })
 
 export { expect } from '@playwright/test'
